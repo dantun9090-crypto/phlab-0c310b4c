@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const STORAGE_KEY = 'php_recently_viewed';
 const MAX_ITEMS = 6;
@@ -13,13 +13,16 @@ export interface RecentlyViewedItem {
 }
 
 export function useRecentlyViewed() {
-  const [items, setItems] = useState<RecentlyViewedItem[]>(() => {
+  const [items, setItems] = useState<RecentlyViewedItem[]>([]);
+
+  useEffect(() => {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      if (Array.isArray(saved)) setItems(saved);
     } catch {
-      return [];
+      /* ignore */
     }
-  });
+  }, []);
 
   const addItem = (item: RecentlyViewedItem) => {
     setItems(prev => {

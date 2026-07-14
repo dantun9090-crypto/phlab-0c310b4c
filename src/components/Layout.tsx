@@ -245,9 +245,14 @@ export function Layout({ children }: LayoutProps) {
   const [suggestions, setSuggestions] = useState<{ type: 'product' | 'article'; label: string; href: string }[]>([]);
   const [activeSuggestion, setActiveSuggestion] = useState(-1);
   const suggestionsRef = useRef<HTMLDivElement>(null);
-  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem('php_recent_searches') || '[]'); } catch { return []; }
-  });
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('php_recent_searches') || '[]');
+      if (Array.isArray(saved)) setRecentSearches(saved);
+    } catch { /* ignore */ }
+  }, []);
 
   // Track whether the initial cart hydration from localStorage has completed.
   // Until it has, we must NOT persist the empty initial React state — otherwise

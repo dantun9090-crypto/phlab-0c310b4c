@@ -1,15 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 
 export function DisclaimerBanner() {
-  const [dismissed, setDismissed] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    try {
-      return localStorage.getItem('disclaimer_dismissed') === 'true';
-    } catch {
-      return false;
-    }
-  });
+  const [dismissed, setDismissed] = useState(false);
   const bannerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('disclaimer_dismissed') === 'true') setDismissed(true);
+    } catch { /* ignore */ }
+  }, []);
 
   useEffect(() => {
     if (dismissed) {

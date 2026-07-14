@@ -162,13 +162,7 @@ export default function HomePage() {
   const [bannerResolved, setBannerResolved] = useState<boolean>(!!ssrBanner);
   const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
   const [showHeroEffects, setShowHeroEffects] = useState(false);
-  const [reserveHeroAdvert, setReserveHeroAdvert] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('php_adverts_hero_count') === '1';
-    } catch {
-      return false;
-    }
-  });
+  const [reserveHeroAdvert, setReserveHeroAdvert] = useState<boolean>(false);
   // IMPORTANT: do NOT seed from localStorage in the lazy initializer — SSR
   // returns [] and the client's first render must match, otherwise React
   // throws hydration error #419 (recoverable hydration mismatch) and
@@ -212,6 +206,7 @@ export default function HomePage() {
     // so repeat visits paint the hero banner without waiting on Firestore.
     // Runs AFTER the first commit, so it never causes a hydration mismatch.
     try {
+      setReserveHeroAdvert(localStorage.getItem('php_adverts_hero_count') === '1');
       const raw = localStorage.getItem('php_adverts_cache');
       if (raw) {
         const { ts, data } = JSON.parse(raw);

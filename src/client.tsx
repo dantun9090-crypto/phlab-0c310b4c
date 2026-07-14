@@ -266,15 +266,25 @@ function capturePreHydrationDom(): void {
       thirdPartyScripts: scripts.filter((s) => /googletagmanager|google-analytics|\/60z6\//i.test(s.src)),
     };
     window.__PHL_PRE_HYDRATION_DOM__ = snapshot;
-    console.info("[HYDRATION DIAG] pre-render DOM snapshot", snapshot);
+    if (hydrationDiagEnabled()) console.info("[HYDRATION DIAG] pre-render DOM snapshot", snapshot);
   } catch (error) {
-    console.warn("[HYDRATION DIAG] snapshot failed", error);
+    if (hydrationDiagEnabled()) console.warn("[HYDRATION DIAG] snapshot failed", error);
+  }
+}
+
+function hydrationDiagEnabled(): boolean {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("hydration_diag") === "1" || localStorage.getItem("phl_hydration_diag") === "1";
+  } catch {
+    return false;
   }
 }
 
 function installPreReactMutationLogger(): () => void {
   let mutationCount = 0;
   const mutatedNames: string[] = [];
+  const debug = hydrationDiagEnabled();
   try {
     const observer = new MutationObserver((records) => {
       if (window.__PHL_REACT_READY__) return;
@@ -291,17 +301,19 @@ function installPreReactMutationLogger(): () => void {
         if (added.length) {
           mutationCount += added.length;
           mutatedNames.push(...added);
-          console.warn(`[HYDRATION DIAG] mutation #${mutationCount}`, added);
+          if (debug) console.info(`[HYDRATION DIAG] mutation #${mutationCount}`, added);
         }
       }
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
     return () => {
       observer.disconnect();
-      if (mutationCount > 0) {
-        console.warn(`[HYDRATION DIAG] FINAL pre-React mutation count = ${mutationCount}`, mutatedNames);
-      } else {
-        console.info("[HYDRATION DIAG] FINAL pre-React mutation count = 0 ✓");
+      if (debug) {
+        if (mutationCount > 0) {
+          console.info(`[HYDRATION DIAG] FINAL pre-React mutation count = ${mutationCount}`, mutatedNames);
+        } else {
+          console.info("[HYDRATION DIAG] FINAL pre-React mutation count = 0 ✓");
+        }
       }
     };
   } catch {
@@ -443,8 +455,8 @@ function showStaticFallback(error: unknown): void {
 }
 
 
-class ClientRootErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error?: Error }> {
-  state: { hasError: boolean; error?: Error } = { hasError: false };
+class ClientRootErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error?: Error; componentName?: string }> {
+  state: { hasError: boolean; error?: Error; componentName?: string } = { hasError: false };
 
   static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
@@ -452,10 +464,21 @@ class ClientRootErrorBoundary extends Component<{ children: ReactNode }, { hasEr
 
   componentDidCatch(error: Error, info: { componentStack?: string }) {
     if (isHydrationCrash(error)) markHydrationCrash(error);
+    const componentName = info?.componentStack
+      ?.split("\n")
+      .map((line) => line.trim())
+      .find((line) => line.startsWith("at "))
+      ?.replace(/^at\s+/, "")
+      .split(" ")[0] || "Unknown component";
+    this.setState({ componentName });
     console.error("[ROOT ERROR BOUNDARY]", error, info?.componentStack || "");
+    console.error("[ROOT ERROR BOUNDARY] component:", componentName);
+    if (error instanceof Error) {
+      console.error("[ROOT ERROR BOUNDARY] stack:\n" + (error.stack || "(no stack)"));
+    }
     reportClientError({
       source: "error-boundary",
-      message: error?.message || String(error),
+      message: `${componentName}: ${error?.message || String(error)}`,
       stack: [error?.stack, info?.componentStack].filter(Boolean).join("\n--- componentStack ---\n"),
       routeId: typeof location !== "undefined" ? location.pathname : undefined,
     });
@@ -466,7 +489,7 @@ class ClientRootErrorBoundary extends Component<{ children: ReactNode }, { hasEr
     return (
       <div role="alert" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#060f1e", color: "#f0f6ff", padding: 24 }}>
         <div style={{ maxWidth: 480, textAlign: "center" }}>
-          <h1 style={{ fontSize: 22, margin: "0 0 10px", fontWeight: 700 }}>Something went wrong</h1>
+          <h1 style={{ fontSize: 22, margin: "0 0 10px", fontWeight: 700 }}>{this.state.componentName || "Something went wrong"}</h1>
           <p style={{ margin: "0 0 18px", color: "#9fb0c8", fontSize: 14, lineHeight: 1.55 }}>
             We hit an unexpected error rendering this page. The issue has been reported. Please try again or refresh.
           </p>
@@ -476,11 +499,11 @@ class ClientRootErrorBoundary extends Component<{ children: ReactNode }, { hasEr
             </pre>
           ) : null}
           <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-            <button type="button" onClick={() => this.setState({ hasError: false, error: undefined })} style={{ appearance: "none", border: "1px solid #1f2d44", borderRadius: 8, background: "transparent", color: "#f0f6ff", fontWeight: 600, padding: "10px 14px", cursor: "pointer" }}>
+            <button type="button" onClick={() => this.setState({ hasError: false, error: undefined, componentName: undefined })} style={{ appearance: "none", border: "1px solid #1f2d44", borderRadius: 8, background: "transparent", color: "#f0f6ff", fontWeight: 600, padding: "10px 14px", cursor: "pointer" }}>
               Try again
             </button>
-            <button type="button" onClick={() => location.reload()} style={{ appearance: "none", border: 0, borderRadius: 8, background: "#10b981", color: "#03140d", fontWeight: 700, padding: "10px 14px", cursor: "pointer" }}>
-              Refresh
+            <button type="button" onClick={() => (window.location.reload as (forceReload?: boolean) => void)(true)} style={{ appearance: "none", border: 0, borderRadius: 8, background: "#10b981", color: "#03140d", fontWeight: 700, padding: "10px 14px", cursor: "pointer" }}>
+              Reload
             </button>
           </div>
         </div>
