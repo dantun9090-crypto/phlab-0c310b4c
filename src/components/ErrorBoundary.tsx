@@ -3,7 +3,7 @@ import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import * as Sentry from '@sentry/react';
 import { logSecurityEvent } from '@/lib/security-events';
-import { isHydrationMismatchError, markHydrationError } from '@/lib/recovery';
+import { isHydrationMismatchError, isStaleChunkError, hardReload, markHydrationError } from '@/lib/recovery';
 
 interface Props {
   children: ReactNode;
@@ -63,6 +63,28 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       const isHydrationError = isHydrationMismatchError(this.state.error);
+      const isChunkError = isStaleChunkError(this.state.error);
+      if (isChunkError) {
+        // Fire hardReload in background; render a friendly refresh UI.
+        try { void hardReload({ clean: true }); } catch { /* ignore */ }
+        return (
+          <div className="min-h-screen bg-gray-900 flex items-center justify-center px-6">
+            <div className="max-w-md w-full text-center">
+              <h1 className="text-2xl font-bold text-white mb-4">Update available</h1>
+              <p className="text-gray-400 mb-8">
+                A newer version of the site is live. Refresh to load the latest page.
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Refresh page
+              </button>
+            </div>
+          </div>
+        );
+      }
       return (
         <div className="min-h-screen bg-gray-900 flex items-center justify-center px-6">
           <div className="max-w-md w-full text-center">
