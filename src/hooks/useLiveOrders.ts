@@ -104,6 +104,10 @@ export const useLiveOrders = (): UseLiveOrdersResult => {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    // LCP optimisation: skip live-order polling on the homepage.
+    // The LiveSalesPopup only renders on non-home routes anyway, and the
+    // extra fetch chain was contending with hero-image bandwidth on mobile.
+    if (window.location.pathname === '/') return;
     let cancelled = false;
 
     const cb = (orders: LiveOrder[], newOrder: LiveOrder | null) => {
