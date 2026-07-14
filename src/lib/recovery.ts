@@ -165,6 +165,8 @@ export async function clearClientCaches(timeoutMs = 1500): Promise<void> {
 }
 
 export const HARD_RELOAD_FLAG = "__phl_hard_reload_in_flight";
+const FRESH_HTML_RECOVERY_KEY = "phlFreshHtmlRecoveryAt";
+const FRESH_HTML_RECOVERY_WINDOW_MS = 60_000;
 
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -276,6 +278,14 @@ export async function hardReload(options: HardReloadOptions = {}): Promise<void>
 
   if (options.clean) {
     try {
+      try {
+        const recent = Number(localStorage.getItem(FRESH_HTML_RECOVERY_KEY) || "0");
+        if (recent && Date.now() - recent < FRESH_HTML_RECOVERY_WINDOW_MS) {
+          window.location.replace("/");
+          return;
+        }
+        localStorage.setItem(FRESH_HTML_RECOVERY_KEY, String(Date.now()));
+      } catch { /* ignore */ }
       await clearCacheStorageAndServiceWorkers(4000);
       await purgeRecoveryStorage();
       await fetchFreshRootHtml();
