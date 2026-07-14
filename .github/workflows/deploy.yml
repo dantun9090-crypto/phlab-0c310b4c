@@ -31,14 +31,14 @@ jobs:
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_AP }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_API }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_API }}
           command: pages deploy dist --project-name=phlabs
 
       - name: Purge Cloudflare edge cache
         if: success()
         env:
-          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_AP }}
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_API }}
           CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID_PHLABS }}
         run: |
           set -euo pipefail
