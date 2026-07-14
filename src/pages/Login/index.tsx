@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Mail, Lock, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { loginUser, resetPassword, signInWithGoogle, setAuthPersistence, db, doc, getDoc } from '@/lib/firebase';
+import { loginUser, resetPassword, signInWithGoogle, setAuthPersistence, db, doc, getDoc, auth } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import { formatRemaining } from '@/lib/login-lockout';
 import { logSecurityEvent } from '@/lib/security-events';
 
