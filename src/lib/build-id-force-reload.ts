@@ -261,12 +261,13 @@ export function installBuildIdForceReload(): void {
     /* ignore */
   }
 
-  // Kick one initial check ~15s after mount so a customer who lands on a
-  // stale shell doesn't have to switch tabs to trigger recovery. Delayed
-  // so we never compete with LCP work.
+  // Kick one initial check ~1.5s after mount so a customer who lands on a
+  // stale shell recovers immediately instead of waiting 15s. Still delayed
+  // enough to not compete with LCP.
   try {
-    setTimeout(() => trigger("initial-delayed"), 15_000);
+    setTimeout(() => trigger("initial-delayed"), 1_500);
   } catch {
     /* ignore */
   }
+
 }
