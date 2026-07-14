@@ -787,38 +787,49 @@ const shouldUseRedirect = (): boolean => {
 
 // Upsert customer profile after Google sign-in (used by popup + redirect flow).
 const upsertGoogleCustomer = async (user: FirebaseUser) => {
-  const customerRef = doc(db, 'customers', user.uid);
-  const snap = await getDoc(customerRef);
-  if (!snap.exists()) {
-    const nameParts = (user.displayName || '').trim().split(' ');
-    const firstName = nameParts[0] || '';
-    const lastName = nameParts.slice(1).join(' ') || '';
-    const referralCode = generateReferralCode();
-    const storedRef = getStoredReferralCode();
-    await setDoc(customerRef, {
-      uid: user.uid,
-      email: user.email || '',
-      firstName,
-      lastName,
-      displayName: user.displayName || '',
-      photoURL: user.photoURL || '',
-      createdAt: Timestamp.now(),
-      isActive: true,
-      loyaltyCredits: 0,
-      totalSpend: 0,
-      totalOrders: 0,
-      provider: 'google',
-      referralCode,
-      referralBalance: 0,
-      referralRewardClaimed: false,
-      referralCount: 0,
-      ...(storedRef ? { referredBy: storedRef } : {}),
-    });
-    if (storedRef) clearStoredReferralCode();
-    await sendWelcomeEmail(user.email || '', firstName).catch(console.error);
-    await logActivity({ type: 'signup', message: `New Google user: ${user.email}`, userId: user.uid });
-  } else {
-    await updateDoc(customerRef, { lastLoginAt: Timestamp.now() });
+  // CRITICAL: this runs AFTER Firebase Auth has already signed the user in.
+  // Any throw here bubbles out of `signInWithGoogle` and causes the Login
+  // page's catch block to run — which then skips navigate(redirectTarget),
+  // leaving the (actually signed-in) user staring at /login. So every
+  // Firestore write here must be non-throwing.
+  try {
+    const customerRef = doc(db, 'customers', user.uid);
+    const snap = await getDoc(customerRef).catch(() => null);
+    if (!snap || !snap.exists()) {
+      const nameParts = (user.displayName || '').trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      const referralCode = generateReferralCode();
+      const storedRef = getStoredReferralCode();
+      await setDoc(customerRef, {
+        uid: user.uid,
+        email: user.email || '',
+        firstName,
+        lastName,
+        displayName: user.displayName || '',
+        photoURL: user.photoURL || '',
+        createdAt: Timestamp.now(),
+        isActive: true,
+        loyaltyCredits: 0,
+        totalSpend: 0,
+        totalOrders: 0,
+        provider: 'google',
+        referralCode,
+        referralBalance: 0,
+        referralRewardClaimed: false,
+        referralCount: 0,
+        ...(storedRef ? { referredBy: storedRef } : {}),
+      }).catch((e) => { console.warn('[google] customer create failed', e); });
+      if (storedRef) { try { clearStoredReferralCode(); } catch {} }
+      sendWelcomeEmail(user.email || '', firstName).catch(console.error);
+      logActivity({ type: 'signup', message: `New Google user: ${user.email}`, userId: user.uid })
+        .catch((e) => console.warn('[google] logActivity failed', e));
+    } else {
+      updateDoc(customerRef, { lastLoginAt: Timestamp.now() })
+        .catch((e) => console.warn('[google] lastLoginAt update failed', e));
+    }
+  } catch (e) {
+    console.warn('[google] upsertGoogleCustomer non-fatal error', e);
   }
   logAuthEvent({ type: 'google_success', email: user.email ?? null, uid: user.uid });
 };

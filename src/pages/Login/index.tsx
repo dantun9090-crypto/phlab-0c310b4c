@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Mail, Lock, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { loginUser, resetPassword, signInWithGoogle, setAuthPersistence, db, doc, getDoc } from '@/lib/firebase';
+import { loginUser, resetPassword, signInWithGoogle, setAuthPersistence, db, doc, getDoc, auth } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import { formatRemaining } from '@/lib/login-lockout';
 import { logSecurityEvent } from '@/lib/security-events';
 
@@ -51,6 +52,18 @@ export default function Login() {
       if (snap.exists()) setSettings(snap.data() as SiteSettings);
     }).catch(() => {});
   }, []);
+
+  // Already-signed-in guard: if Firebase Auth has a live user (e.g. Google
+  // sign-in succeeded but a Firestore post-write threw and skipped navigate),
+  // send them to the intended target instead of leaving them on /login.
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (u) navigate(redirectTarget, { replace: true });
+    });
+    return () => unsub();
+    // redirectTarget is derived from the URL — stable per render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [redirectTarget]);
 
 
   // Tick lockout countdown
