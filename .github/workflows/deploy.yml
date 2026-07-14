@@ -42,6 +42,10 @@ jobs:
           CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID_PHLABS }}
         run: |
           set -euo pipefail
+          if [ -z "${CF_ZONE_ID:-}" ]; then
+            echo "::warning::CLOUDFLARE_ZONE_ID_PHLABS secret not set — skipping edge cache purge"
+            exit 0
+          fi
           resp=$(curl -sS -o /tmp/purge.json -w "%{http_code}" \
             -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
             -H "Authorization: Bearer ${CF_API_TOKEN}" \
