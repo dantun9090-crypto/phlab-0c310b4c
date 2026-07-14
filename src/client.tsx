@@ -330,7 +330,34 @@ function prepareDocumentForCsr(): void {
   }
 }
 
+function attemptCacheBustReload(): boolean {
+  // Fires before rendering the "Please refresh" fallback. If this tab hasn't
+  // already been cache-busted (session flag + URL `_bust` param), do a hard
+  // reload with a cache-busting query so Cloudflare / the SW can't replay
+  // the stale HTML shell that likely caused this crash.
+  try {
+    const RELOADED_KEY = "__phl_hydration_bust_reload_at";
+    if (sessionStorage.getItem(RELOADED_KEY)) return false;
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("_bust")) return false;
+    sessionStorage.setItem(RELOADED_KEY, String(Date.now()));
+    const loc = window.location;
+    const sep = loc.search ? "&" : "?";
+    const target =
+      loc.pathname + loc.search + sep + "_bust=hydration&_t=" + Date.now() + loc.hash;
+    console.warn("[ROOT ERROR BOUNDARY] Attempting cache-bust reload before fallback");
+    loc.replace(target);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function showStaticFallback(error: unknown): void {
+  // First-chance recovery: silently reload once with a cache-buster. If the
+  // real cause was a stale HTML/JS mismatch, the reload fixes it and the user
+  // never sees the "Please refresh" screen.
+  if (attemptCacheBustReload()) return;
   try {
     document.body.innerHTML =
       '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Please refresh</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">The page could not initialise cleanly.</p><button id="phl-root-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer">Refresh</button></div></div>';
@@ -340,6 +367,7 @@ function showStaticFallback(error: unknown): void {
   }
   console.error("[ROOT ERROR BOUNDARY] Static fallback rendered", error);
 }
+
 
 class ClientRootErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error?: Error }> {
   state: { hasError: boolean; error?: Error } = { hasError: false };
