@@ -351,7 +351,24 @@ function prepareDocumentForCsr(): void {
     document.body.style.margin = "0";
     document.body.style.backgroundColor = "#060f1e";
     document.body.style.color = "#f0f6ff";
-    document.body.innerHTML =
+    // CRITICAL: Do NOT mount React on <body>. Third-party scripts (GTM, GA4,
+    // Clarity, Google Merchant Widget, animated background, etc.) inject
+    // sibling nodes into body during page life. If React owns body, those
+    // injections race React's reconciler and trigger
+    //   NotFoundError: Failed to execute 'removeChild' on 'Node'
+    // during hydration/unmount. Isolate React inside a dedicated container.
+    let container = document.getElementById("phl-csr-root");
+    if (!container) {
+      // Clear any pre-existing body content but keep third-party <script>
+      // tags that already loaded — they must remain OUTSIDE the React root.
+      const preservedScripts = Array.from(document.body.querySelectorAll(":scope > script"));
+      document.body.innerHTML = "";
+      preservedScripts.forEach((s) => document.body.appendChild(s));
+      container = document.createElement("div");
+      container.id = "phl-csr-root";
+      document.body.appendChild(container);
+    }
+    container.innerHTML =
       '<div class="phl-boot" aria-live="polite" style="display:flex;min-height:100vh;align-items:center;justify-content:center;color:#9fb0c8;font-size:14px;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif">Loading PH Labs…</div>';
   } catch (error) {
     console.error("[HYDRATION FALLBACK] Could not wipe SSR DOM", error);
