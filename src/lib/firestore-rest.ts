@@ -222,14 +222,20 @@ export async function fetchAllProducts(): Promise<SeoProduct[]> {
   // The per-request timestamp keeps request metadata unique for intermediate
   // proxies while preserving a valid Google API URL.
   const url = `${BASE}/product_stock?key=${API_KEY}&pageSize=300`;
+  const isBrowser = typeof window !== "undefined";
   const res = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
-      Pragma: "no-cache",
-      "X-PH-Cache-Bust": buildCacheBust(),
-    },
-    cache: "no-store",
+    // Browser-side route loaders must remain CORS-simple. Firestore REST does
+    // not answer preflights for custom no-cache headers, but server-side SSR,
+    // sitemaps, and Merchant feeds still need a cache-busted fresh read.
+    headers: isBrowser
+      ? { Accept: "application/json" }
+      : {
+          Accept: "application/json",
+          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+          Pragma: "no-cache",
+          "X-PH-Cache-Bust": buildCacheBust(),
+        },
+    cache: isBrowser ? "default" : "no-store",
   });
   if (!res.ok) {
     const body = await res.text().catch(() => "");

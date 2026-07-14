@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Mail, Lock, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { loginUser, resetPassword, signInWithGoogle, setAuthPersistence, db, doc, getDoc, auth } from '@/lib/firebase';
+import { loginUser, resetPassword, signInWithGoogle, completeGoogleRedirect, setAuthPersistence, db, doc, getDoc, auth } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { formatRemaining } from '@/lib/login-lockout';
 import { logSecurityEvent } from '@/lib/security-events';
@@ -22,7 +22,10 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => {
+    try { return window.localStorage.getItem('php_auth_remember') !== '0'; }
+    catch { return true; }
+  });
   const [lockoutMs, setLockoutMs] = useState(0);
   const lockoutTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -57,10 +60,16 @@ export default function Login() {
   // sign-in succeeded but a Firestore post-write threw and skipped navigate),
   // send them to the intended target instead of leaving them on /login.
   useEffect(() => {
+    let cancelled = false;
+    completeGoogleRedirect()
+      .then((u) => {
+        if (u && !cancelled) navigate(redirectTarget, { replace: true });
+      })
+      .catch(() => {});
     const unsub = onAuthStateChanged(auth, (u) => {
       if (u) navigate(redirectTarget, { replace: true });
     });
-    return () => unsub();
+    return () => { cancelled = true; unsub(); };
     // redirectTarget is derived from the URL — stable per render
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [redirectTarget]);

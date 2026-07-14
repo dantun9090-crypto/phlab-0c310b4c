@@ -278,7 +278,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
           `<!-- ${FEED_REVISION}: approved-format feed rendered live for ${linkBase} at ${generatedAt} -->`,
           `<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">`,
           `  <channel>`,
-          `    <title>${xmlEscape(`${BRAND} UK — Research Compounds &amp; Laboratory Reference Standards`)}</title>`,
+          `    <title>${xmlEscape(`${BRAND} UK — Research Compounds & Laboratory Reference Standards`)}</title>`,
           `    <link>${linkBase}</link>`,
           `    <description>UK-dispatched research compounds and analytical reference standards — HPLC ≥99% purity, CoA per batch, in-vitro laboratory use only. NOT for human consumption.</description>`,
           items,
