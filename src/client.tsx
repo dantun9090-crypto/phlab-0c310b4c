@@ -630,7 +630,12 @@ if (shouldStartPhlClient) window.setTimeout(() => {
     const bootStillVisible = !!document.querySelector(".phl-boot");
     const bodyChildCount = document.body?.childElementCount ?? 0;
     const reactRootMounted = !!document.querySelector("[data-tanstack-scripts], [data-tsr-scripts], #root, main, header, nav");
-    const mountFailed = bootStillVisible || !reactRootMounted || bodyChildCount <= 1;
+    // The real signal is whether React actually rendered content INTO #root.
+    // Body normally has exactly one child (<div id="root">), so a body-level
+    // count check produced false positives on healthy pages.
+    const rootEl = document.getElementById("root");
+    const rootChildCount = rootEl?.childElementCount ?? 0;
+    const mountFailed = bootStillVisible || !reactRootMounted || (rootEl != null && rootChildCount === 0);
 
     if (mountFailed) {
       const buildId =
