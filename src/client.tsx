@@ -144,9 +144,6 @@ try {
 
 import { Component, StrictMode, startTransition, type ReactNode } from "react";
 import { createRoot, hydrateRoot, type Root } from "react-dom/client";
-import { StartClient } from "@tanstack/react-start/client";
-import { RouterProvider } from "@tanstack/react-router";
-import { getRouter } from "./router";
 import LegacyClientApp from "./legacy/LegacyClientApp";
 import { installClientErrorReporter, reportClientError } from "./lib/client-error-reporter";
 import { initSwTelemetry } from "./lib/swTelemetry";
@@ -491,18 +488,11 @@ class ClientRootErrorBoundary extends Component<{ children: ReactNode }, { hasEr
   }
 }
 
-let csrRouter: ReturnType<typeof getRouter> | undefined;
-
-function getCsrRouter() {
-  if (!csrRouter) csrRouter = getRouter();
-  return csrRouter;
-}
-
-function app(mode: "ssr" | "csr" = "ssr", router?: ReturnType<typeof getRouter>) {
+function app() {
   return (
     <StrictMode>
       <ClientRootErrorBoundary>
-        {mode === "csr" ? <CsrLegacyApp /> : <StartClient />}
+        <CsrLegacyApp />
       </ClientRootErrorBoundary>
     </StrictMode>
   );
@@ -522,22 +512,6 @@ function renderCsr(error: unknown): void {
   }
   prepareDocumentForCsr();
   void (async () => {
-    const router = getCsrRouter();
-    // Kick off initial load but DO NOT await — awaiting router.load() before
-    // mount has hung the boot in preview/mobile cases, leaving the user on
-    // the "Loading PH Labs…" shell forever. <Transitioner /> will drive the
-    // first render correctly once React mounts.
-    try {
-      const loadPromise = router.load();
-      if (loadPromise && typeof (loadPromise as Promise<unknown>).catch === "function") {
-        (loadPromise as Promise<unknown>).catch((loadError) => {
-          console.error("[CSR BOOT] initial router.load failed", loadError);
-        });
-      }
-    } catch (loadError) {
-      console.error("[CSR BOOT] initial router.load threw synchronously", loadError);
-    }
-
     try {
       createRoot(getCsrMountNode(), {
         onUncaughtError: (rootError, info) => {
@@ -550,7 +524,7 @@ function renderCsr(error: unknown): void {
         onRecoverableError: (rootError, info) => {
           console.error("[ROOT ERROR BOUNDARY] recoverable", rootError, info?.componentStack || "");
         },
-      }).render(app("csr", router));
+      }).render(app());
     } catch (renderError) {
       showStaticFallback(renderError);
     }
@@ -559,24 +533,7 @@ function renderCsr(error: unknown): void {
 }
 
 function hydrateOrFallback(): void {
-  try {
-    hydrationRoot = hydrateRoot(document, app("ssr"), {
-      onRecoverableError: (error, info) => {
-        console.error("[HYDRATION DIAG] recoverable", error, info?.componentStack || "");
-        if (isHydrationCrash(error)) window.setTimeout(() => renderCsr(error), 0);
-      },
-      onUncaughtError: (error, info) => {
-        console.error("[HYDRATION DIAG] uncaught", error, info?.componentStack || "");
-        window.setTimeout(() => renderCsr(error), 0);
-      },
-      onCaughtError: (error, info) => {
-        console.error("[HYDRATION DIAG] caught", error, info?.componentStack || "");
-        if (isHydrationCrash(error)) window.setTimeout(() => renderCsr(error), 0);
-      },
-    });
-  } catch (error) {
-    renderCsr(error);
-  }
+  renderCsr(new Error("SSR hydration disabled by flag"));
 }
 
 capturePreHydrationDom();
