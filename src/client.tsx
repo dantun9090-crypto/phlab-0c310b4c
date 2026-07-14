@@ -407,7 +407,16 @@ function prepareDocumentForCsr(): void {
       document.body.appendChild(container);
     }
     container.innerHTML =
-      '<div class="phl-boot" aria-live="polite" style="display:flex;min-height:100vh;align-items:center;justify-content:center;color:#9fb0c8;font-size:14px;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif">Loading PH Labs…</div>';
+      '<style>@keyframes phl-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}.phl-sk{background:linear-gradient(90deg,#0f1a2e 25%,#1a2540 50%,#0f1a2e 75%);background-size:200% 100%;animation:phl-shimmer 1.4s infinite;border-radius:8px}</style>' +
+      '<div class="phl-boot" aria-live="polite" aria-busy="true" aria-label="Loading PH Labs" style="min-height:100vh;background:#060f1e;color:#9fb0c8;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif">' +
+        '<div class="phl-sk" style="height:56px;border-radius:0"></div>' +
+        '<div style="max-width:1200px;margin:16px auto;padding:0 16px">' +
+          '<div class="phl-sk" style="height:340px;margin-bottom:24px"></div>' +
+          '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px">' +
+            '<div class="phl-sk" style="height:260px"></div><div class="phl-sk" style="height:260px"></div><div class="phl-sk" style="height:260px"></div><div class="phl-sk" style="height:260px"></div><div class="phl-sk" style="height:260px"></div><div class="phl-sk" style="height:260px"></div><div class="phl-sk" style="height:260px"></div><div class="phl-sk" style="height:260px"></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
   } catch (error) {
     console.error("[HYDRATION FALLBACK] Could not wipe SSR DOM", error);
   }
