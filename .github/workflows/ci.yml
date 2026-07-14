@@ -195,13 +195,13 @@ jobs:
       #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
       #     sbom.cdx.json
       - name: Install cosign
-        if: success()
+        if: always()
         uses: sigstore/cosign-installer@v3
         with:
           cosign-release: v2.4.1
 
       - name: Sign SBOM (cosign keyless)
-        if: success()
+        if: always()
         env:
           COSIGN_YES: "true"
         run: |
@@ -212,7 +212,7 @@ jobs:
             dist/sbom.cdx.json
 
       - name: Verify SBOM signature (self-check)
-        if: success()
+        if: always()
         # Self-check only; the real gate is the separate
         # "Attestation verify (SLSA + CycloneDX)" job below. Rekor's public
         # transparency-log search API now requires a `verifiers` field in the
@@ -232,7 +232,7 @@ jobs:
       # digest to: repo, commit SHA, ref, workflow file, run ID + attempt,
       # and BUILD_ID. This is the JSON we attest below.
       - name: Generate SLSA provenance predicate
-        if: success()
+        if: always()
         env:
           BUILD_ID: ${{ github.sha }}
         run: bun run sbom:provenance
@@ -251,7 +251,7 @@ jobs:
       #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
       #     dist/sbom.cdx.json
       - name: Attest SBOM (SLSA provenance, cosign keyless)
-        if: success()
+        if: always()
         env:
           COSIGN_YES: "true"
         run: |
@@ -264,7 +264,7 @@ jobs:
             dist/sbom.cdx.json
 
       - name: Attest SBOM (CycloneDX predicate, cosign keyless)
-        if: success()
+        if: always()
         env:
           COSIGN_YES: "true"
         run: |
@@ -277,7 +277,7 @@ jobs:
             dist/sbom.cdx.json
 
       - name: Verify SLSA provenance attestation (self-check)
-        if: success()
+        if: always()
         # See note on "Verify SBOM signature (self-check)" above — Rekor
         # search API change makes this self-check flake even when the
         # underlying attestation is valid. The signed .intoto.jsonl is
@@ -297,7 +297,7 @@ jobs:
       # immutable, verifiable audit trail of what packages would have
       # shipped on this build AND which commit produced them.
       - name: Upload SBOM + signature + attestations
-        if: success()
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: sbom-${{ github.sha }}

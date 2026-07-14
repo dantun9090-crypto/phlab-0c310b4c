@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { X, Package } from 'lucide-react';
 import { useLiveOrders } from '@/hooks/useLiveOrders';
 import { formatLivePopupText, type LiveOrder } from '@/lib/orderFormatter';
-
+import { auth } from '@/lib/firebase';
 
 interface PopupState {
   order: LiveOrder | null;
@@ -51,18 +51,18 @@ export default function LiveSalesPopup() {
   const reduced = useMemo(() => prefersReducedMotion(), []);
 
   const isHomePage = pathname === '/' || pathname === '/index';
-  // Own-order exclusion is enforced server-side; no client uid required here.
+  const currentUid = auth.currentUser?.uid;
 
-  // Filter eligible orders by recency; own-order exclusion happens server-side via the `self` param.
+  // Filter eligible orders (recent, not own). Refreshed live via sanitized API.
   const eligible = useMemo(() => {
     const cutoff = Date.now() - MAX_AGE_MS;
     const list = recentOrders.filter((o) => {
       const hasUsableTime = Number.isFinite(o.createdAtMs) && o.createdAtMs > 0;
-      return !hasUsableTime || o.createdAtMs >= cutoff;
+      return (!hasUsableTime || o.createdAtMs >= cutoff) && (!currentUid || o.userId !== currentUid);
     });
     dlog('pool refresh — recentOrders:', recentOrders.length, 'eligible:', list.length, list);
     return list;
-  }, [recentOrders]);
+  }, [recentOrders, currentUid]);
 
   // Keep ref in sync so the rotation interval always sees the freshest pool
   // without tearing down on every snapshot.
@@ -113,7 +113,7 @@ export default function LiveSalesPopup() {
   useEffect(() => {
     if (!latestNewOrder || !isHomePage) return;
     if (Date.now() < snoozeUntilRef.current) return;
-    // Own-order exclusion happens server-side; no client uid check needed.
+    if (currentUid && latestNewOrder.userId === currentUid) return;
     dlog('new order arrived:', latestNewOrder.id);
     showOrder(latestNewOrder);
     // eslint-disable-next-line react-hooks/exhaustive-deps

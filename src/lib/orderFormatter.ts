@@ -8,6 +8,7 @@ export interface LiveOrder {
   productName: string;   // "BPC-157 5mg"
   productImage?: string; // optional thumbnail
   createdAtMs: number;   // epoch ms
+  userId?: string;
   status?: string;
 }
 
@@ -67,6 +68,7 @@ export const mapRawOrderToLive = (raw: RawOrderLike): LiveOrder | null => {
     productName,
     productImage: item?.image || item?.imageUrl,
     createdAtMs,
+    userId: raw.customer?.uid || raw.userId,
     status: raw.status,
   };
 };

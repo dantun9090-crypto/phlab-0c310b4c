@@ -28,13 +28,13 @@ const PROXY_ROUTES = [
 ];
 
 const CACHE_TTL = {
+  html: 86400,       // 24h for browser HTML
   prerender: 60,     // 60s for prerendered HTML (keep bot cache fresh after deploys)
   static: 31536000,  // 1 year for hashed immutable assets — required by
                      // e2e/cache-headers-regression.spec.ts (max-age >= 31536000)
 };
 
-const HTML_REVALIDATE_CACHE_CONTROL = "public, max-age=0, must-revalidate";
-const HTML_NO_STORE_CACHE_CONTROL = HTML_REVALIDATE_CACHE_CONTROL;
+const HTML_NO_STORE_CACHE_CONTROL = "no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0";
 const DOWNLOAD_NO_STORE_CACHE_CONTROL = "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0";
 const IMMUTABLE_BUILD_ASSET_CACHE_CONTROL = "public, max-age=31536000, immutable";
 const HASHED_STATIC_ASSET_RE = /(?:^|\/)[^/?#]+(?:[-._][a-f0-9]{8,}|-[A-Za-z0-9_-]{8,})\.(?:js|mjs|css|woff2?|ttf|otf)$/i;
@@ -274,8 +274,9 @@ async function buildBrowserResponse(response, path) {
   headers.delete("content-encoding");
   headers.set("Content-Type", "text/html; charset=utf-8");
   headers.set("X-Content-Type-Options", "nosniff");
-  // Browser HTML is revalidated on every navigation; CDN/surrogate layers stay
-  // no-store so the edge never replays stale HTML after a publish.
+  // HTML shells must be uncacheable on both browser and CDN. The previous `/`
+  // exception forced `s-maxage=14400` + SWR and caused stale homepage HTML to
+  // hide fresh publishes; keep every human HTML route strict no-store.
   applyBrowserHtmlNoCache(headers, path);
 
   return new Response(body, {
@@ -515,10 +516,14 @@ export default {
     }
 
     const originStart = Date.now();
-    // Bypass CF cache on every human HTML subrequest, including `/`. A cached
-    // homepage shell can keep the SSR fallback on screen after a publish even
-    // when this Worker stamps no-store on the outer response.
-    const originRes = await fetch(request, { cf: { cacheTtl: 0, cacheEverything: false } });
+    // Only `/` is intentionally edge-cacheable. For every other HTML shell,
+    // bypass CF's cache on the subrequest so a Cache Rule (or any inherited
+    // cache config) can't replay a stale shell — otherwise the response we
+    // return carries cf-cache-status=HIT even though we stamp no-store, and
+    // the cache-headers scan / regression suite flags it.
+    const originRes = path === "/"
+      ? await fetch(request)
+      : await fetch(request, { cf: { cacheTtl: 0, cacheEverything: false } });
     const originMs = Date.now() - originStart;
     const passRes = await buildBrowserResponse(originRes, path);
     const out = new Response(passRes.body, {
@@ -528,10 +533,13 @@ export default {
     });
     out.headers.set("X-PHL-Via", "passthrough;bot=0;warm=" + (wEligible ? "miss" : "skip") + ";origin=" + originMs + "ms;total=" + (Date.now() - startTime) + "ms");
     out.headers.set("Server-Timing", `warm-cache;desc="${wEligible ? "MISS" : "SKIP"}", origin;dur=${originMs}, worker;dur=${Date.now() - startTime}`);
-    // Strip inherited cf-cache-status on human HTML shells: the subrequest is
-    // forced no-cache and the outer response is no-store, so HIT/STALE here is
-    // misleading and can mask a stale shell problem.
-    out.headers.delete("cf-cache-status");
+    // Strip cf-cache-status on non-home HTML shells: we bypass CF cache on the
+    // origin subrequest for these paths and force no-store, so any residual
+    // cf-cache-status inherited from the subrequest is misleading and would
+    // trip the html-shell regression contract.
+    if (path !== "/") {
+      out.headers.delete("cf-cache-status");
+    }
     // Mirror origin build id into cf-cache-build-id so the post-deploy health
     // check can confirm this Worker is on-path and its build tag reached the
     // browser through Cloudflare's cache layer.

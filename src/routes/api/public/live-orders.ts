@@ -78,11 +78,6 @@ async function fetchRecentOrderRows(): Promise<OrderRow[]> {
   return Array.from(merged.values()).sort((a, b) => rowTime(b) - rowTime(a));
 }
 
-function rowUid(row: OrderRow): string | undefined {
-  const customer = row.customer as { uid?: string } | undefined;
-  return customer?.uid || (typeof row.userId === 'string' ? row.userId : undefined);
-}
-
 export const Route = createFileRoute('/api/public/live-orders')({
   server: {
     handlers: {
@@ -97,11 +92,8 @@ export const Route = createFileRoute('/api/public/live-orders')({
         const url = new URL(request.url);
         const limit = Math.min(Math.max(Number(url.searchParams.get('limit') || 20), 1), 20);
         const debug = url.searchParams.get('debug') === '1';
-        const selfRaw = url.searchParams.get('self') || '';
-        // Accept only realistic Firebase UID shapes to keep the cache key bounded.
-        const self = /^[A-Za-z0-9_-]{1,64}$/.test(selfRaw) ? selfRaw : '';
 
-        const cacheKey = `limit=${limit}:self=${self}`;
+        const cacheKey = `limit=${limit}`;
         const now = Date.now();
         if (!debug) {
           const cached = liveOrdersCache.get(cacheKey);
@@ -115,7 +107,6 @@ export const Route = createFileRoute('/api/public/live-orders')({
 
           const orders = rows
             .filter((row) => !EXCLUDED_STATUSES.has(String(row.status || '').toLowerCase()))
-            .filter((row) => !self || rowUid(row) !== self)
             .map((row) => mapRawOrderToLive(row as Parameters<typeof mapRawOrderToLive>[0]))
             .filter((order): order is LiveOrder => Boolean(order))
             .slice(0, limit);

@@ -50,7 +50,6 @@ import { Route as ResourcesSlugRouteImport } from './routes/resources.$slug'
 import { Route as ResearchTirzepatideVsRetatrutideRouteImport } from './routes/research.tirzepatide-vs-retatrutide'
 import { Route as ResearchRetatrutideUkRouteImport } from './routes/research.retatrutide-uk'
 import { Route as ResearchRetatrutideComprehensiveGuideRouteImport } from './routes/research.retatrutide-comprehensive-guide'
-import { Route as ResearchMelanotanIiComprehensiveGuideRouteImport } from './routes/research.melanotan-ii-comprehensive-guide'
 import { Route as ResearchCjc1295IpamorelinSynergyRouteImport } from './routes/research.cjc-1295-ipamorelin-synergy'
 import { Route as ResearchBpc157VsTb500RouteImport } from './routes/research.bpc-157-vs-tb-500'
 import { Route as ResearchBpc157UkRouteImport } from './routes/research.bpc-157-uk'
@@ -132,7 +131,6 @@ import { Route as ApiPublicHooksBacklinkWatcherRouteImport } from './routes/api/
 import { Route as ApiPublicHealthBuildRouteImport } from './routes/api/public/health.build'
 import { Route as ApiPublicDiagCacheHeadersRouteImport } from './routes/api/public/diag.cache-headers'
 import { Route as ApiPublicDiagBuildStateRouteImport } from './routes/api/public/diag.build-state'
-import { Route as ApiPublicDiagBannerSourceRouteImport } from './routes/api/public/diag.banner-source'
 
 const Char123indexnowKeyChar125DottxtRoute =
   Char123indexnowKeyChar125DottxtRouteImport.update({
@@ -342,12 +340,6 @@ const ResearchRetatrutideComprehensiveGuideRoute =
   ResearchRetatrutideComprehensiveGuideRouteImport.update({
     id: '/retatrutide-comprehensive-guide',
     path: '/retatrutide-comprehensive-guide',
-    getParentRoute: () => ResearchRoute,
-  } as any)
-const ResearchMelanotanIiComprehensiveGuideRoute =
-  ResearchMelanotanIiComprehensiveGuideRouteImport.update({
-    id: '/melanotan-ii-comprehensive-guide',
-    path: '/melanotan-ii-comprehensive-guide',
     getParentRoute: () => ResearchRoute,
   } as any)
 const ResearchCjc1295IpamorelinSynergyRoute =
@@ -783,12 +775,6 @@ const ApiPublicDiagBuildStateRoute = ApiPublicDiagBuildStateRouteImport.update({
   path: '/api/public/diag/build-state',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicDiagBannerSourceRoute =
-  ApiPublicDiagBannerSourceRouteImport.update({
-    id: '/api/public/diag/banner-source',
-    path: '/api/public/diag/banner-source',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -848,7 +834,6 @@ export interface FileRoutesByFullPath {
   '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
   '/research/bpc-157-vs-tb-500': typeof ResearchBpc157VsTb500Route
   '/research/cjc-1295-ipamorelin-synergy': typeof ResearchCjc1295IpamorelinSynergyRoute
-  '/research/melanotan-ii-comprehensive-guide': typeof ResearchMelanotanIiComprehensiveGuideRoute
   '/research/retatrutide-comprehensive-guide': typeof ResearchRetatrutideComprehensiveGuideRoute
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
   '/research/tirzepatide-vs-retatrutide': typeof ResearchTirzepatideVsRetatrutideRoute
@@ -889,7 +874,6 @@ export interface FileRoutesByFullPath {
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/products/category/$slug': typeof ProductsCategorySlugRoute
-  '/api/public/diag/banner-source': typeof ApiPublicDiagBannerSourceRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
   '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
   '/api/public/health/build': typeof ApiPublicHealthBuildRoute
@@ -972,7 +956,6 @@ export interface FileRoutesByTo {
   '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
   '/research/bpc-157-vs-tb-500': typeof ResearchBpc157VsTb500Route
   '/research/cjc-1295-ipamorelin-synergy': typeof ResearchCjc1295IpamorelinSynergyRoute
-  '/research/melanotan-ii-comprehensive-guide': typeof ResearchMelanotanIiComprehensiveGuideRoute
   '/research/retatrutide-comprehensive-guide': typeof ResearchRetatrutideComprehensiveGuideRoute
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
   '/research/tirzepatide-vs-retatrutide': typeof ResearchTirzepatideVsRetatrutideRoute
@@ -1013,7 +996,6 @@ export interface FileRoutesByTo {
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/products/category/$slug': typeof ProductsCategorySlugRoute
-  '/api/public/diag/banner-source': typeof ApiPublicDiagBannerSourceRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
   '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
   '/api/public/health/build': typeof ApiPublicHealthBuildRoute
@@ -1099,7 +1081,6 @@ export interface FileRoutesById {
   '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
   '/research/bpc-157-vs-tb-500': typeof ResearchBpc157VsTb500Route
   '/research/cjc-1295-ipamorelin-synergy': typeof ResearchCjc1295IpamorelinSynergyRoute
-  '/research/melanotan-ii-comprehensive-guide': typeof ResearchMelanotanIiComprehensiveGuideRoute
   '/research/retatrutide-comprehensive-guide': typeof ResearchRetatrutideComprehensiveGuideRoute
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
   '/research/tirzepatide-vs-retatrutide': typeof ResearchTirzepatideVsRetatrutideRoute
@@ -1140,7 +1121,6 @@ export interface FileRoutesById {
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/products/category/$slug': typeof ProductsCategorySlugRoute
-  '/api/public/diag/banner-source': typeof ApiPublicDiagBannerSourceRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
   '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
   '/api/public/health/build': typeof ApiPublicHealthBuildRoute
@@ -1226,7 +1206,6 @@ export interface FileRouteTypes {
     | '/research/bpc-157-uk'
     | '/research/bpc-157-vs-tb-500'
     | '/research/cjc-1295-ipamorelin-synergy'
-    | '/research/melanotan-ii-comprehensive-guide'
     | '/research/retatrutide-comprehensive-guide'
     | '/research/retatrutide-uk'
     | '/research/tirzepatide-vs-retatrutide'
@@ -1267,7 +1246,6 @@ export interface FileRouteTypes {
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
     | '/products/category/$slug'
-    | '/api/public/diag/banner-source'
     | '/api/public/diag/build-state'
     | '/api/public/diag/cache-headers'
     | '/api/public/health/build'
@@ -1350,7 +1328,6 @@ export interface FileRouteTypes {
     | '/research/bpc-157-uk'
     | '/research/bpc-157-vs-tb-500'
     | '/research/cjc-1295-ipamorelin-synergy'
-    | '/research/melanotan-ii-comprehensive-guide'
     | '/research/retatrutide-comprehensive-guide'
     | '/research/retatrutide-uk'
     | '/research/tirzepatide-vs-retatrutide'
@@ -1391,7 +1368,6 @@ export interface FileRouteTypes {
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
     | '/products/category/$slug'
-    | '/api/public/diag/banner-source'
     | '/api/public/diag/build-state'
     | '/api/public/diag/cache-headers'
     | '/api/public/health/build'
@@ -1476,7 +1452,6 @@ export interface FileRouteTypes {
     | '/research/bpc-157-uk'
     | '/research/bpc-157-vs-tb-500'
     | '/research/cjc-1295-ipamorelin-synergy'
-    | '/research/melanotan-ii-comprehensive-guide'
     | '/research/retatrutide-comprehensive-guide'
     | '/research/retatrutide-uk'
     | '/research/tirzepatide-vs-retatrutide'
@@ -1517,7 +1492,6 @@ export interface FileRouteTypes {
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
     | '/products/category/$slug'
-    | '/api/public/diag/banner-source'
     | '/api/public/diag/build-state'
     | '/api/public/diag/cache-headers'
     | '/api/public/health/build'
@@ -1627,7 +1601,6 @@ export interface RootRouteChildren {
   ApiPublicStaleAssetReportRoute: typeof ApiPublicStaleAssetReportRoute
   ApiPublicWebVitalsRoute: typeof ApiPublicWebVitalsRoute
   ApiWebhooksWallidRoute: typeof ApiWebhooksWallidRoute
-  ApiPublicDiagBannerSourceRoute: typeof ApiPublicDiagBannerSourceRoute
   ApiPublicDiagBuildStateRoute: typeof ApiPublicDiagBuildStateRoute
   ApiPublicDiagCacheHeadersRoute: typeof ApiPublicDiagCacheHeadersRoute
   ApiPublicHooksBacklinkWatcherRoute: typeof ApiPublicHooksBacklinkWatcherRoute
@@ -1940,13 +1913,6 @@ declare module '@tanstack/react-router' {
       path: '/retatrutide-comprehensive-guide'
       fullPath: '/research/retatrutide-comprehensive-guide'
       preLoaderRoute: typeof ResearchRetatrutideComprehensiveGuideRouteImport
-      parentRoute: typeof ResearchRoute
-    }
-    '/research/melanotan-ii-comprehensive-guide': {
-      id: '/research/melanotan-ii-comprehensive-guide'
-      path: '/melanotan-ii-comprehensive-guide'
-      fullPath: '/research/melanotan-ii-comprehensive-guide'
-      preLoaderRoute: typeof ResearchMelanotanIiComprehensiveGuideRouteImport
       parentRoute: typeof ResearchRoute
     }
     '/research/cjc-1295-ipamorelin-synergy': {
@@ -2516,13 +2482,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicDiagBuildStateRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/diag/banner-source': {
-      id: '/api/public/diag/banner-source'
-      path: '/api/public/diag/banner-source'
-      fullPath: '/api/public/diag/banner-source'
-      preLoaderRoute: typeof ApiPublicDiagBannerSourceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -2575,7 +2534,6 @@ interface ResearchRouteChildren {
   ResearchBpc157UkRoute: typeof ResearchBpc157UkRoute
   ResearchBpc157VsTb500Route: typeof ResearchBpc157VsTb500Route
   ResearchCjc1295IpamorelinSynergyRoute: typeof ResearchCjc1295IpamorelinSynergyRoute
-  ResearchMelanotanIiComprehensiveGuideRoute: typeof ResearchMelanotanIiComprehensiveGuideRoute
   ResearchRetatrutideComprehensiveGuideRoute: typeof ResearchRetatrutideComprehensiveGuideRoute
   ResearchRetatrutideUkRoute: typeof ResearchRetatrutideUkRoute
   ResearchTirzepatideVsRetatrutideRoute: typeof ResearchTirzepatideVsRetatrutideRoute
@@ -2587,8 +2545,6 @@ const ResearchRouteChildren: ResearchRouteChildren = {
   ResearchBpc157UkRoute: ResearchBpc157UkRoute,
   ResearchBpc157VsTb500Route: ResearchBpc157VsTb500Route,
   ResearchCjc1295IpamorelinSynergyRoute: ResearchCjc1295IpamorelinSynergyRoute,
-  ResearchMelanotanIiComprehensiveGuideRoute:
-    ResearchMelanotanIiComprehensiveGuideRoute,
   ResearchRetatrutideComprehensiveGuideRoute:
     ResearchRetatrutideComprehensiveGuideRoute,
   ResearchRetatrutideUkRoute: ResearchRetatrutideUkRoute,
@@ -2697,7 +2653,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicStaleAssetReportRoute: ApiPublicStaleAssetReportRoute,
   ApiPublicWebVitalsRoute: ApiPublicWebVitalsRoute,
   ApiWebhooksWallidRoute: ApiWebhooksWallidRoute,
-  ApiPublicDiagBannerSourceRoute: ApiPublicDiagBannerSourceRoute,
   ApiPublicDiagBuildStateRoute: ApiPublicDiagBuildStateRoute,
   ApiPublicDiagCacheHeadersRoute: ApiPublicDiagCacheHeadersRoute,
   ApiPublicHooksBacklinkWatcherRoute: ApiPublicHooksBacklinkWatcherRoute,

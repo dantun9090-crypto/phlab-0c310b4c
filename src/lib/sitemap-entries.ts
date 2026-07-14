@@ -32,7 +32,6 @@ function buildStaticEntries(today: string): SitemapEntry[] {
     { path: "/research/bpc-157-tb-500-synergy", lastmod: today, changefreq: "weekly", priority: "0.9" },
     { path: "/research/tirzepatide-vs-retatrutide", lastmod: today, changefreq: "weekly", priority: "0.9" },
     { path: "/research/cjc-1295-ipamorelin-synergy", lastmod: today, changefreq: "weekly", priority: "0.9" },
-    { path: "/research/melanotan-ii-comprehensive-guide", lastmod: today, changefreq: "weekly", priority: "0.9" },
     { path: "/resources/peptide-categories-uk-research", lastmod: today, changefreq: "monthly", priority: "0.6" },
     { path: "/compound", lastmod: today, changefreq: "weekly", priority: "0.7" },
     { path: "/peptide-calculator", lastmod: today, changefreq: "monthly", priority: "0.7" },

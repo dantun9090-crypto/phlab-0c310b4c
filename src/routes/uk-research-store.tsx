@@ -114,7 +114,7 @@ function UkResearchStore() {
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
               UK Research Store · PH Labs
             </span>
-            <h1 className="mt-6 font-sans text-4xl sm:text-5xl md:text-6xl font-semibold leading-[1.05] tracking-tight text-white">
+            <h1 className="mt-6 text-4xl sm:text-5xl md:text-6xl font-semibold leading-[1.05] tracking-tight text-white">
               High-purity{" "}
               <span className="bg-gradient-to-r from-emerald-400 to-emerald-200 bg-clip-text text-transparent">
                 reference materials
@@ -234,7 +234,7 @@ function UkResearchStore() {
           <p className="text-[11px] uppercase tracking-[0.5em] text-emerald-400">
             Why PH Labs
           </p>
-          <h2 className="mt-4 font-sans text-3xl md:text-4xl font-semibold tracking-tight text-white">
+          <h2 className="mt-4 text-3xl md:text-4xl font-semibold tracking-tight text-white">
             A UK laboratory built for{" "}
             <span className="text-emerald-400">reproducible research</span>.
           </h2>
@@ -290,7 +290,7 @@ function UkResearchStore() {
                   {c.i}
                 </svg>
               </div>
-              <h3 className="mt-5 font-sans text-xl font-semibold text-white">{c.t}</h3>
+              <h3 className="mt-5 text-xl font-semibold text-white">{c.t}</h3>
               <p className="mt-3 text-sm leading-relaxed text-slate-400">{c.d}</p>
             </div>
           ))}
@@ -320,7 +320,7 @@ function UkResearchStore() {
         <p className="text-[11px] uppercase tracking-[0.5em] text-emerald-400 text-center">
           Questions
         </p>
-        <h2 className="mt-4 font-sans text-3xl md:text-4xl font-semibold text-center text-white tracking-tight">
+        <h2 className="mt-4 text-3xl md:text-4xl font-semibold text-center text-white tracking-tight">
           Frequently asked
         </h2>
         <div className="mt-10 md:mt-12 space-y-3">
@@ -353,7 +353,7 @@ function UkResearchStore() {
           <p className="text-[11px] uppercase tracking-[0.5em] text-emerald-400">
             Ready to order
           </p>
-          <h2 className="mt-4 font-sans text-3xl md:text-5xl font-semibold text-white tracking-tight">
+          <h2 className="mt-4 text-3xl md:text-5xl font-semibold text-white tracking-tight">
             Browse the UK research catalogue.
           </h2>
           <p className="mt-4 text-sm md:text-base text-slate-300 max-w-xl mx-auto">
@@ -381,7 +381,7 @@ function UkResearchStore() {
       <section className="py-14 md:py-20">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 text-center">
           <p className="text-[11px] uppercase tracking-[0.5em] text-emerald-400">Legal</p>
-          <h2 className="mt-3 font-sans text-2xl font-semibold text-white">
+          <h2 className="mt-3 text-2xl font-semibold text-white">
             Research use disclaimer
           </h2>
           <p className="mt-4 text-sm leading-relaxed text-slate-400">

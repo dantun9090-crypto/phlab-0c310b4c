@@ -15,20 +15,9 @@ const DEFAULT_DSN =
 
 let initialized = false;
 
-declare global {
-  interface Window {
-    __PHL_SENTRY_INITIALIZED__?: boolean;
-    __PHL_SENTRY_INIT_IN_FLIGHT__?: boolean;
-  }
-}
-
 export function initSentry(): void {
   if (initialized) return;
   if (typeof window === "undefined") return;
-  if (window.__PHL_SENTRY_INITIALIZED__ || window.__PHL_SENTRY_INIT_IN_FLIGHT__) {
-    initialized = true;
-    return;
-  }
 
   const dsn =
     (import.meta.env.VITE_SENTRY_DSN as string | undefined) || DEFAULT_DSN;
@@ -42,7 +31,6 @@ export function initSentry(): void {
     undefined;
 
   try {
-    window.__PHL_SENTRY_INIT_IN_FLIGHT__ = true;
     Sentry.init({
       dsn,
       environment: isProd ? "production" : "development",
@@ -186,11 +174,8 @@ export function initSentry(): void {
 
     });
     initialized = true;
-    window.__PHL_SENTRY_INITIALIZED__ = true;
   } catch (err) {
     // Never let Sentry init crash the app.
     console.warn("[sentry] init failed", err);
-  } finally {
-    window.__PHL_SENTRY_INIT_IN_FLIGHT__ = false;
   }
 }
