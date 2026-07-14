@@ -34,6 +34,18 @@ export default function LegacyApp({
   useEffect(() => {
     try { performance.mark('legacy-app-mount-start'); } catch { /* ignore */ }
     primeLegacyRouter();
+
+    // Preload HomePage lazy children in parallel with LegacyApp mount so they
+    // don't waterfall after HomePage's own chunk resolves. Fire-and-forget:
+    // Vite resolves these to the built chunk URLs and the browser downloads
+    // them alongside the LegacyApp chunk. When HomePage's React.lazy() reads
+    // the same modules the promise is already fulfilled — no extra RTT.
+    if (typeof window !== 'undefined' && window.location.pathname === '/') {
+      void import('@/components/AnimatedBackground');
+      void import('@/components/NewsletterPopup');
+      void import('@/components/MarketingAdvertSlot');
+    }
+
     if (!mounted) setMounted(true);
     requestAnimationFrame(() => {
       try {
