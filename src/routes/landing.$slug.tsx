@@ -1,7 +1,6 @@
 import { createFileRoute, notFound, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { db, doc, getDoc } from "@/lib/firebase";
-import { cfImgProps } from "@/lib/cf-image";
 
 interface Stat { value: string; label: string }
 interface Feature { icon: string; title: string; desc: string }
@@ -151,10 +150,9 @@ function DynamicLanding() {
         </div>
         {data.heroImageUrl && (
           <img
-            {...cfImgProps(data.heroImageUrl, { widths: [480, 768, 1024, 1280, 1600], sizes: '(max-width: 768px) 100vw, (max-width: 1280px) 100vw, 1200px', quality: 82, fallbackWidth: 1024 })}
-            alt={data.heroHeading ? `${data.heroHeading} — PH Labs research peptides UK` : ''}
+            src={data.heroImageUrl}
+            alt=""
             loading="lazy"
-            decoding="async"
             className="mt-10 w-full rounded-2xl border border-white/10"
           />
         )}

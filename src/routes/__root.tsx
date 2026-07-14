@@ -404,10 +404,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // to prevent the third-party stylesheet from mutating <head> before
       // hydration completes, which was triggering React error #418
       // (hydration mismatch) in Chrome/Firefox/Edge.
-      // GA/GTM is deferred until after LCP + idle (see loader below), so we
-      // skip `preconnect` here — the connection would sit idle for 4–8s and
-      // the browser closes it before the script actually fetches. Keep only
-      // dns-prefetch to warm the DNS resolver cheaply.
+      // Analytics / Tag Manager — used sitewide; preconnect shaves ~150–300ms
+      // off the first GA/GTM request on slow mobile networks.
+      { rel: "preconnect", href: "https://www.googletagmanager.com", crossOrigin: "" },
+      { rel: "preconnect", href: "https://www.google-analytics.com", crossOrigin: "" },
       { rel: "dns-prefetch", href: "https://firestore.googleapis.com" },
       { rel: "dns-prefetch", href: "https://firebasestorage.googleapis.com" },
       { rel: "dns-prefetch", href: "https://fonts.googleapis.com" },
@@ -1345,21 +1345,14 @@ function RootComponent() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if ((window as unknown as { __phlGaBootstrapped?: boolean }).__phlGaBootstrapped) return;
-    // Inline gtag bootstrap (dataLayer + consent defaults + `config` calls)
-    // is bundled with the external gtag.js load and runs only when we
-    // actually decide to activate GA — no GA-related script work happens
-    // during hydration or before LCP.
-    const GTAG_BOOTSTRAP =
+    const inline = document.createElement('script');
+    inline.text =
       "(function(){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;var c={a:false,m:false};try{var r=localStorage.getItem('php_cookie_consent');if(r){var p=JSON.parse(r);c.a=!!p.analytics;c.m=!!p.marketing;}}catch(e){}gtag('consent','default',{ad_storage:c.m?'granted':'denied',ad_user_data:c.m?'granted':'denied',ad_personalization:c.m?'granted':'denied',analytics_storage:c.a?'granted':'denied',functionality_storage:'granted',security_storage:'granted',wait_for_update:500});gtag('js',new Date());gtag('config','G-5HM4YT7HDW',{cookie_domain:'auto',cookie_flags:'SameSite=None;Secure',cookie_expires:63072000,cookie_update:true,send_page_view:true,anonymize_ip:true,allow_google_signals:c.m,allow_ad_personalization_signals:c.m});gtag('config','GT-P3HVF8R5',{send_page_view:false,cookie_domain:'auto'});gtag('config','GT-WRHD4Q69',{send_page_view:false,cookie_domain:'auto'});gtag('config','MC-KJMB7MKB29',{send_page_view:false,cookie_domain:'auto'});window.__phlGaBootstrapped=true;})();";
+    document.body.appendChild(inline);
     let loaded = false;
     const loadExt = () => {
       if (loaded) return;
       loaded = true;
-      // 1) Run the bootstrap first so dataLayer + consent are set up.
-      const inline = document.createElement('script');
-      inline.text = GTAG_BOOTSTRAP;
-      document.body.appendChild(inline);
-      // 2) Then request gtag.js — async, off the main thread until it lands.
       const ext = document.createElement('script');
       ext.async = true;
       ext.src = 'https://www.googletagmanager.com/gtag/js?id=G-5HM4YT7HDW';
