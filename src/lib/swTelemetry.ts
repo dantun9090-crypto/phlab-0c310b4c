@@ -123,6 +123,10 @@ export function getSwTelemetryDebugStats(): SwTelemetryDebugStats {
 
 async function persist(ev: BufferedEvent): Promise<void> {
   try {
+    const [{ addDoc, collection, serverTimestamp }, { db }] = await Promise.all([
+      import('firebase/firestore'),
+      import('@/lib/firebase'),
+    ]);
     await addDoc(collection(db, 'sw_telemetry'), {
       event: ev.event,
       clientTs: ev.ts,
