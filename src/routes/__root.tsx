@@ -526,11 +526,34 @@ const EMERGENCY_STALE_RELOAD = `
     if(qs.has('__fresh')) return;
     var blocked=new RegExp('^/(?:admin|auth|login|account|cart|checkout|payment|register)(?:/|$)','i').test(location.pathname||'');
     if(blocked) return;
+    // Loop guard: allow ONE automatic hard reload per stuck page. If we
+    // already reloaded (?_reload=... present) and chunks STILL fail, fall
+    // through to the manual recovery screen instead of looping.
+    var alreadyReloaded=qs.has('_reload')||qs.has('_chunkerr')||qs.has('_clear');
     var shown=false;
+    var tryAutoReload=function(reason){
+      try{
+        var p=[];
+        if(window.caches&&caches.keys){ p.push(caches.keys().then(function(keys){ return Promise.all(keys.map(function(k){ return caches.delete(k).catch(function(){}); })); })); }
+        if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){ p.push(navigator.serviceWorker.getRegistrations().then(function(regs){ return Promise.all(regs.map(function(r){ return r.unregister().catch(function(){}); })); })); }
+        Promise.race([Promise.all(p),new Promise(function(r){ setTimeout(r,1500); })]).then(function(){
+          try{
+            var u=new URL(location.href);
+            u.searchParams.set('_reload',String(Date.now()));
+            location.href=u.toString();
+          }catch(_e){ try{ location.href=location.pathname+'?_reload='+Date.now(); }catch(__e){} }
+        });
+      }catch(e){ try{ location.href=location.pathname+'?_reload='+Date.now(); }catch(_e){} }
+    };
     var showManualRecovery=function(reason){
       if(shown) return;
       shown=true;
-      try{ console.warn('[PHL] Stale script detected — automatic reload disabled:', reason); }catch(e){}
+      if(!alreadyReloaded){
+        try{ console.warn('[PHL] Stale script detected — forcing one hard reload:', reason); }catch(e){}
+        tryAutoReload(reason);
+        return;
+      }
+      try{ console.warn('[PHL] Stale script persists after reload — showing manual recovery:', reason); }catch(e){}
       try{
         if(navigator.serviceWorker&&navigator.serviceWorker.ready){
           navigator.serviceWorker.ready.then(function(reg){ try{ if(reg&&reg.active) reg.active.postMessage({type:'CLEAR_CACHE_AND_RELOAD'}); }catch(e){} }).catch(function(){});
@@ -545,9 +568,6 @@ const EMERGENCY_STALE_RELOAD = `
       var render=function(){
         try{
           if(!document.body){ document.addEventListener('DOMContentLoaded',render,{once:true}); return; }
-          // If React already painted meaningful content, DO NOT wipe it —
-          // a lazily-failing script for a non-critical chunk should not
-          // flicker the whole page to a recovery screen.
           try{
             if(window.__PHL_REACT_READY__) return;
             var b=document.body;
@@ -555,7 +575,7 @@ const EMERGENCY_STALE_RELOAD = `
             var _t=(b&&(b.innerText||b.textContent)||'').replace(/\\s+/g,' ').trim();
             if(_t.length>80) return;
           }catch(_e){}
-          document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:800">PH Labs update ready</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:15px;line-height:1.55">Your browser has an old page file. Automatic refreshing has been stopped.</p><button id="phl-stalescript-refresh" style="appearance:none;border:0;background:#10b981;color:#03140d;font-weight:800;padding:14px 18px;border-radius:8px;cursor:pointer;font-size:15px">Open fresh store</button></div></div>';
+          document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:800">PH Labs update ready</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:15px;line-height:1.55">Your browser has an old page file. Tap the button to load the fresh store.</p><button id="phl-stalescript-refresh" style="appearance:none;border:0;background:#10b981;color:#03140d;font-weight:800;padding:14px 18px;border-radius:8px;cursor:pointer;font-size:15px">Open fresh store</button></div></div>';
           try{ var _b=document.getElementById('phl-stalescript-refresh'); if(_b && typeof window.__phlHardReloadClean==='function') _b.addEventListener('click',window.__phlHardReloadClean); else if(_b) _b.addEventListener('click',function(){ try{ location.reload(); }catch(_e){} }); }catch(_e){}
         }catch(e){}
       };
