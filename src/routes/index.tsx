@@ -3,9 +3,10 @@ import LegacyClientApp from "@/legacy/LegacyClientApp";
 import type { fetchPromoBanner } from "@/lib/firestore-rest";
 
 
-const HOME_TITLE = "PHLabs — Pro Peptide Research Lab | Lab-Grade Compounds";
+const HOME_TITLE = "HPLC-Verified Research Peptides UK | PH Labs";
 const HOME_DESCRIPTION =
-  "PHLabs is a pro peptide research lab supplying laboratory-grade amino acid compounds for scientific research purposes only. Trusted purity, verified standards.";
+  "UK supplier of HPLC-verified research peptides. Lab-tested purity, transparent COAs, and fast UK dispatch for research professionals. For research use only.";
+
 
 const HOME_URL = "https://phlabs.co.uk/";
 const HOME_OG_IMAGE = "https://phlabs.co.uk/og-image.jpg";
@@ -124,203 +125,28 @@ function LegacyMount() {
     <LegacyClientApp
       initialPath="/"
       initialBanner={banner ?? null}
-      fallback={<HomeSsrShell banner={banner ?? null} />}
+      fallback={<HomeSsrFallback />}
     />
   );
 }
 
-function HomeSsrShell({ banner: _banner }: { banner: Awaited<ReturnType<typeof fetchPromoBanner>> | null }) {
-  // Critical SSR shell: PageSpeed/Chrome field data was waiting for the legacy
-  // client chunk before it could paint meaningful home content. Keep this
-  // visually aligned with Layout + Home above-the-fold so FCP/LCP can happen
-  // from HTML while the interactive app hydrates.
+/**
+ * Minimal SSR fallback shown ONLY for the first ~150ms while the legacy
+ * client chunk hydrates. Deliberately visually neutral — matches Layout
+ * background colour so there's no flash of unstyled content, but does NOT
+ * try to reproduce the header/hero (previous shell caused a double-render
+ * where the SSR hero's `<h1>` fell back to browser default serif before
+ * fonts loaded, and its fixed header overlapped the real Navigation
+ * during hydration, producing the broken mobile menu users were reporting).
+ */
+function HomeSsrFallback() {
   return (
     <div
-      className="phl-home-ssr"
       data-phl-app-ready="ssr-home"
       aria-busy="true"
-      style={{ minHeight: "100vh", background: "#030a14", color: "#e4f0ff" }}
-    >
-      <div
-        aria-hidden="true"
-        style={{
-          position: "fixed",
-          inset: "0 0 auto 0",
-          zIndex: 51,
-          height: 32,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#030a14",
-          borderBottom: "1px solid rgba(16,185,129,0.12)",
-          color: "#9cb8d9",
-          fontSize: 11,
-          fontWeight: 600,
-        }}
-      >
-        Free UK Shipping on orders over £50 · ≥99% HPLC Purity
-      </div>
-      <header
-        aria-hidden="true"
-        style={{
-          position: "fixed",
-          inset: "32px 0 auto 0",
-          zIndex: 50,
-          height: 64,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 16px",
-          background: "#030a14",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-          <div
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: 12,
-              border: "1px solid rgba(16,185,129,0.28)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#4ade80",
-              fontWeight: 900,
-            }}
-          >
-            PH
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.05 }}>
-            <span style={{ color: "#fff", fontSize: 20, fontWeight: 800 }}>PH Labs</span>
-            <span style={{ color: "rgba(74,222,128,0.9)", fontSize: 10, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase" }}>
-              Research Grade
-            </span>
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          {["⌕", "🛒", "☰"].map((label) => (
-            <span
-              key={label}
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 12,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#7a9ec8",
-                border: "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
-              {label}
-            </span>
-          ))}
-        </div>
-      </header>
-      <div
-        aria-hidden="true"
-        style={{
-          position: "fixed",
-          left: 0,
-          right: 0,
-          top: 96,
-          zIndex: 49,
-          minHeight: 28,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "6px 16px",
-          background: "rgba(180,83,9,0.95)",
-          color: "#fff7ed",
-          fontSize: 12,
-          fontWeight: 700,
-          textAlign: "center",
-        }}
-      >
-        For Laboratory Research Only — Not for Human Consumption
-      </div>
-      <main
-        style={{
-          minHeight: "100svh",
-          padding: "172px 16px 64px",
-          background: "radial-gradient(ellipse 120% 80% at 60% 40%, #061428 0%, #030a14 60%)",
-        }}
-      >
-        <section style={{ maxWidth: 1280, margin: "0 auto" }}>
-          <div style={{ maxWidth: 680 }}>
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "6px 12px",
-                borderRadius: 999,
-                background: "rgba(16,185,129,0.1)",
-                border: "1px solid rgba(16,185,129,0.25)",
-                color: "#4ade80",
-                fontSize: 11,
-                fontWeight: 800,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-              }}
-            >
-              UK Laboratory Reagent Supplier · Research Use Only
-            </div>
-            <h1
-              style={{
-                margin: "28px 0 0",
-                maxWidth: 680,
-                color: "#f0f8ff",
-                fontSize: "2.75rem",
-                fontWeight: 900,
-                lineHeight: 1.04,
-                letterSpacing: 0,
-                overflowWrap: "break-word",
-              }}
-            >
-              <span style={{ display: "block" }}>Pro Peptide Research Lab</span>
-              <span style={{ display: "block", color: "#10b981" }}>For In-Vitro Research</span>
-              <span style={{ display: "block", color: "#c9d8f0", fontWeight: 500, fontSize: "0.72em" }}>
-                HPLC-Verified ≥99% Purity · CoA Per Batch
-              </span>
-            </h1>
-            <p
-              style={{
-                maxWidth: 520,
-                margin: "28px 0 0",
-                color: "#9cb8d9",
-                fontSize: 17,
-                lineHeight: 1.75,
-              }}
-            >
-              As a pro peptide research lab, PH Labs supplies high-purity amino acids and analytical-grade laboratory reagents for qualified UK researchers. HPLC and mass-spectrometry verified, Certificate of Analysis with every batch.{" "}
-              <strong style={{ color: "#f0a0a0" }}>For Research Use Only. Not for Human Consumption.</strong>
-            </p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 30 }}>
-              {["≥99% HPLC Verified", "CoA Every Batch", "Free UK Shipping £50+", "1–3 Day Dispatch"].map((badge) => (
-                <span
-                  key={badge}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    padding: "7px 12px",
-                    borderRadius: 8,
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    color: "#8db4d8",
-                    fontSize: 12,
-                    fontWeight: 700,
-                  }}
-                >
-                  {badge}
-                </span>
-              ))}
-            </div>
-          </div>
-        </section>
-      </main>
-    </div>
+      style={{ minHeight: "100vh", background: "#020617" }}
+    />
   );
 }
+
 
