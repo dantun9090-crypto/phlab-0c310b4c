@@ -395,7 +395,8 @@ const INTERNAL_HEADER_DENYLIST = [
   "via",
 ];
 
-const HTML_NO_STORE_CACHE_CONTROL = "no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0";
+const HTML_REVALIDATE_CACHE_CONTROL = "public, max-age=0, must-revalidate";
+const HTML_NO_STORE_CACHE_CONTROL = HTML_REVALIDATE_CACHE_CONTROL;
 const DOWNLOAD_NO_STORE_CACHE_CONTROL = "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0";
 const IMMUTABLE_BUILD_ASSET_CACHE_CONTROL = "public, max-age=31536000, immutable";
 const HASHED_STATIC_ASSET_RE = /(?:^|\/)[^/?#]+(?:[-._][a-f0-9]{8,}|-[A-Za-z0-9_-]{8,})\.(?:js|mjs|css|woff2?|ttf|otf)$/i;
@@ -871,9 +872,9 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   if (!contentType.includes("text/html")) return stripped;
 
   const htmlHeaders = new Headers(stripped.headers);
-  // HTML shells must never be cached at browser/CDN/proxy layers. The former
-  // home-page exception (`s-maxage=14400`, SWR=86400) kept replaying stale
-  // HTML after publishes, making users see "0 changes" until a purge.
+  // Browser may store the static/pre-rendered HTML but must revalidate every
+  // navigation. CDN/surrogate layers stay no-store below so Cloudflare cannot
+  // replay stale HTML that points at an older JS bundle.
   htmlHeaders.set("cache-control", HTML_NO_STORE_CACHE_CONTROL);
   htmlHeaders.set("cdn-cache-control", "no-store");
   htmlHeaders.set("cloudflare-cdn-cache-control", "no-store");

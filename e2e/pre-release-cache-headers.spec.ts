@@ -7,7 +7,7 @@
  *
  * What it verifies for both `/` and `/products`:
  *   1. HTTP 200 (cache-busted per attempt, so we always hit the origin fresh)
- *   2. `cache-control` contains `no-store`
+ *   2. `cache-control` contains `max-age=0` and `must-revalidate`
  *   3. `cdn-cache-control` contains `no-store`
  *   4. `pragma: no-cache` (belt-and-braces for legacy proxies)
  *   5. `cf-cache-status` is one of: DYNAMIC | BYPASS | MISS | EXPIRED | NONE
@@ -124,8 +124,12 @@ test.describe("Pre-release cache-header integration guard", () => {
 
         expect(
           o.cc.toLowerCase(),
-          `cache-control must contain no-store on ${route}\n${report}`,
-        ).toContain("no-store");
+          `cache-control must contain max-age=0 on ${route}\n${report}`,
+        ).toContain("max-age=0");
+        expect(
+          o.cc.toLowerCase(),
+          `cache-control must contain must-revalidate on ${route}\n${report}`,
+        ).toContain("must-revalidate");
         expect(
           o.cdncc.toLowerCase(),
           `cdn-cache-control must contain no-store on ${route}\n${report}`,

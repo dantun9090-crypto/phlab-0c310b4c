@@ -33,7 +33,8 @@ const CACHE_TTL = {
                      // e2e/cache-headers-regression.spec.ts (max-age >= 31536000)
 };
 
-const HTML_NO_STORE_CACHE_CONTROL = "no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0";
+const HTML_REVALIDATE_CACHE_CONTROL = "public, max-age=0, must-revalidate";
+const HTML_NO_STORE_CACHE_CONTROL = HTML_REVALIDATE_CACHE_CONTROL;
 const DOWNLOAD_NO_STORE_CACHE_CONTROL = "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0";
 const IMMUTABLE_BUILD_ASSET_CACHE_CONTROL = "public, max-age=31536000, immutable";
 const HASHED_STATIC_ASSET_RE = /(?:^|\/)[^/?#]+(?:[-._][a-f0-9]{8,}|-[A-Za-z0-9_-]{8,})\.(?:js|mjs|css|woff2?|ttf|otf)$/i;
@@ -273,9 +274,8 @@ async function buildBrowserResponse(response, path) {
   headers.delete("content-encoding");
   headers.set("Content-Type", "text/html; charset=utf-8");
   headers.set("X-Content-Type-Options", "nosniff");
-  // HTML shells must be uncacheable on both browser and CDN. The previous `/`
-  // exception forced `s-maxage=14400` + SWR and caused stale homepage HTML to
-  // hide fresh publishes; keep every human HTML route strict no-store.
+  // Browser HTML is revalidated on every navigation; CDN/surrogate layers stay
+  // no-store so the edge never replays stale HTML after a publish.
   applyBrowserHtmlNoCache(headers, path);
 
   return new Response(body, {

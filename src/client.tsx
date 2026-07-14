@@ -4,9 +4,73 @@
 // read a stable runtime build id instead of falling back to "unknown".
 try {
   if (typeof window !== "undefined" && typeof __BUILD_ID__ === "string") {
-    (window as unknown as { __BUILD_ID__?: string }).__BUILD_ID__ = __BUILD_ID__;
+    (window as unknown as { __BUILD_ID__?: string; __PHL_BUILD_ID__?: string }).__BUILD_ID__ = __BUILD_ID__;
+    (window as unknown as { __BUILD_ID__?: string; __PHL_BUILD_ID__?: string }).__PHL_BUILD_ID__ = __BUILD_ID__;
   }
 } catch { /* ignore */ }
+
+// === Static HTML ↔ JS build guard ===========================================
+// Runs before React starts. If Cloudflare/browser cache serves an HTML shell
+// from build A but the JS bundle is build B, hydration is unsafe and can leave
+// mobile users with overlapping pre-rendered and client-rendered layers. Force
+// a single cache-busted navigation instead of trying to hydrate mixed builds.
+(() => {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
+  const jsBuildId = typeof __BUILD_ID__ === "string" && __BUILD_ID__ ? __BUILD_ID__ : "dev";
+  const readHtmlBuildId = (): string | null => {
+    try {
+      return (
+        document.querySelector('meta[name="build-id"]')?.getAttribute("content") ||
+        document.querySelector('meta[name="x-build-id"]')?.getAttribute("content") ||
+        document.querySelector('meta[name="build-version"]')?.getAttribute("content") ||
+        document.documentElement.getAttribute("data-build-id") ||
+        null
+      );
+    } catch {
+      return null;
+    }
+  };
+  const htmlBuildId = readHtmlBuildId();
+  if (!htmlBuildId || htmlBuildId === jsBuildId) return;
+
+  const mismatchKey = `__phl_build_mismatch_reload:${htmlBuildId}:${jsBuildId}`;
+  try {
+    if (sessionStorage.getItem(mismatchKey) === "1") return;
+    sessionStorage.setItem(mismatchKey, "1");
+  } catch { /* keep going */ }
+
+  try {
+    document.documentElement.innerHTML =
+      '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Updating PH Labs</title><style>html,body{margin:0;min-height:100%;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}.box{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}.spin{width:36px;height:36px;margin:0 auto 16px;border-radius:999px;border:2px solid rgba(16,185,129,.25);border-top-color:#10b981;animation:s 1s linear infinite}@keyframes s{to{transform:rotate(360deg)}}p{margin:0;color:#9fb0c8;font-size:14px;line-height:1.5}</style></head><body><div class="box"><div><div class="spin" aria-hidden="true"></div><p>Loading the latest PH Labs build…</p></div></div></body>';
+  } catch { /* ignore */ }
+
+  const clearClientCaches = async () => {
+    try {
+      if ("caches" in window) {
+        const names = await caches.keys();
+        await Promise.all(names.filter((name) => /^(phlabs-|workbox-|precache-|runtime-)/i.test(name)).map((name) => caches.delete(name).catch(() => false)));
+      }
+    } catch { /* ignore */ }
+    try {
+      if ("serviceWorker" in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((reg) => reg.unregister().catch(() => false)));
+      }
+    } catch { /* ignore */ }
+  };
+
+  void clearClientCaches().finally(() => {
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("_bust", jsBuildId);
+      url.searchParams.set("_html_build", htmlBuildId.slice(0, 80));
+      url.searchParams.set("_t", String(Date.now()));
+      window.location.replace(url.toString());
+    } catch {
+      try { window.location.reload(); } catch { /* ignore */ }
+    }
+  });
+})();
 
 // === Reload-loop breaker (runs before React mounts) ========================
 // Only arm this during an actual cache-recovery navigation. Previously this
@@ -197,7 +261,7 @@ const HYDRATION_ERROR_FLAG = "__phl_hydration_error_seen";
 // removeChild recovery, so do not mix hydrateRoot + createRoot on the same
 // document for now.
 // ============================================================
-const ENABLE_SSR_HYDRATION = false;
+const ENABLE_SSR_HYDRATION = true;
 const SSR_HYDRATION_ROUTES: string[] = [];
 
 function shouldHydrateCurrentRoute(): boolean {
@@ -366,7 +430,7 @@ class ClientRootErrorBoundary extends Component<{ children: ReactNode }, { hasEr
           </p>
           {this.state.error?.message ? (
             <pre style={{ margin: "0 0 18px", padding: 10, background: "#0b1a2e", border: "1px solid #1f2d44", borderRadius: 8, color: "#cdd9ea", fontSize: 12, textAlign: "left", overflow: "auto", maxHeight: 140 }}>
-              {String(this.state.error.message).slice(0, 400)}
+              {String(import.meta.env.DEV ? this.state.error.stack || this.state.error.message : this.state.error.message).slice(0, 1200)}
             </pre>
           ) : null}
           <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>

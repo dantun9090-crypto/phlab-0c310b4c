@@ -142,8 +142,8 @@ audit_route() {
     problems+=("status=$http_code")
   fi
   if [ -z "$network_error" ]; then
-    if ! check_contains "$cc" "no-store"; then
-      problems+=("cache-control missing no-store (got: '${cc:-<none>}')")
+    if ! check_contains "$cc" "max-age=0" || ! check_contains "$cc" "must-revalidate"; then
+      problems+=("cache-control missing max-age=0 + must-revalidate (got: '${cc:-<none>}')")
     fi
     if ! check_contains "$cdncc" "no-store"; then
       problems+=("cdn-cache-control missing no-store (got: '${cdncc:-<none>}')")
@@ -260,7 +260,7 @@ open(os.environ['JSON_OUT'], 'w').write(json.dumps(out, indent=2))
   echo ""
   echo "**Base:** \`${BASE_URL}\`  |  **UA:** \`${UA}\`  |  **Passed:** ${pass}  |  **Failed:** ${fail}"
   echo ""
-  echo "Contract for public HTML shells: \`cache-control: no-store\` **and** \`cdn-cache-control: no-store\`; \`cf-cache-status\` must be one of DYNAMIC / BYPASS / MISS / EXPIRED (never HIT/REVALIDATED/STALE)."
+  echo "Contract for public HTML shells: \`cache-control: public, max-age=0, must-revalidate\` **and** \`cdn-cache-control: no-store\`; \`cf-cache-status\` must be one of DYNAMIC / BYPASS / MISS / EXPIRED (never HIT/REVALIDATED/STALE)."
   echo ""
   echo "| Route | HTTP | cache-control | cdn-cache-control | cf-cache-status | build |"
   echo "| --- | --- | --- | --- | --- | --- |"
@@ -269,7 +269,7 @@ open(os.environ['JSON_OUT'], 'w').write(json.dumps(out, indent=2))
   if [ "$fail" -gt 0 ]; then
     echo "❌ **${fail} route(s) failed the cache contract.** Investigate Cloudflare cache rules and worker response headers."
   else
-    echo "✅ All routes served with \`no-store\` — edge cache contract intact."
+    echo "✅ All routes served with browser revalidation + CDN \`no-store\` — edge cache contract intact."
   fi
   echo ""
   echo "_Report JSON: \`${JSON_OUT}\` (uploaded as artifact for cross-deploy diff)._"
