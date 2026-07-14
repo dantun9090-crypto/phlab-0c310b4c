@@ -504,9 +504,17 @@ function renderCsr(error: unknown): void {
   prepareDocumentForCsr();
   void (async () => {
     try {
-      createRoot(document.body, {
+      const container = document.getElementById("phl-csr-root");
+      if (!container) {
+        showStaticFallback(new Error("phl-csr-root container missing"));
+        return;
+      }
+      createRoot(container, {
         onUncaughtError: (rootError, info) => {
           console.error("[ROOT ERROR BOUNDARY] uncaught", rootError, info?.componentStack || "");
+          if (rootError instanceof Error) {
+            console.error("[ROOT ERROR BOUNDARY] stack:\n" + (rootError.stack || "(no stack)"));
+          }
           showStaticFallback(rootError);
         },
         onCaughtError: (rootError, info) => {
