@@ -170,6 +170,18 @@ export default function HomePage() {
   // in the useEffect below (runs synchronously after first commit).
   const [adverts, setAdverts] = useState<any[]>([]);
 
+  // Perf: measure gap between LegacyApp mount and HomePage first render
+  useEffect(() => {
+    try {
+      performance.mark('home-page-render');
+      const legacyMount = performance.getEntriesByName('legacy-app-mount-start')[0];
+      const homeRender = performance.getEntriesByName('home-page-render')[0];
+      if (legacyMount && homeRender) {
+        console.log('[PERF] LegacyApp → HomePage gap:', (homeRender.startTime - legacyMount.startTime).toFixed(1), 'ms');
+      }
+    } catch { /* ignore */ }
+  }, []);
+
   // Intersection observer for scroll animations
   useEffect(() => {
     const observer = new IntersectionObserver(
