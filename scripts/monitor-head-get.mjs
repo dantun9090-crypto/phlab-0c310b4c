@@ -129,7 +129,11 @@ async function checkHost(host) {
   row.html_snippet = html.slice(0, 2000);
   row.html_bytes = html.length;
 
-  const scriptRe = /<script\b([^>]*?)\bsrc=["']([^"']*\/assets\/[^"']+\.js)["']([^>]*)>/gi;
+  // Match /assets/*.js references, tolerating a ?query cache-buster (e.g.
+  // /assets/index-abc.js?v=BUILD_ID) that the runtime shell appends. The URL
+  // captured drops the query — asset fetch requests it without it, since the
+  // CDN serves both with the same content.
+  const scriptRe = /<script\b([^>]*?)\bsrc=["']([^"']*\/assets\/[^"']+?\.js)(?:\?[^"']*)?["']([^>]*)>/gi;
   const scripts = [];
   let match;
   while ((match = scriptRe.exec(html)) !== null) {
