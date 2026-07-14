@@ -3,9 +3,10 @@ import LegacyClientApp from "@/legacy/LegacyClientApp";
 import type { fetchPromoBanner } from "@/lib/firestore-rest";
 
 
-const HOME_TITLE = "PHLabs — Pro Peptide Research Lab | Lab-Grade Compounds";
+const HOME_TITLE = "HPLC-Verified Research Peptides UK | PH Labs";
 const HOME_DESCRIPTION =
-  "PHLabs is a pro peptide research lab supplying laboratory-grade amino acid compounds for scientific research purposes only. Trusted purity, verified standards.";
+  "UK supplier of HPLC-verified research peptides. Lab-tested purity, transparent COAs, and fast UK dispatch for research professionals. For research use only.";
+
 
 const HOME_URL = "https://phlabs.co.uk/";
 const HOME_OG_IMAGE = "https://phlabs.co.uk/og-image.jpg";
