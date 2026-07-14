@@ -129,6 +129,23 @@ export default function Login() {
 
   const handleGoogle = async () => {
     setError('');
+    // Google OAuth is only authorised for the canonical apex `phlabs.co.uk`.
+    // Users landing on the legacy `prohealthpeptides.co.uk` proxy host (kept
+    // alive for GMC Free-Listings — see mem://features/prohealth-legacy-proxy)
+    // would otherwise hit `auth/unauthorized-domain`. Hop them to the same
+    // /login path on the canonical host, preserving the intended redirect,
+    // and let the OAuth popup open from there.
+    try {
+      const host = window.location.hostname.toLowerCase();
+      if (host === 'prohealthpeptides.co.uk' || host === 'www.prohealthpeptides.co.uk') {
+        const target = new URL('/login', 'https://phlabs.co.uk');
+        const rt = redirectTarget && redirectTarget !== '/account' ? redirectTarget : '';
+        if (rt) target.searchParams.set('redirect', rt);
+        target.searchParams.set('google', '1');
+        window.location.replace(target.toString());
+        return;
+      }
+    } catch { /* ignore host parsing */ }
     setGoogleLoading(true);
     try {
       await setAuthPersistence(rememberMe);
@@ -153,6 +170,7 @@ export default function Login() {
     }
     setGoogleLoading(false);
   };
+
 
 
   const handleReset = async (e: React.FormEvent) => {
