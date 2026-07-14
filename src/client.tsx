@@ -352,20 +352,10 @@ function prepareDocumentForCsr(): void {
     document.body.style.backgroundColor = "#060f1e";
     document.body.style.color = "#f0f6ff";
     document.body.innerHTML =
-      '<div id="phl-csr-root"><div class="phl-boot" aria-live="polite" style="display:flex;min-height:100vh;align-items:center;justify-content:center;color:#9fb0c8;font-size:14px;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif">Loading PH Labs…</div></div>';
+      '<div class="phl-boot" aria-live="polite" style="display:flex;min-height:100vh;align-items:center;justify-content:center;color:#9fb0c8;font-size:14px;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif">Loading PH Labs…</div>';
   } catch (error) {
     console.error("[HYDRATION FALLBACK] Could not wipe SSR DOM", error);
   }
-}
-
-function getCsrMountNode(): HTMLElement {
-  let mountNode = document.getElementById("phl-csr-root");
-  if (!mountNode) {
-    mountNode = document.createElement("div");
-    mountNode.id = "phl-csr-root";
-    document.body.replaceChildren(mountNode);
-  }
-  return mountNode;
 }
 
 function CsrBootFallback() {
@@ -497,7 +487,7 @@ function renderCsr(error: unknown): void {
   prepareDocumentForCsr();
   void (async () => {
     try {
-      createRoot(getCsrMountNode(), {
+      createRoot(document.body, {
         onUncaughtError: (rootError, info) => {
           console.error("[ROOT ERROR BOUNDARY] uncaught", rootError, info?.componentStack || "");
           showStaticFallback(rootError);
