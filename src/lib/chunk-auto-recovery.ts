@@ -5,9 +5,8 @@
  * `isStaleChunkError` (dynamic import failure, chunk load failure, missing
  * asset in /assets or /_build).
  *
- * Behaviour: show a full-screen manual recovery overlay. This used to reload
- * automatically after a countdown, but multiple missing chunks after a publish
- * could chain into a visible refresh loop. Recovery is now user-triggered only.
+ * Behaviour: trigger one fresh-HTML recovery automatically. If the browser
+ * cannot navigate immediately, the fallback button runs the same recovery.
  *
  * Guard: `sessionStorage.__phl_chunk_recovery === '1'` — runs at most once
  * per session, so a persistent failure can never loop.
@@ -15,7 +14,7 @@
  * Skipped when a hydration error was already logged (that has its own
  * fallback in client.tsx) or when the reload-loop breaker fired.
  */
-import { isStaleChunkError, hasHydrationErrorState } from "@/lib/recovery";
+import { hardReload, isStaleChunkError, hasHydrationErrorState } from "@/lib/recovery";
 
 const GUARD_KEY = "__phl_chunk_recovery";
 const OVERLAY_ID = "phl-chunk-recovery-overlay";
@@ -113,51 +112,9 @@ async function reportChunkMismatch(err: unknown): Promise<void> {
 }
 
 
-async function clearAppCachesAndSW(): Promise<void> {
-  try {
-    if ("caches" in window) {
-      const names = await caches.keys();
-      await Promise.all(
-        names
-          .filter((n) => /^(phlabs-|workbox-|precache-|runtime-)/i.test(n))
-          .map((n) => caches.delete(n).catch(() => false)),
-      );
-    }
-  } catch { /* ignore */ }
-  try {
-    if ("serviceWorker" in navigator) {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(
-        regs
-          .filter((r) => {
-            const url =
-              r.active?.scriptURL ||
-              r.installing?.scriptURL ||
-              r.waiting?.scriptURL ||
-              "";
-            return /\/(?:sw|service-worker)\.js(?:$|[?#])/i.test(url);
-          })
-          .map((r) => r.unregister().catch(() => false)),
-      );
-    }
-  } catch { /* ignore */ }
-}
-
-function reloadClean(): void {
-  try {
-    const url = new URL(window.location.href);
-    url.searchParams.set("sw", "off");
-    url.searchParams.set("_r", String(Date.now()));
-    window.location.replace(url.toString());
-  } catch {
-    try { window.location.reload(); } catch { /* give up */ }
-  }
-}
-
 async function performRecovery(): Promise<void> {
   try { sessionStorage.setItem(GUARD_KEY, "1"); } catch { /* ignore */ }
-  await clearAppCachesAndSW();
-  reloadClean();
+  await hardReload({ clean: true });
 }
 
 function showCountdownOverlay(): void {
@@ -216,12 +173,14 @@ export function installChunkAutoRecovery(): void {
     const err = event.error ?? event.message;
     if (shouldHandle(err)) {
       void reportChunkMismatch(err);
+      void performRecovery();
       showCountdownOverlay();
     }
   };
   const onRejection = (event: PromiseRejectionEvent) => {
     if (shouldHandle(event.reason)) {
       void reportChunkMismatch(event.reason);
+      void performRecovery();
       showCountdownOverlay();
     }
   };

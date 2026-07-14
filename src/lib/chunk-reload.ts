@@ -120,7 +120,8 @@ function doReload(reason: string) {
     /* ignore */
   }
   // eslint-disable-next-line no-console
-  console.warn("[chunk-reload] automatic reload blocked:", reason);
+  console.warn("[chunk-reload] forcing fresh HTML recovery:", reason);
+  void hardReload({ clean: true });
 }
 
 // Self-heal: when a stale chunk is confirmed missing, fire the public

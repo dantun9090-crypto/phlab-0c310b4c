@@ -165,6 +165,8 @@ export async function clearClientCaches(timeoutMs = 1500): Promise<void> {
 }
 
 export const HARD_RELOAD_FLAG = "__phl_hard_reload_in_flight";
+const FRESH_HTML_RECOVERY_KEY = "phlFreshHtmlRecoveryAt";
+const FRESH_HTML_RECOVERY_WINDOW_MS = 60_000;
 
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -174,6 +176,80 @@ type HardReloadOptions = {
   clean?: boolean;
   home?: boolean;
 };
+
+async function clearCacheStorageAndServiceWorkers(timeoutMs = 4000): Promise<void> {
+  const tasks: Promise<unknown>[] = [];
+
+  try {
+    if (typeof navigator !== "undefined" && navigator.serviceWorker) {
+      tasks.push(
+        navigator.serviceWorker
+          .getRegistrations()
+          .then((regs) => Promise.allSettled(regs.map((r) => r.unregister().catch(() => false))))
+          .catch(() => undefined),
+      );
+    }
+  } catch { /* ignore */ }
+
+  try {
+    if (typeof caches !== "undefined") {
+      tasks.push(
+        caches
+          .keys()
+          .then((keys) => Promise.allSettled(keys.map((k) => caches.delete(k).catch(() => false))))
+          .catch(() => undefined),
+      );
+    }
+  } catch { /* ignore */ }
+
+  await Promise.race([
+    Promise.allSettled(tasks),
+    new Promise((r) => setTimeout(r, timeoutMs)),
+  ]);
+}
+
+async function purgeRecoveryStorage(): Promise<void> {
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && /(cache|build|version|sw-|__phl_|phlabs_build_id|phl_reload_count)/i.test(key)) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((key) => {
+      try { localStorage.removeItem(key); } catch { /* ignore */ }
+    });
+  } catch { /* ignore */ }
+
+  try { sessionStorage.clear(); } catch { /* ignore */ }
+
+  try {
+    const idb = window.indexedDB as IDBFactory & { databases?: () => Promise<{ name?: string }[]> };
+    if (typeof idb.databases === "function") {
+      const dbs = await idb.databases();
+      dbs?.forEach((db) => {
+        if (db.name && !/^firebase|firestore|firebaseLocalStorageDb/i.test(db.name)) {
+          try { window.indexedDB.deleteDatabase(db.name); } catch { /* ignore */ }
+        }
+      });
+    }
+  } catch { /* ignore */ }
+}
+
+async function fetchFreshRootHtml(timeoutMs = 3000): Promise<void> {
+  await Promise.race([
+    fetch("/", {
+      cache: "no-store",
+      credentials: "same-origin",
+      headers: {
+        "Cache-Control": "no-cache",
+        Pragma: "no-cache",
+      },
+    }).catch(() => undefined),
+    new Promise((r) => setTimeout(r, timeoutMs)),
+  ]);
+}
 
 function stripRecoveryParams(url: URL): void {
   url.searchParams.delete("_r");
@@ -200,7 +276,31 @@ export async function hardReload(options: HardReloadOptions = {}): Promise<void>
     sessionStorage.setItem(HARD_RELOAD_FLAG, "1");
   } catch { /* ignore */ }
 
-  await clearClientCaches(options.clean ? 4000 : 1500);
+  if (options.clean) {
+    try {
+      const recent = Number(localStorage.getItem(FRESH_HTML_RECOVERY_KEY) || "0");
+      if (recent && Date.now() - recent < FRESH_HTML_RECOVERY_WINDOW_MS) return;
+      localStorage.setItem(FRESH_HTML_RECOVERY_KEY, String(Date.now()));
+    } catch { /* ignore */ }
+
+    try {
+      await clearCacheStorageAndServiceWorkers(4000);
+      await purgeRecoveryStorage();
+      await fetchFreshRootHtml();
+    } catch (err) {
+      console.error("Cache clear failed:", err);
+      try { localStorage.clear(); } catch { /* ignore */ }
+      try { sessionStorage.clear(); } catch { /* ignore */ }
+    } finally {
+      try { window.location.replace("/"); }
+      catch {
+        try { window.location.href = "/"; } catch { /* give up */ }
+      }
+    }
+    return;
+  }
+
+  await clearClientCaches(1500);
 
   // Give Cloudflare/Prerender purges a short propagation window before the
   // navigation. Without this, stale HTML can be re-fetched immediately after
@@ -214,7 +314,6 @@ export async function hardReload(options: HardReloadOptions = {}): Promise<void>
       url.hash = "";
     }
     stripRecoveryParams(url);
-    if (options.clean) url.searchParams.set("sw", "off");
     window.location.replace(url.toString());
   } catch {
     try { window.location.reload(); } catch { /* give up */ }

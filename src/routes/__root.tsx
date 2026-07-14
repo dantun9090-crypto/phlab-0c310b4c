@@ -439,6 +439,47 @@ const BUILD_ID_CACHE_KILLER = `
   set(LEGACY, buildId);
 })();
 `;
+const FRESH_HTML_RECOVERY = `
+(function(){
+  'use strict';
+  var BUILD_ID=${JSON.stringify(typeof __BUILD_ID__ === "string" ? __BUILD_ID__ : "dev")};
+  var KEY='phlFreshHtmlRecoveryAt';
+  var WINDOW_MS=60000;
+  var isPreview=function(){ try{ var h=location.hostname; return window.top!==window.self||h.indexOf('lovable.')>-1||/\.lovable(?:project)?\.com$|\.lovable\.app$|\.lovable\.dev$/i.test(h)||h.indexOf('id-preview--')===0||h.indexOf('preview--')===0; }catch(e){ return true; } };
+  var isCritical=function(){ try{ return new RegExp('^/(?:admin|auth|login|account|cart|checkout|payment|register)(?:/|$)','i').test(location.pathname||''); }catch(e){ return false; } };
+  var recent=function(){ try{ var at=Number(localStorage.getItem(KEY)||'0'); return at && Date.now()-at<WINDOW_MS; }catch(e){ return false; } };
+  var mark=function(){ try{ localStorage.setItem(KEY,String(Date.now())); }catch(e){} };
+  var fetchFresh=function(){
+    return Promise.race([
+      fetch('/',{cache:'no-store',credentials:'same-origin',headers:{'Cache-Control':'no-cache','Pragma':'no-cache'}}).catch(function(){}),
+      new Promise(function(r){ setTimeout(r,3000); })
+    ]);
+  };
+  var openFreshHome=function(){
+    if(recent()) return;
+    mark();
+    fetchFresh().then(function(){ try{ location.replace('/'); }catch(e){ location.href='/'; } });
+  };
+  try{ window.__phlFetchFreshHtmlAndOpenHome=openFreshHome; }catch(e){}
+  if(isPreview()) return;
+  try{
+    fetch('/api/public/health/build',{method:'GET',cache:'no-store',credentials:'omit',headers:{accept:'application/json'}})
+      .then(function(res){ if(!res||!res.ok) return null; var h=res.headers.get('x-build-id'); if(h) return h; return res.json().then(function(j){ return j&&j.buildId; }).catch(function(){ return null; }); })
+      .then(function(serverBuild){ if(serverBuild && serverBuild!==BUILD_ID && !isCritical()) openFreshHome(); })
+      .catch(function(){});
+  }catch(e){}
+  setTimeout(function(){
+    try{
+      if(window.__PHL_REACT_READY__) return;
+      var body=document.body;
+      if(!body) return;
+      var html=(body.innerHTML||'').replace(/\\s+/g,'').trim();
+      var text=(body.innerText||body.textContent||'').replace(/\\s+/g,' ').trim();
+      if(html.length<50 && text.length<50) openFreshHome();
+    }catch(e){}
+  },5000);
+})();
+`;
 // Runs FIRST. Reads its own `nonce` attribute (stamped by HTMLRewriter in the
 // Worker) and monkey-patches `document.createElement` so every <script>
 // element created at runtime — Firebase SDK loader, GTM, recaptcha, any
@@ -518,17 +559,14 @@ const FORCE_SW_CLEANUP = `
 const EMERGENCY_STALE_RELOAD = `
 (function(){
   try{
-    // Safety note: this guard must never auto-navigate. During stale deploys,
-    // old cached HTML can reference several missing chunks; forcing a reload for
-    // each missing script created the "refreshing like crazy" loop. We now show
-    // a manual recovery screen only.
+    // Stale script recovery: force one fresh root HTML fetch, then navigate to
+    // clean /. The shared localStorage guard prevents refresh loops.
     var qs=new URLSearchParams(location.search);
     if(qs.has('__fresh')) return;
     var blocked=new RegExp('^/(?:admin|auth|login|account|cart|checkout|payment|register)(?:/|$)','i').test(location.pathname||'');
     if(blocked) return;
-    // Loop guard: allow ONE automatic hard reload per stuck page. If we
-    // already reloaded (?_reload=... present) and chunks STILL fail, fall
-    // through to the manual recovery screen instead of looping.
+    // Legacy recovery params are ignored now; query strings do not reliably
+    // bypass Cloudflare/browser HTML cache.
     var alreadyReloaded=qs.has('_reload')||qs.has('_chunkerr')||qs.has('_clear');
     var shown=false;
     var tryAutoReload=function(reason){
@@ -537,49 +575,17 @@ const EMERGENCY_STALE_RELOAD = `
         if(window.caches&&caches.keys){ p.push(caches.keys().then(function(keys){ return Promise.all(keys.map(function(k){ return caches.delete(k).catch(function(){}); })); })); }
         if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){ p.push(navigator.serviceWorker.getRegistrations().then(function(regs){ return Promise.all(regs.map(function(r){ return r.unregister().catch(function(){}); })); })); }
         Promise.race([Promise.all(p),new Promise(function(r){ setTimeout(r,1500); })]).then(function(){
-          try{
-            var u=new URL(location.href);
-            u.searchParams.set('_reload',String(Date.now()));
-            location.href=u.toString();
-          }catch(_e){ try{ location.href=location.pathname+'?_reload='+Date.now(); }catch(__e){} }
+          try{ if(typeof window.__phlFetchFreshHtmlAndOpenHome==='function'){ window.__phlFetchFreshHtmlAndOpenHome(); return; } }catch(_e){}
+          try{ fetch('/',{cache:'no-store',credentials:'same-origin',headers:{'Cache-Control':'no-cache','Pragma':'no-cache'}}).finally(function(){ location.replace('/'); }); }
+          catch(_e){ try{ location.replace('/'); }catch(__e){ location.href='/'; } }
         });
-      }catch(e){ try{ location.href=location.pathname+'?_reload='+Date.now(); }catch(_e){} }
+      }catch(e){ try{ location.replace('/'); }catch(_e){ location.href='/'; } }
     };
     var showManualRecovery=function(reason){
       if(shown) return;
       shown=true;
-      if(!alreadyReloaded){
-        try{ console.warn('[PHL] Stale script detected — forcing one hard reload:', reason); }catch(e){}
-        tryAutoReload(reason);
-        return;
-      }
-      try{ console.warn('[PHL] Stale script persists after reload — showing manual recovery:', reason); }catch(e){}
-      try{
-        if(navigator.serviceWorker&&navigator.serviceWorker.ready){
-          navigator.serviceWorker.ready.then(function(reg){ try{ if(reg&&reg.active) reg.active.postMessage({type:'CLEAR_CACHE_AND_RELOAD'}); }catch(e){} }).catch(function(){});
-        }
-      }catch(e){}
-      try{
-        var p=[];
-        if(window.caches&&caches.keys){ p.push(caches.keys().then(function(keys){ return Promise.all(keys.map(function(k){ return caches.delete(k).catch(function(){}); })); })); }
-        if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){ p.push(navigator.serviceWorker.getRegistrations().then(function(regs){ return Promise.all(regs.map(function(r){ return r.unregister().catch(function(){}); })); })); }
-        Promise.all(p).catch(function(){});
-      }catch(e){}
-      var render=function(){
-        try{
-          if(!document.body){ document.addEventListener('DOMContentLoaded',render,{once:true}); return; }
-          try{
-            if(window.__PHL_REACT_READY__) return;
-            var b=document.body;
-            if(b && b.querySelector('header, nav, main, footer, [data-phl-app-ready], [role="main"], [role="banner"], #root > *')) return;
-            var _t=(b&&(b.innerText||b.textContent)||'').replace(/\\s+/g,' ').trim();
-            if(_t.length>80) return;
-          }catch(_e){}
-          document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:800">PH Labs update ready</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:15px;line-height:1.55">Your browser has an old page file. Tap the button to load the fresh store.</p><button id="phl-stalescript-refresh" style="appearance:none;border:0;background:#10b981;color:#03140d;font-weight:800;padding:14px 18px;border-radius:8px;cursor:pointer;font-size:15px">Open fresh store</button></div></div>';
-          try{ var _b=document.getElementById('phl-stalescript-refresh'); if(_b && typeof window.__phlHardReloadClean==='function') _b.addEventListener('click',window.__phlHardReloadClean); else if(_b) _b.addEventListener('click',function(){ try{ location.reload(); }catch(_e){} }); }catch(_e){}
-        }catch(e){}
-      };
-      render();
+      try{ console.warn('[PHL] Stale script detected — fetching fresh HTML:', reason, alreadyReloaded?'after legacy reload':''); }catch(e){}
+      tryAutoReload(reason);
     };
     window.addEventListener('error',function(e){
       var t=e&&e.target;
@@ -966,16 +972,32 @@ const STALE_ASSET_RECOVERY = `
     var emit=function(evt,extra){ try{ var fn=window.__phlSwTelemetry; if(typeof fn==='function') fn(evt,extra||null); }catch(e){} };
     var hardReloadClean=function(){
       emit('sw_cache_reset_clicked',{ path: location.pathname });
+      try{
+        var guard=Number(localStorage.getItem('phlFreshHtmlRecoveryAt')||'0');
+        if(guard && Date.now()-guard<60000){ return; }
+        localStorage.setItem('phlFreshHtmlRecoveryAt',String(Date.now()));
+      }catch(e){}
       try{ sessionStorage.setItem('phl-sw-cache-reset-pending',String(Date.now())); }catch(e){}
       clearAllStaleFlags();
+      try{
+        var remove=[];
+        for(var i=0;i<localStorage.length;i++){
+          var key=localStorage.key(i);
+          if(key && key!=='phlFreshHtmlRecoveryAt' && new RegExp('cache|build|version|sw-|__phl_|phlabs_build_id|phl_reload_count','i').test(key)) remove.push(key);
+        }
+        remove.forEach(function(k){ try{ localStorage.removeItem(k); }catch(_e){} });
+      }catch(e){}
+      try{ sessionStorage.clear(); }catch(e){}
+      try{
+        var idb=window.indexedDB;
+        if(idb&&typeof idb.databases==='function') idb.databases().then(function(dbs){ (dbs||[]).forEach(function(db){ if(db&&db.name&&!new RegExp('^firebase|firestore|firebaseLocalStorageDb','i').test(db.name)){ try{ idb.deleteDatabase(db.name); }catch(_e){} } }); }).catch(function(){});
+      }catch(e){}
       // Unregister all SWs and wipe caches so the next request hits the
       // freshly-purged Cloudflare edge instead of a stale SW snapshot.
       var done=function(){
-        try{
-          var u=new URL(location.href);
-          u.searchParams.set('_r', String(Date.now()));
-          location.replace(u.toString());
-        }catch(e){ location.reload(); }
+        var open=function(){ try{ location.replace('/'); }catch(e){ location.href='/'; } };
+        try{ fetch('/',{cache:'no-store',credentials:'same-origin',headers:{'Cache-Control':'no-cache','Pragma':'no-cache'}}).then(open,open); }
+        catch(e){ open(); }
       };
       var pending=0,finished=false;
       var tick=function(){ if(!finished&&pending<=0){ finished=true; done(); } };
@@ -1003,7 +1025,9 @@ const STALE_ASSET_RECOVERY = `
     var requestHardReset=function(reason){
       try{
         sessionStorage.setItem(AUTO_HARDRESET,String(Date.now()));
-        try{ console.warn('[STALE_ASSET] Automatic hard reset disabled:',reason); }catch(_e){}
+        try{ console.warn('[STALE_ASSET] forcing fresh HTML recovery:',reason); }catch(_e){}
+        hardReloadClean();
+        return true;
       }catch(e){}
       return false;
     };
@@ -1051,33 +1075,10 @@ const STALE_ASSET_RECOVERY = `
       }catch(e){}
     };
     var showLimit=function(){
-      // Prerender / SSR guard — never render the wall server-side.
       if(typeof window==='undefined') return;
-      // Session debounce: once shown in this tab, never again.
-      try{
-        if(sessionStorage.getItem(UPDATE_SHOWN_KEY)==='1'){ swLog('','','already-shown-this-session'); return; }
-      }catch(e){}
-      // Skip when the tab has just resumed from background — Chrome Android
-      // re-runs pageshow/asset checks and would otherwise false-positive.
-      if(__phlLastHiddenAt && (Date.now()-__phlLastHiddenAt)<3000){
-        swLog('','','recent-visibility-hidden');
-        return;
-      }
-      try{ console.error('[STALE_ASSET] Automatic reload blocked'); }catch(e){}
+      try{ console.warn('[STALE_ASSET] fetching fresh HTML instead of showing update wall'); }catch(e){}
       emit('sw_stale_reload_shown',{ path: location.pathname });
-      var reveal=function(){
-        // Re-check debounce + visibility right before rendering (5s later on Android).
-        try{ if(sessionStorage.getItem(UPDATE_SHOWN_KEY)==='1'){ swLog('','','already-shown-this-session'); return; } }catch(e){}
-        if(__phlLastHiddenAt && (Date.now()-__phlLastHiddenAt)<3000){ swLog('','','recent-visibility-hidden'); return; }
-        swLog('',true,'');
-        renderUpdateWall();
-      };
-      if(isChromeAndroid()){
-        swLog('',true,'chrome-android-delayed-5s');
-        setTimeout(reveal,5000);
-      }else{
-        reveal();
-      }
+      hardReloadClean();
     };
 
     var readCount=function(){
@@ -1129,7 +1130,7 @@ const STALE_ASSET_RECOVERY = `
               sessionStorage.setItem(KEY,String(Date.now()));
               sessionStorage.setItem(COUNT,String(count));
               sessionStorage.setItem(LEGACY_COUNT,String(count));
-              if(count<STALE_THRESHOLD){ try{ console.warn('[phlabs] stale asset 404 ('+count+'/'+STALE_THRESHOLD+'), automatic reload disabled:', src); }catch(e){} if(!requestHardReset('asset-404')) showLimit(); return; }
+              if(count<STALE_THRESHOLD){ try{ console.warn('[phlabs] stale asset 404 ('+count+'/'+STALE_THRESHOLD+'), fetching fresh HTML:', src); }catch(e){} if(!requestHardReset('asset-404')) showLimit(); return; }
             }catch(e){ showLimit(); return; }
             try{ console.warn('[phlabs] stale build asset 404, showing manual recovery:', src); }catch(e){}
             // Force-fire the auto-purge again (bypass throttle) — this visitor
@@ -1266,6 +1267,8 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta httpEquiv="Pragma" content="no-cache" />
         <meta httpEquiv="Expires" content="0" />
+        <meta name="build-id" content={typeof __BUILD_ID__ === "string" ? __BUILD_ID__ : "dev"} />
+        <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: FRESH_HTML_RECOVERY }} />
         {/* Logo asset is Vite-inlined as a data:image/webp URL (small file
             under the assetsInlineLimit), so it ships inside the HTML shell
             already. A <link rel=preload> pointing at that same data: URL

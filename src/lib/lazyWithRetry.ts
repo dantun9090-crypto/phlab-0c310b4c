@@ -40,7 +40,7 @@ function ChunkRefreshFallback() {
       "button",
       {
         onClick: () => {
-          try { window.location.reload(); } catch { /* ignore */ }
+          try { void hardReload({ clean: true }); } catch { /* ignore */ }
         },
         style: {
           padding: "12px 24px",
@@ -52,7 +52,7 @@ function ChunkRefreshFallback() {
           borderRadius: "8px",
         },
       },
-      "Refresh page",
+      "Refresh & clear cache",
     ),
   );
 }

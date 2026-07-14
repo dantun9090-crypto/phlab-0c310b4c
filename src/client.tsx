@@ -152,6 +152,7 @@ import { installChunkAutoRecovery } from "./lib/chunk-auto-recovery";
 import { installImageErrorAutoReset } from "./lib/image-error-auto-reset";
 import { installBuildIdForceReload } from "./lib/build-id-force-reload";
 import { installBuildFreshnessCheck } from "./lib/build-freshness-check";
+import { hardReload as forceFreshHtmlReload } from "./lib/recovery";
 import appCss from "./styles.css?url";
 
 const shouldStartPhlClient = (() => {
@@ -448,22 +449,15 @@ function CsrLegacyApp() {
 }
 
 function attemptCacheBustReload(): boolean {
-  // Fires before rendering the "Please refresh" fallback. If this tab hasn't
-  // already been cache-busted (session flag + URL `_bust` param), do a hard
-  // reload with a cache-busting query so Cloudflare / the SW can't replay
-  // the stale HTML shell that likely caused this crash.
+  // Fires before rendering the "Please refresh" fallback. Fetch `/` with
+  // cache:no-store first, then open clean `/` so Cloudflare/browser caches
+  // cannot replay the stale HTML shell that likely caused this crash.
   try {
     const RELOADED_KEY = "__phl_hydration_bust_reload_at";
     if (sessionStorage.getItem(RELOADED_KEY)) return false;
-    const params = new URLSearchParams(window.location.search);
-    if (params.has("_bust")) return false;
     sessionStorage.setItem(RELOADED_KEY, String(Date.now()));
-    const loc = window.location;
-    const sep = loc.search ? "&" : "?";
-    const target =
-      loc.pathname + loc.search + sep + "_bust=hydration&_t=" + Date.now() + loc.hash;
-    console.warn("[ROOT ERROR BOUNDARY] Attempting cache-bust reload before fallback");
-    loc.replace(target);
+    console.warn("[ROOT ERROR BOUNDARY] Attempting fresh-HTML recovery before fallback");
+    void forceFreshHtmlReload({ clean: true });
     return true;
   } catch {
     return false;
@@ -479,7 +473,9 @@ function showStaticFallback(error: unknown): void {
     const target = document.getElementById("phl-csr-root") || document.body;
     target.innerHTML =
       '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Please refresh</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">The page could not initialise cleanly.</p><button id="phl-root-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer">Reload page</button></div></div>';
-    document.getElementById("phl-root-refresh")?.addEventListener("click", () => location.reload());
+    document.getElementById("phl-root-refresh")?.addEventListener("click", () => {
+      void forceFreshHtmlReload({ clean: true });
+    });
   } catch {
     /* ignore */
   }

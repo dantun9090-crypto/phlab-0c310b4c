@@ -6,8 +6,8 @@
 //   while the underlying hashed assets on the CDN have already rotated.
 //   Users used to end up on the manual "Update available" wall — one more
 //   click before the app worked. This module proactively detects the
-//   mismatch and does a silent, cache-busted `location.replace` reload
-//   before the user ever sees that wall.
+//   mismatch and does a silent fresh-HTML recovery before the user ever sees
+//   that wall.
 //
 // Signal source:
 //   GET /api/public/health/build → { buildId } (also x-build-id header).
@@ -28,8 +28,10 @@
 //     is open. Subsequent mismatches log only.
 //   • 10s cooldown between checks; skip if a check is already in flight.
 //   • Skips when offline (would just fail).
-//   • Skips when the URL already carries our `_bust=` param — we're
-//     already on the reloaded page.
+//   • The recovery path fetches `/` with `cache: "no-store"` before opening
+//     clean `/`; no query-string cache busting is used for HTML.
+
+import { hardReload as forceFreshHtmlReload } from "@/lib/recovery";
 
 const CURRENT_BUILD_ID =
   typeof __BUILD_ID__ === "string" && __BUILD_ID__ ? __BUILD_ID__ : "dev";
@@ -117,14 +119,6 @@ function stampCheck(): void {
   }
 }
 
-function urlAlreadyBusted(): boolean {
-  try {
-    return new URLSearchParams(window.location.search).has("_bust");
-  } catch {
-    return false;
-  }
-}
-
 async function fetchServerBuildId(): Promise<string | null> {
   try {
     const res = await fetch(HEALTH_URL, {
@@ -159,25 +153,14 @@ async function requestPurgeBeforeReload(): Promise<void> {
 function forceReload(newBuildId: string): void {
   markReloadedThisSession();
   try {
-    const loc = window.location;
-    const sep = loc.search ? "&" : "?";
-    const target =
-      loc.pathname +
-      loc.search +
-      sep +
-      "_bust=" +
-      encodeURIComponent(newBuildId) +
-      "&_t=" +
-      Date.now() +
-      loc.hash;
     // eslint-disable-next-line no-console
     console.warn(
-      `[build-id-force-reload] mismatch (client=${CURRENT_BUILD_ID}, server=${newBuildId}) → forcing reload`,
+      `[build-id-force-reload] mismatch (client=${CURRENT_BUILD_ID}, server=${newBuildId}) → fetching fresh HTML`,
     );
-    loc.replace(target);
+    void forceFreshHtmlReload({ clean: true });
   } catch {
     try {
-      window.location.reload();
+      window.location.replace("/");
     } catch {
       /* ignore */
     }
@@ -192,7 +175,6 @@ async function checkOnce(reason: string): Promise<void> {
   if (withinCooldown()) return;
   if (alreadyReloadedThisSession()) return;
   if (isCriticalRoute()) return;
-  if (urlAlreadyBusted()) return;
 
   inFlight = true;
   stampCheck();

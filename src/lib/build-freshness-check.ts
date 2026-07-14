@@ -19,6 +19,8 @@
 //   before hydration and inside any page. One at a time; dismisses on
 //   Refresh click.
 
+import { hardReload as forceFreshHtmlReload } from "@/lib/recovery";
+
 const HEALTH_URL = "/api/public/health/build";
 const BANNER_ID = "phl-update-banner";
 const SESSION_SHOWN_KEY = "__phl_update_banner_shown";
@@ -95,23 +97,6 @@ async function requestPurge(): Promise<void> {
   ]);
 }
 
-function hardReload(newBuildId: string | null): void {
-  try {
-    const loc = window.location;
-    const sep = loc.search ? "&" : "?";
-    const bust = encodeURIComponent(newBuildId ?? String(Date.now()));
-    loc.replace(
-      loc.pathname + loc.search + sep + "_bust=" + bust + "&_t=" + Date.now() + loc.hash,
-    );
-  } catch {
-    try {
-      window.location.reload();
-    } catch {
-      /* ignore */
-    }
-  }
-}
-
 function renderBanner(newBuildId: string | null): void {
   if (typeof document === "undefined" || !document.body) return;
   if (document.getElementById(BANNER_ID)) return;
@@ -167,7 +152,7 @@ function renderBanner(newBuildId: string | null): void {
     try {
       await requestPurge();
     } finally {
-      hardReload(newBuildId);
+      void forceFreshHtmlReload({ clean: true });
     }
   });
 

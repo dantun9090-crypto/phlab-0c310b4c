@@ -3,7 +3,7 @@
 // Bot/prerender branch: UA sniff -> Prerender.io -> hash-CSP -> cache separately.
 // TTFB: ~50-80ms cache HIT (browser), ~75ms (prerender).
 //
-// Deploy version: 2026-07-13.01 — disable browser HTML edge cache completely;
+// Deploy version: 2026-07-14.01 — bypass browser HTML edge cache completely;
 // cached home shells were masking fresh publishes.
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -28,7 +28,7 @@ const PROXY_ROUTES = [
 ];
 
 const CACHE_TTL = {
-  html: 86400,       // 24h for browser HTML
+  html: 0,           // browser HTML is always fetched with cache bypass
   prerender: 60,     // 60s for prerendered HTML (keep bot cache fresh after deploys)
   static: 31536000,  // 1 year for hashed immutable assets — required by
                      // e2e/cache-headers-regression.spec.ts (max-age >= 31536000)
@@ -516,14 +516,10 @@ export default {
     }
 
     const originStart = Date.now();
-    // Only `/` is intentionally edge-cacheable. For every other HTML shell,
-    // bypass CF's cache on the subrequest so a Cache Rule (or any inherited
-    // cache config) can't replay a stale shell — otherwise the response we
-    // return carries cf-cache-status=HIT even though we stamp no-store, and
-    // the cache-headers scan / regression suite flags it.
-    const originRes = path === "/"
-      ? await fetch(request)
-      : await fetch(request, { cf: { cacheTtl: 0, cacheEverything: false } });
+    // Bypass CF's cache on every human HTML subrequest, including `/`, so a
+    // Cache Rule or inherited edge config cannot replay a stale shell pointing
+    // at deleted build chunks.
+    const originRes = await fetch(request, { cf: { cacheTtl: 0, cacheEverything: false } });
     const originMs = Date.now() - originStart;
     const passRes = await buildBrowserResponse(originRes, path);
     const out = new Response(passRes.body, {
