@@ -1084,6 +1084,8 @@ export default function CheckoutPage() {
     : null;
 
   return (
+    <>
+    <NoCacheHead title="Checkout — PH Labs" />
     <section id="checkout" className="min-h-screen bg-[#060f1e] pt-20 pb-16">
       <div className="max-w-5xl mx-auto px-4">
 
