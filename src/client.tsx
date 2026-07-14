@@ -147,6 +147,7 @@ import { createRoot, hydrateRoot, type Root } from "react-dom/client";
 import { StartClient } from "@tanstack/react-start/client";
 import { RouterProvider } from "@tanstack/react-router";
 import { getRouter } from "./router";
+import LegacyClientApp from "./legacy/LegacyClientApp";
 import { installClientErrorReporter, reportClientError } from "./lib/client-error-reporter";
 import { initSwTelemetry } from "./lib/swTelemetry";
 import { initSentry } from "./lib/sentry";
@@ -380,6 +381,31 @@ function getCsrMountNode(): HTMLElement {
   return mountNode;
 }
 
+function CsrBootFallback() {
+  return (
+    <div
+      className="phl-boot"
+      aria-live="polite"
+      style={{
+        display: "flex",
+        minHeight: "100vh",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#9fb0c8",
+        fontSize: 14,
+        fontFamily: "Inter Tight, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+      }}
+    >
+      Loading PH Labs…
+    </div>
+  );
+}
+
+function CsrLegacyApp() {
+  const initialPath = typeof window !== "undefined" ? window.location.pathname : "/";
+  return <LegacyClientApp initialPath={initialPath} fallback={<CsrBootFallback />} />;
+}
+
 function attemptCacheBustReload(): boolean {
   // Fires before rendering the "Please refresh" fallback. If this tab hasn't
   // already been cache-busted (session flag + URL `_bust` param), do a hard
@@ -476,7 +502,7 @@ function app(mode: "ssr" | "csr" = "ssr", router?: ReturnType<typeof getRouter>)
   return (
     <StrictMode>
       <ClientRootErrorBoundary>
-        {mode === "csr" ? <RouterProvider router={router ?? getCsrRouter()} /> : <StartClient />}
+        {mode === "csr" ? <CsrLegacyApp /> : <StartClient />}
       </ClientRootErrorBoundary>
     </StrictMode>
   );
