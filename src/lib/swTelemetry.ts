@@ -7,8 +7,11 @@
 // Events land in Firestore collection `sw_telemetry` (locked-shape rule —
 // anon CREATE, admin READ). Correlated with Admin → Purge Incidents.
 
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+// Firebase is dynamically imported inside persist() so the entry chunk
+// does NOT statically pull in `@/lib/firebase` (1719 lines) and the
+// `vendor-firebase` chunk (~507 KB firebase SDK). swTelemetry writes are
+// fire-and-forget and only run after user interaction / build-mismatch
+// detection, so lazy-loading Firestore here has no user-visible impact.
 
 export type SwTelemetryEvent =
   | 'sw_stale_reload_shown'
