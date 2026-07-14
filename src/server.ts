@@ -188,12 +188,9 @@ const SECURITY_HEADERS: Record<string, string> = {
   // Deny every powerful feature except payment (Stripe/TrueLayer/Fena need it on self).
   "permissions-policy": [
     "accelerometer=()",
-    "ambient-light-sensor=()",
     "autoplay=()",
-    "battery=()",
     "camera=()",
     "display-capture=()",
-    "document-domain=()",
     "encrypted-media=()",
     "fullscreen=(self)",
     "geolocation=()",
@@ -208,7 +205,6 @@ const SECURITY_HEADERS: Record<string, string> = {
     "screen-wake-lock=()",
     "sync-xhr=()",
     "usb=()",
-    "web-share=(self)",
     "xr-spatial-tracking=()",
   ].join(", "),
   "cross-origin-opener-policy": "same-origin-allow-popups",
