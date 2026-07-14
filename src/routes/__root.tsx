@@ -261,6 +261,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "google", content: "notranslate" },
       // Build marker — helps confirm which build a stale tab is running.
+      { name: "build-id", content: typeof __BUILD_ID__ === "string" ? __BUILD_ID__ : "dev" },
       { name: "x-build-id", content: typeof __BUILD_ID__ === "string" ? __BUILD_ID__ : "dev" },
       { name: "author", content: "PH Labs UK" },
       { property: "og:site_name", content: "PH Labs UK" },

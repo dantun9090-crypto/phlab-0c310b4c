@@ -962,7 +962,7 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
     const rewriter: Rewriter = new RewriterCtor();
     let r = rewriter.on("head", {
       element(el) {
-        el.prepend(`<script data-phl-build-killer>${buildIdCacheKillerScript(buildId)}</script>`, { html: true });
+        el.prepend(`<script nonce="${nonceAttrValue}" data-phl-build-killer>${buildIdCacheKillerScript(buildId)}</script>`, { html: true });
         el.append(`<meta name="build-id" content="${buildId}">`, { html: true });
         el.append(`<meta name="build-version" content="${buildId}">`, { html: true });
         el.append(`<meta name="release" content="${buildId}">`, { html: true });
