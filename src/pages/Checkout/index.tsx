@@ -1988,5 +1988,6 @@ export default function CheckoutPage() {
 
       </div>
     </section>
+    </>
   );
 }
