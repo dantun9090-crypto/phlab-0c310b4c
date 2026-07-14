@@ -351,7 +351,24 @@ function prepareDocumentForCsr(): void {
     document.body.style.margin = "0";
     document.body.style.backgroundColor = "#060f1e";
     document.body.style.color = "#f0f6ff";
-    document.body.innerHTML =
+    // CRITICAL: Do NOT mount React on <body>. Third-party scripts (GTM, GA4,
+    // Clarity, Google Merchant Widget, animated background, etc.) inject
+    // sibling nodes into body during page life. If React owns body, those
+    // injections race React's reconciler and trigger
+    //   NotFoundError: Failed to execute 'removeChild' on 'Node'
+    // during hydration/unmount. Isolate React inside a dedicated container.
+    let container = document.getElementById("phl-csr-root");
+    if (!container) {
+      // Clear any pre-existing body content but keep third-party <script>
+      // tags that already loaded — they must remain OUTSIDE the React root.
+      const preservedScripts = Array.from(document.body.querySelectorAll(":scope > script"));
+      document.body.innerHTML = "";
+      preservedScripts.forEach((s) => document.body.appendChild(s));
+      container = document.createElement("div");
+      container.id = "phl-csr-root";
+      document.body.appendChild(container);
+    }
+    container.innerHTML =
       '<div class="phl-boot" aria-live="polite" style="display:flex;min-height:100vh;align-items:center;justify-content:center;color:#9fb0c8;font-size:14px;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif">Loading PH Labs…</div>';
   } catch (error) {
     console.error("[HYDRATION FALLBACK] Could not wipe SSR DOM", error);
@@ -412,13 +429,17 @@ function showStaticFallback(error: unknown): void {
   // never sees the "Please refresh" screen.
   if (attemptCacheBustReload()) return;
   try {
-    document.body.innerHTML =
-      '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Please refresh</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">The page could not initialise cleanly.</p><button id="phl-root-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer">Refresh</button></div></div>';
+    const target = document.getElementById("phl-csr-root") || document.body;
+    target.innerHTML =
+      '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Please refresh</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">The page could not initialise cleanly.</p><button id="phl-root-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer">Reload page</button></div></div>';
     document.getElementById("phl-root-refresh")?.addEventListener("click", () => location.reload());
   } catch {
     /* ignore */
   }
   console.error("[ROOT ERROR BOUNDARY] Static fallback rendered", error);
+  if (error instanceof Error) {
+    console.error("[ROOT ERROR BOUNDARY] stack:\n" + (error.stack || "(no stack)"));
+  }
 }
 
 
@@ -487,9 +508,17 @@ function renderCsr(error: unknown): void {
   prepareDocumentForCsr();
   void (async () => {
     try {
-      createRoot(document.body, {
+      const container = document.getElementById("phl-csr-root");
+      if (!container) {
+        showStaticFallback(new Error("phl-csr-root container missing"));
+        return;
+      }
+      createRoot(container, {
         onUncaughtError: (rootError, info) => {
           console.error("[ROOT ERROR BOUNDARY] uncaught", rootError, info?.componentStack || "");
+          if (rootError instanceof Error) {
+            console.error("[ROOT ERROR BOUNDARY] stack:\n" + (rootError.stack || "(no stack)"));
+          }
           showStaticFallback(rootError);
         },
         onCaughtError: (rootError, info) => {
