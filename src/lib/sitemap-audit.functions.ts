@@ -66,55 +66,13 @@ export function checkAuditRateLimit(uid: string): {
   };
 }
 
-/**
- * Firestore-backed rate limit: counts `kind: "run"` rows for this uid in
- * the last hour. Shared across all Worker isolates. If Firestore is
- * unreachable, we fail OPEN (return allowed=true) so a transient outage
- * does not lock admins out — the in-memory pre-check still applies and
- * any abuse remains visible in the audit log.
- */
-export async function checkAuditRateLimitPersistent(uid: string): Promise<{
-  allowed: boolean;
-  remaining: number;
-  resetMs: number;
-}> {
-  const now = Date.now();
-  try {
-    const { listDocsAdmin } = await import("@/lib/server/firestore-admin");
-    const rows = await listDocsAdmin("sitemap_audit_log", {
-      where: { field: "uid", op: "EQUAL", value: uid },
-      orderBy: "timestamp",
-      direction: "DESCENDING",
-      limit: MAX_AUDIT_RUNS_PER_HOUR * 3,
-    });
-    const recentRuns = rows.filter((r: Record<string, unknown>) => {
-      if (r.kind !== "run") return false;
-      const ts = r.timestamp;
-      const t = typeof ts === "string" ? Date.parse(ts) : 0;
-      return t > 0 && now - t < HOUR_MS;
-    });
-    if (recentRuns.length >= MAX_AUDIT_RUNS_PER_HOUR) {
-      const oldest = recentRuns[recentRuns.length - 1].timestamp as string;
-      const oldestT = Date.parse(oldest);
-      return {
-        allowed: false,
-        remaining: 0,
-        resetMs: HOUR_MS - (now - oldestT),
-      };
-    }
-    return {
-      allowed: true,
-      remaining: MAX_AUDIT_RUNS_PER_HOUR - recentRuns.length,
-      resetMs: HOUR_MS,
-    };
-  } catch (err) {
-    console.warn(
-      "[sitemap-audit] persistent rate-limit check failed, failing open",
-      (err as Error).message,
-    );
-    return { allowed: true, remaining: MAX_AUDIT_RUNS_PER_HOUR, resetMs: HOUR_MS };
-  }
-}
+// Firestore-backed persistent rate-limit lives in a .server.ts sibling.
+// Import-protection blocks any **/server/** import from client-visible
+// modules (including this .functions.ts), so the Firestore Admin call
+// must not appear here — even inside a dynamic import(). The handler
+// below imports it lazily so the split server chunk pulls it in only
+// when the RPC actually runs.
+
 
 interface UnauthorizedContext {
   reason: string;
