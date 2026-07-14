@@ -455,10 +455,33 @@ const FRESH_HTML_RECOVERY = `
       new Promise(function(r){ setTimeout(r,3000); })
     ]);
   };
+  var nukeBrowserCaches=function(){
+    var tasks=[];
+    try{
+      if(typeof caches!=='undefined' && caches && caches.keys){
+        tasks.push(caches.keys().then(function(keys){
+          return Promise.all(keys.map(function(k){ return caches.delete(k).catch(function(){}); }));
+        }).catch(function(){}));
+      }
+    }catch(e){}
+    try{
+      if(navigator && navigator.serviceWorker && navigator.serviceWorker.getRegistrations){
+        tasks.push(navigator.serviceWorker.getRegistrations().then(function(regs){
+          return Promise.all(regs.map(function(r){ return r.unregister().catch(function(){}); }));
+        }).catch(function(){}));
+      }
+    }catch(e){}
+    try{
+      var keep={theme:1,currency:1};
+      Object.keys(localStorage).forEach(function(k){ if(!keep[k]){ try{ localStorage.removeItem(k); }catch(e){} } });
+    }catch(e){}
+    try{ sessionStorage.clear(); }catch(e){}
+    return Promise.race([Promise.all(tasks), new Promise(function(r){ setTimeout(r,2500); })]);
+  };
   var openFreshHome=function(){
     if(recent()) return;
     mark();
-    fetchFresh().then(function(){ try{ location.replace('/'); }catch(e){ location.href='/'; } });
+    nukeBrowserCaches().then(fetchFresh).then(function(){ try{ location.replace('/'); }catch(e){ location.href='/'; } });
   };
   try{ window.__phlFetchFreshHtmlAndOpenHome=openFreshHome; }catch(e){}
   if(isPreview()) return;
