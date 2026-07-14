@@ -243,13 +243,19 @@ export function installBuildIdForceReload(): void {
     /* ignore */
   }
 
-  // Kick one initial check ~1.5s after mount so a customer who lands on a
-  // stale shell recovers immediately instead of waiting 15s. Still delayed
-  // enough to not compete with LCP.
-  try {
-    setTimeout(() => trigger("initial-delayed"), 1_500);
-  } catch {
-    /* ignore */
-  }
+  // NOTE: No initial-delayed trigger on fresh page loads.
+  //
+  // A fresh page load ALWAYS receives an HTML shell whose compiled
+  // __BUILD_ID__ is the one the server just rendered — the whole point of
+  // this detector is stale-tab recovery, not first-paint recovery. Running
+  // the check ~1.5s after mount used to fire on every deploy while the
+  // edge was warming up and triggered a `hardReload({ clean: true })`
+  // mid-render — which the Playwright cache-stability suite
+  // (`e2e/cache-stability.spec.ts`) then flags as "detected 2 main-frame
+  // navigations — refresh loop" on every public route. Visibility / focus
+  // / pageshow / interval remain — those fire only when the tab has been
+  // idle long enough for a real build rotation to have happened.
+
+
 
 }
