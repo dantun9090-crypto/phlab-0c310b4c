@@ -32,8 +32,17 @@ export default function LegacyApp({
   const [mounted, setMounted] = useState(() => typeof document !== "undefined");
 
   useEffect(() => {
+    try { performance.mark('legacy-app-mount-start'); } catch { /* ignore */ }
     primeLegacyRouter();
     if (!mounted) setMounted(true);
+    requestAnimationFrame(() => {
+      try {
+        performance.mark('legacy-app-mount-end');
+        performance.measure('legacy-app-mount', 'legacy-app-mount-start', 'legacy-app-mount-end');
+        const m = performance.getEntriesByName('legacy-app-mount')[0];
+        if (m) console.log('[PERF] LegacyApp mount:', m.duration.toFixed(1), 'ms');
+      } catch { /* ignore */ }
+    });
   }, [mounted]);
 
   if (!mounted) {
