@@ -182,7 +182,7 @@
   },
   "resolutions": {
     "undici": "^8.5.0",
-    "ws": "^8.18.0",
+    "ws": "^8.21.0",
     "js-yaml": "^5.1.0",
     "protobufjs": "^8.6.5",
     "brace-expansion": "^2.0.2",
