@@ -1,6 +1,7 @@
 import { createBrowserRouter, createMemoryRouter, Outlet, Navigate, useLocation } from 'react-router-dom';
 import React, { useEffect, useState, Suspense } from 'react';
 import { Layout } from '@/components/Layout';
+import { PremiumLanding } from '@/components/PremiumLanding';
 import ScrollToTop from '@/components/ScrollToTop';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
@@ -132,6 +133,10 @@ const routes = [
       </ErrorBoundary>
     ),
   },
+  // /compound is a dedicated marketing route. Keep it outside the legacy
+  // shop Layout during emergency CSR boot so it never falls through to 404
+  // or renders a duplicate storefront header.
+  { path: '/compound', element: <PremiumLanding eyebrow="UK Laboratory Supply" /> },
   // ── All public routes — wrapped in Layout ──
   {
     path: '/',

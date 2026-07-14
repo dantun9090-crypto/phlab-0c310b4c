@@ -156,7 +156,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
             PH Labs · United Kingdom
           </span>
           <span className="lux-fade d2 hidden md:inline gold-text font-medium tracking-[0.3em]">
-            For Research Use Only · Not for Human Consumption
+            For Research Use Only. Not for Human Consumption.
           </span>
           <span className="lux-fade d3">EST. {new Date().getFullYear()}</span>
         </div>
@@ -703,7 +703,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
       <footer className="border-t border-white/10 py-12 bg-[#060b18]">
         <div className="mx-auto max-w-7xl px-6 flex flex-col items-center justify-center gap-3 text-[11px] uppercase tracking-[0.35em] text-white/75 text-center">
           <span>© {new Date().getFullYear()} PH Labs · United Kingdom</span>
-          <span className="gold-text font-medium">For Research Use Only · Not for Human Consumption</span>
+          <span className="gold-text font-medium">For Research Use Only. Not for Human Consumption.</span>
         </div>
       </footer>
     </main>

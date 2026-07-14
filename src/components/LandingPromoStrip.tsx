@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
 
 /**
  * Dismissable promo strip + "Start here" starter-product card for Google Ads
@@ -108,13 +107,12 @@ export function LandingPromoStrip({ theme = "dark" }: Props) {
             <span className="opacity-70 text-[11px] sm:text-[12px]">{label}</span>
           </span>
         ))}
-        <Link
-          to="/products/$slug"
-          params={{ slug: STARTER_SLUG }}
+        <a
+          href={`/products/${STARTER_SLUG}`}
           className={`inline-flex items-center rounded-full px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] font-medium transition-colors ${cta}`}
         >
           Start with {STARTER_PRICE} reagent →
-        </Link>
+        </a>
         <button
           type="button"
           onClick={dismiss}
@@ -126,14 +124,13 @@ export function LandingPromoStrip({ theme = "dark" }: Props) {
       </div>
 
       {/* Mobile-tappable starter card row (visible only on /landing/phlabs hero) */}
-      <Link
-        to="/products/$slug"
-        params={{ slug: STARTER_SLUG }}
+      <a
+        href={`/products/${STARTER_SLUG}`}
         className="sr-only"
         aria-label={`${STARTER_TITLE} — ${STARTER_PRICE}. ${STARTER_SUB}`}
       >
         {STARTER_TITLE} {STARTER_PRICE}
-      </Link>
+      </a>
     </div>
   );
 }
