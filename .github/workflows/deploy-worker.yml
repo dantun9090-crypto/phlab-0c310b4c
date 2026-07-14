@@ -38,7 +38,7 @@ jobs:
         id: snapshot
         env:
           CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_API }}
         run: |
           mkdir -p /tmp/rollback
           HTTP=$(curl -sS -o /tmp/rollback/phlabs-prerender.mjs -w "%{http_code}" \
@@ -56,7 +56,7 @@ jobs:
       - name: Deploy Worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_API }}
         working-directory: cloudflare
         # Deploy by name — preserves existing route bindings configured in the CF dashboard
         # (phlabs.co.uk/* on the phlabs zone; legacy domain proxies stay on the `phlab` worker).
@@ -132,7 +132,7 @@ jobs:
         if: failure() && steps.snapshot.outputs.have_snapshot == 'true'
         env:
           CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_API }}
         run: |
           set -euo pipefail
           echo "::warning::Smoke tests failed — rolling back phlabs-prerender to previous version"
