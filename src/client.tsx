@@ -195,8 +195,14 @@ const HYDRATION_ERROR_FLAG = "__phl_hydration_error_seen";
 // Keep homepage SSR hydrated instead of wiping the server HTML into CSR.
 // The home route now renders a stable SSR shell and upgrades LegacyApp after mount.
 // ============================================================
-const ENABLE_SSR_HYDRATION = true;
-const SSR_HYDRATION_ROUTES: string[] = ["/"];
+// EMERGENCY: SSR hydration on "/" was crashing in Chrome/Edge with a
+// NotFoundError removeChild during hydration, then the CSR unmount failed
+// with "createRoot called twice on same container" and left the page blank.
+// Force full CSR boot for every route until the underlying legacy-router
+// hydration mismatch is fixed — matches the "emergency CSR mode" documented
+// in Admin › Tools.
+const ENABLE_SSR_HYDRATION = false;
+const SSR_HYDRATION_ROUTES: string[] = [];
 
 function shouldHydrateCurrentRoute(): boolean {
   if (!ENABLE_SSR_HYDRATION) return false;
