@@ -203,16 +203,6 @@ const HYDRATION_ERROR_FLAG = "__phl_hydration_error_seen";
 const ENABLE_SSR_HYDRATION = false;
 const SSR_HYDRATION_ROUTES: string[] = [];
 
-function shouldHydrateCurrentRoute(): boolean {
-  if (!ENABLE_SSR_HYDRATION) return false;
-  if (SSR_HYDRATION_ROUTES.length === 0) return true;
-  try {
-    return SSR_HYDRATION_ROUTES.includes(location.pathname);
-  } catch {
-    return false;
-  }
-}
-
 function errorText(error: unknown): string {
   if (!error) return "";
   const err = error as { message?: unknown; name?: unknown; stack?: unknown };
