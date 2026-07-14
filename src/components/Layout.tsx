@@ -202,8 +202,19 @@ export function Layout({ children }: LayoutProps) {
   } as CSSProperties;
   
   // Check if any cart items have no variant selected
+  // An item has a selected variant if ANY of variantId / variantName / dosage
+  // is populated. Legacy cached carts on Safari/iPhone (where localStorage
+  // survives across deploys) may only carry `variantId` + `variantName`
+  // without a `dosage` string — those must NOT trip the "Variant Required"
+  // gate, otherwise the customer sees the correct variant on the row but
+  // cannot check out.
   const hasItemsWithoutVariant = useMemo(() => {
-    return cart.some(item => !item.dosage || item.dosage === '');
+    return cart.some(item => {
+      const hasVariantId = typeof item.variantId === 'string' && item.variantId.trim() !== '';
+      const hasVariantName = typeof item.variantName === 'string' && item.variantName.trim() !== '';
+      const hasDosage = typeof item.dosage === 'string' && item.dosage.trim() !== '';
+      return !hasVariantId && !hasVariantName && !hasDosage;
+    });
   }, [cart]);
   // Age Gate REMOVED — no longer blocking content
   
