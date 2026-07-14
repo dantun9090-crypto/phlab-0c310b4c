@@ -154,9 +154,31 @@ import { installBuildIdForceReload } from "./lib/build-id-force-reload";
 import { installBuildFreshnessCheck } from "./lib/build-freshness-check";
 import appCss from "./styles.css?url";
 
-try { installImageErrorAutoReset(); } catch { /* ignore */ }
-try { installBuildIdForceReload(); } catch { /* ignore */ }
-try { installBuildFreshnessCheck(); } catch { /* ignore */ }
+const shouldStartPhlClient = (() => {
+  try {
+    if (typeof window === "undefined") return false;
+    const w = window as unknown as { __PHL_CLIENT_BOOT_STARTED__?: string };
+    const current = typeof __BUILD_ID__ === "string" ? __BUILD_ID__ : "unknown";
+    if (w.__PHL_CLIENT_BOOT_STARTED__) {
+      console.warn("[PHL] Duplicate client boot blocked", {
+        activeBuild: w.__PHL_CLIENT_BOOT_STARTED__,
+        duplicateBuild: current,
+        script: document.currentScript instanceof HTMLScriptElement ? document.currentScript.src : "unknown",
+      });
+      return false;
+    }
+    w.__PHL_CLIENT_BOOT_STARTED__ = current;
+    return true;
+  } catch {
+    return true;
+  }
+})();
+
+if (shouldStartPhlClient) {
+  try { installImageErrorAutoReset(); } catch { /* ignore */ }
+  try { installBuildIdForceReload(); } catch { /* ignore */ }
+  try { installBuildFreshnessCheck(); } catch { /* ignore */ }
+}
 
 // Sentry init is heavy (tracing + session replay integrations patch fetch,
 // install observers, install listeners). Running synchronously before
@@ -165,21 +187,24 @@ try { installBuildFreshnessCheck(); } catch { /* ignore */ }
 // then are still captured by the ErrorBoundary + client-error-reporter
 // path — they're just buffered until Sentry is ready.
 const kickSentry = () => { try { initSentry(); } catch { /* ignore */ } };
-if (typeof requestIdleCallback !== 'undefined') {
-  requestIdleCallback(kickSentry, { timeout: 4000 });
-} else {
-  setTimeout(kickSentry, 2500);
+if (shouldStartPhlClient) {
+  if (typeof requestIdleCallback !== 'undefined') {
+    requestIdleCallback(kickSentry, { timeout: 4000 });
+  } else {
+    setTimeout(kickSentry, 2500);
+  }
+  installClientErrorReporter();
+  initSwTelemetry();
+  // Auto-recover from stale-chunk failures after a deploy (countdown overlay,
+  // once-per-session, then hard reload with cache purge).
+  installChunkAutoRecovery();
 }
-installClientErrorReporter();
-initSwTelemetry();
-// Auto-recover from stale-chunk failures after a deploy (countdown overlay,
-// once-per-session, then hard reload with cache purge).
-installChunkAutoRecovery();
 
 declare global {
   interface Window {
     __PHL_PRE_HYDRATION_DOM__?: unknown;
     __PHL_REACT_READY__?: boolean;
+    __PHL_CLIENT_BOOT_STARTED__?: string;
     __phlHydrationFallback?: (error?: unknown) => void;
   }
 }
@@ -371,11 +396,12 @@ function prepareDocumentForCsr(): void {
     // during hydration/unmount. Isolate React inside a dedicated container.
     let container = document.getElementById("phl-csr-root");
     if (!container) {
-      // Clear any pre-existing body content but keep third-party <script>
-      // tags that already loaded — they must remain OUTSIDE the React root.
-      const preservedScripts = Array.from(document.body.querySelectorAll(":scope > script"));
-      document.body.innerHTML = "";
-      preservedScripts.forEach((s) => document.body.appendChild(s));
+      // Clear the pre-rendered body before CSR takes ownership. Do NOT preserve
+      // or re-append <script> tags here: in production the running app entry is
+      // a direct body child, and moving it can cause the browser to evaluate the
+      // client bundle a second time. Two React roots owning this same container
+      // produce the exact NotFoundError/removeChild crash shown on mobile.
+      document.body.replaceChildren();
       container = document.createElement("div");
       container.id = "phl-csr-root";
       document.body.appendChild(container);
@@ -525,6 +551,7 @@ function app() {
 let switchedToCsr = false;
 
 function renderCsr(error: unknown): void {
+  if (!shouldStartPhlClient) return;
   if (switchedToCsr) return;
   switchedToCsr = true;
   markHydrationCrash(error);
@@ -558,27 +585,30 @@ function renderCsr(error: unknown): void {
 
 }
 
-capturePreHydrationDom();
-const stopMutationLogger = installPreReactMutationLogger();
-window.__phlHydrationFallback = (error?: unknown) => renderCsr(error || new Error("External hydration fallback requested"));
+const stopMutationLogger = shouldStartPhlClient ? installPreReactMutationLogger() : () => undefined;
 
-// Temporary SW debug instrumentation — gated by ?sw_debug=1 (persists).
-void import("@/lib/sw-debug").then((m) => m.startSwDebug()).catch(() => { /* noop */ });
+if (shouldStartPhlClient) {
+  capturePreHydrationDom();
+  window.__phlHydrationFallback = (error?: unknown) => renderCsr(error || new Error("External hydration fallback requested"));
 
-window.addEventListener("error", (event) => {
-  const error = event.error ?? event.message;
-  if (isHydrationCrash(error)) renderCsr(error);
-}, true);
-window.addEventListener("unhandledrejection", (event) => {
-  if (isHydrationCrash(event.reason)) renderCsr(event.reason);
-}, true);
+  // Temporary SW debug instrumentation — gated by ?sw_debug=1 (persists).
+  void import("@/lib/sw-debug").then((m) => m.startSwDebug()).catch(() => { /* noop */ });
 
-console.info(
-  `[HYDRATION] CSR mode on ${location.pathname} (ENABLE_SSR_HYDRATION=${ENABLE_SSR_HYDRATION}, allowed=${JSON.stringify(SSR_HYDRATION_ROUTES)})`,
-);
-renderCsr(new Error("SSR hydration disabled by flag"));
+  window.addEventListener("error", (event) => {
+    const error = event.error ?? event.message;
+    if (isHydrationCrash(error)) renderCsr(error);
+  }, true);
+  window.addEventListener("unhandledrejection", (event) => {
+    if (isHydrationCrash(event.reason)) renderCsr(event.reason);
+  }, true);
 
-window.setTimeout(() => {
+  console.info(
+    `[HYDRATION] CSR mode on ${location.pathname} (ENABLE_SSR_HYDRATION=${ENABLE_SSR_HYDRATION}, allowed=${JSON.stringify(SSR_HYDRATION_ROUTES)})`,
+  );
+  renderCsr(new Error("SSR hydration disabled by flag"));
+}
+
+if (shouldStartPhlClient) window.setTimeout(() => {
   window.__PHL_REACT_READY__ = true;
   stopMutationLogger();
   try {
