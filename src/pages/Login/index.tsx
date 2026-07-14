@@ -53,6 +53,18 @@ export default function Login() {
     }).catch(() => {});
   }, []);
 
+  // Already-signed-in guard: if Firebase Auth has a live user (e.g. Google
+  // sign-in succeeded but a Firestore post-write threw and skipped navigate),
+  // send them to the intended target instead of leaving them on /login.
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (u) navigate(redirectTarget, { replace: true });
+    });
+    return () => unsub();
+    // redirectTarget is derived from the URL — stable per render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [redirectTarget]);
+
 
   // Tick lockout countdown
   useEffect(() => {
