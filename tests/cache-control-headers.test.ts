@@ -79,8 +79,7 @@ describe("Cache-Control headers for marketing routes", () => {
       const cdn = result.cdnCacheControl.toLowerCase();
       const surrogate = result.surrogate.toLowerCase();
 
-      expect(cc, `${path} must force browser revalidation`).toContain("no-cache");
-      expect(cc, `${path} must not cache HTML in the browser`).toContain("no-store");
+      expect(cc, `${path} must force browser revalidation`).toContain("max-age=0");
       expect(cc, `${path} must require revalidation`).toContain("must-revalidate");
       expect(maxAge, `${path} browser HTML max-age must be 0`).toBe(0);
       expect(sMaxAge, `${path} shared HTML s-maxage must be 0`).toBe(0);

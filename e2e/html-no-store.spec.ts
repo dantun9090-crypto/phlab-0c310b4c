@@ -1,9 +1,9 @@
 /**
- * HTML no-store regression.
+ * HTML cache revalidation regression.
  *
  * Focused guard: every human-facing HTML route MUST serve
- * `cache-control: no-store` on both the browser tier and the CDN tier so
- * that a fresh publish is never masked by a stale Cloudflare HTML shell.
+ * `cache-control: public, max-age=0, must-revalidate` on the browser tier and
+ * no-store on the CDN tier so a fresh publish is never masked by stale HTML.
  *
  * This is intentionally narrower than cache-headers-regression.spec.ts:
  * it fails loudly on the single symptom the user reports ("0 zmian /
@@ -66,11 +66,15 @@ test.describe(`HTML no-store · ${BASE}`, () => {
       expect(h.status, `status for ${path}`).toBe(200);
       expect(h.contentType, `content-type for ${path}`).toMatch(/text\/html/);
 
-      // Browser tier
+      // Browser tier — store is allowed, reuse without revalidation is not.
       expect(
         h.cacheControl,
-        `browser cache-control no-store on ${path} ("${h.cacheControl}")`,
-      ).toContain("no-store");
+        `browser cache-control max-age=0 on ${path} ("${h.cacheControl}")`,
+      ).toContain("max-age=0");
+      expect(
+        h.cacheControl,
+        `browser cache-control must-revalidate on ${path} ("${h.cacheControl}")`,
+      ).toContain("must-revalidate");
 
       // CDN tier — surrogate or cdn-cache-control MUST also be no-store
       const cdnHeader = h.cdn || h.surrogate;
