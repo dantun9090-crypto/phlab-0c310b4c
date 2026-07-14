@@ -12,7 +12,13 @@ import { lazyWithRetry } from '@/lib/lazyWithRetry';
 // biggest win for mobile main-bundle size (~810 KB unused JS reported by
 // PSI). NotFound is kept eager because it is a tiny stub and used as the
 // catch-all fallback.
-import Home from '@/pages/Home';
+// Home is code-split — it's 600+ lines and pulls ~3-4 MB (Firebase, 30+ lucide
+// icons, animations, popups, SEO index) into the entry chunk. The SSR shell in
+// LegacyApp already paints LCP text before this chunk loads, so the Suspense
+// fallback is only shown on client-side navigation back to /.
+// `vitePrefetch: true` asks the browser to prefetch the chunk after the main
+// bundle finishes so the tab-back navigation is instant.
+const Home = lazyWithRetry(() => import(/* vitePrefetch: true */ '@/pages/Home'));
 import NotFound from '@/pages/NotFound';
 
 // Code-split: admin, checkout, payment, auth, account, VIP — not needed for
