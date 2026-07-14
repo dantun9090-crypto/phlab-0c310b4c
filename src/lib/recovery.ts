@@ -281,7 +281,6 @@ export async function hardReload(options: HardReloadOptions = {}): Promise<void>
       try {
         const recent = Number(localStorage.getItem(FRESH_HTML_RECOVERY_KEY) || "0");
         if (recent && Date.now() - recent < FRESH_HTML_RECOVERY_WINDOW_MS) {
-          window.location.replace("/");
           return;
         }
         localStorage.setItem(FRESH_HTML_RECOVERY_KEY, String(Date.now()));
