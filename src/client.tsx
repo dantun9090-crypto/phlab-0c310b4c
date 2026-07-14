@@ -452,10 +452,20 @@ class ClientRootErrorBoundary extends Component<{ children: ReactNode }, { hasEr
 
   componentDidCatch(error: Error, info: { componentStack?: string }) {
     if (isHydrationCrash(error)) markHydrationCrash(error);
+    const componentName = info?.componentStack
+      ?.split("\n")
+      .map((line) => line.trim())
+      .find((line) => line.startsWith("at "))
+      ?.replace(/^at\s+/, "")
+      .split(" ")[0] || "Unknown component";
     console.error("[ROOT ERROR BOUNDARY]", error, info?.componentStack || "");
+    console.error("[ROOT ERROR BOUNDARY] component:", componentName);
+    if (error instanceof Error) {
+      console.error("[ROOT ERROR BOUNDARY] stack:\n" + (error.stack || "(no stack)"));
+    }
     reportClientError({
       source: "error-boundary",
-      message: error?.message || String(error),
+      message: `${componentName}: ${error?.message || String(error)}`,
       stack: [error?.stack, info?.componentStack].filter(Boolean).join("\n--- componentStack ---\n"),
       routeId: typeof location !== "undefined" ? location.pathname : undefined,
     });
@@ -479,8 +489,8 @@ class ClientRootErrorBoundary extends Component<{ children: ReactNode }, { hasEr
             <button type="button" onClick={() => this.setState({ hasError: false, error: undefined })} style={{ appearance: "none", border: "1px solid #1f2d44", borderRadius: 8, background: "transparent", color: "#f0f6ff", fontWeight: 600, padding: "10px 14px", cursor: "pointer" }}>
               Try again
             </button>
-            <button type="button" onClick={() => location.reload()} style={{ appearance: "none", border: 0, borderRadius: 8, background: "#10b981", color: "#03140d", fontWeight: 700, padding: "10px 14px", cursor: "pointer" }}>
-              Refresh
+            <button type="button" onClick={() => (window.location.reload as (forceReload?: boolean) => void)(true)} style={{ appearance: "none", border: 0, borderRadius: 8, background: "#10b981", color: "#03140d", fontWeight: 700, padding: "10px 14px", cursor: "pointer" }}>
+              Reload
             </button>
           </div>
         </div>

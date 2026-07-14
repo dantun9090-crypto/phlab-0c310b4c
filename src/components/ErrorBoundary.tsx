@@ -12,6 +12,7 @@ interface Props {
 interface State {
   hasError: boolean;
   error?: Error;
+  componentName?: string;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -21,8 +22,21 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
+  private getComponentName(componentStack?: string | null): string {
+    const firstFrame = componentStack
+      ?.split('\n')
+      .map((line) => line.trim())
+      .find((line) => line.startsWith('at '));
+    return firstFrame?.replace(/^at\s+/, '').split(' ')[0] || 'Unknown component';
+  }
+
   componentDidCatch(error: Error, info: { componentStack?: string | null }) {
     if (isHydrationMismatchError(error)) markHydrationError();
+    const componentName = this.getComponentName(info?.componentStack);
+    this.setState({ componentName });
+    console.error('[ERROR BOUNDARY]', error);
+    console.error('[ERROR BOUNDARY] component:', componentName);
+    console.error('[ERROR BOUNDARY] component stack:\n' + (info?.componentStack || '(no component stack)'));
     // Ship to Sentry with the React component stack for release-context alerts.
     try {
       Sentry.withScope((scope) => {
@@ -40,8 +54,6 @@ export class ErrorBoundary extends Component<Props, State> {
         meta: { stack: (error.stack || '').slice(0, 1000) },
       });
     } catch { /* never break */ }
-    // Dev-only console echo
-    if (import.meta.env.DEV) console.error('Error caught by boundary:', error);
   }
 
   handleRetry = () => {
@@ -59,7 +71,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
 
             <h1 className="text-2xl font-bold text-white mb-4">
-              {isHydrationError ? 'Refresh needed' : 'Something went wrong'}
+              {this.state.componentName || (isHydrationError ? 'Refresh needed' : 'Something went wrong')}
             </h1>
 
             <p className="text-gray-400 mb-8">
@@ -75,6 +87,13 @@ export class ErrorBoundary extends Component<Props, State> {
               >
                 <RefreshCw className="w-4 h-4" />
                 Try Again
+              </button>
+              <button
+                onClick={() => (window.location.reload as (forceReload?: boolean) => void)(true)}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Reload
               </button>
 
               <Link
