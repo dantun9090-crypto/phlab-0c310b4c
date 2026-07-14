@@ -1,0 +1,11 @@
+{
+  // Dedicated config for the phlabs-prerender Worker.
+  // Kept separate from the root /wrangler.jsonc (main TanStack app) so this
+  // Worker does NOT inherit that config's `assets` block — the prerender
+  // Worker is a pure fetch proxy and has no static-asset directory to serve.
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "phlabs-prerender",
+  "main": "phlabs-prerender.mjs",
+  "compatibility_date": "2025-09-24",
+  "compatibility_flags": ["nodejs_compat"]
+}
