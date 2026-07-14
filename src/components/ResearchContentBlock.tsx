@@ -1,5 +1,4 @@
 import { FlaskConical, Beaker, Snowflake, ShieldCheck, FileText, Link2, Atom, Activity, BookOpen } from "lucide-react";
-import { Link } from "@tanstack/react-router";
 import { RESEARCH_CONTENT, type ResearchContent } from "@/lib/research-content";
 
 interface ResearchContentBlockProps {
@@ -128,14 +127,13 @@ export function ResearchContentBlock({ slug }: ResearchContentBlockProps) {
         <ul className="grid sm:grid-cols-2 gap-3">
           {content.related.map((r) => (
             <li key={r.slug}>
-              <Link
-                to="/products/$slug"
-                params={{ slug: r.slug }}
+              <a
+                href={`/products/${r.slug}`}
                 className="block p-3.5 rounded-xl bg-blue-600/[0.06] border border-blue-500/15 hover:border-blue-500/40 hover:bg-blue-600/[0.1] transition-colors"
               >
                 <span className="block text-[#d0e4f8] font-semibold text-sm">{r.label}</span>
                 <span className="block text-[#7a99c0] text-xs mt-1 leading-relaxed">{r.relationship}</span>
-              </Link>
+              </a>
             </li>
           ))}
         </ul>
