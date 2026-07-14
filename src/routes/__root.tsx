@@ -445,6 +445,7 @@ const FRESH_HTML_RECOVERY = `
   var BUILD_ID=${JSON.stringify(typeof __BUILD_ID__ === "string" ? __BUILD_ID__ : "dev")};
   var KEY='phlFreshHtmlRecoveryAt';
   var WINDOW_MS=60000;
+  var isPreview=function(){ try{ var h=location.hostname; return window.top!==window.self||h.indexOf('lovable.')>-1||/\.lovable(?:project)?\.com$|\.lovable\.app$|\.lovable\.dev$/i.test(h)||h.indexOf('id-preview--')===0||h.indexOf('preview--')===0; }catch(e){ return true; } };
   var isCritical=function(){ try{ return new RegExp('^/(?:admin|auth|login|account|cart|checkout|payment|register)(?:/|$)','i').test(location.pathname||''); }catch(e){ return false; } };
   var recent=function(){ try{ var at=Number(localStorage.getItem(KEY)||'0'); return at && Date.now()-at<WINDOW_MS; }catch(e){ return false; } };
   var mark=function(){ try{ localStorage.setItem(KEY,String(Date.now())); }catch(e){} };
@@ -460,6 +461,7 @@ const FRESH_HTML_RECOVERY = `
     fetchFresh().then(function(){ try{ location.replace('/'); }catch(e){ location.href='/'; } });
   };
   try{ window.__phlFetchFreshHtmlAndOpenHome=openFreshHome; }catch(e){}
+  if(isPreview()) return;
   try{
     fetch('/api/public/health/build',{method:'GET',cache:'no-store',credentials:'omit',headers:{accept:'application/json'}})
       .then(function(res){ if(!res||!res.ok) return null; var h=res.headers.get('x-build-id'); if(h) return h; return res.json().then(function(j){ return j&&j.buildId; }).catch(function(){ return null; }); })
