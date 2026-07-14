@@ -24,6 +24,7 @@ import { useFreeGiftConfig, freeGiftApplies } from '@/lib/free-gift-config';
 import { trackAddPaymentInfo, trackBeginCheckout, trackViewCart, type GaItem } from '@/lib/analytics';
 import UkBankBadges from '@/components/UkBankBadges';
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
+import NoCacheHead from '@/components/NoCacheHead';
 
 
 interface CheckoutForm {
