@@ -17,9 +17,18 @@ const BASE =
   "https://phlabs.co.uk";
 
 test.describe("/compound axe-core a11y audit", () => {
+  // Live /compound cold-boot occasionally exceeds the global 30s test
+  // timeout on Cloudflare cache-miss + Prerender.io warm-up. Raise this
+  // spec's own timeout so a slow first byte on the live edge doesn't fail
+  // the a11y audit — the audit itself is unchanged.
+  test.setTimeout(90_000);
+
   test("has no critical or serious WCAG violations", async ({ page }) => {
-    await page.goto(`${BASE}/compound`, { waitUntil: "networkidle" });
-    await expect(page.locator("h1")).toBeVisible();
+    await page.goto(`${BASE}/compound`, {
+      waitUntil: "networkidle",
+      timeout: 60_000,
+    });
+    await expect(page.locator("h1")).toBeVisible({ timeout: 30_000 });
 
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"])
