@@ -56,7 +56,7 @@ const WARM_SKIP_PREFIXES = [
   "/admin", "/auth", "/login", "/logout", "/account",
   "/cart", "/checkout", "/payment", "/register", "/api/", "/downloads/",
 ];
-/** @type {Map<string, { body: ArrayBuffer, contentType: string, expiresAt: number }>} */
+/** @type {Map<string, { body: ArrayBuffer, headers: Array<[string,string]>, expiresAt: number }>} */
 const htmlWarmCache = new Map();
 
 function warmCacheKey(url) {
@@ -76,13 +76,13 @@ function warmCacheGet(key) {
   return hit;
 }
 
-function warmCacheSet(key, body, contentType) {
+function warmCacheSet(key, body, headers) {
   if (htmlWarmCache.size >= WARM_MAX_ENTRIES) {
     // Simple FIFO eviction — delete oldest.
     const firstKey = htmlWarmCache.keys().next().value;
     if (firstKey !== undefined) htmlWarmCache.delete(firstKey);
   }
-  htmlWarmCache.set(key, { body, contentType, expiresAt: Date.now() + WARM_TTL_MS });
+  htmlWarmCache.set(key, { body, headers, expiresAt: Date.now() + WARM_TTL_MS });
 }
 
 function warmCacheEligible(path) {
