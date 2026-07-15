@@ -84,7 +84,7 @@ export const Route = createFileRoute("/uk-research-store")({
   component: UkResearchStore,
 });
 
-function UkResearchStore() {
+export function UkResearchStore() {
   return (
     <main className="min-h-screen bg-slate-950 text-white antialiased pb-24 md:pb-0">
       {/* Compliance bar */}
