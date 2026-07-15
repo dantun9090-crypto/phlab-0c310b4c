@@ -147,14 +147,3 @@ export const setDevModeAndPurge = createServerFn({ method: 'POST' })
     };
   });
 
-// Server-only helpers exported for the watchdog cron (no auth — watchdog
-// runs behind `x-watchdog-secret`). Never call from client code.
-export async function _watchdogSetDevMode(value: 'on' | 'off') {
-  return cfFetch('PATCH', { value });
-}
-export async function _watchdogPurgeEverything() {
-  return purgeEverything();
-}
-export async function _watchdogRecachePrerender() {
-  return recachePrerender();
-}
