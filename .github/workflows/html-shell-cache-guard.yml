@@ -38,7 +38,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: "1.2.21"
 
       # Give Cloudflare/origin a moment after a fresh deploy so we're
       # probing the newly published shell, not the one still propagating.
