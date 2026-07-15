@@ -212,7 +212,7 @@ jobs:
             dist/sbom.cdx.json
 
       - name: Verify SBOM signature (self-check)
-        if: always()
+        if: hashFiles('dist/sbom.cdx.json.sig') != ''
         # Self-check only; the real gate is the separate
         # "Attestation verify (SLSA + CycloneDX)" job below. Rekor's public
         # transparency-log search API now requires a `verifiers` field in the
