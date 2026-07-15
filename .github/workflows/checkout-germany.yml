@@ -23,7 +23,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lockb', 'package.json') }}
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock', 'package.json') }}
           restore-keys: |
             ${{ runner.os }}-bun-
 
@@ -58,7 +58,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lockb', 'package.json') }}
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock', 'package.json') }}
           restore-keys: |
             ${{ runner.os }}-bun-
 
@@ -67,7 +67,7 @@ jobs:
 
       # Cache the Playwright browser binaries per browser+version so cold
       # `playwright install` only downloads when the pinned version changes.
-      # Keyed on the resolved @playwright/test version from bun.lockb — bump
+      # Keyed on the resolved @playwright/test version from bun.lock — bump
       # the lockfile and the cache invalidates automatically.
       - name: Resolve Playwright version
         id: pw
@@ -94,14 +94,22 @@ jobs:
             bunx playwright install --with-deps ${{ matrix.browser }}
           fi
 
+      - name: Start local dev server
+        run: |
+          (bun run dev --host 127.0.0.1 --port 8080 > server.log 2>&1 &)
+          for i in $(seq 1 120); do
+            if curl -fsS -o /dev/null "http://127.0.0.1:8080/checkout"; then
+              echo "server up after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "server failed to start"; tail -n 200 server.log; exit 1
+
       - name: Run Germany checkout spec on ${{ matrix.browser }}
-        # Point at the live domain — the Lovable preview URL now requires
-        # authentication (SSO login wall), which blocks every unauthenticated
-        # Playwright navigation and makes `getByLabel(/first name/i)` time out
-        # on the login page. Live phlabs.co.uk is public and serves the real
-        # checkout flow the spec was written against.
+        # Run against localhost so headless browsers avoid Cloudflare bot
+        # handling and the SSO-gated preview URL. The spec stubs order APIs.
         env:
-          TEST_BASE_URL: https://phlabs.co.uk
+          TEST_BASE_URL: http://127.0.0.1:8080
         run: bunx playwright test e2e/checkout-germany.spec.ts --project=${{ matrix.browser }}
 
       - name: Upload Playwright report
@@ -112,5 +120,6 @@ jobs:
           path: |
             playwright-report/
             test-results/
+            server.log
           retention-days: 14
           if-no-files-found: ignore
