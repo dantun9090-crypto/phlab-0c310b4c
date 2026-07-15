@@ -566,13 +566,27 @@ export default {
 
     // Populate the warm cache on successful HTML pass-through. We tee the
     // body: one stream to the browser, one buffered into isolate memory.
+    // Skip if origin sent Set-Cookie (per-user response) — must never share.
     const ctype = out.headers.get("Content-Type") || "";
-    if (wEligible && out.status === 200 && ctype.includes("text/html") && out.body) {
+    const hasSetCookie = out.headers.has("set-cookie") || out.headers.has("Set-Cookie");
+    if (wEligible && out.status === 200 && ctype.includes("text/html") && out.body && !hasSetCookie) {
       const [a, b] = out.body.tee();
+      // Snapshot response headers so warm hits replay the exact CSP (with its
+      // original per-request nonce), build id, and content-type. Filter out
+      // hop-by-hop / connection headers that mustn't be replayed.
+      const snapshot = [];
+      out.headers.forEach((value, name) => {
+        const n = name.toLowerCase();
+        if (n === "set-cookie" || n === "connection" || n === "keep-alive" ||
+            n === "transfer-encoding" || n === "cf-ray" || n === "cf-request-id" ||
+            n === "server-timing" || n === "x-phl-via" || n === "age" ||
+            n === "date") return;
+        snapshot.push([name, value]);
+      });
       ctx.waitUntil((async () => {
         try {
           const buf = await new Response(b).arrayBuffer();
-          warmCacheSet(wKey, buf, ctype);
+          warmCacheSet(wKey, buf, snapshot);
         } catch (e) {
           console.warn("[PHL Worker] warm cache populate failed: " + (e && e.message));
         }
