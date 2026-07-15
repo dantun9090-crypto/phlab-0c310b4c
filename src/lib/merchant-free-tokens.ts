@@ -2,7 +2,7 @@
  * Opaque, rotatable tokens for the Free-Listings Google Merchant feed.
  *
  * Why: name-based slugs (/products/retatrutide-research-peptide) were burned
- * in the prohealthpeptides.co.uk Free-Listings account after repeated
+ * in the legacy Free-Listings account after repeated
  * disapprovals. Google keeps a per-URL history — a re-submit of the same URL
  * often keeps the old verdict. To recover we must submit under fresh URLs
  * that (a) contain no molecule name and (b) have never been indexed before.
