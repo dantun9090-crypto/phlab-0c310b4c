@@ -49,10 +49,12 @@ jobs:
       - name: Verify build-id tags and versioned assets after purge
         run: |
           set -euo pipefail
-          html=$(curl -fsSL -H "User-Agent: PHLabs-PostDeploy/1.0" https://phlabs.co.uk/)
-          echo "$html" | grep -q 'name="build-id"'
-          echo "$html" | grep -q 'window.__BUILD_ID__'
-          echo "$html" | grep -Eq "/(assets|_build)/[^\"'<>]+\.(js|css)[^\"'<>]*[?&]v="
+          # Write to file — the live HTML contains null bytes (worker inline
+          # scripts) which bash $(...) truncates. `grep -a` treats it as text.
+          curl -fsSL -H "User-Agent: PHLabs-PostDeploy/1.0" https://phlabs.co.uk/ -o /tmp/live.html
+          grep -aq 'name="build-id"' /tmp/live.html
+          grep -aq 'window.__BUILD_ID__' /tmp/live.html
+          grep -aEq "/(assets|_build)/[^\"'<>]+\.(js|css)[^\"'<>]*[?&]v=" /tmp/live.html
           echo "✅ Build ID and versioned asset URLs present"
 
       - name: Verify homepage no-store after purge
