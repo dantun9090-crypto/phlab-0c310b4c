@@ -58,6 +58,8 @@ import { Route as ProductsSlugRouteImport } from './routes/products_.$slug'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentCancelRouteImport } from './routes/payment.cancel'
 import { Route as OrderSuccessRouteImport } from './routes/order.success'
+import { Route as OrderCancelledRouteImport } from './routes/order.cancelled'
+import { Route as OrderCancelRouteImport } from './routes/order.cancel'
 import { Route as LandingPhlabsRouteImport } from './routes/landing.phlabs'
 import { Route as LandingSlugRouteImport } from './routes/landing.$slug'
 import { Route as DownloadsFileRouteImport } from './routes/downloads.$file'
@@ -384,6 +386,16 @@ const PaymentCancelRoute = PaymentCancelRouteImport.update({
 const OrderSuccessRoute = OrderSuccessRouteImport.update({
   id: '/order/success',
   path: '/order/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrderCancelledRoute = OrderCancelledRouteImport.update({
+  id: '/order/cancelled',
+  path: '/order/cancelled',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrderCancelRoute = OrderCancelRouteImport.update({
+  id: '/order/cancel',
+  path: '/order/cancel',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LandingPhlabsRoute = LandingPhlabsRouteImport.update({
@@ -840,6 +852,8 @@ export interface FileRoutesByFullPath {
   '/downloads/$file': typeof DownloadsFileRoute
   '/landing/$slug': typeof LandingSlugRoute
   '/landing/phlabs': typeof LandingPhlabsRoute
+  '/order/cancel': typeof OrderCancelRoute
+  '/order/cancelled': typeof OrderCancelledRoute
   '/order/success': typeof OrderSuccessRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
@@ -964,6 +978,8 @@ export interface FileRoutesByTo {
   '/downloads/$file': typeof DownloadsFileRoute
   '/landing/$slug': typeof LandingSlugRoute
   '/landing/phlabs': typeof LandingPhlabsRoute
+  '/order/cancel': typeof OrderCancelRoute
+  '/order/cancelled': typeof OrderCancelledRoute
   '/order/success': typeof OrderSuccessRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
@@ -1091,6 +1107,8 @@ export interface FileRoutesById {
   '/downloads/$file': typeof DownloadsFileRoute
   '/landing/$slug': typeof LandingSlugRoute
   '/landing/phlabs': typeof LandingPhlabsRoute
+  '/order/cancel': typeof OrderCancelRoute
+  '/order/cancelled': typeof OrderCancelledRoute
   '/order/success': typeof OrderSuccessRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
@@ -1218,6 +1236,8 @@ export interface FileRouteTypes {
     | '/downloads/$file'
     | '/landing/$slug'
     | '/landing/phlabs'
+    | '/order/cancel'
+    | '/order/cancelled'
     | '/order/success'
     | '/payment/cancel'
     | '/payment/success'
@@ -1342,6 +1362,8 @@ export interface FileRouteTypes {
     | '/downloads/$file'
     | '/landing/$slug'
     | '/landing/phlabs'
+    | '/order/cancel'
+    | '/order/cancelled'
     | '/order/success'
     | '/payment/cancel'
     | '/payment/success'
@@ -1468,6 +1490,8 @@ export interface FileRouteTypes {
     | '/downloads/$file'
     | '/landing/$slug'
     | '/landing/phlabs'
+    | '/order/cancel'
+    | '/order/cancelled'
     | '/order/success'
     | '/payment/cancel'
     | '/payment/success'
@@ -1588,6 +1612,8 @@ export interface RootRouteChildren {
   DownloadsFileRoute: typeof DownloadsFileRoute
   LandingSlugRoute: typeof LandingSlugRoute
   LandingPhlabsRoute: typeof LandingPhlabsRoute
+  OrderCancelRoute: typeof OrderCancelRoute
+  OrderCancelledRoute: typeof OrderCancelledRoute
   OrderSuccessRoute: typeof OrderSuccessRoute
   PaymentCancelRoute: typeof PaymentCancelRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
@@ -1995,6 +2021,20 @@ declare module '@tanstack/react-router' {
       path: '/order/success'
       fullPath: '/order/success'
       preLoaderRoute: typeof OrderSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/order/cancelled': {
+      id: '/order/cancelled'
+      path: '/order/cancelled'
+      fullPath: '/order/cancelled'
+      preLoaderRoute: typeof OrderCancelledRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/order/cancel': {
+      id: '/order/cancel'
+      path: '/order/cancel'
+      fullPath: '/order/cancel'
+      preLoaderRoute: typeof OrderCancelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/landing/phlabs': {
@@ -2655,6 +2695,8 @@ const rootRouteChildren: RootRouteChildren = {
   DownloadsFileRoute: DownloadsFileRoute,
   LandingSlugRoute: LandingSlugRoute,
   LandingPhlabsRoute: LandingPhlabsRoute,
+  OrderCancelRoute: OrderCancelRoute,
+  OrderCancelledRoute: OrderCancelledRoute,
   OrderSuccessRoute: OrderSuccessRoute,
   PaymentCancelRoute: PaymentCancelRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
