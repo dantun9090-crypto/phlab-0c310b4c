@@ -14,14 +14,15 @@ import {
   CheckCircle2,
   ChevronDown,
   ShieldCheck,
-  BadgeCheck,
+  Landmark,
   Zap,
   CreditCard,
   Lock,
-  ArrowRightLeft,
-  Banknote,
-  Landmark,
+  ArrowLeftRight,
+  Activity,
+  Wallet,
 } from "lucide-react";
+
 import UkBankBadges from "@/components/UkBankBadges";
 import WallidTrustElements from "@/components/WallidTrustElements";
 import type { CheckoutPaymentOptions } from "@/lib/payments/types";
@@ -42,13 +43,14 @@ const WHAT_HAPPENS_NEXT = [
 
 const TRUST_ITEMS: { icon: React.ComponentType<{ className?: string }>; label: string }[] = [
   { icon: ShieldCheck, label: "Secure Open Banking" },
-  { icon: BadgeCheck, label: "FCA Regulated" },
+  { icon: Landmark, label: "FCA Regulated" },
   { icon: Zap, label: "Instant Bank Transfer" },
   { icon: CreditCard, label: "No Card Needed" },
   { icon: Lock, label: "GDPR Compliant" },
-  { icon: Landmark, label: "Direct Bank Payment" },
-  { icon: ArrowRightLeft, label: "Real-time Settlement" },
-  { icon: Banknote, label: "Pay from Your Bank" },
+  { icon: ArrowLeftRight, label: "Direct Bank Payment" },
+  { icon: Activity, label: "Real-time Settlement" },
+  { icon: Wallet, label: "Pay from Your Bank" },
+
 ];
 
 function Radio({ checked, tone = "emerald" }: { checked: boolean; tone?: "emerald" | "slate" }) {
@@ -65,16 +67,20 @@ function Radio({ checked, tone = "emerald" }: { checked: boolean; tone?: "emeral
 
 function TrustBadgesRow() {
   return (
-    <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-emerald-500/20 ml-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4 pt-4 border-t border-emerald-500/20">
       {TRUST_ITEMS.map(({ icon: Icon, label }) => (
-        <div key={label} className="flex items-center gap-1.5 text-xs text-slate-400">
-          <Icon className="w-3 h-3 text-emerald-400 shrink-0" />
-          <span className="whitespace-nowrap">{label}</span>
+        <div
+          key={label}
+          className="flex items-center gap-2 text-[11px] sm:text-xs text-slate-400 whitespace-nowrap"
+        >
+          <Icon className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+          <span>{label}</span>
         </div>
       ))}
     </div>
   );
 }
+
 
 function WhatHappensNext() {
   const [open, setOpen] = useState(false);
