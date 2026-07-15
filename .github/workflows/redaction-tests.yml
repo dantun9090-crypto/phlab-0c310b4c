@@ -48,7 +48,7 @@ jobs:
       # Typecheck FIRST — if the redactor or its tests don't compile, fail
       # fast with a clear signal instead of a noisy vitest stack trace.
       - name: Typecheck redaction sources
-        run: bunx tsgo --noEmit -p tsconfig.json
+        run: bunx --bun tsc --noEmit -p tsconfig.json
 
       - name: Run redaction test suite
         id: redaction_tests
