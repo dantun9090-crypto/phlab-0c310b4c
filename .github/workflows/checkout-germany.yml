@@ -15,7 +15,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: "1.2.21"
 
       # Cache Bun's global module store keyed on the lockfile so unchanged
       # deps skip network fetches on every PR run.
@@ -47,7 +47,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: "1.2.21"
 
       - uses: actions/setup-node@v5
         with:

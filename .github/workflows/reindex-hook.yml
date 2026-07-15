@@ -26,7 +26,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: "1.2.21"
 
       - run: bash scripts/ci-bun-install.sh
       - run: bunx playwright install --with-deps chromium

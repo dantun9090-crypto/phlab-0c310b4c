@@ -36,7 +36,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: "1.2.21"
 
       # Resolve fully-reproducible cache keys from the exact files that
       # affect each cached output. We hash files explicitly (not via
@@ -424,7 +424,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: "1.2.21"
 
       # Intentionally NO actions/cache steps — this job must rebuild
       # everything from scratch so the resulting hashes represent a
