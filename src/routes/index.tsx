@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import LegacyClientApp from "@/legacy/LegacyClientApp";
-import type { fetchPromoBanner } from "@/lib/firestore-rest";
+import { fetchPromoBanner } from "@/lib/firestore-rest";
+import { cfImg, cfSrcSet } from "@/lib/cf-image";
 
 
 const HOME_TITLE = "HPLC-Verified Research Peptides UK | PH Labs";
@@ -10,6 +11,13 @@ const HOME_DESCRIPTION =
 
 const HOME_URL = "https://phlabs.co.uk/";
 const HOME_OG_IMAGE = "https://phlabs.co.uk/og-image.jpg";
+
+// Widths mirror <img> in src/pages/Home/index.tsx so the preloaded bytes
+// are the same variant the browser eventually renders (no wasted preload).
+const BANNER_WIDTHS = [480, 640, 800, 1024, 1280, 1600];
+const BANNER_SIZES = "(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1600px";
+const BANNER_QUALITY = 82;
+const BANNER_FALLBACK_WIDTH = 800;
 
 // Mirrors the visible FAQ section rendered by src/pages/Home/index.tsx.
 // Kept inline so the FAQPage JSON-LD ships in SSR HTML (crawler-visible)
@@ -22,17 +30,34 @@ const HOME_FAQS: { q: string; a: string }[] = [
   { q: 'What payment methods do you accept?', a: 'We accept secure UK bank transfer (Open Banking) via our trusted payment partner. All transactions are secured with 256-bit SSL encryption.' },
 ];
 
+// Fetch banner with a hard timeout so a slow Firestore call never
+// balloons TTFB. On timeout/error we fall back to null and the client
+// re-fetches post-hydration (same behaviour as before this change).
+async function fetchBannerWithBudget(budgetMs = 300): Promise<Awaited<ReturnType<typeof fetchPromoBanner>>> {
+  try {
+    return await Promise.race([
+      fetchPromoBanner(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), budgetMs)),
+    ]);
+  } catch {
+    return null;
+  }
+}
+
 export const Route = createFileRoute("/")({
-  // Non-blocking loader: return null banner immediately so the Worker can flush
-  // HTML with zero waiting. The client fetches the real banner post-hydration
-  // inside a requestIdleCallback (see src/pages/Home/index.tsx). This shaved
-  // ~350ms off cold-cache TTFB in Lighthouse desktop lab runs.
-  loader: () => ({ banner: null as Awaited<ReturnType<typeof fetchPromoBanner>> | null }),
+  // SSR-fetch the banner so its <img> paints on first frame from a
+  // <link rel="preload"> — banner image is the LCP element on the home
+  // page. Tight 300ms timeout keeps TTFB regression-free.
+  loader: async () => ({ banner: await fetchBannerWithBudget(300) }),
 
   // Public content routes must SSR a non-empty body. Do not disable SSR
   // here or wrap the route in deferred loading with an empty fallback; that combination
   // caused staging to stick on the boot loader after publishes.
-  head: () => ({
+  head: (ctx) => {
+    const banner = ctx.loaderData?.banner ?? null;
+    const bannerSrc = banner?.imageUrl ? cfImg(banner.imageUrl, { width: BANNER_FALLBACK_WIDTH, quality: BANNER_QUALITY }) : "";
+    const bannerSrcSet = banner?.imageUrl ? cfSrcSet(banner.imageUrl, BANNER_WIDTHS, { quality: BANNER_QUALITY }) : undefined;
+    return {
     meta: [
       { title: HOME_TITLE },
       { name: "description", content: HOME_DESCRIPTION },
@@ -54,10 +79,21 @@ export const Route = createFileRoute("/")({
       { rel: "preconnect", href: "https://firestore.googleapis.com", crossOrigin: "" },
       { rel: "preconnect", href: "https://firebasestorage.googleapis.com", crossOrigin: "" },
       { rel: "dns-prefetch", href: "https://firebasestorage.googleapis.com" },
-      // Banner LCP preload omitted — banner URL is unknown at SSR time.
-      // Trade-off: LCP element shifts from banner image to hero shell (which
-      // is inline CSS, so paints on first frame). Net LCP improved.
+      // LCP preload — banner image is the largest above-the-fold element.
+      // Same href/srcset/sizes as the rendered <img>, so the browser
+      // reuses the preloaded bytes instead of a second network request.
+      ...(bannerSrc
+        ? [{
+            rel: "preload",
+            as: "image",
+            href: bannerSrc,
+            imageSrcSet: bannerSrcSet,
+            imageSizes: BANNER_SIZES,
+            fetchPriority: "high",
+          } as unknown as { rel: string; as: string; href: string }]
+        : []),
     ],
+
 
     scripts: [
       // Sitewide identity (LocalBusiness + WebSite/SearchAction) lives here
