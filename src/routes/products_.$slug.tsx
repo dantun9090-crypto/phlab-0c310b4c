@@ -1,6 +1,7 @@
 import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
 import LegacyApp from "@/legacy/LegacyApp";
 import {
+  fetchAllProducts,
   fetchProductBySlug,
   fetchProductById,
   type SeoProduct,
@@ -9,6 +10,7 @@ import { SEO_LIMITS, SITE_URL, clamp } from "@/lib/seo-meta";
 import { RESEARCH_CONTENT } from "@/lib/research-content";
 import { PRODUCT_ID_TO_SLUG, resolveSlugFromId } from "@/lib/product-id-slug-map";
 import { DUAL_ENTRY_ALIASES, getDualEntryAliasInfo } from "@/lib/merchant-dual-entries";
+import { isFreeTokenShape, resolveFreeTokenToDocId } from "@/lib/merchant-free-tokens";
 import { PRODUCT_SEO_OVERRIDES } from "@/lib/product-seo-overrides";
 import { skuFor } from "@/lib/product-sku";
 
@@ -43,6 +45,23 @@ const LEGACY_SLUG_ALIASES: Record<string, string> = {
 export const Route = createFileRoute("/products_/$slug")({
   loader: async ({ params }) => {
     const raw = params.slug;
+
+    // 0a) Free-Listings opaque token — resolve to canonical product, render
+    //     in place (HTTP 200, no redirect) so GMC's feed URL == landing URL.
+    //     Canonical <link> is set to the SAME token URL below.
+    if (isFreeTokenShape(raw)) {
+      try {
+        const all = await fetchAllProducts();
+        const docId = await resolveFreeTokenToDocId(raw, all);
+        if (docId) {
+          const product = await fetchProductById(docId);
+          if (product) return { product, matchedBy: "free-token" as const, aliasInfo: null };
+        }
+      } catch {
+        // fall through to notFound
+      }
+      throw notFound();
+    }
 
     // 0) Dual-entry GMC alias — render the canonical product IN PLACE so
     //    the URL keeps the opaque dual-entry slug (no 301). Merchant Center
@@ -132,9 +151,14 @@ export const Route = createFileRoute("/products_/$slug")({
       product?.description ||
       `${name}: HPLC-verified research peptide from PH Labs UK.`;
     const description = clamp(baseDesc.replace(/\s+/g, " ").trim(), SEO_LIMITS.descriptionMax);
-    // Canonical always points to the slug URL, even when the page was
-    // opened via the Firestore-ID alias (/products/{id}).
-    const url = `${SITE_URL}/products/${product?.slug ?? params.slug}`;
+    // Canonical points to the slug URL, EXCEPT when the page was opened
+    // via a Free-Listings opaque token — then canonical == the token URL so
+    // GMC's feed link matches the landing page's <link rel="canonical">
+    // (prevents "Mismatched value (page crawl): landing page canonical").
+    const matchedByFreeToken = loaderData?.matchedBy === "free-token";
+    const url = matchedByFreeToken
+      ? `${SITE_URL}/products/${params.slug}`
+      : `${SITE_URL}/products/${product?.slug ?? params.slug}`;
     const image = product?.imageUrl || OG_IMAGE_FALLBACK;
 
     // Parse a measurement (e.g. "10 mg", "5mg", "100 mcg", "2 IU", "30 ml")

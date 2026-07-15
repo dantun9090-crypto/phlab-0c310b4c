@@ -8,6 +8,7 @@ import {
   isProductAllowed,
   applyOverrideToItem,
 } from "@/lib/merchant-feed-overrides";
+import { freeTokenFor } from "@/lib/merchant-free-tokens";
 
 /**
  * ============================================================================
@@ -39,7 +40,7 @@ const LEGACY_HOST = "prohealthpeptides.co.uk";
 const LEGACY_BASE_URL = `https://${LEGACY_HOST}`;
 const BRAND = "PH Labs";
 const CURRENCY = "GBP";
-const FEED_REVISION = "prohealth-grok-safe-v4-semrush-20260627";
+const FEED_REVISION = "prohealth-free-listings-opaque-tokens-20260715";
 
 // Hard block — never list (active pharma trial / disapproved molecules).
 // Hard block — never list (active pharma / restricted molecules).
@@ -166,8 +167,8 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
             !(typeof p.stock === "number" && p.stock <= 0),
         );
 
-        const items = eligible
-          .map((p) => {
+        const items = (await Promise.all(eligible
+          .map(async (p) => {
             const docId = p.id;
             const fullName = cleanFullName(p.name);
             const sizeLabel =
@@ -220,12 +221,13 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
                   `    <g:additional_image_link>${xmlEscape(abs)}</g:additional_image_link>`,
               );
 
-            // IMPORTANT: <link> MUST match the landing page's <link rel="canonical">.
-            // Product pages canonicalize to /products/{slug} (e.g. tb-500-thymosin-beta-4).
-            // Using /products/{docId} here caused GMC to disapprove items as
-            // "Mismatched landing page canonical" and drop them from Free Listings.
-            const slugPath = (p as { slug?: string }).slug || docId;
-            const link = `${linkBase}/products/${slugPath}`;
+            // Feed <link> uses a fresh opaque token (never a name-based slug).
+            // The product route resolves this token in place at HTTP 200 and
+            // sets <link rel="canonical"> to the SAME token URL — so GMC's
+            // feed↔landing-page canonical check matches. Rotate FREE_TOKEN_SALT
+            // in src/lib/merchant-free-tokens.ts to burn-recover all URLs.
+            const freeToken = await freeTokenFor(docId);
+            const link = `${linkBase}/products/${freeToken}`;
             const price = `${p.price.toFixed(2)} ${CURRENCY}`;
             const availability =
               typeof p.stock === "number" && p.stock <= 0 ? "out of stock" : "in stock";
@@ -280,7 +282,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               .filter(Boolean)
               .join("\n");
             return applyOverrideToItem(itemXml, adminOverrides.get(docId));
-          })
+          })))
           .join("\n");
 
         const xml = [
