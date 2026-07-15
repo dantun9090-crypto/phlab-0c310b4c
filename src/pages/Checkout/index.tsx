@@ -261,16 +261,11 @@ export default function CheckoutPage() {
         setPreflightIssues(issues);
         setPreflightOk(issues.length === 0 && result.ok);
       } catch {
-        // Network / server fault — surface a single soft issue, don't block.
+        // Network / server fault — don't block checkout. The final createOrder
+        // call re-validates every price/stock line server-side, so the user
+        // can still place the order; we just clear the transient issues.
         if (runId === preflightRunId.current) {
-          setPreflightIssues([{
-            productId: '',
-            variantId: null,
-            cartPrice: 0,
-            serverPrice: null,
-            kind: 'not_found',
-            message: 'Could not verify cart prices right now. We will retry when you place the order.',
-          }]);
+          setPreflightIssues([]);
           setPreflightOk(false);
         }
       } finally {
