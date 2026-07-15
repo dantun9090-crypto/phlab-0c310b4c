@@ -164,6 +164,10 @@ export default function HomePage() {
   const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
   const [showHeroEffects, setShowHeroEffects] = useState(false);
   const [reserveHeroAdvert, setReserveHeroAdvert] = useState<boolean>(false);
+  // CLS: whether to reserve 320px placeholder before Firestore banner resolves.
+  // Seeded post-mount from localStorage (see effect below) so SSR/CSR match
+  // and empty pages don't reserve wasted height that collapses on resolve.
+  const [expectBanner, setExpectBanner] = useState<boolean>(!!ssrBanner);
   // IMPORTANT: do NOT seed from localStorage in the lazy initializer — SSR
   // returns [] and the client's first render must match, otherwise React
   // throws hydration error #419 (recoverable hydration mismatch) and
