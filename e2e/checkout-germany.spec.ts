@@ -217,7 +217,10 @@ test.describe('Checkout — Germany', () => {
 
     // Step 3 — confirm 18+ and Terms, then pay.
     await page.getByLabel(/18\s*years?\s*(of age)?\s*or\s*older|18\s*or\s*older|18\+/i).check();
-    await page.getByLabel(/terms|research use/i).check();
+    // Scope to the actual checkbox — `terms|research use/i` also matches the
+    // page's "Research use notice" banner and "Confirm research use" button,
+    // causing a strict-mode locator conflict.
+    await page.locator('#acceptedTerms').check();
     await page.getByRole('button', { name: /pay|place order|continue to payment/i }).first().click();
 
     // Wait for the order-create call to be observed.
