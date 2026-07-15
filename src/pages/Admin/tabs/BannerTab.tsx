@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { db, doc, getDoc, setDoc, Timestamp, triggerContentCdnInvalidation, bumpMarketingVersion } from '@/lib/firebase';
 import { getAdminIdToken } from '@/lib/auth-ready';
 import { uploadBannerImage } from '@/lib/banner-image-upload.functions';
+import SmartBannerAdminCard from './SmartBannerAdminCard';
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -865,6 +866,9 @@ export default function BannerTab() {
           </div>
         </div>
       </div>
+
+      <SmartBannerAdminCard />
     </div>
   );
 }
+

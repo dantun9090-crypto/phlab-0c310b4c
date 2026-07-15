@@ -1,15 +1,20 @@
 import { useEffect, useState } from "react";
 import {
-  bannerConfig as defaultConfig,
   BANNER_SIZE_PADDING,
+  BANNER_SIZE_MAXWIDTH,
   DISMISS_STORAGE_KEY,
   type BannerConfig,
   type BannerPosition,
 } from "@/config/banner.config";
+import { useSmartBannerConfig } from "@/lib/smart-banner-config";
 
 interface SmartBannerProps {
-  /** Optional override — useful for admin preview. Falls back to bannerConfig. */
-  config?: Partial<BannerConfig>;
+  /** Optional override — used by admin preview. When omitted, config is
+   * loaded live from Firestore via useSmartBannerConfig(). */
+  config?: BannerConfig;
+  /** When true, bypass dismiss/localStorage/delay so the admin preview
+   * always shows the banner. */
+  previewMode?: boolean;
 }
 
 const DESKTOP_MIN_WIDTH = 1024;
@@ -18,8 +23,10 @@ function isHex(value: string): boolean {
   return typeof value === "string" && value.trim().startsWith("#");
 }
 
-function positionClasses(position: BannerPosition): string {
+function positionWrapperClasses(position: BannerPosition): string {
   switch (position) {
+    case "center":
+      return "inset-0 flex items-center justify-center";
     case "top-left":
       return "top-6 left-6";
     case "bottom-right":
@@ -51,156 +58,127 @@ function prefersReducedMotion(): boolean {
   }
 }
 
-export function SmartBanner({ config }: SmartBannerProps = {}) {
-  const cfg: BannerConfig = { ...defaultConfig, ...(config ?? {}) };
+export function SmartBanner({ config, previewMode = false }: SmartBannerProps = {}) {
+  const liveCfg = useSmartBannerConfig();
+  const cfg: BannerConfig = config ?? liveCfg;
 
   const [isClient, setIsClient] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
-  const [visible, setVisible] = useState(false);
-  const [entered, setEntered] = useState(false);
+  const [visible, setVisible] = useState(previewMode);
+  const [entered, setEntered] = useState(previewMode);
   const [dismissed, setDismissed] = useState(false);
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  useEffect(() => { setIsClient(true); }, []);
 
-  // Determine viewport + dismissal state — client only.
   useEffect(() => {
     if (!isClient) return;
+    if (previewMode) { setIsDesktop(true); return; }
     const mq = window.matchMedia(`(min-width: ${DESKTOP_MIN_WIDTH}px)`);
-    const applyViewport = () => setIsDesktop(mq.matches);
-    applyViewport();
-    mq.addEventListener("change", applyViewport);
-    return () => mq.removeEventListener("change", applyViewport);
-  }, [isClient]);
+    const apply = () => setIsDesktop(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, [isClient, previewMode]);
 
   useEffect(() => {
-    if (!isClient || !cfg.enabled) return;
+    if (!isClient || previewMode) return;
+    if (!cfg.enabled || !isDesktop) return;
+
     const dismissedAt = readDismissedAt();
     const stillHidden =
       dismissedAt > 0 &&
       Date.now() - dismissedAt < cfg.dismissDurationHours * 60 * 60 * 1000;
-    if (stillHidden) {
-      setDismissed(true);
-      return;
-    }
+    if (stillHidden) { setDismissed(true); return; }
 
-    if (isDesktop) {
-      const delay = prefersReducedMotion() ? 0 : cfg.delayMs;
-      const t = window.setTimeout(() => {
-        setVisible(true);
-        // Next frame → trigger enter transition.
-        window.requestAnimationFrame(() => setEntered(true));
-      }, delay);
-      return () => window.clearTimeout(t);
-    }
-
-    // Mobile — mount inline immediately, fade in.
-    setVisible(true);
-    window.requestAnimationFrame(() => setEntered(true));
-  }, [isClient, isDesktop, cfg.enabled, cfg.delayMs, cfg.dismissDurationHours]);
+    const delay = prefersReducedMotion() ? 0 : cfg.delayMs;
+    const t = window.setTimeout(() => {
+      setVisible(true);
+      window.requestAnimationFrame(() => setEntered(true));
+    }, delay);
+    return () => window.clearTimeout(t);
+  }, [isClient, isDesktop, previewMode, cfg.enabled, cfg.delayMs, cfg.dismissDurationHours]);
 
   const handleDismiss = () => {
-    try {
-      window.localStorage.setItem(DISMISS_STORAGE_KEY, String(Date.now()));
-    } catch {
-      /* ignore */
+    if (!previewMode) {
+      try { window.localStorage.setItem(DISMISS_STORAGE_KEY, String(Date.now())); } catch { /* ignore */ }
     }
     setDismissed(true);
   };
 
-  if (!isClient || !cfg.enabled || dismissed || !visible) return null;
+  // Desktop-only. Mobile: never render.
+  if (!previewMode && (!isClient || !isDesktop)) return null;
+  if (!cfg.enabled || dismissed || !visible) return null;
 
   const bgIsHex = isHex(cfg.backgroundColor);
   const textIsHex = isHex(cfg.textColor);
-
   const containerStyle: React.CSSProperties = {};
   if (bgIsHex) containerStyle.backgroundColor = cfg.backgroundColor;
   if (textIsHex) containerStyle.color = cfg.textColor;
-
   const bgClass = !bgIsHex ? cfg.backgroundColor : "";
   const textClass = !textIsHex ? cfg.textColor : "";
   const paddingClass = BANNER_SIZE_PADDING[cfg.bannerSize];
+  const maxW = BANNER_SIZE_MAXWIDTH[cfg.bannerSize];
 
-  const reduce = prefersReducedMotion();
+  const reduce = !previewMode && prefersReducedMotion();
   const enterMs = reduce ? 0 : 400;
+  const isCenter = cfg.position === "center";
 
-  const inner = (
-    <>
-      <div className="flex-1 min-w-0 pr-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
-        <span className="font-medium">{cfg.message}</span>
-        {cfg.ctaLabel && cfg.ctaHref ? (
-          <a
-            href={cfg.ctaHref}
-            className="underline underline-offset-2 font-semibold hover:opacity-90"
-          >
-            {cfg.ctaLabel} →
-          </a>
-        ) : null}
-      </div>
-      <button
-        type="button"
-        onClick={handleDismiss}
-        aria-label="Dismiss banner"
-        className="absolute top-3 right-3 inline-flex items-center justify-center w-7 h-7 rounded-full hover:bg-black/10 focus:outline-none focus:ring-2 focus:ring-white/40 transition-colors"
-      >
-        <svg
-          className="w-4 h-4"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M6 6l12 12M18 6L6 18"
-          />
-        </svg>
-      </button>
-    </>
-  );
+  const wrapperPositionClass = previewMode
+    ? "relative"
+    : `fixed ${positionWrapperClasses(cfg.position)}`;
 
-  if (isDesktop) {
-    // Floating promo popup — fixed, non-blocking wrapper.
-    return (
-      <div
-        aria-live="polite"
-        className={`fixed z-[60] pointer-events-none ${positionClasses(cfg.position)}`}
-        style={{ maxWidth: "min(420px, calc(100vw - 32px))" }}
-      >
-        <div
-          role="region"
-          aria-label="Promotional message"
-          className={`relative pointer-events-auto rounded-2xl shadow-2xl border border-white/20 ${paddingClass} ${cfg.fontSize} ${bgClass} ${textClass}`}
-          style={{
-            ...containerStyle,
-            maxWidth: 420,
-            opacity: entered ? 1 : 0,
-            transform: entered ? "translateY(0)" : "translateY(-20px)",
-            transition: `opacity ${enterMs}ms ease-out, transform ${enterMs}ms ease-out`,
-          }}
-        >
-          {inner}
-        </div>
-      </div>
-    );
-  }
-
-  // Mobile — inline banner, flows in document.
   return (
     <div
-      role="region"
-      aria-label="Promotional message"
-      className={`relative w-full ${paddingClass} ${cfg.fontSize} ${bgClass} ${textClass}`}
-      style={{
-        ...containerStyle,
-        opacity: entered ? 1 : 0,
-        transition: `opacity 300ms ease-out`,
-      }}
+      aria-live="polite"
+      className={`${wrapperPositionClass} z-[60] ${previewMode ? "" : "pointer-events-none"} ${isCenter && !previewMode ? "bg-black/40 backdrop-blur-sm" : ""}`}
+      style={
+        previewMode
+          ? undefined
+          : { maxWidth: isCenter ? undefined : `min(${maxW + 40}px, calc(100vw - 32px))` }
+      }
     >
-      {inner}
+      <div
+        role="region"
+        aria-label="Promotional message"
+        className={`relative ${previewMode ? "" : "pointer-events-auto"} rounded-2xl shadow-2xl border border-white/20 ${paddingClass} ${cfg.fontSize} ${bgClass} ${textClass}`}
+        style={{
+          ...containerStyle,
+          maxWidth: maxW,
+          width: isCenter ? "100%" : undefined,
+          opacity: entered ? 1 : 0,
+          transform: entered ? "translateY(0) scale(1)" : (isCenter ? "scale(0.96)" : "translateY(-20px)"),
+          transition: `opacity ${enterMs}ms ease-out, transform ${enterMs}ms ease-out`,
+        }}
+      >
+        <div className="flex-1 min-w-0 pr-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-center">
+          <span className="font-medium">{cfg.message}</span>
+          {cfg.ctaLabel && cfg.ctaHref ? (
+            <a
+              href={cfg.ctaHref}
+              className="underline underline-offset-2 font-semibold hover:opacity-90"
+            >
+              {cfg.ctaLabel} →
+            </a>
+          ) : null}
+        </div>
+        <button
+          type="button"
+          onClick={handleDismiss}
+          aria-label="Dismiss banner"
+          className="absolute top-3 right-3 inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-black/10 focus:outline-none focus:ring-2 focus:ring-white/40 transition-colors"
+        >
+          <svg
+            className="w-4 h-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
     </div>
   );
 }
