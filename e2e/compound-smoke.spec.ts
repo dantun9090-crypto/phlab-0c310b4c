@@ -24,7 +24,12 @@ test.describe("/compound landing page", () => {
     // Hero H1
     const h1 = page.locator("h1");
     await expect(h1).toBeVisible();
-    await expect(h1).toContainText(/Premium Research Compounds/i);
+    // The H1 splits "Premium Research / Compounds for / UK Laboratories"
+    // across three <span class="block"> elements. Playwright's textContent
+    // join collapses them to "Premium ResearchCompounds forUK Laboratories"
+    // with no whitespace between the spans, so allow zero-or-more whitespace
+    // between the words.
+    await expect(h1).toContainText(/Premium\s*Research\s*Compounds/i);
 
     // Two disclaimers (top bar + footer/legal section)
     const disclaimer = page.getByText(

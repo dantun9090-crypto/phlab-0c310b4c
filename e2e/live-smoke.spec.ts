@@ -41,6 +41,13 @@ const FALLBACK_TEXTS = [
 ];
 
 test.describe("live smoke", () => {
+  // Live site emits ongoing pings (heartbeats, analytics), so
+  // `waitForLoadState("networkidle")` never resolves within the default
+  // 30s test budget — the timer fires, the context closes, and every
+  // follow-up assertion reports "browser has been closed". Give the whole
+  // per-test budget enough headroom that the short networkidle attempt
+  // below can time out cleanly and the assertions still run.
+  test.setTimeout(90_000);
   test("health endpoint reports healthy", async () => {
     const ctx = await request.newContext({ extraHTTPHeaders: { "user-agent": REAL_CHROME_UA } });
     const res = await ctx.get(`${BASE}/api/public/health`, { timeout: 15_000 });
@@ -98,7 +105,7 @@ test.describe("live smoke", () => {
       expect(html, `${route} missing <title>`).toMatch(/<title>[^<]+<\/title>/i);
 
       await page
-        .waitForLoadState("networkidle", { timeout: 30_000 })
+        .waitForLoadState("networkidle", { timeout: 5_000 })
         .catch(() => undefined);
 
       // Only fail on VISIBLE fallback copy. Some of these strings are baked
