@@ -21,6 +21,9 @@ import { lazyWithRetry } from '@/lib/lazyWithRetry';
 // bundle finishes so the tab-back navigation is instant.
 const Home = lazyWithRetry(() => import(/* vitePrefetch: true */ '@/pages/Home'));
 import NotFound from '@/pages/NotFound';
+const UkResearchStoreLazy = lazyWithRetry(() =>
+  import('@/routes/uk-research-store').then((m) => ({ default: m.UkResearchStore })),
+);
 
 // Code-split: admin, checkout, payment, auth, account, VIP — not needed for
 // first paint of the public store. Saves ~250–300 KB from the main bundle.
