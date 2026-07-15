@@ -282,7 +282,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               .filter(Boolean)
               .join("\n");
             return applyOverrideToItem(itemXml, adminOverrides.get(docId));
-          })
+          })))
           .join("\n");
 
         const xml = [
