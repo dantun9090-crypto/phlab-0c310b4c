@@ -251,7 +251,7 @@ jobs:
       #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
       #     dist/sbom.cdx.json
       - name: Attest SBOM (SLSA provenance, cosign keyless)
-        if: always()
+        if: hashFiles('dist/sbom.cdx.json', 'dist/sbom.cdx.json.provenance.json') != ''
         env:
           COSIGN_YES: "true"
         run: |
