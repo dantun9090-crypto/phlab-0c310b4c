@@ -195,13 +195,13 @@ jobs:
       #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
       #     sbom.cdx.json
       - name: Install cosign
-        if: always()
+        if: hashFiles('dist/sbom.cdx.json') != ''
         uses: sigstore/cosign-installer@v3
         with:
           cosign-release: v2.4.1
 
       - name: Sign SBOM (cosign keyless)
-        if: always()
+        if: hashFiles('dist/sbom.cdx.json') != ''
         env:
           COSIGN_YES: "true"
         run: |
