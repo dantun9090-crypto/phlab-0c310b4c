@@ -508,17 +508,15 @@ export default {
     if (wEligible) {
       const warm = warmCacheGet(wKey);
       if (warm) {
-        console.log("[PHL Worker] htmlWarmCache hit for " + path);
-        const headers = new Headers();
-        headers.set("Content-Type", warm.contentType);
-        headers.set("X-Content-Type-Options", "nosniff");
-        applyBrowserHtmlNoCache(headers);
+        const headers = new Headers(warm.headers);
+        // Force no-store on the wire even from warm hits — the cache is
+        // isolate-internal only; browsers/CDN must still fetch fresh next time.
+        applyBrowserHtmlNoCache(headers, path);
         const total = Date.now() - startTime;
         headers.set("X-PHL-Via", "warm-hit;bot=0;total=" + total + "ms");
         headers.set("Server-Timing", `warm-cache;desc="HIT", origin;dur=0, worker;dur=${total}`);
         return new Response(warm.body, { status: 200, headers });
       }
-      console.log("[PHL Worker] htmlWarmCache miss for " + path);
     }
 
     const originStart = Date.now();
