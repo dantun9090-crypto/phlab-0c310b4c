@@ -126,24 +126,29 @@ function OfflineScreen() {
 }
 
 function HydrationRecoveryScreen() {
+  useEffect(() => {
+    try { void hardReload({ clean: true, home: true }); }
+    catch { try { window.location.replace('/cache-reset?next=/'); } catch { /* ignore */ } }
+  }, []);
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Refresh needed
+          Opening fresh store
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          The page did not initialise cleanly. Automatic reloads have been stopped so your browser does not loop.
+          Clearing an old browser copy and loading the latest page.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
               clearHydrationError();
-              window.location.reload();
+              void hardReload({ clean: true, home: true });
             }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Refresh page
+            Open fresh store
           </button>
           <a
             href="/"
