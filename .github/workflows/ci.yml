@@ -232,7 +232,7 @@ jobs:
       # digest to: repo, commit SHA, ref, workflow file, run ID + attempt,
       # and BUILD_ID. This is the JSON we attest below.
       - name: Generate SLSA provenance predicate
-        if: always()
+        if: hashFiles('dist/sbom.cdx.json') != ''
         env:
           BUILD_ID: ${{ github.sha }}
         run: bun run sbom:provenance
