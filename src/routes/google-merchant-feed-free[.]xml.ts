@@ -158,7 +158,12 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
         const adminConfig = await loadFeedConfig(feedKey);
         const adminOverrides = await loadFeedOverrides(feedKey);
         const eligible = products.filter(
-          (p) => isAllowedForFreeListing(p as any) && isProductAllowed(p as any, adminOverrides.get(p.id), adminConfig),
+          (p) =>
+            isAllowedForFreeListing(p as any) &&
+            isProductAllowed(p as any, adminOverrides.get(p.id), adminConfig) &&
+            // Omit out-of-stock entirely (do NOT emit <g:availability>out of stock</g:availability>)
+            // so Google doesn't crawl dead/thin landing pages while stock is 0.
+            !(typeof p.stock === "number" && p.stock <= 0),
         );
 
         const items = eligible
