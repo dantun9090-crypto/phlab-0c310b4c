@@ -144,7 +144,7 @@ test.describe('Checkout — Germany', () => {
     // Try to advance — should be blocked with a PLZ error.
     await page.getByRole('button', { name: /continue|next/i }).first().click();
 
-    await expect(page.getByText(/valid German postcode|5 digits|PLZ/i)).toBeVisible();
+    await expect(page.getByText(/Enter a valid German postcode/i)).toBeVisible();
     // We must NOT have advanced to the review / payment step.
     await expect(page.getByRole('heading', { name: /confirm|review|payment|age/i })).toHaveCount(0);
   });
