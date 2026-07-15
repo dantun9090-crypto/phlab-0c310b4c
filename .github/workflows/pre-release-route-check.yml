@@ -1,17 +1,16 @@
 name: Pre-release route check (staging)
 
-# Blocks merges into main when staging preview returns any non-200,
-# unauthorized noindex, or canonical-uniqueness violation.
-# Runs the same scripts as post-deploy-regression but against the
-# Lovable preview URL so we catch regressions BEFORE they hit prod.
+# Blocks merges into main when the route tree returns any non-200, unauthorized
+# noindex, or canonical-uniqueness violation. Runs against a local dev server by
+# default so PR checks are not blocked by the authenticated preview URL.
 
 on:
   workflow_dispatch:
     inputs:
       base_url:
-        description: "Staging base URL"
+        description: "Base URL (defaults to local dev server)"
         required: false
-        default: "https://id-preview--1f12c255-a30a-4bea-bbab-28d9e6f70804.lovable.app"
+        default: "http://127.0.0.1:8080"
   pull_request:
     branches: [main]
     paths:
@@ -32,11 +31,31 @@ jobs:
       contents: read
       pull-requests: write
     env:
-      BASE: ${{ github.event.inputs.base_url || 'https://id-preview--1f12c255-a30a-4bea-bbab-28d9e6f70804.lovable.app' }}
+      BASE: ${{ github.event.inputs.base_url || 'http://127.0.0.1:8080' }}
     steps:
       - uses: actions/checkout@v5
 
-      - name: Wait for preview to propagate
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.2.21"
+
+      - name: Install deps
+        run: bash scripts/ci-bun-install.sh
+
+      - name: Start local dev server
+        if: startsWith(env.BASE, 'http://127.0.0.1') || startsWith(env.BASE, 'http://localhost')
+        run: |
+          (bun run dev --host 127.0.0.1 --port 8080 > server.log 2>&1 &)
+          for i in $(seq 1 120); do
+            if curl -fsS -o /dev/null "$BASE/"; then
+              echo "server up after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "server failed to start"; tail -n 200 server.log; exit 1
+
+      - name: Wait for remote preview to propagate
+        if: ${{ !(startsWith(env.BASE, 'http://127.0.0.1') || startsWith(env.BASE, 'http://localhost')) }}
         run: sleep 60
 
       - name: Crawl status codes + noindex policy
@@ -78,6 +97,7 @@ jobs:
             /tmp/prod-routes.log
             /tmp/canonicals.log
             /tmp/route-audit.md
+            server.log
           retention-days: 30
 
       - name: Sticky PR comment

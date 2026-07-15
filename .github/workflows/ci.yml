@@ -71,6 +71,10 @@ jobs:
       - name: /compound + /research Playwright suite
         env:
           TEST_BASE_URL: http://127.0.0.1:8080
+          # cache-stability.spec.ts must keep probing the real Cloudflare edge
+          # headers; the smoke/axe specs in this same script use localhost to
+          # avoid headless bot handling on marketing pages.
+          CACHE_STABILITY_BASE_URL: https://phlabs.co.uk
         run: bun run test:compound:e2e
 
       # Visual regression for /compound + /research. Baselines live in
