@@ -46,6 +46,23 @@ export const Route = createFileRoute("/products_/$slug")({
   loader: async ({ params }) => {
     const raw = params.slug;
 
+    // 0a) Free-Listings opaque token — resolve to canonical product, render
+    //     in place (HTTP 200, no redirect) so GMC's feed URL == landing URL.
+    //     Canonical <link> is set to the SAME token URL below.
+    if (isFreeTokenShape(raw)) {
+      try {
+        const all = await fetchAllProducts();
+        const docId = await resolveFreeTokenToDocId(raw, all);
+        if (docId) {
+          const product = await fetchProductById(docId);
+          if (product) return { product, matchedBy: "free-token" as const, aliasInfo: null };
+        }
+      } catch {
+        // fall through to notFound
+      }
+      throw notFound();
+    }
+
     // 0) Dual-entry GMC alias — render the canonical product IN PLACE so
     //    the URL keeps the opaque dual-entry slug (no 301). Merchant Center
     //    fetches the link directly and requires HTTP 200. The canonical
