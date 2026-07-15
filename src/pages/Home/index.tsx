@@ -496,7 +496,7 @@ export default function HomePage() {
       {/* ════════════════════════════════
           PROMO BANNER (admin-controlled) — moved to top
       ════════════════════════════════ */}
-      {bannerVisible && (
+      {bannerVisible ? (
         <div className="relative w-full overflow-hidden" style={{ minHeight: banner.heightPx ? `${banner.heightPx}px` : '320px' }}>
           {banner.overlayEnabled && (
             <div className="absolute inset-0 pointer-events-none z-[6]"
@@ -517,11 +517,11 @@ export default function HomePage() {
           })()}
           {bannerHref ? (
             <a href={bannerHref} className="block">
-              <img {...cfImgProps(banner.imageUrl, { widths: [480, 640, 800, 1024, 1280, 1600], sizes: '(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1600px', quality: 82, fallbackWidth: 800 })} alt={banner.altText || [banner.overlayHeading, banner.overlaySubheading].filter(Boolean).join(' — ') || 'PH Labs research peptides — homepage hero banner'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={banner.heightPx || 320}
+              <img {...cfImgProps(banner.imageUrl, { widths: [480, 640, 800, 1024, 1280], sizes: '(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1280px', quality: 75, fallbackWidth: 800 })} alt={banner.altText || [banner.overlayHeading, banner.overlaySubheading].filter(Boolean).join(' — ') || 'PH Labs research peptides — homepage hero banner'} className="w-full" fetchPriority="high" decoding="async" width={1280} height={banner.heightPx || 320}
                 style={{ height: banner.heightPx ? `${banner.heightPx}px` : '320px', objectFit: banner.objectFit || 'cover', objectPosition: `${banner.objectPositionX ?? 50}% ${banner.objectPositionY ?? 50}%`, display: 'block' }} />
             </a>
           ) : (
-              <img {...cfImgProps(banner.imageUrl, { widths: [480, 640, 800, 1024, 1280, 1600], sizes: '(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1600px', quality: 82, fallbackWidth: 800 })} alt={banner.altText || [banner.overlayHeading, banner.overlaySubheading].filter(Boolean).join(' — ') || 'PH Labs research peptides — homepage hero banner'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={banner.heightPx || 320}
+              <img {...cfImgProps(banner.imageUrl, { widths: [480, 640, 800, 1024, 1280], sizes: '(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1280px', quality: 75, fallbackWidth: 800 })} alt={banner.altText || [banner.overlayHeading, banner.overlaySubheading].filter(Boolean).join(' — ') || 'PH Labs research peptides — homepage hero banner'} className="w-full" fetchPriority="high" decoding="async" width={1280} height={banner.heightPx || 320}
                 style={{ height: banner.heightPx ? `${banner.heightPx}px` : '320px', objectFit: banner.objectFit || 'cover', objectPosition: `${banner.objectPositionX ?? 50}% ${banner.objectPositionY ?? 50}%`, display: 'block' }} />
 
           )}
@@ -536,6 +536,10 @@ export default function HomePage() {
             </div>
           )}
         </div>
+      ) : (
+        // Reserve banner height BEFORE resolve to prevent CLS shift on hero when
+        // banner arrives async (matches Lighthouse-flagged 0.27+0.24 shifts).
+        !bannerResolved ? <div aria-hidden="true" style={{ minHeight: 320 }} /> : null
       )}
 
       {/* ════════════════════════════════
@@ -825,7 +829,7 @@ export default function HomePage() {
                   {/* Image area */}
                   <div className="relative overflow-hidden" style={{ aspectRatio: '4/3', background: '#040d1a' }}>
                     {p.image ? (
-                      <img {...cfImgProps(p.image, { widths: [400, 600, 800, 1200, 1600], sizes: '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw', quality: 92 })} alt={`${p.name} research peptide vial`} loading={i === 0 ? "eager" : "lazy"} fetchPriority="auto" width="400" height="300" decoding="async" style={{ display: 'block', width: '100%', height: '100%', objectFit: 'contain' }} className="transition-transform duration-700 group-hover:scale-105" />
+                      <img {...cfImgProps(p.image, { widths: [300, 400, 500, 700], sizes: '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw', quality: 78, fallbackWidth: 400 })} alt={`${p.name} research peptide vial`} loading={i === 0 ? "eager" : "lazy"} fetchPriority="auto" width="400" height="300" decoding="async" style={{ display: 'block', width: '100%', height: '100%', objectFit: 'contain' }} className="transition-transform duration-700 group-hover:scale-105" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <FlaskConical style={{ width: 48, height: 48, color: 'rgba(16,185,129,0.3)' }} />
