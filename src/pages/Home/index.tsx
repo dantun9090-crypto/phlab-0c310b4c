@@ -487,6 +487,9 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen shadow-none overflow-x-hidden" style={{ background: '#030a14', color: '#e4f0ff' }}>
+      <SmartBanner />
+
+
 
 
       {/* ════════════════════════════════
