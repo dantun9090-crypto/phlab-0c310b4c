@@ -729,7 +729,10 @@ function PremiumLandingGuard() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.location.pathname !== "/compound") return;
-    const t = setTimeout(() => {
+    // Defer the overlay/regression check until the browser is idle so it
+    // does not compete with LCP paint or hero image decode on mobile.
+    let timer: number | undefined;
+    const run = () => {
       const root = document.querySelector('[data-source="premium-landing"]');
       const legacyResearch = !!document.querySelector('[data-source="legacy-research-page"]');
       const adsLanding = !!document.querySelector('[data-source="research-ads-landing"]');
@@ -771,8 +774,17 @@ function PremiumLandingGuard() {
           /* diagnostics must never break the page */
         }
       }
-    }, 600);
-    return () => clearTimeout(t);
+    };
+    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
+    if (typeof ric === "function") {
+      const id = ric(run, { timeout: 4000 });
+      return () => {
+        const cic = (window as unknown as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback;
+        if (typeof cic === "function") cic(id);
+      };
+    }
+    timer = window.setTimeout(run, 2500);
+    return () => { if (timer) window.clearTimeout(timer); };
   }, []);
   return null;
 }
