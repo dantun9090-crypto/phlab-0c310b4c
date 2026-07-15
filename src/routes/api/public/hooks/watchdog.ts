@@ -149,6 +149,78 @@ async function writeRun(acct: SA, token: string, doc: Record<string, unknown>): 
 const CF_ZONE_ID = 'ed093ef4578e8e3568e26c3e979558c6';
 const DEVMODE_DOC_PATH = 'watchdog/devmode_alerts';
 const TELEGRAM_GATEWAY = 'https://connector-gateway.lovable.dev/telegram';
+// Auto-turn-off Dev Mode after this many minutes. Real dev work should be
+// done via ?cf-cache-bypass=1 / Worker preview URL / Lovable preview — NOT
+// zone-wide Dev Mode. 10 min is a safety net, not a "you have 10 min to
+// dev" window.
+const DEVMODE_AUTO_OFF_MIN = 10;
+const RECACHE_URLS = [
+  'https://phlabs.co.uk/',
+  'https://phlabs.co.uk/products',
+  'https://phlabs.co.uk/sitemap.xml',
+  'https://phlabs.co.uk/robots.txt',
+  'https://phlabs.co.uk/products/category/metabolic-signaling',
+  'https://phlabs.co.uk/products/category/tissue-repair',
+  'https://phlabs.co.uk/products/category/cognitive-research',
+  'https://phlabs.co.uk/products/category/longevity',
+  'https://phlabs.co.uk/products/category/growth-hormone',
+  'https://phlabs.co.uk/products/category/skin-research',
+  'https://phlabs.co.uk/products/category/blends',
+];
+
+async function cfDevModePatch(cfToken: string, value: 'on' | 'off'): Promise<{ ok: boolean; detail: string }> {
+  try {
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/settings/development_mode`,
+      {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${cfToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value }),
+        signal: AbortSignal.timeout(15_000),
+      },
+    );
+    return { ok: res.ok, detail: `cf devmode PATCH ${value} → ${res.status}` };
+  } catch (e: any) {
+    return { ok: false, detail: e?.message || 'devmode PATCH threw' };
+  }
+}
+
+async function cfPurgeEverything(cfToken: string): Promise<{ ok: boolean; detail: string }> {
+  try {
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${cfToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ purge_everything: true }),
+        signal: AbortSignal.timeout(15_000),
+      },
+    );
+    return { ok: res.ok, detail: `cf purge → ${res.status}` };
+  } catch (e: any) {
+    return { ok: false, detail: e?.message || 'purge threw' };
+  }
+}
+
+async function prerenderRecache(): Promise<{ ok: boolean; detail: string }> {
+  const token = process.env.PRERENDER_TOKEN;
+  if (!token) return { ok: false, detail: 'PRERENDER_TOKEN missing' };
+  const post = async (adaptiveType: 'desktop' | 'mobile') => {
+    try {
+      const res = await fetch('https://api.prerender.io/recache', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Prerender-Token': token },
+        body: JSON.stringify({ prerenderToken: token, urls: RECACHE_URLS, adaptiveType }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      return { ok: res.ok, status: res.status };
+    } catch {
+      return { ok: false, status: 0 };
+    }
+  };
+  const [d, m] = await Promise.all([post('desktop'), post('mobile')]);
+  return { ok: d.ok && m.ok, detail: `desktop ${d.status} / mobile ${m.status}` };
+}
 
 async function getDevmodeDoc(acct: SA, token: string): Promise<Record<string, any> | null> {
   const url = `https://firestore.googleapis.com/v1/projects/${acct.project_id}/databases/(default)/documents/${DEVMODE_DOC_PATH}`;
@@ -242,31 +314,74 @@ async function checkCloudflareDevMode(acct: SA, token: string): Promise<CheckRes
         patch.alertSentAt = null;
         patch.escalationSentAt = null;
         patch.turnedOffAt = null;
+        patch.autoDisabledAt = null;
       }
       const startMs = Date.parse(sessionStart);
       const ageMin = Number.isFinite(startMs) ? Math.round((Date.now() - startMs) / 60_000) : 0;
       detail += ` for ${ageMin}min`;
 
-      const alreadyAlerted = !isNewSession && !!doc.alertSentAt;
-      const alreadyEscalated = !isNewSession && !!doc.escalationSentAt;
+      // ── AUTO-OFF: after DEVMODE_AUTO_OFF_MIN, forcibly turn Dev Mode
+      // off + purge + recache Prerender. This is the "full fix" — the
+      // site can never be left in Dev Mode long enough for the 3h
+      // auto-expiry to cause a stale-prerender blank page.
+      if (ageMin >= DEVMODE_AUTO_OFF_MIN && !doc.autoDisabledAt) {
+        const offRes = await cfDevModePatch(cfToken, 'off');
+        const purgeRes = offRes.ok ? await cfPurgeEverything(cfToken) : { ok: false, detail: 'skipped (off failed)' };
+        const preRes = offRes.ok ? await prerenderRecache() : { ok: false, detail: 'skipped (off failed)' };
+        if (offRes.ok) {
+          patch.autoDisabledAt = nowIso;
+          patch.turnedOffAt = nowIso;
+        }
+        detail += ` | AUTO-OFF ${offRes.ok ? 'OK' : 'FAILED'} | purge ${purgeRes.detail} | prerender ${preRes.detail}`;
+        await writeAuditLog(acct, token, {
+          kind: 'watchdog_devmode_auto_off',
+          at: nowIso,
+          ageMin,
+          offOk: offRes.ok,
+          purgeOk: purgeRes.ok,
+          prerenderOk: preRes.ok,
+          detail,
+        });
+        // Info alert to Telegram so admins see it happened.
+        const tg = await sendTelegramAlert(
+          `🛠 <b>PHLabs Watchdog auto-off</b>\nCloudflare Dev Mode auto-disabled after ${ageMin} min.\nPurge ${purgeRes.ok ? '✅' : '❌'}, Prerender recache ${preRes.ok ? '✅' : '❌'}.`,
+        );
+        alertOk = tg.ok;
+      } else {
+        const alreadyAlerted = !isNewSession && !!doc.alertSentAt;
+        const alreadyEscalated = !isNewSession && !!doc.escalationSentAt;
 
-      if (ageMin > 120 && !alreadyEscalated) {
-        const r = await sendTelegramAlert(
-          `🆘 <b>PHLabs Watchdog ESCALATION</b>\nCloudflare Dev Mode still <b>ON</b> after ${ageMin} min on phlabs.co.uk.\nAuto-expires in ~${Math.max(0, 180 - ageMin)} min → expect blank pages!\n<b>Turn off NOW</b> in Admin → Cloudflare.`,
-        );
-        if (r.ok) { patch.escalationSentAt = nowIso; alertOk = true; }
-        detail += ` | escalation ${r.ok ? 'sent' : 'FAILED:' + r.detail}`;
-      } else if (ageMin > 30 && !alreadyAlerted) {
-        const r = await sendTelegramAlert(
-          `🚨 <b>PHLabs Watchdog</b>\nCloudflare Dev Mode <b>ON</b> for &gt;30 min on phlabs.co.uk.\nBlank page risk after 3h auto-expiry!\nTurn off in Admin → Cloudflare panel.\n\n<i>Session started: ${sessionStart}</i>`,
-        );
-        if (r.ok) { patch.alertSentAt = nowIso; alertOk = true; }
-        detail += ` | alert ${r.ok ? 'sent' : 'FAILED:' + r.detail}`;
+        if (ageMin > 120 && !alreadyEscalated) {
+          const r = await sendTelegramAlert(
+            `🆘 <b>PHLabs Watchdog ESCALATION</b>\nCloudflare Dev Mode still <b>ON</b> after ${ageMin} min on phlabs.co.uk.\nAuto-expires in ~${Math.max(0, 180 - ageMin)} min → expect blank pages!\n<b>Turn off NOW</b> in Admin → Cloudflare.`,
+          );
+          if (r.ok) { patch.escalationSentAt = nowIso; alertOk = true; }
+          detail += ` | escalation ${r.ok ? 'sent' : 'FAILED:' + r.detail}`;
+        } else if (ageMin > 30 && !alreadyAlerted) {
+          const r = await sendTelegramAlert(
+            `🚨 <b>PHLabs Watchdog</b>\nCloudflare Dev Mode <b>ON</b> for &gt;30 min on phlabs.co.uk.\nBlank page risk after 3h auto-expiry!\nTurn off in Admin → Cloudflare panel.\n\n<i>Session started: ${sessionStart}</i>`,
+          );
+          if (r.ok) { patch.alertSentAt = nowIso; alertOk = true; }
+          detail += ` | alert ${r.ok ? 'sent' : 'FAILED:' + r.detail}`;
+        }
       }
     } else {
+      // Dev Mode is OFF. If we had a live session and it closed since
+      // last cycle (either admin turned it off, or 3h auto-expiry
+      // triggered), fire a purge + recache to guarantee no stale
+      // snapshots survive.
       if (doc.sessionStartedAt && !doc.turnedOffAt) {
         patch.turnedOffAt = nowIso;
-        detail += ' | session closed';
+        const purgeRes = await cfPurgeEverything(cfToken);
+        const preRes = await prerenderRecache();
+        detail += ` | session closed | purge ${purgeRes.detail} | prerender ${preRes.detail}`;
+        await writeAuditLog(acct, token, {
+          kind: 'watchdog_devmode_session_closed',
+          at: nowIso,
+          purgeOk: purgeRes.ok,
+          prerenderOk: preRes.ok,
+          detail,
+        });
       }
     }
 
