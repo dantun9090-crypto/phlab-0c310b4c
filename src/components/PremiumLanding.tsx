@@ -138,6 +138,13 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
         .gold-gradient{background: linear-gradient(135deg, #c9a44c 0%, #e8d5a3 50%, #c9a44c 100%);}
         .display{font-family:'Cormorant Garamond','Times New Roman',serif}
         section[id]{scroll-margin-top:80px}
+        /* Skip rendering below-fold sections until they scroll near viewport.
+           Massive TBT + LCP win on mobile — hero paints without competing
+           with 6 heavy sections' layout/paint work. */
+        main[data-source="premium-landing"] > section:not(:first-of-type) {
+          content-visibility: auto;
+          contain-intrinsic-size: auto 900px;
+        }
         @media (max-width: 767px) {
           .lux-ken, .lux-float, .lux-shimmer, .lux-marquee { animation: none !important; transform: none !important; }
           .lux-shimmer { display: none !important; }
