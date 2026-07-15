@@ -20,7 +20,8 @@ import { migrateStoredCart } from '@/lib/cart-migration';
 import { logCartEvent, safeCartWrite } from '@/lib/cart-telemetry';
 import { sendPublicMail } from '@/lib/sendPublicMail';
 import type { CartItem } from '@/components/Layout';
-import { useFreeGiftConfig, freeGiftApplies } from '@/lib/free-gift-config';
+import { useFreeGiftConfig, freeGiftApplies, eligibleGifts } from '@/lib/free-gift-config';
+import FreeGiftPicker from '@/components/checkout/FreeGiftPicker';
 import { trackAddPaymentInfo, trackBeginCheckout, trackViewCart, type GaItem } from '@/lib/analytics';
 import UkBankBadges from '@/components/UkBankBadges';
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
@@ -489,6 +490,16 @@ export default function CheckoutPage() {
   const hasDiscount = discount > 0 || couponFreeShipping;
   const totalItems = cart.reduce((s, i) => s + i.quantity, 0);
   const showFreeGift = cart.length > 0 && freeGiftApplies(freeGiftCfg, subtotal);
+  const eligibleGiftList = cart.length > 0 ? eligibleGifts(freeGiftCfg, subtotal) : [];
+  const [selectedGiftId, setSelectedGiftId] = useState<string | null>(null);
+  const selectedGift =
+    eligibleGiftList.find((g) => g.id === selectedGiftId) ?? eligibleGiftList[0] ?? null;
+  // Reset picker when subtotal changes and current selection is no longer eligible.
+  useEffect(() => {
+    if (selectedGiftId && !eligibleGiftList.some((g) => g.id === selectedGiftId)) {
+      setSelectedGiftId(null);
+    }
+  }, [eligibleGiftList, selectedGiftId]);
   const hasItemsWithoutVariant = cart.some(item => !item.dosage || item.dosage === '');
   const activePayByBankName = paymentOptions?.primary?.name ?? 'Open Banking';
   const cartToGaItems = useCallback((): GaItem[] => cart.map(item => ({
@@ -787,8 +798,8 @@ export default function CheckoutPage() {
             couponCode: appliedCoupon?.code ?? null,
             customerNote: (() => {
               const base = form.customerNote.trim();
-              if (!showFreeGift) return base || null;
-              const giftLine = `[FREE GIFT] ${freeGiftCfg.title}`;
+              if (!showFreeGift || !selectedGift) return base || null;
+              const giftLine = `[FREE GIFT] ${selectedGift.title}`;
               return base ? `${giftLine}\n${base}` : giftLine;
             })(),
             idToken,
@@ -1692,18 +1703,11 @@ export default function CheckoutPage() {
                         </span>
                       </div>
                       {showFreeGift && (
-                        <div className="flex justify-between items-start gap-2 bg-emerald-500/10 border border-emerald-500/25 rounded-lg px-2.5 py-2">
-                          <span className="text-emerald-300 text-[11px] font-semibold flex items-start gap-1.5">
-                            <Tag className="w-3 h-3 mt-0.5 shrink-0" />
-                            <span>
-                              Free Gift: {freeGiftCfg.title}
-                              {freeGiftCfg.description && (
-                                <span className="block text-emerald-300/70 font-normal mt-0.5">{freeGiftCfg.description}</span>
-                              )}
-                            </span>
-                          </span>
-                          <span className="text-emerald-300 text-[11px] font-semibold shrink-0">FREE</span>
-                        </div>
+                        <FreeGiftPicker
+                          eligible={eligibleGiftList}
+                          selectedId={selectedGift?.id ?? null}
+                          onSelect={setSelectedGiftId}
+                        />
                       )}
                       {discount > 0 && (
                         <div className="flex justify-between text-emerald-400">
@@ -1946,14 +1950,14 @@ export default function CheckoutPage() {
                         {isFreeShipping ? 'FREE' : `£${shippingCost.toFixed(2)}`}
                       </span>
                     </div>
-                    {showFreeGift && (
+                    {showFreeGift && selectedGift && (
                       <div className="flex justify-between items-start gap-2 bg-emerald-500/10 border border-emerald-500/25 rounded-lg px-2.5 py-2">
                         <span className="text-emerald-300 text-[11px] font-semibold flex items-start gap-1.5">
                           <Tag className="w-3 h-3 mt-0.5 shrink-0" />
                           <span>
-                            Free Gift: {freeGiftCfg.title}
-                            {freeGiftCfg.description && (
-                              <span className="block text-emerald-300/70 font-normal mt-0.5">{freeGiftCfg.description}</span>
+                            Free Gift: {selectedGift.title}
+                            {selectedGift.description && (
+                              <span className="block text-emerald-300/70 font-normal mt-0.5">{selectedGift.description}</span>
                             )}
                           </span>
                         </span>
