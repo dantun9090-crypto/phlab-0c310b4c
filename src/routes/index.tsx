@@ -151,9 +151,11 @@ export const Route = createFileRoute("/")({
         }),
       },
     ],
-  }),
+    };
+  },
   component: LegacyMount,
 });
+
 
 function LegacyMount() {
   const { banner } = Route.useLoaderData();
