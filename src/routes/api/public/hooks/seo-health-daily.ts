@@ -193,13 +193,25 @@ export const Route = createFileRoute('/api/public/hooks/seo-health-daily')({
               probe(target, HUMAN_UA, 'human'),
               probePrerenderDirect(target),
             ]);
+            // prerender-direct is an informational probe only: Googlebot on
+            // the live Worker path is served via hash-csp edge cache (the
+            // real SEO surface), and a direct prerender.io miss/404 there
+            // does not affect crawler indexing. Requiring it to be 200
+            // produced daily false-positive alerts for TanStack SPA routes
+            // (all /research/* subpages) where prerender.io's headless
+            // Chrome hydration flips the client router into NotFound after
+            // the pre-rendered shell — Google still sees the correct 200
+            // via hash-csp. Only fail on googlebot + human probes.
+            const criticalOk = probes
+              .filter((p) => p.perspective !== 'prerender-direct')
+              .every((p) => p.ok);
             const result: RouteResult = {
               path: r.path,
               label: r.label,
               tier: r.tier,
               probes,
               signature: '',
-              ok: probes.every((p) => p.ok),
+              ok: criticalOk,
             };
             result.signature = signatureOf(result);
             results.push(result);
