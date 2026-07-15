@@ -47,8 +47,12 @@ async function prepare(page: Page, context: BrowserContext) {
 
 async function loadPage(page: Page) {
   await page.goto(`${BASE}/uk-research-store`, { waitUntil: "domcontentloaded" });
-  await expect(page.locator("h1")).toContainText(/reference materials/i);
-  await page.waitForLoadState("load", { timeout: 10_000 }).catch(() => undefined);
+  // Wait specifically for the real hero h1 (not the "Taking longer than usual"
+  // fallback that flashes on slow live cold-boots).
+  await expect(
+    page.locator("h1").filter({ hasText: /reference materials/i }).first(),
+  ).toBeVisible({ timeout: 25_000 });
+  await page.waitForLoadState("load", { timeout: 15_000 }).catch(() => undefined);
   await page.waitForTimeout(400);
   // Collapse any open <details> so FAQ height is deterministic.
   await page.evaluate(() => {
