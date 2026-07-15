@@ -43,13 +43,14 @@ const WHAT_HAPPENS_NEXT = [
 
 const TRUST_ITEMS: { icon: React.ComponentType<{ className?: string }>; label: string }[] = [
   { icon: ShieldCheck, label: "Secure Open Banking" },
-  { icon: BadgeCheck, label: "FCA Regulated" },
+  { icon: Landmark, label: "FCA Regulated" },
   { icon: Zap, label: "Instant Bank Transfer" },
   { icon: CreditCard, label: "No Card Needed" },
   { icon: Lock, label: "GDPR Compliant" },
-  { icon: Landmark, label: "Direct Bank Payment" },
-  { icon: ArrowRightLeft, label: "Real-time Settlement" },
-  { icon: Banknote, label: "Pay from Your Bank" },
+  { icon: ArrowLeftRight, label: "Direct Bank Payment" },
+  { icon: Activity, label: "Real-time Settlement" },
+  { icon: Wallet, label: "Pay from Your Bank" },
+
 ];
 
 function Radio({ checked, tone = "emerald" }: { checked: boolean; tone?: "emerald" | "slate" }) {
