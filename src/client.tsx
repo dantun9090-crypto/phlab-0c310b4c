@@ -643,10 +643,20 @@ if (shouldStartPhlClient) {
     if (isHydrationCrash(event.reason)) renderCsr(event.reason);
   }, true);
 
-  console.info(
-    `[HYDRATION] CSR mode on ${location.pathname} (ENABLE_SSR_HYDRATION=${ENABLE_SSR_HYDRATION}, allowed=${JSON.stringify(SSR_HYDRATION_ROUTES)})`,
-  );
-  renderCsr(new Error("SSR hydration disabled by flag"));
+  if (shouldSkipCsrForCurrentPath()) {
+    // Dedicated TanStack route: keep the SSR HTML in place. Mounting
+    // LegacyApp here would wipe the article and render the react-router
+    // catch-all NotFound (page title flips to "Page Not Found | PH Labs UK"),
+    // breaking real users and causing prerender.io to snapshot a 404.
+    console.info(
+      `[HYDRATION] Skip CSR on ${location.pathname} — dedicated TanStack SSR route`,
+    );
+  } else {
+    console.info(
+      `[HYDRATION] CSR mode on ${location.pathname} (ENABLE_SSR_HYDRATION=${ENABLE_SSR_HYDRATION}, allowed=${JSON.stringify(SSR_HYDRATION_ROUTES)})`,
+    );
+    renderCsr(new Error("SSR hydration disabled by flag"));
+  }
 }
 
 if (shouldStartPhlClient) window.setTimeout(() => {
