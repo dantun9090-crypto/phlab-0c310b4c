@@ -50,7 +50,7 @@ const HASHED_STATIC_ASSET_RE = /(?:^|\/)[^/?#]+(?:[-._][a-f0-9]{8,}|-[A-Za-z0-9_
 // SAFETY: Only cache successful (2xx) text/html responses on GET. Never cache
 // authenticated / sensitive paths — those are excluded by prefix below.
 // ═══════════════════════════════════════════════════════════════════════════════
-const WARM_TTL_MS = 0;
+const WARM_TTL_MS = 20_000; // 20s per-isolate HTML shell cache — bounds stale window after deploy.
 const WARM_MAX_ENTRIES = 64;
 const WARM_SKIP_PREFIXES = [
   "/admin", "/auth", "/login", "/logout", "/account",
@@ -85,10 +85,16 @@ function warmCacheSet(key, body, contentType) {
   htmlWarmCache.set(key, { body, contentType, expiresAt: Date.now() + WARM_TTL_MS });
 }
 
-function warmCacheEligible(_path) {
-  // Disabled while publishing/debugging: any Worker-isolate warm HTML cache can
-  // mask a fresh deployment for the next visitor on that isolate.
-  return false;
+function warmCacheEligible(path) {
+  // Warm HTML shells only for public, user-agnostic routes. Auth/checkout/cart
+  // and API/downloads are excluded so no per-user or dynamic body is cached.
+  // 20s TTL bounds any post-deploy staleness on a single isolate; new isolates
+  // (spun up frequently by CF) always hit origin first.
+  if (!path) return false;
+  for (const prefix of WARM_SKIP_PREFIXES) {
+    if (path === prefix || path.startsWith(prefix + "/") || path.startsWith(prefix)) return false;
+  }
+  return true;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
