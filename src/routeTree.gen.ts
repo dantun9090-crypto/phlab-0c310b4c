@@ -57,6 +57,7 @@ import { Route as ResearchBpc157Tb500SynergyRouteImport } from './routes/researc
 import { Route as ProductsSlugRouteImport } from './routes/products_.$slug'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentCancelRouteImport } from './routes/payment.cancel'
+import { Route as OrderSuccessRouteImport } from './routes/order.success'
 import { Route as LandingPhlabsRouteImport } from './routes/landing.phlabs'
 import { Route as LandingSlugRouteImport } from './routes/landing.$slug'
 import { Route as DownloadsFileRouteImport } from './routes/downloads.$file'
@@ -378,6 +379,11 @@ const PaymentSuccessRoute = PaymentSuccessRouteImport.update({
 const PaymentCancelRoute = PaymentCancelRouteImport.update({
   id: '/payment/cancel',
   path: '/payment/cancel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrderSuccessRoute = OrderSuccessRouteImport.update({
+  id: '/order/success',
+  path: '/order/success',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LandingPhlabsRoute = LandingPhlabsRouteImport.update({
@@ -834,6 +840,7 @@ export interface FileRoutesByFullPath {
   '/downloads/$file': typeof DownloadsFileRoute
   '/landing/$slug': typeof LandingSlugRoute
   '/landing/phlabs': typeof LandingPhlabsRoute
+  '/order/success': typeof OrderSuccessRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
@@ -957,6 +964,7 @@ export interface FileRoutesByTo {
   '/downloads/$file': typeof DownloadsFileRoute
   '/landing/$slug': typeof LandingSlugRoute
   '/landing/phlabs': typeof LandingPhlabsRoute
+  '/order/success': typeof OrderSuccessRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
@@ -1083,6 +1091,7 @@ export interface FileRoutesById {
   '/downloads/$file': typeof DownloadsFileRoute
   '/landing/$slug': typeof LandingSlugRoute
   '/landing/phlabs': typeof LandingPhlabsRoute
+  '/order/success': typeof OrderSuccessRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products_/$slug': typeof ProductsSlugRoute
@@ -1209,6 +1218,7 @@ export interface FileRouteTypes {
     | '/downloads/$file'
     | '/landing/$slug'
     | '/landing/phlabs'
+    | '/order/success'
     | '/payment/cancel'
     | '/payment/success'
     | '/products/$slug'
@@ -1332,6 +1342,7 @@ export interface FileRouteTypes {
     | '/downloads/$file'
     | '/landing/$slug'
     | '/landing/phlabs'
+    | '/order/success'
     | '/payment/cancel'
     | '/payment/success'
     | '/products/$slug'
@@ -1457,6 +1468,7 @@ export interface FileRouteTypes {
     | '/downloads/$file'
     | '/landing/$slug'
     | '/landing/phlabs'
+    | '/order/success'
     | '/payment/cancel'
     | '/payment/success'
     | '/products_/$slug'
@@ -1576,6 +1588,7 @@ export interface RootRouteChildren {
   DownloadsFileRoute: typeof DownloadsFileRoute
   LandingSlugRoute: typeof LandingSlugRoute
   LandingPhlabsRoute: typeof LandingPhlabsRoute
+  OrderSuccessRoute: typeof OrderSuccessRoute
   PaymentCancelRoute: typeof PaymentCancelRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
@@ -1975,6 +1988,13 @@ declare module '@tanstack/react-router' {
       path: '/payment/cancel'
       fullPath: '/payment/cancel'
       preLoaderRoute: typeof PaymentCancelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/order/success': {
+      id: '/order/success'
+      path: '/order/success'
+      fullPath: '/order/success'
+      preLoaderRoute: typeof OrderSuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/landing/phlabs': {
@@ -2635,6 +2655,7 @@ const rootRouteChildren: RootRouteChildren = {
   DownloadsFileRoute: DownloadsFileRoute,
   LandingSlugRoute: LandingSlugRoute,
   LandingPhlabsRoute: LandingPhlabsRoute,
+  OrderSuccessRoute: OrderSuccessRoute,
   PaymentCancelRoute: PaymentCancelRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
   ProductsSlugRoute: ProductsSlugRoute,
