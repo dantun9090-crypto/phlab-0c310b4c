@@ -105,7 +105,7 @@ test.describe("live smoke", () => {
       expect(html, `${route} missing <title>`).toMatch(/<title>[^<]+<\/title>/i);
 
       await page
-        .waitForLoadState("networkidle", { timeout: 30_000 })
+        .waitForLoadState("networkidle", { timeout: 5_000 })
         .catch(() => undefined);
 
       // Only fail on VISIBLE fallback copy. Some of these strings are baked
