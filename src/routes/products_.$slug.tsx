@@ -1,6 +1,7 @@
 import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
 import LegacyApp from "@/legacy/LegacyApp";
 import {
+  fetchAllProducts,
   fetchProductBySlug,
   fetchProductById,
   type SeoProduct,
@@ -9,6 +10,7 @@ import { SEO_LIMITS, SITE_URL, clamp } from "@/lib/seo-meta";
 import { RESEARCH_CONTENT } from "@/lib/research-content";
 import { PRODUCT_ID_TO_SLUG, resolveSlugFromId } from "@/lib/product-id-slug-map";
 import { DUAL_ENTRY_ALIASES, getDualEntryAliasInfo } from "@/lib/merchant-dual-entries";
+import { isFreeTokenShape, resolveFreeTokenToDocId } from "@/lib/merchant-free-tokens";
 import { PRODUCT_SEO_OVERRIDES } from "@/lib/product-seo-overrides";
 import { skuFor } from "@/lib/product-sku";
 
