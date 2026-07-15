@@ -20,7 +20,7 @@ async function unregisterServiceWorkersAndCaches() {
     if ('caches' in window) {
       const names = await caches.keys();
       await Promise.all(
-        names.filter((name) => /^(phlabs-offline-|workbox-|precache-|runtime-)/i.test(name) || /(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/i.test(name)).map(async (name) => {
+        names.filter((name) => /^(phlabs-|php_|workbox-|precache-|runtime-)/i.test(name) || /(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/i.test(name)).map(async (name) => {
           try { await caches.delete(name); } catch (_) {}
         })
       );

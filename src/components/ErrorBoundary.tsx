@@ -57,7 +57,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   handleRetry = () => {
-    window.location.reload();
+    void hardReload({ clean: true, home: true });
   };
 
   render() {
@@ -70,16 +70,16 @@ export class ErrorBoundary extends Component<Props, State> {
         return (
           <div className="min-h-screen bg-gray-900 flex items-center justify-center px-6">
             <div className="max-w-md w-full text-center">
-              <h1 className="text-2xl font-bold text-white mb-4">Update available</h1>
+              <h1 className="text-2xl font-bold text-white mb-4">Opening fresh store</h1>
               <p className="text-gray-400 mb-8">
-                A newer version of the site is live. Refresh to load the latest page.
+                Clearing an old browser copy and loading the latest page.
               </p>
               <button
                 onClick={() => { void hardReload({ clean: true }); }}
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors"
               >
                 <RefreshCw className="w-4 h-4" />
-                Refresh &amp; clear cache
+                Open fresh store
               </button>
             </div>
           </div>
@@ -93,12 +93,12 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
 
             <h1 className="text-2xl font-bold text-white mb-4">
-              {this.state.componentName || (isHydrationError ? 'Refresh needed' : 'Something went wrong')}
+              {this.state.componentName || (isHydrationError ? 'Opening fresh store' : 'Something went wrong')}
             </h1>
 
             <p className="text-gray-400 mb-8">
               {isHydrationError
-                ? 'The page did not initialise cleanly. Auto-reload has been stopped; please refresh manually.'
+                ? 'Clearing an old browser copy and loading the latest page.'
                 : 'Something went wrong. Please try again.'}
             </p>
 
@@ -111,11 +111,11 @@ export class ErrorBoundary extends Component<Props, State> {
                 Try Again
               </button>
               <button
-                onClick={() => (window.location.reload as (forceReload?: boolean) => void)(true)}
+                onClick={() => { void hardReload({ clean: true, home: true }); }}
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors"
               >
                 <RefreshCw className="w-4 h-4" />
-                Reload
+                Open fresh store
               </button>
 
               <Link

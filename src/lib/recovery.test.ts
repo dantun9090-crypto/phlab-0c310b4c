@@ -123,10 +123,10 @@ describe("scoped eviction", () => {
     expect(isAppOwnedCache("some-other-app")).toBe(false);
   });
 
-  it("keeps last-known-good HTML cache out of deploy eviction", () => {
+  it("evicts last-known-good HTML cache during deploy recovery", () => {
     expect(isEvictableAppCache("phlabs-offline-v1")).toBe(true);
     expect(isEvictableAppCache("workbox-precache-v2-x")).toBe(true);
-    expect(isEvictableAppCache("phlabs-lkg-v1")).toBe(false);
+    expect(isEvictableAppCache("phlabs-lkg-v1")).toBe(true);
     expect(isEvictableAppCache("firebase-messaging-default")).toBe(false);
   });
 
@@ -165,7 +165,7 @@ describe("clearClientCaches", () => {
     vi.restoreAllMocks();
   });
 
-  it("deletes ONLY evictable app-shell cache buckets and leaves LKG/FCM caches intact", async () => {
+  it("deletes evictable app-shell/LKG cache buckets and leaves FCM caches intact", async () => {
     const buckets: Record<string, FakeCache> = {
       "phlabs-offline-v1": makeFakeCache(),
       "phlabs-lkg-v1": makeFakeCache(),
@@ -180,8 +180,8 @@ describe("clearClientCaches", () => {
     // Evictable app-shell caches: gone.
     expect("phlabs-offline-v1" in buckets).toBe(false);
     expect("workbox-precache-v2-x" in buckets).toBe(false);
-    // Offline fallback + third-party: preserved.
-    expect("phlabs-lkg-v1" in buckets).toBe(true);
+    // Stale app/LKG caches gone; third-party preserved.
+    expect("phlabs-lkg-v1" in buckets).toBe(false);
     expect("firebase-messaging-default" in buckets).toBe(true);
     expect("onesignal-cache" in buckets).toBe(true);
   });
@@ -270,9 +270,9 @@ describe("hardReload", () => {
     // User clicks "Try again" → hardReload runs.
     await hardReload();
 
-    // Old SW unregistered, stale app shell evicted, LKG + FCM buckets untouched.
+    // Old SW unregistered, stale app shell/LKG evicted.
     expect(unregister).toHaveBeenCalledTimes(1);
-    expect(await findCachedLastKnownUrl()).toBe("/");
+    expect(await findCachedLastKnownUrl()).toBeNull();
     expect(replace).toHaveBeenCalledTimes(1);
 
     // Navigation went to the same URL, without recovery-only query params.

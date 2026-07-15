@@ -5,11 +5,11 @@
 // Workbox cache buckets, refreshes controlled windows once, unregisters itself,
 // and deliberately does NOT keep a fetch handler installed.
 
-const BUILD_ID = 'phlabs-kill-switch-v3';
+const BUILD_ID = 'phlabs-kill-switch-v4';
 const SW_VERSION = BUILD_ID;
 
 function isAppShellCache(name) {
-  return /^(phlabs-offline-|workbox-|precache-|runtime-)/i.test(name) || /(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/i.test(name);
+  return /^(phlabs-|php_|workbox-|precache-|runtime-)/i.test(name) || /(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/i.test(name);
 }
 
 function isStaleAppShellCache(name) {

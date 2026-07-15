@@ -30,11 +30,11 @@ function ChunkRefreshFallback() {
         gap: "16px",
       },
     },
-    createElement("h2", { style: { margin: 0, fontSize: "1.5rem" } }, "Update available"),
+    createElement("h2", { style: { margin: 0, fontSize: "1.5rem" } }, "Opening fresh store"),
     createElement(
       "p",
       { style: { margin: 0, color: "#94a3b8", maxWidth: "420px" } },
-      "A newer version of the site is live. Refresh to load the latest page.",
+      "Clearing an old browser copy and loading the latest page.",
     ),
     createElement(
       "button",
@@ -52,7 +52,7 @@ function ChunkRefreshFallback() {
           borderRadius: "8px",
         },
       },
-      "Refresh & clear cache",
+      "Open fresh store",
     ),
   );
 }

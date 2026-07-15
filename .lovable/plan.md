@@ -1,86 +1,29 @@
+Plan naprawy blank/pustej strony i cache end-to-end:
 
-# Plan naprawy failujących workflowów GitHub Actions
+1. Uprościć boot/cache recovery w `src/routes/__root.tsx`
+   - Usunąć ryzykowne automatyczne podmiany całego `document.body.innerHTML` na ściany typu `Refresh needed` / `Update available`, które mogą zostawiać klienta na pustej lub recovery stronie.
+   - Zostawić tylko bezpieczne czyszczenie cache + jeden kontrolowany powrót przez `/cache-reset?next=/`.
+   - Nie zmieniać UI sklepu, kolorów ani layoutu.
 
-Sprawdziłem ostatnie runy na `main`. **10 z 16 workflowów przechodzi**. Poniżej 6 failujących + plan naprawy każdego.
+2. Naprawić powrót stałego klienta po deployu
+   - Gdy wykryty jest stary build, brak assetu albo błąd ładowania chunków: kasować Cache Storage, stare Service Workery, recovery flagi i otwierać świeżą stronę przez `/cache-reset`.
+   - Dodać mocniejszy mechanizm czyszczenia starego `phlabs-lkg-v1`, bo obecny kod celowo zostawia cache last-known-good i to może trzymać stary HTML.
 
-## Aktualny stan (main)
+3. Wzmocnić Service Worker kill-switch
+   - Zaktualizować `public/sw.js` i `public/service-worker.js`, żeby usuwały wszystkie cache buckets PH Labs, włącznie z `phlabs-lkg-*`, i nie zostawiały żadnej rejestracji.
+   - Bez fetch handlera, bez cache’owania HTML.
 
-| # | Workflow | Failujący krok | Typ problemu |
-|---|---|---|---|
-| 1 | Live smoke test (phlabs.co.uk) | `Smoke test live routes` | fałszywy alarm — literał "Refresh needed" |
-| 2 | CI | `/compound + /research Playwright suite` + kroki cosign/SLSA | test e2e + brak `id-token` OIDC |
-| 3 | Day Theme Audit | `Run day-theme audit` | snapshot diff |
-| 4 | Visual regression `/uk-research-store` | `visual + 4px grid spec` | snapshot diff |
-| 5 | Checkout Germany (webkit/firefox/chromium) | `Germany checkout spec` | realna regresja checkoutu |
-| 6 | Security scan (deps) | `Verify SLSA provenance attestation` | zależny od CI #2 (kaskada) |
+4. Sprawdzić edge/cache headers
+   - Utrzymać HTML jako `no-store` na browser/CDN/proxy.
+   - Zweryfikować `/sw.js`, `/service-worker.js`, `/cache-reset`, `/`, `/products`, `/cart`, `/checkout`.
+   - Nie ruszać canonical/SEO poza cache headers.
 
----
+5. E2E regresja w Playwright
+   - Dodać/rozszerzyć test „returning user after deploy”: zasymulować stare cache, stary service worker, stare local/session storage, normalne wejście bez hard refresh.
+   - Test ma potwierdzić: brak pustej strony, brak `Refresh needed`/`Update available`, brak reload loop, realny H1 widoczny, brak aktywnego SW, cache wyczyszczony.
+   - Osobno sprawdzić ścieżkę `/cache-reset?next=/`.
 
-## Plan naprawy — krok po kroku
-
-### 1) Live smoke test — najszybsza wygrana
-**Problem:** `e2e/live-smoke.spec.ts` sprawdza `getByText(/Refresh needed/i)`, ale ten literał jest w ukrytym inline-boot-watchdog template'ie w `__root.tsx`, więc match trafia zawsze.
-**Fix:** zmienić asercję na `visible: true` (`page.getByText(/Refresh needed/i).filter({ visible: true })`) albo wyrzucić literał z template'u boot-watchdogu do zmiennej JS.
-**Zakres:** 1 plik (`e2e/live-smoke.spec.ts`), ~3 linie.
-
-### 2a) CI — Playwright `/compound + /research`
-**Problem:** realny fail e2e po ostatnich zmianach (build-id nuke cache).
-**Fix:** pobrać artefakt Playwrighta z runa, obejrzeć trace, naprawić selektor/timing. Prawdopodobnie zmienił się boot flow po dodaniu `nukeBrowserCaches` — spec musi poczekać na `networkidle` zamiast `domcontentloaded`.
-**Zakres:** 1 plik w `e2e/`.
-
-### 2b) CI — kroki cosign / SLSA / SBOM attest
-**Problem:** `Sign SBOM (cosign keyless)` + attesty wymagają OIDC token, workflow `.github/workflows/release.yml`/CI job nie ma `permissions: id-token: write` albo brakuje `contents: write` na attestach.
-**Fix:** dodać blok:
-```yaml
-permissions:
-  contents: write
-  id-token: write
-  attestations: write
-```
-do joba "Production build + Worker import guard". Jeśli attesty są nice-to-have na PR/push branch (nie release) — owinąć te kroki w `if: github.event_name == 'push' && github.ref == 'refs/heads/main'` + `continue-on-error: true`, bo blokują nam cały workflow bez powodu.
-
-### 3) Day Theme Audit — snapshot diff
-**Problem:** intencjonalne zmiany UI unieważniły baseline snapshots.
-**Fix:** zregenerować baseline lokalnie i commitować:
-```
-bunx playwright test e2e/day-theme-audit.spec.ts --update-snapshots
-```
-Alternatywnie odpalić workflow z `workflow_dispatch` z flagą update, jeśli jest.
-
-### 4) Visual regression `/uk-research-store` — snapshot diff
-**Fix:** identycznie jak (3):
-```
-bunx playwright test e2e/uk-research-store-visual.spec.ts --update-snapshots
-```
-
-### 5) Checkout Germany — realna regresja (najważniejszy)
-**Problem:** spec Germany failuje na **wszystkich 3 przeglądarkach** — to nie flake, to regresja w checkout flow (walidacja adresu DE, VAT albo delivery date).
-**Fix:**
-1. Pobrać `test-results/` artifact + trace z runa 29377345976
-2. Zidentyfikować konkretny asercji fail (schema mismatch vs render)
-3. Sprawdzić `tests/create-order-schema-germany.test.ts` (unit) — jeśli przechodzi, problem jest w UI/routingu; jeśli failuje, to schema/business logic
-4. Naprawić w `src/pages/Checkout/` + odpowiedni serverFn
-
-### 6) Security scan (deps)
-**Problem:** `Verify SLSA provenance attestation (self-check)` — kaskada z (2b). Sam skan zależności jest OK; blokuje go weryfikacja podpisu attesta, którego nie ma bo (2b) failuje.
-**Fix:** automatycznie zielony gdy (2b) naprawione. Jeśli nie — analogiczne `permissions: id-token: write` + `continue-on-error` na kroku self-check.
-
----
-
-## Kolejność wykonania (proponowana)
-
-1. **Live smoke** (1) — 2 min, natychmiast zielone
-2. **Snapshot updates** (3) + (4) — 5 min, uruchamiamy Playwright `--update-snapshots`, commit
-3. **Permissions OIDC** dla CI cosign (2b) + Security scan (6) — 5 min, edycja `.github/workflows/*.yml`
-4. **Playwright /compound + /research** (2a) — 15 min, wymaga obejrzenia trace
-5. **Checkout Germany** (5) — 20-40 min, realna regresja, najbardziej ryzykowna zmiana
-
-## Co zostawiam bez zmian
-
-- Wszystkie inne workflowy (10) — zielone.
-- Nie dotykam kodu produkcyjnego poza (5) Checkout Germany — reszta to CI/spec/snapshots.
-- Baseline design/UI — nie zmieniam, tylko regeneruję snapshoty do aktualnego wyglądu.
-
-## Pytanie przed startem
-
-Czy chcesz żebym zrobił **wszystkie 6** naraz (~30-45 min pracy), czy podzielić na etapy i po każdym potwierdzasz (safer, wolniej)?
+6. Weryfikacja po wdrożeniu
+   - Uruchomić lokalny smoke przez przeglądarkę na preview/live w zwykłym Chrome UA, Safari/iOS UA i Firefox UA.
+   - Sprawdzić konsolę, requesty document/asset, nagłówki cache i stan `navigator.serviceWorker`/`caches.keys()`.
+   - Po publish: pełny purge Cloudflare dla `phlabs.co.uk`, potem ponowna weryfikacja live.

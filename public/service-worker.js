@@ -5,7 +5,7 @@
 // unregisters itself. This file is a same-path replacement for old visitors;
 // after activation it refreshes controlled windows once and then disappears.
 
-const BUILD_ID = 'phlabs-legacy-kill-switch-v3';
+const BUILD_ID = 'phlabs-legacy-kill-switch-v4';
 
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
@@ -22,7 +22,7 @@ self.addEventListener('message', (event) => {
 });
 
 function isAppShellCache(name) {
-  return /^(phlabs-offline-|workbox-|precache-|runtime-)/i.test(name) || /(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/i.test(name);
+  return /^(phlabs-|php_|workbox-|precache-|runtime-)/i.test(name) || /(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/i.test(name);
 }
 
 function isStaleAppShellCache(name) {

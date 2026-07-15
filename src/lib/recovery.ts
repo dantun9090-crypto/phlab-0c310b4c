@@ -78,11 +78,10 @@ export function isAppOwnedCache(name: string): boolean {
   return /(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/.test(name);
 }
 
-// Caches safe to evict during a deploy recovery. Keep phlabs-lkg-* so if the
-// network is still unavailable after the hard reload, the offline screen can
-// still offer last-known content instead of a dead end.
+// Caches safe to evict during deploy/cache recovery. Include phlabs-lkg-*:
+// those last-known-good HTML snapshots can keep returning visitors on an old
+// shell after a publish, which is worse than losing the offline shortcut.
 export function isEvictableAppCache(name: string): boolean {
-  if (name.startsWith("phlabs-lkg-")) return false;
   if (APP_CACHE_PREFIXES.some((p) => name.startsWith(p))) return true;
   return /(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/.test(name);
 }
