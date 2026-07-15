@@ -35,6 +35,8 @@ SIG="$SBOM.sig"
 CERT="$SBOM.pem"
 PROV="$SBOM.provenance.intoto.jsonl"
 CYDX="$SBOM.cyclonedx.intoto.jsonl"
+PROV_CERT="$SBOM.provenance.pem"
+CYDX_CERT="$SBOM.cyclonedx.pem"
 
 REPO="${GITHUB_REPOSITORY:-}"
 IDENTITY_REGEX="^https://github\.com/${REPO}/\.github/workflows/${WORKFLOW}\.yml@"
@@ -112,7 +114,7 @@ run_check() {
   echo "| --- | --- | --- |"
 } >> "$SUMMARY"
 
-for f in "$SBOM" "$SIG" "$CERT" "$PROV" "$CYDX"; do
+for f in "$SBOM" "$SIG" "$CERT" "$PROV" "$PROV_CERT" "$CYDX" "$CYDX_CERT"; do
   if [ ! -f "$f" ]; then
     emit_check "artifact:${f##*/}" fail "missing artifact file: ${f##*/}"
   fi
@@ -133,6 +135,7 @@ if [ "$FAIL" -eq 0 ]; then
     run_check "cosign verify-blob-attestation (SLSA Provenance v1)" \
       cosign verify-blob-attestation \
         --signature "$PROV" \
+        --certificate "$PROV_CERT" \
         --type slsaprovenance1 \
         --certificate-identity-regexp "$IDENTITY_REGEX" \
         --certificate-oidc-issuer "$ISSUER" \
@@ -141,6 +144,7 @@ if [ "$FAIL" -eq 0 ]; then
     run_check "cosign verify-blob-attestation (CycloneDX SBOM)" \
       cosign verify-blob-attestation \
         --signature "$CYDX" \
+        --certificate "$CYDX_CERT" \
         --type cyclonedx \
         --certificate-identity-regexp "$IDENTITY_REGEX" \
         --certificate-oidc-issuer "$ISSUER" \

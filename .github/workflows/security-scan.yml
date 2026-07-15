@@ -255,7 +255,7 @@ jobs:
         if: always()
         uses: sigstore/cosign-installer@v3
         with:
-          cosign-release: v2.4.1
+          cosign-release: v3.1.1
 
       - name: Sign SBOM (cosign keyless)
         if: always()
@@ -388,7 +388,7 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
         with:
-          cosign-release: v2.4.1
+          cosign-release: v3.1.1
 
       - name: Download SBOM bundle artifact
         uses: actions/download-artifact@v5

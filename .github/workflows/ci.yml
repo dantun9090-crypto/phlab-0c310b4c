@@ -57,9 +57,20 @@ jobs:
       - name: Install Playwright browser
         run: bunx playwright install --with-deps chromium
 
+      - name: Start local dev server for Playwright
+        run: |
+          (bun run dev --host 127.0.0.1 --port 8080 > server.log 2>&1 &)
+          for i in $(seq 1 120); do
+            if curl -fsS -o /dev/null "http://127.0.0.1:8080/compound"; then
+              echo "server up after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "server failed to start"; tail -n 200 server.log; exit 1
+
       - name: /compound + /research Playwright suite
         env:
-          TEST_BASE_URL: https://phlabs.co.uk
+          TEST_BASE_URL: http://127.0.0.1:8080
         run: bun run test:compound:e2e
 
       # Visual regression for /compound + /research. Baselines live in
@@ -70,7 +81,7 @@ jobs:
       # intentional design change — CI never auto-updates snapshots.
       - name: /compound + /research visual regression
         env:
-          TEST_BASE_URL: https://phlabs.co.uk
+          TEST_BASE_URL: http://127.0.0.1:8080
         run: bun run test:compound:visual
 
       # Idempotent cache invalidation unit tests — guards the dedupe key
@@ -86,6 +97,7 @@ jobs:
           path: |
             playwright-report
             test-results
+            server.log
           retention-days: 14
 
       # Dedicated artifact: structured cache-invalidation diagnostics
@@ -198,7 +210,7 @@ jobs:
         if: hashFiles('dist/sbom.cdx.json') != ''
         uses: sigstore/cosign-installer@v3
         with:
-          cosign-release: v2.4.1
+          cosign-release: v3.1.1
 
       - name: Sign SBOM (cosign keyless)
         if: hashFiles('dist/sbom.cdx.json') != ''
@@ -363,7 +375,7 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
         with:
-          cosign-release: v2.4.1
+          cosign-release: v3.1.1
 
       - name: Download SBOM bundle artifact
         uses: actions/download-artifact@v5
