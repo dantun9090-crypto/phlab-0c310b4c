@@ -99,14 +99,17 @@ test.describe("returning user, post-deploy: fresh HTML without hard refresh", ()
     // 2a. Seed Cache Storage with a fake shell for "/".
     await page.evaluate(async ({ base, marker }) => {
       const cache = await caches.open("phlabs-stale-precache-v1");
+      const lkgCache = await caches.open("phlabs-lkg-v1");
       const staleBody = `<!doctype html><html><head><title>${marker}</title></head><body><h1>${marker}</h1><script>window.__PHLABS_STALE__=true;</script></body></html>`;
+      const staleResponse = new Response(staleBody, {
+        status: 200,
+        headers: { "content-type": "text/html; charset=utf-8" },
+      });
       await cache.put(
         new Request(`${base}/`, { method: "GET" }),
-        new Response(staleBody, {
-          status: 200,
-          headers: { "content-type": "text/html; charset=utf-8" },
-        }),
+        staleResponse.clone(),
       );
+      await lkgCache.put(new Request(`${base}/`, { method: "GET" }), staleResponse.clone());
       // 2b. Seed localStorage with an "old build" marker.
       window.localStorage.setItem("phlabs.buildId", "old-build-0000000");
     }, { base: BASE, marker: OLD_BUILD_MARKER });
@@ -250,6 +253,48 @@ test.describe("returning user, post-deploy: fresh HTML without hard refresh", ()
     await expect(page.locator("h1").first()).toBeVisible();
     for (const re of [/Please refresh/i, /Update available/i, /Refresh needed/i, /Something went wrong/i]) {
       await expect(page.getByText(re), `recovery wall visible: ${re}`).toHaveCount(0);
+    }
+
+    await context.close();
+  });
+
+  test("cache reset route clears stale local browser state and opens fresh store", async ({ browser }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
+    await page.evaluate(async ({ base, marker }) => {
+      const cache = await caches.open("phlabs-lkg-v1");
+      await cache.put(
+        new Request(`${base}/`, { method: "GET" }),
+        new Response(`<html><body><h1>${marker}</h1></body></html>`, {
+          status: 200,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        }),
+      );
+      localStorage.setItem("phlabs.buildId", "old-build-0000000");
+      sessionStorage.setItem("__phl_hard_reload_in_flight", "1");
+    }, { base: BASE, marker: OLD_BUILD_MARKER });
+
+    const resetResp = await page.goto(`${BASE}/cache-reset?next=/`, { waitUntil: "domcontentloaded" });
+    expect(resetResp, "cache reset response").not.toBeNull();
+    expect(resetResp!.status(), "cache reset HTTP status").toBeLessThan(400);
+    await page.waitForURL(`${BASE}/`, { timeout: 10000 });
+    await expect(page.locator("h1").first()).toBeVisible();
+
+    const state = await page.evaluate(async () => ({
+      cacheKeys: "caches" in window ? await caches.keys() : [],
+      oldBuildId: localStorage.getItem("phlabs.buildId"),
+      hardReloadFlag: sessionStorage.getItem("__phl_hard_reload_in_flight"),
+      text: document.body.innerText,
+    }));
+
+    expect(state.cacheKeys, `Cache Storage still populated after /cache-reset: ${state.cacheKeys.join(", ")}`).toHaveLength(0);
+    expect(state.oldBuildId).toBeNull();
+    expect(state.hardReloadFlag).toBeNull();
+    expect(state.text).not.toContain(OLD_BUILD_MARKER);
+    for (const re of [/Please refresh/i, /Update available/i, /Refresh needed/i, /Something went wrong/i]) {
+      await expect(page.getByText(re), `recovery wall visible after reset: ${re}`).toHaveCount(0);
     }
 
     await context.close();
