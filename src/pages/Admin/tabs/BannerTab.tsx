@@ -869,9 +869,8 @@ export default function BannerTab() {
           </div>
         </div>
       </div>
-
-      <SmartBannerAdminCard />
     </div>
   );
 }
+
 
