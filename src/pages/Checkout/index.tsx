@@ -23,7 +23,7 @@ import type { CartItem } from '@/components/Layout';
 import { useFreeGiftConfig, freeGiftApplies, eligibleGifts } from '@/lib/free-gift-config';
 import FreeGiftPicker from '@/components/checkout/FreeGiftPicker';
 import { trackAddPaymentInfo, trackBeginCheckout, trackViewCart, type GaItem } from '@/lib/analytics';
-import UkBankBadges from '@/components/UkBankBadges';
+
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
 import NoCacheHead from '@/components/NoCacheHead';
 
