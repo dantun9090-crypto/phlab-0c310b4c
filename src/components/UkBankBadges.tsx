@@ -1,7 +1,6 @@
 /**
- * Muted, monochrome row of major UK bank names shown on the Pay-by-Bank
- * option to reassure customers their bank is supported. Kept intentionally
- * low-contrast so it never competes with the primary CTA.
+ * Text-only pill row of major UK bank names shown on the Pay-by-Bank
+ * option. No external images — pure Tailwind chips.
  */
 interface UkBankBadgesProps {
   className?: string;
@@ -12,18 +11,20 @@ const BANKS = ['HSBC', 'Barclays', 'NatWest', 'Lloyds', 'Monzo', 'Starling'];
 export default function UkBankBadges({ className = '' }: UkBankBadgesProps) {
   return (
     <div
-      className={`flex flex-wrap items-center gap-x-3 gap-y-1 opacity-70 ${className}`}
+      className={`flex flex-wrap gap-2 ${className}`}
       aria-label={`Supported UK banks: ${BANKS.join(', ')}`}
     >
       {BANKS.map((name) => (
         <span
           key={name}
-          className="text-[11px] font-medium tracking-wide text-slate-300 leading-none"
+          className="bg-white/10 text-white text-xs font-medium px-2.5 py-1 rounded-md whitespace-nowrap"
         >
           {name}
         </span>
       ))}
-      <span className="text-[11px] text-slate-400 leading-none">+ all UK banks</span>
+      <span className="text-xs text-slate-400 px-2.5 py-1 whitespace-nowrap">
+        + all UK banks
+      </span>
     </div>
   );
 }
