@@ -278,7 +278,10 @@ export default function BannerTab() {
         )}
       </AnimatePresence>
 
+      <SmartBannerAdminCard />
+
       <div className="grid lg:grid-cols-5 gap-6">
+
         {/* ── Left — controls ── */}
         <div className="lg:col-span-2 space-y-4">
 
