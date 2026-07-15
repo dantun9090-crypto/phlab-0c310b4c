@@ -586,14 +586,21 @@ export default {
       if (fit && ["cover", "contain", "scale-down", "crop", "pad"].includes(fit)) imageOpts.fit = fit;
       try {
         const upstream = await fetch(src.toString(), {
-          cf: { image: imageOpts, cacheEverything: true, cacheTtl: 86400 },
+          // 30-day edge cache — resized image variants are immutable per
+          // (u,w,q,f,fit) key, so a longer TTL raises hit ratio without
+          // staleness risk. Was 86400 (1d).
+          cf: { image: imageOpts, cacheEverything: true, cacheTtl: 2592000 },
           headers: { accept: request.headers.get("accept") || "image/avif,image/webp,*/*" },
         });
         const h = new Headers(upstream.headers);
         h.set("cache-control", "public, max-age=31536000, immutable");
+        // Vary on Accept so intermediaries don't serve an AVIF response
+        // to a client whose Accept header doesn't include image/avif.
+        h.set("vary", "Accept");
         h.set("x-phl-via", "img-resize");
         h.delete("set-cookie");
         return applySecurityHeaders(new Response(upstream.body, { status: upstream.status, statusText: upstream.statusText, headers: h }), url);
+
       } catch (_) {
         // Fallback to original
         try {
