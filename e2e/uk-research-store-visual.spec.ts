@@ -52,6 +52,9 @@ async function loadPage(page: Page) {
   await expect(
     page.locator("h1").filter({ hasText: /reference materials/i }).first(),
   ).toBeVisible({ timeout: 25_000 });
+  // Confirm the hero CTA buttons have hydrated too — otherwise the 4px grid
+  // tests can race the render and see 0 `a.inline-flex` elements.
+  await page.locator("a.inline-flex").first().waitFor({ state: "attached", timeout: 15_000 });
   await page.waitForLoadState("load", { timeout: 15_000 }).catch(() => undefined);
   await page.waitForTimeout(400);
   // Collapse any open <details> so FAQ height is deterministic.
