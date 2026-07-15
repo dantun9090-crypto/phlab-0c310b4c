@@ -50,13 +50,13 @@ const HASHED_STATIC_ASSET_RE = /(?:^|\/)[^/?#]+(?:[-._][a-f0-9]{8,}|-[A-Za-z0-9_
 // SAFETY: Only cache successful (2xx) text/html responses on GET. Never cache
 // authenticated / sensitive paths — those are excluded by prefix below.
 // ═══════════════════════════════════════════════════════════════════════════════
-const WARM_TTL_MS = 0;
+const WARM_TTL_MS = 20_000; // 20s per-isolate HTML shell cache — bounds stale window after deploy.
 const WARM_MAX_ENTRIES = 64;
 const WARM_SKIP_PREFIXES = [
   "/admin", "/auth", "/login", "/logout", "/account",
   "/cart", "/checkout", "/payment", "/register", "/api/", "/downloads/",
 ];
-/** @type {Map<string, { body: ArrayBuffer, contentType: string, expiresAt: number }>} */
+/** @type {Map<string, { body: ArrayBuffer, headers: Array<[string,string]>, expiresAt: number }>} */
 const htmlWarmCache = new Map();
 
 function warmCacheKey(url) {
@@ -76,19 +76,25 @@ function warmCacheGet(key) {
   return hit;
 }
 
-function warmCacheSet(key, body, contentType) {
+function warmCacheSet(key, body, headers) {
   if (htmlWarmCache.size >= WARM_MAX_ENTRIES) {
     // Simple FIFO eviction — delete oldest.
     const firstKey = htmlWarmCache.keys().next().value;
     if (firstKey !== undefined) htmlWarmCache.delete(firstKey);
   }
-  htmlWarmCache.set(key, { body, contentType, expiresAt: Date.now() + WARM_TTL_MS });
+  htmlWarmCache.set(key, { body, headers, expiresAt: Date.now() + WARM_TTL_MS });
 }
 
-function warmCacheEligible(_path) {
-  // Disabled while publishing/debugging: any Worker-isolate warm HTML cache can
-  // mask a fresh deployment for the next visitor on that isolate.
-  return false;
+function warmCacheEligible(path) {
+  // Warm HTML shells only for public, user-agnostic routes. Auth/checkout/cart
+  // and API/downloads are excluded so no per-user or dynamic body is cached.
+  // 20s TTL bounds any post-deploy staleness on a single isolate; new isolates
+  // (spun up frequently by CF) always hit origin first.
+  if (!path) return false;
+  for (const prefix of WARM_SKIP_PREFIXES) {
+    if (path === prefix || path.startsWith(prefix + "/") || path.startsWith(prefix)) return false;
+  }
+  return true;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -502,17 +508,15 @@ export default {
     if (wEligible) {
       const warm = warmCacheGet(wKey);
       if (warm) {
-        console.log("[PHL Worker] htmlWarmCache hit for " + path);
-        const headers = new Headers();
-        headers.set("Content-Type", warm.contentType);
-        headers.set("X-Content-Type-Options", "nosniff");
-        applyBrowserHtmlNoCache(headers);
+        const headers = new Headers(warm.headers);
+        // Force no-store on the wire even from warm hits — the cache is
+        // isolate-internal only; browsers/CDN must still fetch fresh next time.
+        applyBrowserHtmlNoCache(headers, path);
         const total = Date.now() - startTime;
         headers.set("X-PHL-Via", "warm-hit;bot=0;total=" + total + "ms");
         headers.set("Server-Timing", `warm-cache;desc="HIT", origin;dur=0, worker;dur=${total}`);
         return new Response(warm.body, { status: 200, headers });
       }
-      console.log("[PHL Worker] htmlWarmCache miss for " + path);
     }
 
     const originStart = Date.now();
@@ -562,13 +566,27 @@ export default {
 
     // Populate the warm cache on successful HTML pass-through. We tee the
     // body: one stream to the browser, one buffered into isolate memory.
+    // Skip if origin sent Set-Cookie (per-user response) — must never share.
     const ctype = out.headers.get("Content-Type") || "";
-    if (wEligible && out.status === 200 && ctype.includes("text/html") && out.body) {
+    const hasSetCookie = out.headers.has("set-cookie") || out.headers.has("Set-Cookie");
+    if (wEligible && out.status === 200 && ctype.includes("text/html") && out.body && !hasSetCookie) {
       const [a, b] = out.body.tee();
+      // Snapshot response headers so warm hits replay the exact CSP (with its
+      // original per-request nonce), build id, and content-type. Filter out
+      // hop-by-hop / connection headers that mustn't be replayed.
+      const snapshot = [];
+      out.headers.forEach((value, name) => {
+        const n = name.toLowerCase();
+        if (n === "set-cookie" || n === "connection" || n === "keep-alive" ||
+            n === "transfer-encoding" || n === "cf-ray" || n === "cf-request-id" ||
+            n === "server-timing" || n === "x-phl-via" || n === "age" ||
+            n === "date") return;
+        snapshot.push([name, value]);
+      });
       ctx.waitUntil((async () => {
         try {
           const buf = await new Response(b).arrayBuffer();
-          warmCacheSet(wKey, buf, ctype);
+          warmCacheSet(wKey, buf, snapshot);
         } catch (e) {
           console.warn("[PHL Worker] warm cache populate failed: " + (e && e.message));
         }
