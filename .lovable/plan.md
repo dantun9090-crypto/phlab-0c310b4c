@@ -1,29 +1,73 @@
-Plan naprawy blank/pustej strony i cache end-to-end:
+# Plan: Boost phlabs.co.uk Performance
 
-1. Uprościć boot/cache recovery w `src/routes/__root.tsx`
-   - Usunąć ryzykowne automatyczne podmiany całego `document.body.innerHTML` na ściany typu `Refresh needed` / `Update available`, które mogą zostawiać klienta na pustej lub recovery stronie.
-   - Zostawić tylko bezpieczne czyszczenie cache + jeden kontrolowany powrót przez `/cache-reset?next=/`.
-   - Nie zmieniać UI sklepu, kolorów ani layoutu.
+Cel: podnieść Core Web Vitals (LCP, INP, CLS) i wynik Lighthouse na mobile/desktop dla strony głównej, /products i /compound. Bez zmian UI, bez SSR/CSR — zostajemy przy prerenderingu na Cloudflare.
 
-2. Naprawić powrót stałego klienta po deployu
-   - Gdy wykryty jest stary build, brak assetu albo błąd ładowania chunków: kasować Cache Storage, stare Service Workery, recovery flagi i otwierać świeżą stronę przez `/cache-reset`.
-   - Dodać mocniejszy mechanizm czyszczenia starego `phlabs-lkg-v1`, bo obecny kod celowo zostawia cache last-known-good i to może trzymać stary HTML.
+## 1. Obrazy (największy wpływ na LCP)
+- Hero i logo: preload tylko jednego LCP obrazu (`<link rel="preload" as="image" fetchpriority="high">`) w `head()` route'a `/`.
+- Konwersja bundlowanych obrazów przez `vite-imagetools` do AVIF + WebP z fallbackiem JPG; `<picture>` z `srcset` i `sizes`.
+- Dynamiczne obrazy produktów: Cloudflare Image Resizing (`/cdn-cgi/image/...`) z `width`, `format=auto`, `quality=75`; mobilne warianty 400/800px.
+- Każdy `<img>` dostaje `width`, `height`, `decoding="async"`, `loading="lazy"` (poza LCP, który dostaje `fetchpriority="high"` i `loading="eager"`).
+- Usunięcie zbędnych dużych PNG z `src/assets/` — audyt rozmiarów >100KB.
 
-3. Wzmocnić Service Worker kill-switch
-   - Zaktualizować `public/sw.js` i `public/service-worker.js`, żeby usuwały wszystkie cache buckets PH Labs, włącznie z `phlabs-lkg-*`, i nie zostawiały żadnej rejestracji.
-   - Bez fetch handlera, bez cache’owania HTML.
+## 2. JavaScript & code-splitting
+- Audyt bundla (`vite build --mode production` + `rollup-plugin-visualizer`) — cel: initial JS < 170KB gz na mobile.
+- Lazy-load: `/admin/*`, `/checkout`, panele modali, edytory, ciężkie zależności (chart libs, markdown, pdf).
+- Split vendor chunków: `react`, `router`, `firebase`, `ui` osobno.
+- Usunięcie martwych zależności; wymiana ciężkich na lżejsze (np. `date-fns` selektywne importy, `zod` tylko tam gdzie potrzebny).
+- `defer` / `type=module` dla wszystkich skryptów; analytics ładowane po `requestIdleCallback`.
 
-4. Sprawdzić edge/cache headers
-   - Utrzymać HTML jako `no-store` na browser/CDN/proxy.
-   - Zweryfikować `/sw.js`, `/service-worker.js`, `/cache-reset`, `/`, `/products`, `/cart`, `/checkout`.
-   - Nie ruszać canonical/SEO poza cache headers.
+## 3. CSS
+- Włączyć Tailwind v4 `content` scanning strict — usunąć nieużywane utility.
+- Critical CSS inline w `__root.tsx` head (już częściowo jest — zweryfikować rozmiar <14KB).
+- Font-display: `swap`; preload tylko 1-2 wag WOFF2; reszta lazy.
+- Zredukować `src/styles/cls-fixes.css` do minimum — celu CLS < 0.05.
 
-5. E2E regresja w Playwright
-   - Dodać/rozszerzyć test „returning user after deploy”: zasymulować stare cache, stary service worker, stare local/session storage, normalne wejście bez hard refresh.
-   - Test ma potwierdzić: brak pustej strony, brak `Refresh needed`/`Update available`, brak reload loop, realny H1 widoczny, brak aktywnego SW, cache wyczyszczony.
-   - Osobno sprawdzić ścieżkę `/cache-reset?next=/`.
+## 4. Cloudflare edge
+- Ruleset dla `_next/`, `/assets/*`, `.woff2`, `.avif`, `.webp`: `Cache-Control: public, max-age=31536000, immutable` + Edge Cache TTL 1 rok.
+- HTML: no-store (już jest) — nie ruszamy.
+- Włączyć Brotli (jeśli nie jest) i Early Hints dla `/`, `/products`.
+- Argo Smart Routing i Tiered Cache — sprawdzić czy aktywne, włączyć jeśli nie.
+- Speed Brain — MUSI zostać wyłączone (pamięć projektu).
 
-6. Weryfikacja po wdrożeniu
-   - Uruchomić lokalny smoke przez przeglądarkę na preview/live w zwykłym Chrome UA, Safari/iOS UA i Firefox UA.
-   - Sprawdzić konsolę, requesty document/asset, nagłówki cache i stan `navigator.serviceWorker`/`caches.keys()`.
-   - Po publish: pełny purge Cloudflare dla `phlabs.co.uk`, potem ponowna weryfikacja live.
+## 5. Fonty
+- Wszystkie fonty via `<link rel="preload" as="font" type="font/woff2" crossorigin>` w root head, tylko WOFF2, tylko wagi używane above-the-fold.
+- `font-display: swap` + `size-adjust` żeby ograniczyć CLS przy podmianie.
+
+## 6. Trzecie strony
+- Analytics (GA/gtag) — `async`, ładowane po interakcji lub `requestIdleCallback` (max 3s po LCP).
+- Usunąć/opóźnić skrypty które nie są krytyczne pre-LCP (chat widget, pixele).
+
+## 7. Prerender + SW
+- Zweryfikować że prerendered HTML ma zainlineowany LCP `<img>` (nie czeka na JS).
+- Service Worker: precache tylko shell + krytyczne assety, nie HTML.
+
+## 8. Weryfikacja
+- Lighthouse CI (`.lighthouserc.json` już jest) — desktop + mobile na `/`, `/products`, `/compound`.
+- Porównanie z `lighthouse-baseline/` — cel: perf mobile ≥ 0.90, LCP < 2.5s, CLS < 0.05, TBT < 200ms.
+- E2E `home-hero-lcp.spec.ts` musi przejść.
+- RUM `web_vitals` w adminie — sprawdzić p75 przez 48h po deployu.
+- Test na iOS Safari, Firefox, Chrome — potwierdzić brak regresji (blank page, cache).
+
+## Kolejność wdrożenia
+1. Obrazy + preload LCP (największy zysk, najmniejsze ryzyko)
+2. Code-splitting + audyt bundla
+3. Fonty + CSS krytyczne
+4. Cloudflare cache rules dla assetów
+5. Odroczenie third-party skryptów
+6. Lighthouse CI + porównanie z baseline
+
+## Sekcja techniczna
+Pliki dotknięte:
+- `src/routes/__root.tsx` — preload fontów, critical CSS review
+- `src/routes/index.tsx`, `/products.tsx`, `/compound.tsx` — per-route `head().links` preload LCP
+- `vite.config.ts` — `vite-imagetools`, `manualChunks`, `visualizer`
+- `src/components/**` — `<img>` → `<picture>` + `fetchpriority`
+- `public/_headers` — asset cache immutable
+- `cloudflare/wrangler.jsonc` — cache rules (jeśli konieczne)
+- `.lighthouserc.*.json` — progi
+
+Ryzyka:
+- Zmiana chunków może wywołać kolejny epizod stale cache — łagodzone przez istniejący `/cache-reset` flow i BUILD_ID w SW.
+- Cloudflare Image Resizing wymaga aktywnego planu — sprawdzić przed użyciem.
+
+Nie ruszamy: UI, kolorów, layoutu, headera, Firebase, płatności, SSR/CSR, Speed Brain.

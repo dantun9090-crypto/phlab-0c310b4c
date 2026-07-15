@@ -397,10 +397,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // hreflang removed from root — hardcoding href="/" on every route was
       // wrong (pointed every page at the homepage). Single-language UK site
       // doesn't need hreflang; leaf routes set their own canonical instead.
+      // Preconnect budget: browsers throttle after ~4-6 concurrent TLS
+      // handshakes; too many preconnects steal main-thread + network
+      // budget away from the LCP fetch. We keep preconnect for the four
+      // origins that fire inside the LCP window (Firestore data, Storage
+      // image bytes, Google fonts CSS + WOFF2), and demote everything
+      // else to dns-prefetch (cheap ~0-1ms) so the browser resolves DNS
+      // early but doesn't pay for a TLS handshake it may never use.
       { rel: "preconnect", href: "https://firestore.googleapis.com", crossOrigin: "" },
-      { rel: "preconnect", href: "https://firebaseinstallations.googleapis.com", crossOrigin: "" },
       { rel: "preconnect", href: "https://firebasestorage.googleapis.com", crossOrigin: "" },
-      { rel: "preconnect", href: "https://identitytoolkit.googleapis.com", crossOrigin: "" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
       // NOTE: Google Fonts stylesheet (#gfonts) is intentionally NOT injected
@@ -409,16 +414,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // to prevent the third-party stylesheet from mutating <head> before
       // hydration completes, which was triggering React error #418
       // (hydration mismatch) in Chrome/Firefox/Edge.
-      // Analytics / Tag Manager — used sitewide; preconnect shaves ~150–300ms
-      // off the first GA/GTM request on slow mobile networks.
-      { rel: "preconnect", href: "https://www.googletagmanager.com", crossOrigin: "" },
-      { rel: "preconnect", href: "https://www.google-analytics.com", crossOrigin: "" },
+      { rel: "dns-prefetch", href: "https://firebaseinstallations.googleapis.com" },
+      { rel: "dns-prefetch", href: "https://identitytoolkit.googleapis.com" },
+      { rel: "dns-prefetch", href: "https://www.googletagmanager.com" },
+      { rel: "dns-prefetch", href: "https://www.google-analytics.com" },
       { rel: "dns-prefetch", href: "https://firestore.googleapis.com" },
       { rel: "dns-prefetch", href: "https://firebasestorage.googleapis.com" },
       { rel: "dns-prefetch", href: "https://fonts.googleapis.com" },
       { rel: "dns-prefetch", href: "https://fonts.gstatic.com" },
-      { rel: "dns-prefetch", href: "https://www.googletagmanager.com" },
-      { rel: "dns-prefetch", href: "https://www.google-analytics.com" },
+
 
 
     ],
