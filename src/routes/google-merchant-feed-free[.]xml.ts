@@ -220,7 +220,12 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
                   `    <g:additional_image_link>${xmlEscape(abs)}</g:additional_image_link>`,
               );
 
-            const link = `${linkBase}/products/${docId}`;
+            // IMPORTANT: <link> MUST match the landing page's <link rel="canonical">.
+            // Product pages canonicalize to /products/{slug} (e.g. tb-500-thymosin-beta-4).
+            // Using /products/{docId} here caused GMC to disapprove items as
+            // "Mismatched landing page canonical" and drop them from Free Listings.
+            const slugPath = (p as { slug?: string }).slug || docId;
+            const link = `${linkBase}/products/${slugPath}`;
             const price = `${p.price.toFixed(2)} ${CURRENCY}`;
             const availability =
               typeof p.stock === "number" && p.stock <= 0 ? "out of stock" : "in stock";
