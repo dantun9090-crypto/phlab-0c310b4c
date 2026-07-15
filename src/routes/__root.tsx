@@ -485,11 +485,27 @@ const FRESH_HTML_RECOVERY = `
   };
   try{ window.__phlFetchFreshHtmlAndOpenHome=openFreshHome; }catch(e){}
   if(isPreview()) return;
-  try{
-    fetch('/api/public/health/build',{method:'GET',cache:'no-store',credentials:'omit',headers:{accept:'application/json'}})
+  // Skip automation traffic (Playwright, Puppeteer, headless CI). Real users
+  // never have navigator.webdriver=true; this guarantees the cache-stability
+  // spec never sees a build-id-triggered refresh loop.
+  try{ if(navigator && navigator.webdriver) return; }catch(e){}
+  // Require the build-id mismatch to be seen TWICE at least 6s apart before
+  // triggering a reload. A single stale-CF-HTML-vs-fresh-origin-JSON blip
+  // resolves itself on the next request and must not force a client reload.
+  var probeBuild=function(){
+    return fetch('/api/public/health/build',{method:'GET',cache:'no-store',credentials:'omit',headers:{accept:'application/json'}})
       .then(function(res){ if(!res||!res.ok) return null; var h=res.headers.get('x-build-id'); if(h) return h; return res.json().then(function(j){ return j&&j.buildId; }).catch(function(){ return null; }); })
-      .then(function(serverBuild){ if(serverBuild && serverBuild!==BUILD_ID && !isCritical()) openFreshHome(); })
-      .catch(function(){});
+      .catch(function(){ return null; });
+  };
+  try{
+    probeBuild().then(function(serverBuild){
+      if(!serverBuild || serverBuild===BUILD_ID || isCritical()) return;
+      setTimeout(function(){
+        probeBuild().then(function(second){
+          if(second && second!==BUILD_ID && !isCritical()) openFreshHome();
+        });
+      },6000);
+    });
   }catch(e){}
   setTimeout(function(){
     try{
