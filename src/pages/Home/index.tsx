@@ -291,8 +291,13 @@ export default function HomePage() {
     const run = () => {
       loadFirebase().then(({ getDocFromServer, doc, db }) => {
         getDocFromServer(doc(db, 'settings', 'promoBanner')).then(snap => {
-          if (snap.exists()) setBanner(snap.data());
+          const data = snap.exists() ? snap.data() : null;
+          if (data) setBanner(data);
           setBannerResolved(true);
+          try {
+            const active = !!(data && (data as any).imageUrl && (data as any).active !== false && (data as any).isActive !== false);
+            localStorage.setItem('php_banner_active', active ? '1' : '0');
+          } catch { /* ignore */ }
         }).catch(() => setBannerResolved(true));
 
         getDocFromServer(doc(db, 'siteSettings', 'featured-products')).then(snap => {
