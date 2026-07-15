@@ -23,10 +23,10 @@ jobs:
     name: Deploy Prerender Worker
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v4
         with:
           node-version: '24'
 
@@ -101,7 +101,7 @@ jobs:
 
       - name: Smoke test /__health (legacy domain)
         run: |
-          LEGACY_HOST="prohealthpeptides.$(echo co.uk)" # check-domains-allow-line
+          LEGACY_HOST="prohealthpeptides.co.uk" # check-domains-allow-line
           echo "GET https://$LEGACY_HOST/__health"
           curl -sS -f -o /dev/null -w "HTTP %{http_code}\n" "https://$LEGACY_HOST/__health" || echo "legacy /__health not served by prerender worker (expected — legacy zone 301s to apex)"
 

@@ -6,7 +6,7 @@ name: Post-Deploy Edge Purge
 
 on:
   workflow_run:
-    workflows: ["deploy-worker"]
+    workflows: ["Deploy Cloudflare Worker"]
     types: [completed]
     branches: [main]
   workflow_dispatch:
@@ -52,7 +52,7 @@ jobs:
           html=$(curl -fsSL -H "User-Agent: PHLabs-PostDeploy/1.0" https://phlabs.co.uk/)
           echo "$html" | grep -q 'name="build-id"'
           echo "$html" | grep -q 'window.__BUILD_ID__'
-          echo "$html" | grep -Eq '/(assets|_build)/[^"'"'<>]+\.(js|css)[^"'"'<>]*[?&]v='
+          echo "$html" | grep -Eq "/(assets|_build)/[^\"'<>]+\.(js|css)[^\"'<>]*[?&]v="
           echo "✅ Build ID and versioned asset URLs present"
 
       - name: Verify homepage no-store after purge
