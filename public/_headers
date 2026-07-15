@@ -65,6 +65,27 @@
 /_build/*
   Cache-Control: public, max-age=31536000, immutable
 
+# Static images/fonts shipped from /public. Filenames aren't hashed, but
+# these are updated rarely — 7-day browser cache + SWR on the edge keeps
+# LCP fast on repeat views without pinning stale bytes forever.
+/*.avif
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/*.webp
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/*.jpg
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/*.jpeg
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/*.png
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/*.svg
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/*.woff2
+  Cache-Control: public, max-age=31536000, immutable
+/*.woff
+  Cache-Control: public, max-age=31536000, immutable
+
+
 # Payment/webhook/cron endpoints must never be cached anywhere — stale
 # order/payment status would be impossible to recover from.
 /api/payments/*
