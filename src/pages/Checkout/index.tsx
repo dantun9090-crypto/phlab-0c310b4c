@@ -684,9 +684,6 @@ export default function CheckoutPage() {
       }, 50);
       return;
     }
-    // Guard: if the cart is somehow empty by the time we submit, tell the user
-    // instead of silently no-op'ing the button.
-    }
     if (hasItemsWithoutVariant) {
       setErrors(prev => ({ ...prev, stock: 'Please select a variant for all items in your cart' }));
       setLoginError('Please select a variant for every item in your cart.');
