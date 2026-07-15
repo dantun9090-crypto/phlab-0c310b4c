@@ -164,6 +164,10 @@ export default function HomePage() {
   const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
   const [showHeroEffects, setShowHeroEffects] = useState(false);
   const [reserveHeroAdvert, setReserveHeroAdvert] = useState<boolean>(false);
+  // CLS: whether to reserve 320px placeholder before Firestore banner resolves.
+  // Seeded post-mount from localStorage (see effect below) so SSR/CSR match
+  // and empty pages don't reserve wasted height that collapses on resolve.
+  const [expectBanner, setExpectBanner] = useState<boolean>(!!ssrBanner);
   // IMPORTANT: do NOT seed from localStorage in the lazy initializer — SSR
   // returns [] and the client's first render must match, otherwise React
   // throws hydration error #419 (recoverable hydration mismatch) and
@@ -220,6 +224,7 @@ export default function HomePage() {
     // Runs AFTER the first commit, so it never causes a hydration mismatch.
     try {
       setReserveHeroAdvert(localStorage.getItem('php_adverts_hero_count') === '1');
+      if (localStorage.getItem('php_banner_active') === '1') setExpectBanner(true);
       const raw = localStorage.getItem('php_adverts_cache');
       if (raw) {
         const { ts, data } = JSON.parse(raw);
@@ -286,8 +291,13 @@ export default function HomePage() {
     const run = () => {
       loadFirebase().then(({ getDocFromServer, doc, db }) => {
         getDocFromServer(doc(db, 'settings', 'promoBanner')).then(snap => {
-          if (snap.exists()) setBanner(snap.data());
+          const data = snap.exists() ? snap.data() : null;
+          if (data) setBanner(data);
           setBannerResolved(true);
+          try {
+            const active = !!(data && (data as any).imageUrl && (data as any).active !== false && (data as any).isActive !== false);
+            localStorage.setItem('php_banner_active', active ? '1' : '0');
+          } catch { /* ignore */ }
         }).catch(() => setBannerResolved(true));
 
         getDocFromServer(doc(db, 'siteSettings', 'featured-products')).then(snap => {
@@ -539,7 +549,7 @@ export default function HomePage() {
       ) : (
         // Reserve banner height BEFORE resolve to prevent CLS shift on hero when
         // banner arrives async (matches Lighthouse-flagged 0.27+0.24 shifts).
-        !bannerResolved ? <div aria-hidden="true" style={{ minHeight: 320 }} /> : null
+        !bannerResolved && expectBanner ? <div aria-hidden="true" style={{ minHeight: 320 }} /> : null
       )}
 
       {/* ════════════════════════════════
