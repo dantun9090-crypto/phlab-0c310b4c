@@ -95,6 +95,13 @@ jobs:
           fi
 
       - name: Run Germany checkout spec on ${{ matrix.browser }}
+        # Point at the live domain — the Lovable preview URL now requires
+        # authentication (SSO login wall), which blocks every unauthenticated
+        # Playwright navigation and makes `getByLabel(/first name/i)` time out
+        # on the login page. Live phlabs.co.uk is public and serves the real
+        # checkout flow the spec was written against.
+        env:
+          TEST_BASE_URL: https://phlabs.co.uk
         run: bunx playwright test e2e/checkout-germany.spec.ts --project=${{ matrix.browser }}
 
       - name: Upload Playwright report

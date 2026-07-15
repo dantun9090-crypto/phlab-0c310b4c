@@ -1,76 +1,86 @@
-# Deep Audit PH Labs — Root Cause + Plan
 
-## ✅ Już naprawione w tej turze
+# Plan naprawy failujących workflowów GitHub Actions
 
-**Root cause obu screenshotów** = `HomeSsrShell` w `src/routes/index.tsx` (linie 132-325). To był placeholder "dla FCP" dodany wcześniej, który:
+Sprawdziłem ostatnie runy na `main`. **10 z 16 workflowów przechodzi**. Poniżej 6 failujących + plan naprawy każdego.
 
-- renderował własne `<h1>Pro Peptide Research Lab / For In-Vitro Research</h1>` bez `font-family` → browser default = **serif** (screenshot 1),
-- renderował własny fixed header z emoji `⌕ 🛒 ☰` który zachodził na prawdziwą `<Navigation>` podczas hydracji → **rozjechane menu** (screenshot 2),
-- używał inline styles zamiast Tailwinda → wyglądał zupełnie inaczej niż prawdziwa strona.
+## Aktualny stan (main)
 
-**Fix:** SSR shell zastąpiony pustym `<div>` z tłem `#020617` (slate-950). Prawdziwy `<Home>` z `src/pages/Home/index.tsx` renderuje się od razu po hydracji, bez flash of unstyled content i bez "podwójnego" headera. Purge Cloudflare wykonany.
+| # | Workflow | Failujący krok | Typ problemu |
+|---|---|---|---|
+| 1 | Live smoke test (phlabs.co.uk) | `Smoke test live routes` | fałszywy alarm — literał "Refresh needed" |
+| 2 | CI | `/compound + /research Playwright suite` + kroki cosign/SLSA | test e2e + brak `id-token` OIDC |
+| 3 | Day Theme Audit | `Run day-theme audit` | snapshot diff |
+| 4 | Visual regression `/uk-research-store` | `visual + 4px grid spec` | snapshot diff |
+| 5 | Checkout Germany (webkit/firefox/chromium) | `Germany checkout spec` | realna regresja checkoutu |
+| 6 | Security scan (deps) | `Verify SLSA provenance attestation` | zależny od CI #2 (kaskada) |
 
-Meta `HOME_TITLE` w `src/routes/index.tsx` zsynchronizowany z `useSEO` w Home (`HPLC-Verified Research Peptides UK | PH Labs`) — wcześniej były dwa różne tytuły.
+---
 
-## 🔍 Reszta deep auditu — do zrobienia w kolejnych iteracjach
+## Plan naprawy — krok po kroku
 
-### 1. Weryfikacja fixa na produkcji
-- Odpalić Playwright na `https://phlabs.co.uk/` (mobile 390px + desktop) po deploy'u
-- Sprawdzić że H1 = "HPLC-Verified..." NIE "Pro Peptide Research Lab", font = sans-serif
-- Otworzyć hamburger → sprawdzić że drawer wjeżdża od prawej, linki mają padding i tła
-- Screenshoty tego samego widoku co user (Firefox mobile UA) dla porównania
+### 1) Live smoke test — najszybsza wygrana
+**Problem:** `e2e/live-smoke.spec.ts` sprawdza `getByText(/Refresh needed/i)`, ale ten literał jest w ukrytym inline-boot-watchdog template'ie w `__root.tsx`, więc match trafia zawsze.
+**Fix:** zmienić asercję na `visible: true` (`page.getByText(/Refresh needed/i).filter({ visible: true })`) albo wyrzucić literał z template'u boot-watchdogu do zmiennej JS.
+**Zakres:** 1 plik (`e2e/live-smoke.spec.ts`), ~3 linie.
 
-### 2. Sprawdzenie każdej podstrony (routes audit)
-Dla każdej z: `/`, `/products`, `/product/[slug]`, `/cart`, `/checkout`, `/account`, `/lab-reports`, `/research`, `/contact`, `/vip-store`, `/admin`, policies (`/privacy`, `/terms`, `/shipping`, `/refund`):
-- SSR HTML zawiera prawdziwy `<h1>` i główną treść (nie tylko shell / spinner)
-- Meta `<title>` i `<description>` unikalne per route, nie odziedziczone z `__root`
-- `og:image` tylko na leaf routes (nigdy `__root`)
-- `canonical` = `https://phlabs.co.uk/…` bez `www`
-- Powyżej fold: żadnych fontów serif chyba że user o to prosi (design system → sans + emerald)
-- "For Research Use Only. Not for Human Consumption." widoczne na każdym product page + footer
+### 2a) CI — Playwright `/compound + /research`
+**Problem:** realny fail e2e po ostatnich zmianach (build-id nuke cache).
+**Fix:** pobrać artefakt Playwrighta z runa, obejrzeć trace, naprawić selektor/timing. Prawdopodobnie zmienił się boot flow po dodaniu `nukeBrowserCaches` — spec musi poczekać na `networkidle` zamiast `domcontentloaded`.
+**Zakres:** 1 plik w `e2e/`.
 
-### 3. Hydration mismatches
-Konsola pokazuje `[HYDRATION DIAG] FINAL pre-React mutation count = 4` (`gapi.iframe` wstrzykuje `<script>` + `<iframe>` przed React zdąży hydratować).
-- Zdefer'ować ładowanie `apis.google.com/js/api.js` do `requestIdleCallback` po hydracji
-- Lub przenieść za React tree (na koniec body) żeby nie zmieniało DOM przed hydracją
+### 2b) CI — kroki cosign / SLSA / SBOM attest
+**Problem:** `Sign SBOM (cosign keyless)` + attesty wymagają OIDC token, workflow `.github/workflows/release.yml`/CI job nie ma `permissions: id-token: write` albo brakuje `contents: write` na attestach.
+**Fix:** dodać blok:
+```yaml
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+```
+do joba "Production build + Worker import guard". Jeśli attesty są nice-to-have na PR/push branch (nie release) — owinąć te kroki w `if: github.event_name == 'push' && github.ref == 'refs/heads/main'` + `continue-on-error: true`, bo blokują nam cały workflow bez powodu.
 
-### 4. Web Vitals
-Konsola: `FCP 5696ms (poor)` na `/` w dev. Sprawdzić na prod:
-- SSR shell był ostatnią zmianą — po jego usunięciu FCP powinno spaść (real content zamiast pustego div)
-- Font loading strategy: `font-display: swap` na wszystkich `@font-face`
-- LCP element: banner image? hero H1? — sprawdzić i preload odpowiedni asset
-- CLS: reserve space for banner/adverts
+### 3) Day Theme Audit — snapshot diff
+**Problem:** intencjonalne zmiany UI unieważniły baseline snapshots.
+**Fix:** zregenerować baseline lokalnie i commitować:
+```
+bunx playwright test e2e/day-theme-audit.spec.ts --update-snapshots
+```
+Alternatywnie odpalić workflow z `workflow_dispatch` z flagą update, jeśli jest.
 
-### 5. bfcache
-Konsola: `⚠ Cache-Control on / contains "no-store" — page is NOT bfcache-eligible`.
-- Decyzja: HTML `no-store` jest celowe (świeże buildy) ale zabija bfcache → flash blank przy Back
-- Opcja: przełączyć na `no-cache, must-revalidate` + polegać na `x-build-id` mismatch reload (już mamy)
+### 4) Visual regression `/uk-research-store` — snapshot diff
+**Fix:** identycznie jak (3):
+```
+bunx playwright test e2e/uk-research-store-visual.spec.ts --update-snapshots
+```
 
-### 6. CSP audit
-Widziałem `'unsafe-eval'` w `script-src` na produkcji. Sprawdzić czy naprawdę potrzebne (jakiś bundler eval? sentry replay?) — usunąć jeśli nie.
+### 5) Checkout Germany — realna regresja (najważniejszy)
+**Problem:** spec Germany failuje na **wszystkich 3 przeglądarkach** — to nie flake, to regresja w checkout flow (walidacja adresu DE, VAT albo delivery date).
+**Fix:**
+1. Pobrać `test-results/` artifact + trace z runa 29377345976
+2. Zidentyfikować konkretny asercji fail (schema mismatch vs render)
+3. Sprawdzić `tests/create-order-schema-germany.test.ts` (unit) — jeśli przechodzi, problem jest w UI/routingu; jeśli failuje, to schema/business logic
+4. Naprawić w `src/pages/Checkout/` + odpowiedni serverFn
 
-### 7. Firestore rules & security
-- Zweryfikować że deployed rules = hardened rules z project-knowledge (`isAdmin`, `!hasAny(['isAdmin','role','isVip'])`)
-- Sprawdzić czy `/auditLogs` faktycznie zapisywane server-side przy każdej admin akcji
-- Sprawdzić że robots.txt blokuje `/admin`, `/cart`, `/checkout`, `/api`, `/vip-store`
+### 6) Security scan (deps)
+**Problem:** `Verify SLSA provenance attestation (self-check)` — kaskada z (2b). Sam skan zależności jest OK; blokuje go weryfikacja podpisu attesta, którego nie ma bo (2b) failuje.
+**Fix:** automatycznie zielony gdy (2b) naprawione. Jeśli nie — analogiczne `permissions: id-token: write` + `continue-on-error` na kroku self-check.
 
-### 8. Payments smoke test
-- Stripe: webhook endpoint (`/api/public/stripe-webhook`?) waliduje sygnaturę
-- TrueLayer: request signing (EC P-521 kid)
-- Fena: worker proxy nie leakuje sekretów do klienta
-- Age gate 18+ walidowane server-side w checkout functions
+---
 
-### 9. Sitemap & SEO
-- `/sitemap.xml` reguluje się automatycznie po product save (Firebase trigger?)
-- Base URL = `https://phlabs.co.uk` wszędzie (nie www, nie phlab.lovable.app)
-- 13 aktywnych produktów z inventory ma live URL i JSON-LD Product schema
+## Kolejność wykonania (proponowana)
 
-### 10. Bundle & performance
-- `/admin` i `/checkout` code-split (dynamic import) → sprawdzić `bundle-analyzer`
-- Lazy load poniżej fold: adverts, testimonials, FAQ
-- Cloudflare Image Resizing dla wszystkich Firebase Storage URLs
+1. **Live smoke** (1) — 2 min, natychmiast zielone
+2. **Snapshot updates** (3) + (4) — 5 min, uruchamiamy Playwright `--update-snapshots`, commit
+3. **Permissions OIDC** dla CI cosign (2b) + Security scan (6) — 5 min, edycja `.github/workflows/*.yml`
+4. **Playwright /compound + /research** (2a) — 15 min, wymaga obejrzenia trace
+5. **Checkout Germany** (5) — 20-40 min, realna regresja, najbardziej ryzykowna zmiana
 
-## Technical notes
-- Fix trafi na produkcję po następnym publish (build ID zmieni się, force-reload wyłapie mismatch u obecnych użytkowników)
-- Po publish uruchomię pełną weryfikację Playwright na `phlabs.co.uk` (nie preview)
-- Każdy z punktów 2-10 to osobna iteracja z konkretnymi zmianami; nie zmieniam UI ani product logic — tylko poprawki infra/hydration/security/perf zgodne z workspace + project knowledge
+## Co zostawiam bez zmian
+
+- Wszystkie inne workflowy (10) — zielone.
+- Nie dotykam kodu produkcyjnego poza (5) Checkout Germany — reszta to CI/spec/snapshots.
+- Baseline design/UI — nie zmieniam, tylko regeneruję snapshoty do aktualnego wyglądu.
+
+## Pytanie przed startem
+
+Czy chcesz żebym zrobił **wszystkie 6** naraz (~30-45 min pracy), czy podzielić na etapy i po każdym potwierdzasz (safer, wolniej)?

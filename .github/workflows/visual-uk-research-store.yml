@@ -14,6 +14,10 @@ on:
         description: "Override base URL (defaults to https://phlabs.co.uk)"
         required: false
         default: "https://phlabs.co.uk"
+      update_snapshots:
+        description: "Regenerate visual baselines from this run"
+        type: boolean
+        default: false
 
 concurrency:
   group: visual-uk-research-store-${{ github.ref }}
@@ -47,7 +51,20 @@ jobs:
         # PNGs into on a failed toHaveScreenshot assertion. HTML report is
         # emitted alongside so reviewers get both the interactive diff viewer
         # and the raw PNGs in the artifact.
-        run: bunx playwright test e2e/uk-research-store-visual.spec.ts --project=chromium --reporter=line,html --output=test-results
+        env:
+          UPDATE_SNAPSHOTS: ${{ github.event.inputs.update_snapshots }}
+        run: |
+          FLAGS=""
+          if [ "$UPDATE_SNAPSHOTS" = "true" ]; then FLAGS="--update-snapshots"; fi
+          bunx playwright test e2e/uk-research-store-visual.spec.ts --project=chromium --reporter=line,html --output=test-results $FLAGS
+
+      - name: Upload regenerated snapshots
+        if: ${{ github.event.inputs.update_snapshots == 'true' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: uk-research-store-snapshots
+          path: e2e/uk-research-store-visual.spec.ts-snapshots/
+          retention-days: 30
 
       - name: Collect screenshot diff PNGs
         if: failure()

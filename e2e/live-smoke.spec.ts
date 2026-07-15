@@ -101,9 +101,13 @@ test.describe("live smoke", () => {
         .waitForLoadState("networkidle", { timeout: 30_000 })
         .catch(() => undefined);
 
+      // Only fail on VISIBLE fallback copy. Some of these strings are baked
+      // into the hidden inline boot-watchdog / update-toast templates in
+      // __root.tsx and are always present in the DOM as templates — matching
+      // them without a visibility filter always fails on a healthy site.
       for (const re of FALLBACK_TEXTS) {
-        const count = await page.getByText(re).count();
-        expect(count, `${route} fallback visible: ${re}`).toBe(0);
+        const visibleCount = await page.getByText(re).filter({ visible: true }).count();
+        expect(visibleCount, `${route} fallback visible: ${re}`).toBe(0);
       }
 
       const bodyChildren = await page.evaluate(
