@@ -6,7 +6,7 @@ name: Post-Deploy Edge Purge
 
 on:
   workflow_run:
-    workflows: ["deploy-worker"]
+    workflows: ["Deploy Cloudflare Worker"]
     types: [completed]
     branches: [main]
   workflow_dispatch:
