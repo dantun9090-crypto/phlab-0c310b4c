@@ -1,38 +1,29 @@
 /**
- * Small inline badges that show the major UK banks supported by our
- * Pay by Bank (Open Banking) checkout option. Pure presentation — used on
- * the checkout payment-method selector to reassure customers that their
- * bank is supported.
+ * Muted, monochrome row of major UK bank names shown on the Pay-by-Bank
+ * option to reassure customers their bank is supported. Kept intentionally
+ * low-contrast so it never competes with the primary CTA.
  */
 interface UkBankBadgesProps {
   className?: string;
 }
 
-const BANKS: { name: string; bg: string; fg: string }[] = [
-  { name: 'HSBC',     bg: '#db0011', fg: '#ffffff' },
-  { name: 'Barclays', bg: '#00aeef', fg: '#ffffff' },
-  { name: 'NatWest',  bg: '#5a287d', fg: '#ffffff' },
-  { name: 'Lloyds',   bg: '#024731', fg: '#ffffff' },
-  { name: 'Monzo',    bg: '#ff3464', fg: '#ffffff' },
-  { name: 'Starling', bg: '#7d3cf8', fg: '#ffffff' },
-];
+const BANKS = ['HSBC', 'Barclays', 'NatWest', 'Lloyds', 'Monzo', 'Starling'];
 
 export default function UkBankBadges({ className = '' }: UkBankBadgesProps) {
   return (
     <div
-      className={`flex flex-wrap items-center gap-1 ${className}`}
-      aria-label="Supported UK banks: HSBC, Barclays, NatWest, Lloyds, Monzo, Starling"
+      className={`flex flex-wrap items-center gap-x-3 gap-y-1 opacity-70 ${className}`}
+      aria-label={`Supported UK banks: ${BANKS.join(', ')}`}
     >
-      {BANKS.map(b => (
+      {BANKS.map((name) => (
         <span
-          key={b.name}
-          className="text-[9px] font-bold px-1.5 py-0.5 rounded leading-none tracking-wide"
-          style={{ background: b.bg, color: b.fg }}
+          key={name}
+          className="text-[11px] font-medium tracking-wide text-slate-300 leading-none"
         >
-          {b.name}
+          {name}
         </span>
       ))}
-      <span className="text-[9px] text-gray-500 ml-1">+ all UK banks</span>
+      <span className="text-[11px] text-slate-400 leading-none">+ all UK banks</span>
     </div>
   );
 }
