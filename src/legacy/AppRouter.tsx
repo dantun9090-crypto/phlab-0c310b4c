@@ -137,6 +137,17 @@ const routes = [
   // shop Layout during emergency CSR boot so it never falls through to 404
   // or renders a duplicate storefront header.
   { path: '/compound', element: <PremiumLanding eyebrow="UK Laboratory Supply" /> },
+  // /uk-research-store is an SSR-first landing page (own <main>, own SEO
+  // head). Registered here too so the legacy client-side router does NOT
+  // fall through to <NotFound /> after hydration on that path.
+  {
+    path: '/uk-research-store',
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <UkResearchStoreLazy />
+      </Suspense>
+    ),
+  },
   // ── All public routes — wrapped in Layout ──
   {
     path: '/',
