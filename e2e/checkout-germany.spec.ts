@@ -103,7 +103,7 @@ test.describe('Checkout — Germany', () => {
     await advance.click();
 
     // Step 3 has rendered (age / terms visible).
-    await expect(page.getByLabel(/18 or older|18\+/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByLabel(/18\s*years?\s*(of age)?\s*or\s*older|18\s*or\s*older|18\+/i)).toBeVisible({ timeout: 5000 });
     // Going back to the address step, the German PLZ we entered is still there.
     await page.getByRole('button', { name: /delivery address|edit address|address/i }).first().click().catch(() => { /* accordion may auto-scroll */ });
     await expect(page.locator('input#postcode')).toHaveValue('10115');
@@ -216,7 +216,7 @@ test.describe('Checkout — Germany', () => {
     await page.getByRole('button', { name: /continue|next/i }).first().click();
 
     // Step 3 — confirm 18+ and Terms, then pay.
-    await page.getByLabel(/18 or older|18\+/i).check();
+    await page.getByLabel(/18\s*years?\s*(of age)?\s*or\s*older|18\s*or\s*older|18\+/i).check();
     await page.getByLabel(/terms|research use/i).check();
     await page.getByRole('button', { name: /pay|place order|continue to payment/i }).first().click();
 
@@ -290,7 +290,7 @@ test.describe('Checkout — Germany', () => {
     // Sanity: fixing the address (adds a house number) lets Step 2 pass.
     await streetInput.fill('Musterstraße 12');
     await advance.click();
-    await expect(page.getByLabel(/18 or older|18\+/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByLabel(/18\s*years?\s*(of age)?\s*or\s*older|18\s*or\s*older|18\+/i)).toBeVisible({ timeout: 5000 });
 
     // The order-create endpoint must NEVER have been called during the
     // invalid attempts above.
