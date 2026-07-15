@@ -151,9 +151,14 @@ export const Route = createFileRoute("/products_/$slug")({
       product?.description ||
       `${name}: HPLC-verified research peptide from PH Labs UK.`;
     const description = clamp(baseDesc.replace(/\s+/g, " ").trim(), SEO_LIMITS.descriptionMax);
-    // Canonical always points to the slug URL, even when the page was
-    // opened via the Firestore-ID alias (/products/{id}).
-    const url = `${SITE_URL}/products/${product?.slug ?? params.slug}`;
+    // Canonical points to the slug URL, EXCEPT when the page was opened
+    // via a Free-Listings opaque token — then canonical == the token URL so
+    // GMC's feed link matches the landing page's <link rel="canonical">
+    // (prevents "Mismatched value (page crawl): landing page canonical").
+    const matchedByFreeToken = loaderData?.matchedBy === "free-token";
+    const url = matchedByFreeToken
+      ? `${SITE_URL}/products/${params.slug}`
+      : `${SITE_URL}/products/${product?.slug ?? params.slug}`;
     const image = product?.imageUrl || OG_IMAGE_FALLBACK;
 
     // Parse a measurement (e.g. "10 mg", "5mg", "100 mcg", "2 IU", "30 ml")
