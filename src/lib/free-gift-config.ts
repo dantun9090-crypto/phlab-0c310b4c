@@ -82,29 +82,32 @@ export function useFreeGiftConfig(): FreeGiftConfig {
 }
 
 export function freeGiftApplies(cfg: FreeGiftConfig, subtotal: number): boolean {
-  if (!cfg.enabled) return false;
-  if (cfg.items.length > 0) return cfg.items.some((it) => it.enabled && subtotal >= (it.minSubtotal || 0));
-  return subtotal >= (cfg.minSubtotal || 0);
+  return eligibleGifts(cfg, subtotal).length > 0;
 }
 
 /**
- * All gifts the customer currently qualifies for. Falls back to the legacy
- * single-gift shape when no `items` are configured, so behaviour is
- * unchanged for existing setups.
+ * All gifts the customer currently qualifies for. The legacy default gift
+ * (top-level title/description/minSubtotal) is included alongside `items`
+ * whenever it has a non-empty title — so admins configuring a "default" +
+ * one or more "extras" get a picker with all of them, matching their
+ * mental model. When no extras are configured, behaviour is unchanged.
  */
 export function eligibleGifts(cfg: FreeGiftConfig, subtotal: number): FreeGiftItem[] {
   if (!cfg.enabled) return [];
-  if (cfg.items.length > 0) {
-    return cfg.items.filter((it) => it.enabled && subtotal >= (it.minSubtotal || 0));
-  }
-  if (subtotal >= (cfg.minSubtotal || 0)) {
-    return [{
+  const out: FreeGiftItem[] = [];
+  const legacyTitle = (cfg.title || '').trim();
+  const legacyMin = cfg.minSubtotal || 0;
+  if (legacyTitle && subtotal >= legacyMin) {
+    out.push({
       id: 'legacy',
-      title: cfg.title || FREE_GIFT_DEFAULTS.title,
-      description: cfg.description || '',
-      minSubtotal: cfg.minSubtotal || 0,
+      title: legacyTitle,
+      description: (cfg.description || '').trim(),
+      minSubtotal: legacyMin,
       enabled: true,
-    }];
+    });
   }
-  return [];
+  for (const it of cfg.items) {
+    if (it.enabled && subtotal >= (it.minSubtotal || 0)) out.push(it);
+  }
+  return out;
 }

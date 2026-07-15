@@ -315,7 +315,7 @@ jobs:
             dist/sbom.cdx.json
 
       - name: Verify SLSA provenance attestation (self-check)
-        if: always()
+        if: hashFiles('dist/sbom.cdx.json.provenance.intoto.jsonl') != ''
         run: |
           cosign verify-blob-attestation \
             --signature dist/sbom.cdx.json.provenance.intoto.jsonl \

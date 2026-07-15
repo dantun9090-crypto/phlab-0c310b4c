@@ -195,13 +195,13 @@ jobs:
       #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
       #     sbom.cdx.json
       - name: Install cosign
-        if: always()
+        if: hashFiles('dist/sbom.cdx.json') != ''
         uses: sigstore/cosign-installer@v3
         with:
           cosign-release: v2.4.1
 
       - name: Sign SBOM (cosign keyless)
-        if: always()
+        if: hashFiles('dist/sbom.cdx.json') != ''
         env:
           COSIGN_YES: "true"
         run: |
@@ -212,7 +212,7 @@ jobs:
             dist/sbom.cdx.json
 
       - name: Verify SBOM signature (self-check)
-        if: always()
+        if: hashFiles('dist/sbom.cdx.json.sig') != ''
         # Self-check only; the real gate is the separate
         # "Attestation verify (SLSA + CycloneDX)" job below. Rekor's public
         # transparency-log search API now requires a `verifiers` field in the
@@ -232,7 +232,7 @@ jobs:
       # digest to: repo, commit SHA, ref, workflow file, run ID + attempt,
       # and BUILD_ID. This is the JSON we attest below.
       - name: Generate SLSA provenance predicate
-        if: always()
+        if: hashFiles('dist/sbom.cdx.json') != ''
         env:
           BUILD_ID: ${{ github.sha }}
         run: bun run sbom:provenance
@@ -251,7 +251,7 @@ jobs:
       #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
       #     dist/sbom.cdx.json
       - name: Attest SBOM (SLSA provenance, cosign keyless)
-        if: always()
+        if: hashFiles('dist/sbom.cdx.json', 'dist/sbom.cdx.json.provenance.json') != ''
         env:
           COSIGN_YES: "true"
         run: |
@@ -264,7 +264,7 @@ jobs:
             dist/sbom.cdx.json
 
       - name: Attest SBOM (CycloneDX predicate, cosign keyless)
-        if: always()
+        if: hashFiles('dist/sbom.cdx.json') != ''
         env:
           COSIGN_YES: "true"
         run: |

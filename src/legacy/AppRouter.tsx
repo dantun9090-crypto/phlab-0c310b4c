@@ -21,6 +21,9 @@ import { lazyWithRetry } from '@/lib/lazyWithRetry';
 // bundle finishes so the tab-back navigation is instant.
 const Home = lazyWithRetry(() => import(/* vitePrefetch: true */ '@/pages/Home'));
 import NotFound from '@/pages/NotFound';
+const UkResearchStoreLazy = lazyWithRetry(() =>
+  import('@/routes/uk-research-store').then((m) => ({ default: m.UkResearchStore })),
+);
 
 // Code-split: admin, checkout, payment, auth, account, VIP — not needed for
 // first paint of the public store. Saves ~250–300 KB from the main bundle.
@@ -137,6 +140,17 @@ const routes = [
   // shop Layout during emergency CSR boot so it never falls through to 404
   // or renders a duplicate storefront header.
   { path: '/compound', element: <PremiumLanding eyebrow="UK Laboratory Supply" /> },
+  // /uk-research-store is an SSR-first landing page (own <main>, own SEO
+  // head). Registered here too so the legacy client-side router does NOT
+  // fall through to <NotFound /> after hydration on that path.
+  {
+    path: '/uk-research-store',
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <UkResearchStoreLazy />
+      </Suspense>
+    ),
+  },
   // ── All public routes — wrapped in Layout ──
   {
     path: '/',
