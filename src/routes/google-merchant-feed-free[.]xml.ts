@@ -8,6 +8,7 @@ import {
   isProductAllowed,
   applyOverrideToItem,
 } from "@/lib/merchant-feed-overrides";
+import { freeTokenFor } from "@/lib/merchant-free-tokens";
 
 /**
  * ============================================================================
