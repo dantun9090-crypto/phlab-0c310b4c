@@ -14,14 +14,15 @@ import {
   CheckCircle2,
   ChevronDown,
   ShieldCheck,
-  BadgeCheck,
+  Landmark,
   Zap,
   CreditCard,
   Lock,
-  ArrowRightLeft,
-  Banknote,
-  Landmark,
+  ArrowLeftRight,
+  Activity,
+  Wallet,
 } from "lucide-react";
+
 import UkBankBadges from "@/components/UkBankBadges";
 import WallidTrustElements from "@/components/WallidTrustElements";
 import type { CheckoutPaymentOptions } from "@/lib/payments/types";
