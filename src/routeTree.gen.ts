@@ -62,6 +62,7 @@ import { Route as LandingSlugRouteImport } from './routes/landing.$slug'
 import { Route as DownloadsFileRouteImport } from './routes/downloads.$file'
 import { Route as CompareSlugRouteImport } from './routes/compare.$slug'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
+import { Route as CheckoutCancelledRouteImport } from './routes/checkout.cancelled'
 import { Route as CheckoutCancelRouteImport } from './routes/checkout.cancel'
 import { Route as AdminPurgeRouteImport } from './routes/admin.purge'
 import { Route as AdminPublishStatusRouteImport } from './routes/admin.publish-status'
@@ -402,6 +403,11 @@ const CompareSlugRoute = CompareSlugRouteImport.update({
 const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
   id: '/checkout/success',
   path: '/checkout/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutCancelledRoute = CheckoutCancelledRouteImport.update({
+  id: '/checkout/cancelled',
+  path: '/checkout/cancelled',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CheckoutCancelRoute = CheckoutCancelRouteImport.update({
@@ -822,6 +828,7 @@ export interface FileRoutesByFullPath {
   '/admin/publish-status': typeof AdminPublishStatusRoute
   '/admin/purge': typeof AdminPurgeRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
+  '/checkout/cancelled': typeof CheckoutCancelledRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/compare/$slug': typeof CompareSlugRoute
   '/downloads/$file': typeof DownloadsFileRoute
@@ -944,6 +951,7 @@ export interface FileRoutesByTo {
   '/admin/publish-status': typeof AdminPublishStatusRoute
   '/admin/purge': typeof AdminPurgeRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
+  '/checkout/cancelled': typeof CheckoutCancelledRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/compare/$slug': typeof CompareSlugRoute
   '/downloads/$file': typeof DownloadsFileRoute
@@ -1069,6 +1077,7 @@ export interface FileRoutesById {
   '/admin/publish-status': typeof AdminPublishStatusRoute
   '/admin/purge': typeof AdminPurgeRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
+  '/checkout/cancelled': typeof CheckoutCancelledRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/compare/$slug': typeof CompareSlugRoute
   '/downloads/$file': typeof DownloadsFileRoute
@@ -1194,6 +1203,7 @@ export interface FileRouteTypes {
     | '/admin/publish-status'
     | '/admin/purge'
     | '/checkout/cancel'
+    | '/checkout/cancelled'
     | '/checkout/success'
     | '/compare/$slug'
     | '/downloads/$file'
@@ -1316,6 +1326,7 @@ export interface FileRouteTypes {
     | '/admin/publish-status'
     | '/admin/purge'
     | '/checkout/cancel'
+    | '/checkout/cancelled'
     | '/checkout/success'
     | '/compare/$slug'
     | '/downloads/$file'
@@ -1440,6 +1451,7 @@ export interface FileRouteTypes {
     | '/admin/publish-status'
     | '/admin/purge'
     | '/checkout/cancel'
+    | '/checkout/cancelled'
     | '/checkout/success'
     | '/compare/$slug'
     | '/downloads/$file'
@@ -1558,6 +1570,7 @@ export interface RootRouteChildren {
   _e2ePaymentOptionsRoute: typeof _e2ePaymentOptionsRoute
   _e2eWatchdogPanelRoute: typeof _e2eWatchdogPanelRoute
   CheckoutCancelRoute: typeof CheckoutCancelRoute
+  CheckoutCancelledRoute: typeof CheckoutCancelledRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   CompareSlugRoute: typeof CompareSlugRoute
   DownloadsFileRoute: typeof DownloadsFileRoute
@@ -1997,6 +2010,13 @@ declare module '@tanstack/react-router' {
       path: '/checkout/success'
       fullPath: '/checkout/success'
       preLoaderRoute: typeof CheckoutSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout/cancelled': {
+      id: '/checkout/cancelled'
+      path: '/checkout/cancelled'
+      fullPath: '/checkout/cancelled'
+      preLoaderRoute: typeof CheckoutCancelledRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checkout/cancel': {
@@ -2609,6 +2629,7 @@ const rootRouteChildren: RootRouteChildren = {
   _e2ePaymentOptionsRoute: _e2ePaymentOptionsRoute,
   _e2eWatchdogPanelRoute: _e2eWatchdogPanelRoute,
   CheckoutCancelRoute: CheckoutCancelRoute,
+  CheckoutCancelledRoute: CheckoutCancelledRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   CompareSlugRoute: CompareSlugRoute,
   DownloadsFileRoute: DownloadsFileRoute,
