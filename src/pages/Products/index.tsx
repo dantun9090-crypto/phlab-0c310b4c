@@ -279,7 +279,7 @@ export default function Products() {
     const items = filteredProducts.slice(0, 30).map((p, i) => ({
       '@type': 'ListItem',
       position: i + 1,
-      url: `${baseUrl}/product/${nameToSlug(p.name ?? '')}`,
+      url: `${baseUrl}/products/${nameToSlug(p.name ?? '')}`,
       name: p.name,
       image: p.imageUrl,
     }));
