@@ -224,6 +224,7 @@ export default function HomePage() {
     // Runs AFTER the first commit, so it never causes a hydration mismatch.
     try {
       setReserveHeroAdvert(localStorage.getItem('php_adverts_hero_count') === '1');
+      if (localStorage.getItem('php_banner_active') === '1') setExpectBanner(true);
       const raw = localStorage.getItem('php_adverts_cache');
       if (raw) {
         const { ts, data } = JSON.parse(raw);
