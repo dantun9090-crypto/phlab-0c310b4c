@@ -72,9 +72,21 @@ async function waitForTheme(page: Page, mode: "light" | "dark") {
 
 async function stabilise(page: Page) {
   // Wait for hydration + fonts + network so screenshots are deterministic.
-  await page.locator("main, h1, header").first().waitFor({ state: "visible" });
-  await page.evaluate(() => (document as any).fonts?.ready);
-  await page.waitForLoadState("networkidle").catch(() => {});
+  await page
+    .locator("main, h1, header")
+    .first()
+    .waitFor({ state: "visible", timeout: 10_000 });
+  // `document.fonts.ready` can hang if a webfont 404s in CI — bound it.
+  await Promise.race([
+    page.evaluate(() => (document as any).fonts?.ready),
+    page.waitForTimeout(2_000),
+  ]).catch(() => {});
+  // networkidle inherits the test timeout by default (30s) and hangs whenever
+  // an SSE/WS/analytics beacon keeps the pool busy. Cap it so a chatty page
+  // does not eat every test's budget — 3s of quiet is enough for screenshots.
+  await page
+    .waitForLoadState("networkidle", { timeout: 3_000 })
+    .catch(() => {});
   // Kill every motion source: CSS animations/transitions, smooth scroll,
   // caret blink, AND requestAnimationFrame loops (Framer Motion, GSAP,
   // canvas/3D tickers). The rAF stub keeps callbacks idempotent — they
