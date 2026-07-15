@@ -1,73 +1,65 @@
-# Plan: Boost phlabs.co.uk Performance
+# Full fix: Cloudflare Development Mode nie może już zepsuć strony
 
-Cel: podnieść Core Web Vitals (LCP, INP, CLS) i wynik Lighthouse na mobile/desktop dla strony głównej, /products i /compound. Bez zmian UI, bez SSR/CSR — zostajemy przy prerenderingu na Cloudflare.
+## Problem
+Dev Mode na Cloudflare (zone `phlabs.co.uk`) omija cache dla całej strefy i **auto-wygasa po 3h**. Gdy się wyłącza, Prerender.io może serwować stare snapshoty z chunkami JS ze starego builda → **blank white page** dla realnych użytkowników.
 
-## 1. Obrazy (największy wpływ na LCP)
-- Hero i logo: preload tylko jednego LCP obrazu (`<link rel="preload" as="image" fetchpriority="high">`) w `head()` route'a `/`.
-- Konwersja bundlowanych obrazów przez `vite-imagetools` do AVIF + WebP z fallbackiem JPG; `<picture>` z `srcset` i `sizes`.
-- Dynamiczne obrazy produktów: Cloudflare Image Resizing (`/cdn-cgi/image/...`) z `width`, `format=auto`, `quality=75`; mobilne warianty 400/800px.
-- Każdy `<img>` dostaje `width`, `height`, `decoding="async"`, `loading="lazy"` (poza LCP, który dostaje `fetchpriority="high"` i `loading="eager"`).
-- Usunięcie zbędnych dużych PNG z `src/assets/` — audyt rozmiarów >100KB.
+Obecnie mamy tylko:
+- Baner w adminie (`DevModeBanner`) — wymaga że ktoś patrzy w admin
+- Watchdog (co 5 min) — tylko **alerty** na Telegram po 30 min i 120 min, **nie wyłącza** Dev Mode
+- Ręczne API `setDevMode` — nikt tego automatycznie nie wywołuje
 
-## 2. JavaScript & code-splitting
-- Audyt bundla (`vite build --mode production` + `rollup-plugin-visualizer`) — cel: initial JS < 170KB gz na mobile.
-- Lazy-load: `/admin/*`, `/checkout`, panele modali, edytory, ciężkie zależności (chart libs, markdown, pdf).
-- Split vendor chunków: `react`, `router`, `firebase`, `ui` osobno.
-- Usunięcie martwych zależności; wymiana ciężkich na lżejsze (np. `date-fns` selektywne importy, `zod` tylko tam gdzie potrzebny).
-- `defer` / `type=module` dla wszystkich skryptów; analytics ładowane po `requestIdleCallback`.
+Efekt: jak ktoś (albo integracja) włączy Dev Mode i zapomni, po ~3h strona się psuje.
 
-## 3. CSS
-- Włączyć Tailwind v4 `content` scanning strict — usunąć nieużywane utility.
-- Critical CSS inline w `__root.tsx` head (już częściowo jest — zweryfikować rozmiar <14KB).
-- Font-display: `swap`; preload tylko 1-2 wag WOFF2; reszta lazy.
-- Zredukować `src/styles/cls-fixes.css` do minimum — celu CLS < 0.05.
+## Cel
+Dev Mode **nigdy** nie może zostać włączony dłużej niż kilka minut na produkcji, a jak już wygaśnie/zostanie wyłączony — cache i Prerender.io muszą być natychmiast odświeżone, żeby nie było blank page. Bez dotykania UI, kolorów, layoutu, checkoutu, Firebase.
 
-## 4. Cloudflare edge
-- Ruleset dla `_next/`, `/assets/*`, `.woff2`, `.avif`, `.webp`: `Cache-Control: public, max-age=31536000, immutable` + Edge Cache TTL 1 rok.
-- HTML: no-store (już jest) — nie ruszamy.
-- Włączyć Brotli (jeśli nie jest) i Early Hints dla `/`, `/products`.
-- Argo Smart Routing i Tiered Cache — sprawdzić czy aktywne, włączyć jeśli nie.
-- Speed Brain — MUSI zostać wyłączone (pamięć projektu).
+## Plan (5 kroków, wyłącznie backend + admin panel)
 
-## 5. Fonty
-- Wszystkie fonty via `<link rel="preload" as="font" type="font/woff2" crossorigin>` w root head, tylko WOFF2, tylko wagi używane above-the-fold.
-- `font-display: swap` + `size-adjust` żeby ograniczyć CLS przy podmianie.
+### 1) Auto-turn-off Dev Mode w watchdogu
+W `src/routes/api/public/hooks/watchdog.ts`, funkcja `checkCloudflareDevMode`:
+- Gdy `value === 'on'` i `ageMin >= 10` (10-minutowy grace period na realną pracę developera): wywołaj `PATCH /settings/development_mode` z `value: 'off'`.
+- Zapisz `autoDisabledAt` do `watchdog/devmode_alerts` + audit log (`kind: 'watchdog_devmode_auto_off'`).
+- Wyślij Telegram info: "Dev Mode auto-disabled po X min — cache i Prerender przewietrzone".
+- Nie ruszam istniejących alertów 30 min / 120 min — zostają jako defence-in-depth (gdyby auto-off padło).
 
-## 6. Trzecie strony
-- Analytics (GA/gtag) — `async`, ładowane po interakcji lub `requestIdleCallback` (max 3s po LCP).
-- Usunąć/opóźnić skrypty które nie są krytyczne pre-LCP (chat widget, pixele).
+### 2) Auto-purge + auto-recache po wyłączeniu
+Zaraz po udanym `value: 'off'` (albo gdy watchdog wykryje przejście `on → off` między cyklami — porównanie z `doc.sessionStartedAt` + brak `turnedOffAt`):
+- `POST https://api.cloudflare.com/client/v4/zones/{zone}/purge_cache` z `{ purge_everything: true }`.
+- `POST https://api.prerender.io/recache` z listą krytycznych URLi: `/`, `/products`, `/sitemap.xml`, `/robots.txt`, wszystkie kategorie (jak w `src/lib/cache-invalidate.functions.ts`) — dla `desktop` i `mobile`.
+- Wynik zapisany do `watchdog_runs` + audit log.
 
-## 7. Prerender + SW
-- Zweryfikować że prerendered HTML ma zainlineowany LCP `<img>` (nie czeka na JS).
-- Service Worker: precache tylko shell + krytyczne assety, nie HTML.
+### 3) Grace-period configurable z admin panelu
+Do `WatchdogTab.tsx` dodać jedno pole liczbowe: **"Auto-disable Dev Mode after N minutes"** (default 10, min 1, max 60), trzymane w Firestore `siteSettings/watchdogConfig.devModeGraceMin`. Watchdog czyta wartość na starcie cyklu. Nic więcej nie zmieniam w UI — tylko dokładam input w istniejący layout tabu.
 
-## 8. Weryfikacja
-- Lighthouse CI (`.lighthouserc.json` już jest) — desktop + mobile na `/`, `/products`, `/compound`.
-- Porównanie z `lighthouse-baseline/` — cel: perf mobile ≥ 0.90, LCP < 2.5s, CLS < 0.05, TBT < 200ms.
-- E2E `home-hero-lcp.spec.ts` musi przejść.
-- RUM `web_vitals` w adminie — sprawdzić p75 przez 48h po deployu.
-- Test na iOS Safari, Firefox, Chrome — potwierdzić brak regresji (blank page, cache).
+### 4) Manualny przycisk "Force off + purge + recache" w banerze
+W `DevModeBanner.tsx` obok "Turn off now" dołożyć drugi guzik **"Turn off + purge cache"** (ten sam styl, ten sam kolor). Wywoła nowy serverFn `setDevModeAndPurge` który robi kroki 1+2 synchronicznie i zwraca podsumowanie (purge status, prerender status). Baner pokaże toast/tekst z wynikiem.
 
-## Kolejność wdrożenia
-1. Obrazy + preload LCP (największy zysk, najmniejsze ryzyko)
-2. Code-splitting + audyt bundla
-3. Fonty + CSS krytyczne
-4. Cloudflare cache rules dla assetów
-5. Odroczenie third-party skryptów
-6. Lighthouse CI + porównanie z baseline
+### 5) Health-check hook (`/api/public/hooks/health-check.ts`) — utrzymać istniejący
+Ten hook już eskaluje `admin_alerts` gdy widzi `devModeOn`. Zostawiamy bez zmian — działa jako niezależny sensor.
 
-## Sekcja techniczna
-Pliki dotknięte:
-- `src/routes/__root.tsx` — preload fontów, critical CSS review
-- `src/routes/index.tsx`, `/products.tsx`, `/compound.tsx` — per-route `head().links` preload LCP
-- `vite.config.ts` — `vite-imagetools`, `manualChunks`, `visualizer`
-- `src/components/**` — `<img>` → `<picture>` + `fetchpriority`
-- `public/_headers` — asset cache immutable
-- `cloudflare/wrangler.jsonc` — cache rules (jeśli konieczne)
-- `.lighthouserc.*.json` — progi
+## Bezpieczeństwo (co MUSI zostać nietknięte)
+- Żadnych zmian w `src/routes/__root.tsx`, `src/client.tsx`, `src/server.ts`, service workerze, recovery, chunk-retry — tam nic nie dotykam (świeżo po naprawie blank page).
+- Żadnych zmian w checkoucie, Firebase rules, Wallid, Prerender workerze (`cloudflare/phlabs-prerender.mjs`), CSP, headerach.
+- Header, kolory, layout, produkty — bez zmian.
+- Grace period ≥ 1 min, żeby real developer (jeśli kiedykolwiek) miał chwilę pracy — ale nigdy więcej niż 60 min.
+- `setDevMode` wymaga `requireFirebaseAdmin` — bez zmian. Watchdog uwierzytelnia się `x-watchdog-secret` — bez zmian.
 
-Ryzyka:
-- Zmiana chunków może wywołać kolejny epizod stale cache — łagodzone przez istniejący `/cache-reset` flow i BUILD_ID w SW.
-- Cloudflare Image Resizing wymaga aktywnego planu — sprawdzić przed użyciem.
+## Weryfikacja przed zamknięciem
+1. `bun run typecheck` + build lokalnie.
+2. Włączyć Dev Mode ręcznie z panelu Cloudflare → poczekać na następny cykl watchdoga → sprawdzić w Firestore `auditLogs` wpis `watchdog_devmode_auto_off` i w `watchdog_runs` że purge + recache poszły.
+3. Sprawdzić `curl -I https://phlabs.co.uk/` — `cf-cache-status: HIT` (albo `EXPIRED` → `HIT` na drugim requeście) po 30s od auto-off.
+4. Testy e2e `e2e/blank-watchdog-*.spec.ts` muszą przejść bez zmian (nie ruszam kodu który testują).
+5. Manualnie kliknąć "Turn off + purge cache" w banerze na preview → toast z wynikiem.
 
-Nie ruszamy: UI, kolorów, layoutu, headera, Firebase, płatności, SSR/CSR, Speed Brain.
+## Pliki do zmiany
+- `src/routes/api/public/hooks/watchdog.ts` — dodaj auto-off + auto-purge + auto-recache w `checkCloudflareDevMode`
+- `src/lib/cloudflare-devmode.functions.ts` — dodaj `setDevModeAndPurge` serverFn (reuse `purgeCloudflare` + prerender recache patternów z `cache-invalidate.functions.ts`)
+- `src/pages/Admin/components/DevModeBanner.tsx` — drugi przycisk + wyświetlanie wyniku
+- `src/pages/Admin/tabs/WatchdogTab.tsx` — jedno pole "grace minutes"
+- (opcjonalnie) `src/lib/watchdog-config.functions.ts` — nowy plik, get/set `siteSettings/watchdogConfig`, admin-gated
+
+## Czego NIE robię
+- Nie tworzę nowego workflowu GitHub Actions ani cron zewnętrznego — istniejący cron watchdoga (co 5 min) jest wystarczający.
+- Nie usuwam banera ani alertów Telegram — zostają jako fallback.
+- Nie ruszam `phlabs-prerender` workera.
+- Nie zmieniam TTL cache ani reguł CF poza samym Dev Mode.
