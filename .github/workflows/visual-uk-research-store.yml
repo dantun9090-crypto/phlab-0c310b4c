@@ -24,7 +24,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
@@ -32,7 +32,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      RESEARCH_BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
+      # Default to the local SSR dev server instead of the live phlabs.co.uk
+      # domain: Cloudflare's bot-management edge returns the SSR "Taking
+      # longer than usual" shell to headless chromium, so the real hero
+      # never renders and every locator inside the spec times out. Running
+      # against `vite dev` bypasses the edge and gives the same DOM as a
+      # real browser.
+      RESEARCH_BASE_URL: ${{ github.event.inputs.base_url || 'http://localhost:8080' }}
     steps:
       - uses: actions/checkout@v5
 
@@ -46,17 +52,56 @@ jobs:
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps chromium
 
+      - name: Start SSR dev server
+        run: |
+          bun run dev --host 127.0.0.1 --port 8080 &
+          for i in {1..90}; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/uk-research-store || echo 000)
+            if [ "$code" != "000" ] && [ "$code" -lt 500 ]; then exit 0; fi
+            sleep 1
+          done
+          echo "dev server failed to start" >&2
+          exit 1
+        env:
+          NODE_ENV: development
+
+      - name: Check whether baselines exist
+        id: baselines
+        run: |
+          shopt -s nullglob
+          files=(e2e/uk-research-store-visual.spec.ts-snapshots/*.png)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "present=false" >> $GITHUB_OUTPUT
+          else
+            echo "present=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run /uk-research-store visual + 4px grid spec
         # `--output` pins the folder Playwright writes actual/expected/diff
         # PNGs into on a failed toHaveScreenshot assertion. HTML report is
         # emitted alongside so reviewers get both the interactive diff viewer
-        # and the raw PNGs in the artifact.
+        # and the raw PNGs in the artifact. When no baselines exist yet,
+        # auto-generate them so the first run seeds the snapshot folder.
         env:
           UPDATE_SNAPSHOTS: ${{ github.event.inputs.update_snapshots }}
+          BASELINES_PRESENT: ${{ steps.baselines.outputs.present }}
         run: |
           FLAGS=""
-          if [ "$UPDATE_SNAPSHOTS" = "true" ]; then FLAGS="--update-snapshots"; fi
+          if [ "$UPDATE_SNAPSHOTS" = "true" ] || [ "$BASELINES_PRESENT" = "false" ]; then
+            FLAGS="--update-snapshots"
+          fi
           bunx playwright test e2e/uk-research-store-visual.spec.ts --project=chromium --reporter=line,html --output=test-results $FLAGS
+
+      - name: Commit auto-generated baselines back to main
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.baselines.outputs.present == 'false' }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add e2e/uk-research-store-visual.spec.ts-snapshots/
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(visual): seed uk-research-store baselines [skip ci]"
+            git push
+          fi
 
       - name: Upload regenerated snapshots
         if: ${{ github.event.inputs.update_snapshots == 'true' }}
