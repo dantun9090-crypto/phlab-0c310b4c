@@ -102,12 +102,8 @@ try {
     arr.push(now);
     sessionStorage.setItem(KEY, JSON.stringify(arr));
     if (arr.length >= THRESHOLD) {
-
       sessionStorage.removeItem(KEY);
-      document.documentElement.innerHTML =
-        '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Recovering — PH Labs</title><style>html,body{margin:0;min-height:100%;background:#060f1e;color:#f0f6ff;font-family:system-ui,sans-serif}.box{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}.card{max-width:440px;text-align:center}h1{margin:0 0 12px;font-size:22px}p{margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55}button{appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 18px;cursor:pointer;font-size:14px}</style></head><body><div class="box"><div class="card"><h1>⚠️ Loading issue detected</h1><p>Automatic recovery has been stopped to prevent refresh loops. Click once to clear local cache, then the page will open normally.</p><button id="phl-cc">Clear cache and open site</button></div></div></body>';
-      const btn = document.getElementById("phl-cc");
-      btn?.addEventListener("click", async () => {
+      (async () => {
         try {
           for (const key of [KEY, ...RECOVERY_KEYS, "phl_reload_count", "__phl_stale_asset_reload_count"]) {
             sessionStorage.removeItem(key);
@@ -133,7 +129,7 @@ try {
           /* ignore */
         }
         location.replace("/cache-reset?next=" + encodeURIComponent(location.pathname + location.search + location.hash));
-      });
+      })();
       throw new Error("PHL_RELOAD_LOOP_BREAKER");
     }
   } catch (e) {
