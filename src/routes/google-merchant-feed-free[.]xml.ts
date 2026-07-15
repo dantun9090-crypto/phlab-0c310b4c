@@ -167,8 +167,8 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
             !(typeof p.stock === "number" && p.stock <= 0),
         );
 
-        const items = eligible
-          .map((p) => {
+        const items = (await Promise.all(eligible
+          .map(async (p) => {
             const docId = p.id;
             const fullName = cleanFullName(p.name);
             const sizeLabel =
