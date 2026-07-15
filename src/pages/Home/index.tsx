@@ -1,6 +1,7 @@
 import { ArrowRight, CheckCircle2, ShieldCheck, Zap, Mail, Microscope, CreditCard, Truck, Flame, Star, Dna, Activity, Brain, RefreshCw, Shield, Snowflake, FileCheck, FlaskConical, ChevronDown, Lock, Loader2 } from 'lucide-react';
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 const NewsletterPopup = lazy(() => import('@/components/NewsletterPopup'));
+import SmartBanner from '@/components/SmartBanner';
 import { useSSRBanner } from '@/legacy/SSRDataContext';
 import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 
