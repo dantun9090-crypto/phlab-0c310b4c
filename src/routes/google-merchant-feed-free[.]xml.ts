@@ -40,7 +40,7 @@ const LEGACY_HOST = "prohealthpeptides.co.uk";
 const LEGACY_BASE_URL = `https://${LEGACY_HOST}`;
 const BRAND = "PH Labs";
 const CURRENCY = "GBP";
-const FEED_REVISION = "prohealth-grok-safe-v4-semrush-20260627";
+const FEED_REVISION = "prohealth-free-listings-opaque-tokens-20260715";
 
 // Hard block — never list (active pharma trial / disapproved molecules).
 // Hard block — never list (active pharma / restricted molecules).
