@@ -225,6 +225,46 @@ const HYDRATION_ERROR_FLAG = "__phl_hydration_error_seen";
 const ENABLE_SSR_HYDRATION = false;
 const SSR_HYDRATION_ROUTES: string[] = [];
 
+// ============================================================
+// DEDICATED TANSTACK ROUTES — SKIP CSR ENTIRELY
+// ------------------------------------------------------------
+// These routes are hand-written TanStack route files with fully
+// self-contained SSR content (articles, comparison pages). They
+// do NOT need LegacyApp / react-router. If we let renderCsr()
+// wipe the body and mount LegacyApp on them, LegacyApp has no
+// matching path and shows its /* → NotFound page, so every human
+// visitor to /research/<pillar> or /compare/<slug> lands on a
+// fake 404 (with title "Page Not Found") on top of the correct
+// SSR HTML. That was flagged by the SEO daily health hook as
+// prerender-direct:404 and is also a real-user regression.
+//
+// Leaving the SSR HTML in place is safe: the pages contain only
+// content, breadcrumbs, and plain <a> links — no interactivity
+// that requires React to hydrate.
+// ============================================================
+const SKIP_CSR_ROUTES: readonly string[] = [
+  "/research/bpc-157-tb-500-synergy",
+  "/research/bpc-157-uk",
+  "/research/bpc-157-vs-tb-500",
+  "/research/cjc-1295-ipamorelin-synergy",
+  "/research/retatrutide-comprehensive-guide",
+  "/research/retatrutide-uk",
+  "/research/tirzepatide-vs-retatrutide",
+];
+const SKIP_CSR_PREFIXES: readonly string[] = ["/compare/"];
+
+function shouldSkipCsrForCurrentPath(): boolean {
+  try {
+    if (typeof location === "undefined") return false;
+    const path = location.pathname.replace(/\/+$/, "") || "/";
+    if (SKIP_CSR_ROUTES.includes(path)) return true;
+    if (SKIP_CSR_PREFIXES.some((p) => path.startsWith(p) && path.length > p.length)) return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 function errorText(error: unknown): string {
   if (!error) return "";
   const err = error as { message?: unknown; name?: unknown; stack?: unknown };
@@ -603,10 +643,20 @@ if (shouldStartPhlClient) {
     if (isHydrationCrash(event.reason)) renderCsr(event.reason);
   }, true);
 
-  console.info(
-    `[HYDRATION] CSR mode on ${location.pathname} (ENABLE_SSR_HYDRATION=${ENABLE_SSR_HYDRATION}, allowed=${JSON.stringify(SSR_HYDRATION_ROUTES)})`,
-  );
-  renderCsr(new Error("SSR hydration disabled by flag"));
+  if (shouldSkipCsrForCurrentPath()) {
+    // Dedicated TanStack route: keep the SSR HTML in place. Mounting
+    // LegacyApp here would wipe the article and render the react-router
+    // catch-all NotFound (page title flips to "Page Not Found | PH Labs UK"),
+    // breaking real users and causing prerender.io to snapshot a 404.
+    console.info(
+      `[HYDRATION] Skip CSR on ${location.pathname} — dedicated TanStack SSR route`,
+    );
+  } else {
+    console.info(
+      `[HYDRATION] CSR mode on ${location.pathname} (ENABLE_SSR_HYDRATION=${ENABLE_SSR_HYDRATION}, allowed=${JSON.stringify(SSR_HYDRATION_ROUTES)})`,
+    );
+    renderCsr(new Error("SSR hydration disabled by flag"));
+  }
 }
 
 if (shouldStartPhlClient) window.setTimeout(() => {
