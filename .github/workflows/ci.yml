@@ -264,7 +264,7 @@ jobs:
             dist/sbom.cdx.json
 
       - name: Attest SBOM (CycloneDX predicate, cosign keyless)
-        if: always()
+        if: hashFiles('dist/sbom.cdx.json') != ''
         env:
           COSIGN_YES: "true"
         run: |
