@@ -23,7 +23,7 @@ import type { CartItem } from '@/components/Layout';
 import { useFreeGiftConfig, freeGiftApplies, eligibleGifts } from '@/lib/free-gift-config';
 import FreeGiftPicker from '@/components/checkout/FreeGiftPicker';
 import { trackAddPaymentInfo, trackBeginCheckout, trackViewCart, type GaItem } from '@/lib/analytics';
-import UkBankBadges from '@/components/UkBankBadges';
+
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
 import NoCacheHead from '@/components/NoCacheHead';
 
@@ -1616,31 +1616,8 @@ export default function CheckoutPage() {
                       onChange={(v) => setField('paymentMethod', v)}
                     />
 
-                    {/* Selected method info */}
-                    {form.paymentMethod === 'pay_by_bank' ? (
-                      <div className="bg-emerald-500/8 border border-emerald-500/20 rounded-xl p-4">
-                        <div className="flex items-center justify-between gap-2 mb-2">
-                          <div className="flex items-center gap-2">
-                            <Landmark className="w-4 h-4 text-emerald-400" />
-                            <p className="text-sm font-semibold text-white">Pay by Bank (Instant Bank Transfer)</p>
-                          </div>
-                          <UkBankBadges />
-                        </div>
-                        <p className="text-xs text-gray-400 leading-relaxed">
-                          Pay instantly from your UK bank account — no card needed, no chargebacks. You'll be redirected to your bank to approve the payment, then back here to confirm your order.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="bg-blue-500/8 border border-blue-500/20 rounded-xl p-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Landmark className="w-4 h-4 text-blue-400" />
-                          <p className="text-sm font-semibold text-white">Manual Bank Transfer</p>
-                        </div>
-                        <p className="text-xs text-gray-400 leading-relaxed">
-                          Your order will be reserved for <strong className="text-white">48 hours</strong>. After placing your order, transfer the exact amount using the reference provided. Confirmation email sent immediately.
-                        </p>
-                      </div>
-                    )}
+                    {/* Selected-method info is now rendered inside PaymentMethodOptions cards to remove duplication. */}
+
 
                     {/* Discount code */}
                     <div>

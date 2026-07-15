@@ -1,21 +1,31 @@
 /**
  * Customer-facing payment method selector used on Checkout.
  *
- * Renders "Pay by Bank" (instant Open Banking) only when at least one
- * gateway is enabled in the admin panel. When no online gateway is
- * available, hides the option and shows an amber "manual bank transfer
- * only" notice; the parent controls the form state.
+ * Presents two selectable cards inside a single radiogroup:
+ *  - Primary "Pay by Bank" (Open Banking) — recommended, richer trust signals
+ *  - Secondary "Manual Bank Transfer" — reserved order for 48h
+ *
+ * All payment logic (API calls, webhooks, cart state, gateway routing) is
+ * owned by the parent Checkout page. This component is pure UI.
  *
  * Accessibility:
- *  - Options are exposed as a radiogroup so screen readers announce
- *    "selected / not selected" correctly.
- *  - Each option includes a screen-reader-only summary describing the
- *    current state plus next steps.
- *  - Visible step-by-step instructions appear under the selected option.
- *  - Larger type (18–20px) and generous line-height for older users.
- *  - Tap targets are ≥ 96px tall; focus-visible rings are 4px emerald.
+ *  - role="radiogroup" wraps the two options; each option is a real
+ *    <button role="radio"> with aria-checked and aria-describedby.
+ *  - Selected option renders a visible + screen-reader-only "Selected" chip.
+ *  - "What happens next" is a <details> disclosure — no JS required, works
+ *    at build time on the pre-rendered static site.
  */
-import { Landmark, CheckCircle2 } from "lucide-react";
+import {
+  Landmark,
+  CheckCircle2,
+  ChevronDown,
+  ShieldCheck,
+  BadgeCheck,
+  Zap,
+  CreditCard,
+  Lock,
+  ArrowRightLeft,
+} from "lucide-react";
 import UkBankBadges from "@/components/UkBankBadges";
 import WallidTrustElements from "@/components/WallidTrustElements";
 import type { CheckoutPaymentOptions } from "@/lib/payments/types";
@@ -31,42 +41,89 @@ export interface PaymentMethodOptionsProps {
 const OPEN_BANKING_STEPS = [
   "Tap “Continue to payment” below.",
   "Choose your UK bank from the list (e.g. Barclays, HSBC, Lloyds, Monzo).",
-  "You’ll be sent to your bank app or website to approve the payment with Face ID, fingerprint, or your usual login.",
-  "You’ll be returned here automatically — your order is confirmed instantly.",
+  "Approve the payment in your bank app with Face ID, fingerprint, or your usual login.",
+  "You'll be returned here automatically — your order is confirmed instantly.",
 ];
 
 const MANUAL_TRANSFER_STEPS = [
   "Tap “Place order” below to reserve your items for 48 hours.",
-  "We’ll email you the bank name, sort code, account number, and a unique reference.",
+  "We'll email you the bank name, sort code, account number, and a unique reference.",
   "Log in to your bank app and send the exact total using that reference.",
   "Once we receive the funds (usually within a few hours) we ship your order.",
 ];
 
+const TRUST_ITEMS: { icon: React.ComponentType<{ className?: string }>; label: string }[] = [
+  { icon: ShieldCheck, label: "Secure Open Banking" },
+  { icon: BadgeCheck, label: "FCA Regulated" },
+  { icon: Zap, label: "Instant Transfer" },
+  { icon: CreditCard, label: "No Card Needed" },
+  { icon: Lock, label: "GDPR Compliant" },
+  { icon: ArrowRightLeft, label: "Direct Payment" },
+];
+
+/** Custom emerald radio indicator (not a native input). */
+function RadioDot({ checked }: { checked: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+        checked
+          ? "border-emerald-400 bg-emerald-500/20"
+          : "border-white/30 bg-transparent"
+      }`}
+    >
+      <span
+        className={`h-2.5 w-2.5 rounded-full transition-transform ${
+          checked ? "bg-emerald-400 scale-100" : "bg-transparent scale-0"
+        }`}
+      />
+    </span>
+  );
+}
+
+function TrustGrid() {
+  return (
+    <ul className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 py-3 border-t border-white/10">
+      {TRUST_ITEMS.map(({ icon: Icon, label }) => (
+        <li key={label} className="flex items-center gap-2 min-w-0">
+          <Icon className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+          <span className="text-xs text-slate-400 leading-snug break-words">
+            {label}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function InstructionList({
   id,
-  title,
   steps,
 }: {
   id: string;
-  title: string;
   steps: string[];
 }) {
   return (
-    <div
+    <details
       id={id}
-      role="region"
-      aria-label={title}
-      className="mt-3 rounded-xl border-2 border-emerald-400/40 bg-emerald-500/5 p-4 sm:p-5"
+      className="group mt-3 rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden"
     >
-      <p className="text-lg sm:text-xl font-bold text-emerald-100 leading-snug">
-        {title}
-      </p>
-      <ol className="mt-3 space-y-3 sm:space-y-4 text-base sm:text-lg text-white leading-loose break-words">
+      <summary
+        className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-medium text-slate-200 hover:bg-white/[0.04] transition-colors"
+        aria-label="What happens next"
+      >
+        <span>What happens next?</span>
+        <ChevronDown
+          className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180"
+          aria-hidden="true"
+        />
+      </summary>
+      <ol className="px-4 pb-4 pt-1 space-y-2 text-sm text-slate-300 leading-relaxed list-none">
         {steps.map((step, i) => (
-          <li key={i} className="flex gap-3 sm:gap-4">
+          <li key={i} className="flex gap-3 min-w-0">
             <span
               aria-hidden="true"
-              className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full bg-emerald-400 text-base font-bold text-black"
+              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-[11px] font-semibold text-emerald-300"
             >
               {i + 1}
             </span>
@@ -74,10 +131,9 @@ function InstructionList({
           </li>
         ))}
       </ol>
-    </div>
+    </details>
   );
 }
-
 
 export default function PaymentMethodOptions({
   options,
@@ -92,24 +148,40 @@ export default function PaymentMethodOptions({
     !wallidEnabled && options && !options.primary && options.backups.length === 0,
   );
 
-  const optionBase =
-    "w-full flex items-start gap-4 text-left p-5 rounded-2xl border-2 transition-all min-h-[96px] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060f1e]";
-  const optionSelected =
-    "border-emerald-400 bg-emerald-500/15 shadow-lg shadow-emerald-500/20";
-  const optionIdle =
-    "border-white/25 bg-[#060f1e] hover:border-emerald-400/60 hover:bg-white/5";
+  const showPrimary = hasOnline || wallidEnabled;
+  const primaryValue: "pay_by_bank" | "wallid" = wallidEnabled ? "wallid" : "pay_by_bank";
+  const primarySelected = value === primaryValue;
+  const manualSelected = value === "bank_transfer";
+
+  const cardBase =
+    "relative w-full text-left rounded-2xl border transition-all p-4 sm:p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060f1e]";
+
+  const primaryCardClass = `${cardBase} ${
+    primarySelected
+      ? "bg-emerald-500/10 border-emerald-500/40 border-l-4 border-l-emerald-500 shadow-lg shadow-emerald-500/10"
+      : "bg-white/5 border-white/10 hover:bg-white/[0.07] hover:border-white/20"
+  }`;
+
+  const manualCardClass = `${cardBase} ${
+    manualSelected
+      ? "bg-emerald-500/10 border-emerald-500/40 border-l-4 border-l-emerald-500"
+      : "bg-white/5 border-white/10 hover:bg-white/[0.07] hover:border-white/20"
+  }`;
+
+  const primaryTestId = wallidEnabled ? "wallid-pay-by-bank-button" : "pay-by-bank-button";
+  const primaryInstructionsId = wallidEnabled ? "wallid-instructions" : "pay-by-bank-instructions";
 
   return (
     <div
       role="radiogroup"
       aria-label="Choose how you want to pay"
-      className="space-y-3"
+      className="rounded-2xl border border-white/10 bg-slate-900/40 p-3 sm:p-4 space-y-3 sm:space-y-4"
     >
       {noOnline && (
         <div
           data-testid="manual-only-notice"
           role="status"
-          className="bg-amber-500/10 border-2 border-amber-400/50 rounded-xl p-4 text-base sm:text-lg text-amber-100 leading-relaxed"
+          className="rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 leading-relaxed"
         >
           Instant Pay-by-Bank is temporarily unavailable. Please complete your
           order via Manual Bank Transfer below — your order will be reserved for
@@ -117,198 +189,144 @@ export default function PaymentMethodOptions({
         </div>
       )}
 
-      {/* Wallid Pay by Bank — only when enabled by admin kill switch */}
-      {wallidEnabled && (
-        <>
+      {/* ── PRIMARY: Pay by Bank (Open Banking) ── */}
+      {showPrimary && (
+        <div>
           <button
             type="button"
-            data-testid="wallid-pay-by-bank-button"
-            onClick={() => onChange("wallid")}
+            data-testid={primaryTestId}
+            onClick={() => onChange(primaryValue)}
             role="radio"
-            aria-checked={value === "wallid"}
-            aria-describedby={
-              value === "wallid" ? "wallid-instructions" : undefined
-            }
-            className={`${optionBase} ${
-              value === "wallid" ? optionSelected : optionIdle
-            }`}
+            aria-checked={primarySelected}
+            aria-describedby={primarySelected ? primaryInstructionsId : undefined}
+            className={primaryCardClass}
           >
-            <span
-              className={`flex items-center justify-center w-14 h-14 rounded-xl shrink-0 ${
-                value === "wallid"
-                  ? "bg-emerald-500 text-black"
-                  : "bg-white/10 text-emerald-300"
-              }`}
-              aria-hidden="true"
-            >
-              <Landmark className="w-8 h-8" />
+            {/* RECOMMENDED pill */}
+            <span className="absolute top-3 right-3 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-bold tracking-wide text-slate-900">
+              RECOMMENDED
             </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-xl font-bold text-white flex items-center gap-2 flex-wrap leading-snug">
-                Pay by Bank
-                <span className="text-xs font-bold uppercase tracking-wide bg-emerald-400 text-black px-2 py-0.5 rounded">
-                  Recommended
-                </span>
-                {value === "wallid" && (
-                  <span className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-200">
-                    <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
-                    Selected
-                  </span>
-                )}
-              </p>
-              <p className="text-base text-slate-100 leading-relaxed mt-2">
-                Pay securely from any UK bank app — instant confirmation, no
-                card needed.
-              </p>
-              <span className="sr-only">
-                {value === "wallid"
-                  ? "Selected. You will be sent to your bank app to approve the payment."
-                  : "Not selected. Tap to pay instantly from your UK bank app."}
-              </span>
-              <UkBankBadges className="mt-3" />
-            </div>
-          </button>
-          {value === "wallid" && (
-            <>
-              <InstructionList
-                id="wallid-instructions"
-                title="What happens next"
-                steps={OPEN_BANKING_STEPS}
-              />
-              <WallidTrustElements className="mb-1" />
-            </>
-          )}
-        </>
-      )}
 
-      <div
-        className={`grid grid-cols-1 ${hasOnline ? "sm:grid-cols-2" : ""} gap-3`}
-      >
-        {hasOnline && (
-          <button
-            type="button"
-            data-testid="pay-by-bank-button"
-            onClick={() => onChange("pay_by_bank")}
-            role="radio"
-            aria-checked={value === "pay_by_bank"}
-            aria-describedby={
-              value === "pay_by_bank" ? "pay-by-bank-instructions" : undefined
-            }
-            className={`${optionBase} ${
-              value === "pay_by_bank" ? optionSelected : optionIdle
-            }`}
-          >
-            <span
-              className={`flex items-center justify-center w-14 h-14 rounded-xl shrink-0 ${
-                value === "pay_by_bank"
-                  ? "bg-emerald-500 text-black"
-                  : "bg-white/10 text-emerald-300"
-              }`}
-              aria-hidden="true"
-            >
-              <Landmark className="w-8 h-8" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-xl font-bold text-white flex items-center gap-2 flex-wrap leading-snug">
-                Pay by Bank
-                <span className="text-xs font-bold uppercase tracking-wide bg-emerald-400 text-black px-2 py-0.5 rounded">
-                  Instant
-                </span>
-                {value === "pay_by_bank" && (
-                  <span className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-200">
-                    <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
-                    Selected
-                  </span>
-                )}
-              </p>
-              <p className="text-base text-slate-100 leading-relaxed mt-2">
-                Pay instantly from your UK bank account — no card needed, no
-                chargebacks.
-              </p>
-              {options?.primary && (
-                <p
-                  data-testid="active-gateway-label"
-                  className="text-sm text-emerald-200 mt-2 leading-relaxed"
-                >
-                  via {options.primary.name}
-                  {options.primary.sandbox && " (sandbox)"}
-                  {options.backups.length > 0 && (
-                    <span className="text-slate-200">
-                      {" "}· auto-failover to{" "}
-                      {options.backups.map((b) => b.name).join(", ")}
+            <div className="flex items-start gap-3 pr-24 sm:pr-28">
+              <RadioDot checked={primarySelected} />
+              <span
+                aria-hidden="true"
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                  primarySelected
+                    ? "bg-emerald-500/20 text-emerald-300"
+                    : "bg-white/5 text-slate-300"
+                }`}
+              >
+                <Landmark className="w-5 h-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-lg font-semibold text-white leading-tight break-words">
+                    Pay by Bank
+                  </p>
+                  {primarySelected && (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
+                      <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                      Selected
                     </span>
                   )}
+                </div>
+                <p className="mt-1 text-sm text-slate-300 leading-relaxed break-words">
+                  Pay securely from any UK bank app — instant confirmation, no
+                  card needed.
                 </p>
-              )}
-              <span className="sr-only">
-                {value === "pay_by_bank"
-                  ? "Selected. You will be sent to your bank app to approve the payment."
-                  : "Not selected. Tap to pay instantly from your UK bank app."}
-              </span>
-              <UkBankBadges className="mt-3" />
+                {options?.primary && !wallidEnabled && (
+                  <p
+                    data-testid="active-gateway-label"
+                    className="mt-1.5 text-xs text-emerald-300/90 leading-relaxed break-words"
+                  >
+                    via {options.primary.name}
+                    {options.primary.sandbox && " (sandbox)"}
+                    {options.backups.length > 0 && (
+                      <span className="text-slate-400">
+                        {" "}· auto-failover to{" "}
+                        {options.backups.map((b) => b.name).join(", ")}
+                      </span>
+                    )}
+                  </p>
+                )}
+                <span className="sr-only">
+                  {primarySelected
+                    ? "Selected. You will be sent to your bank app to approve the payment."
+                    : "Not selected. Tap to pay instantly from your UK bank app."}
+                </span>
+
+                <UkBankBadges className="mt-3" />
+
+                <TrustGrid />
+              </div>
             </div>
           </button>
-        )}
+
+          {primarySelected && (
+            <>
+              <InstructionList id={primaryInstructionsId} steps={OPEN_BANKING_STEPS} />
+              {wallidEnabled && <WallidTrustElements className="mt-3" showBadges={false} />}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── SECONDARY: Manual Bank Transfer ── */}
+      <div>
         <button
           type="button"
           data-testid="manual-bank-transfer-button"
           onClick={() => onChange("bank_transfer")}
           role="radio"
-          aria-checked={value === "bank_transfer"}
-          aria-describedby={
-            value === "bank_transfer" ? "manual-bank-instructions" : undefined
-          }
-          className={`${optionBase} ${
-            value === "bank_transfer" ? optionSelected : optionIdle
-          }`}
+          aria-checked={manualSelected}
+          aria-describedby={manualSelected ? "manual-bank-instructions" : undefined}
+          className={manualCardClass}
         >
-          <span
-            className={`flex items-center justify-center w-14 h-14 rounded-xl shrink-0 ${
-              value === "bank_transfer"
-                ? "bg-emerald-500 text-black"
-                : "bg-white/10 text-emerald-300"
-            }`}
-            aria-hidden="true"
-          >
-            <Landmark className="w-8 h-8" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-xl font-bold text-white flex items-center gap-2 flex-wrap leading-snug">
-              Manual Bank Transfer
-              {value === "bank_transfer" && (
-                <span className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-200">
-                  <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
-                  Selected
-                </span>
-              )}
-            </p>
-            <p className="text-base text-slate-100 leading-relaxed mt-2">
-              Receive bank details by email and transfer manually within 48
-              hours.
-            </p>
-            <span className="sr-only">
-              {value === "bank_transfer"
-                ? "Selected. We will email you bank details after you place the order."
-                : "Not selected. Tap to pay by manual UK bank transfer."}
+          <div className="flex items-start gap-3">
+            <RadioDot checked={manualSelected} />
+            <span
+              aria-hidden="true"
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                manualSelected
+                  ? "bg-emerald-500/20 text-emerald-300"
+                  : "bg-white/5 text-slate-300"
+              }`}
+            >
+              <ArrowRightLeft className="w-4 h-4" />
             </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-base font-medium text-white leading-tight break-words">
+                  Manual Bank Transfer
+                </p>
+                {manualSelected && (
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
+                    <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                    Selected
+                  </span>
+                )}
+              </div>
+              <p className="mt-1 text-sm text-slate-400 leading-relaxed break-words">
+                Receive bank details by email and transfer manually within 48
+                hours.
+              </p>
+              <p className="mt-1.5 text-xs text-slate-500 leading-relaxed break-words">
+                Your order will be reserved for 48 hours. Confirmation email
+                sent immediately.
+              </p>
+              <span className="sr-only">
+                {manualSelected
+                  ? "Selected. We will email you bank details after you place the order."
+                  : "Not selected. Tap to pay by manual UK bank transfer."}
+              </span>
+            </div>
           </div>
         </button>
-      </div>
 
-      {value === "pay_by_bank" && hasOnline && (
-        <InstructionList
-          id="pay-by-bank-instructions"
-          title="What happens next"
-          steps={OPEN_BANKING_STEPS}
-        />
-      )}
-      {value === "bank_transfer" && (
-        <InstructionList
-          id="manual-bank-instructions"
-          title="What happens next"
-          steps={MANUAL_TRANSFER_STEPS}
-        />
-      )}
+        {manualSelected && (
+          <InstructionList id="manual-bank-instructions" steps={MANUAL_TRANSFER_STEPS} />
+        )}
+      </div>
     </div>
   );
 }
