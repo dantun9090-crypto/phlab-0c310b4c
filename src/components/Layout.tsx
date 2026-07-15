@@ -17,7 +17,17 @@ type ArticleLite = { title: string; subtitle?: string; slug: string };
 import { CookieConsent } from '@/components/CookieConsent';
 // Lazy: pulls framer-motion (~40 KB gz). Only rendered inside the cart drawer,
 // which is closed at first paint — keep it off the LCP critical path.
-const RecentlyViewedProducts = lazy(() => import('@/components/RecentlyViewedProducts'));
+const RecentlyViewedProducts = lazy(() =>
+  import('@/components/RecentlyViewedProducts').catch(async (err) => {
+    // Stale hashed chunk after redeploy — hard reload so the fresh HTML loads.
+    const { isStaleChunkError, hardReload } = await import('@/lib/recovery');
+    if (isStaleChunkError(err)) {
+      void hardReload({ clean: true });
+    }
+    // Render nothing rather than crash the cart drawer / product page.
+    return { default: () => null };
+  }),
+);
 import { getRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { migrateStoredCart } from '@/lib/cart-migration';
 import { initAnalytics, trackPageView, trackAddToCart, trackBeginCheckout, renderGoogleMerchantBadge } from '@/lib/analytics';
