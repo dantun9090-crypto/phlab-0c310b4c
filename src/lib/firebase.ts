@@ -32,6 +32,7 @@ import {
   browserLocalPersistence,
   browserSessionPersistence,
   indexedDBLocalPersistence,
+  inMemoryPersistence,
   User as FirebaseUser,
 } from 'firebase/auth';
 import { checkLockout, recordFailure, clearFailures, formatRemaining } from '@/lib/login-lockout';
@@ -611,20 +612,40 @@ export const loginUser = async (email: string, password: string) => {
   try {
     userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
   } catch (err: any) {
-    if (
-      err?.code === 'auth/wrong-password' ||
-      err?.code === 'auth/user-not-found' ||
-      err?.code === 'auth/invalid-credential' ||
-      err?.code === 'auth/invalid-login-credentials'
-    ) {
-      const state = await recordFailure(cleanEmail);
-      if (state.locked) {
-        logAuthFailure('login_failure', { code: 'auth/account-locked', message: 'locked-after-failure' }, { email: cleanEmail });
-        throw new LockoutError(state.remainingMs);
+    // Device storage failure (full disk / private mode / corrupted IndexedDB).
+    // Firebase Auth cannot persist the session, so it aborts sign-in.
+    // Retry once with in-memory persistence so the user can still log in
+    // (session lasts until the tab is closed).
+    const msg = String(err?.message || '');
+    const isStorageErr =
+      err?.code === 'auth/web-storage-unsupported' ||
+      err?.code === 'auth/internal-error' ||
+      err?.name === 'QuotaExceededError' ||
+      /indexedDB|IndexedDB|full disk|QuotaExceeded|backing store/i.test(msg);
+    if (isStorageErr) {
+      try {
+        await setPersistence(auth, inMemoryPersistence);
+        userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
+      } catch (retryErr: any) {
+        logAuthFailure('login_failure', retryErr, { email: cleanEmail });
+        throw retryErr;
       }
+    } else {
+      if (
+        err?.code === 'auth/wrong-password' ||
+        err?.code === 'auth/user-not-found' ||
+        err?.code === 'auth/invalid-credential' ||
+        err?.code === 'auth/invalid-login-credentials'
+      ) {
+        const state = await recordFailure(cleanEmail);
+        if (state.locked) {
+          logAuthFailure('login_failure', { code: 'auth/account-locked', message: 'locked-after-failure' }, { email: cleanEmail });
+          throw new LockoutError(state.remainingMs);
+        }
+      }
+      logAuthFailure('login_failure', err, { email: cleanEmail });
+      throw err;
     }
-    logAuthFailure('login_failure', err, { email: cleanEmail });
-    throw err;
   }
 
   // Successful login — clear failure counter
