@@ -626,51 +626,11 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* ═══════════════════════════════════════════════════════════════
-          PERSISTENT SHIPPING TOP BAR — hidden on auth/admin pages
+          UNIFIED TOP STRIPE — replaces the legacy shipping bar +
+          yellow research tape + promo. Rotating messages, dismissible,
+          hidden on auth/admin pages. Height 36px.
       ═══════════════════════════════════════════════════════════════ */}
-      {!isCleanPage && <div
-        data-shipping-top-bar
-        className="fixed left-0 right-0 z-[51] flex items-center justify-center gap-4 px-4 text-center"
-        style={{
-          top: researchBannerOffset,
-          height: '32px',
-          background: '#030a14',
-          borderBottom: '1px solid rgba(16,185,129,0.12)',
-        }}
-      >
-        <div className="flex items-center gap-3 text-[11px] font-medium" style={{ color: '#9cb8d9' }}>
-          <span className="flex items-center gap-1.5">
-            <Truck className="w-3 h-3" style={{ color: '#10b981', flexShrink: 0 }} />
-            <span style={{ color: '#4ade80', fontWeight: 600 }}>Free UK Shipping</span>
-            <span>on orders over</span>
-            <span style={{ color: '#e4f0ff', fontWeight: 700 }}>£50</span>
-          </span>
-          <span style={{ color: 'rgba(255,255,255,0.15)' }} className="hidden sm:block">·</span>
-          <span className="hidden sm:flex items-center gap-1.5">
-            <FlaskConical className="w-3 h-3" style={{ color: '#3b82f6', flexShrink: 0 }} />
-            <span>≥99% HPLC Purity</span>
-          </span>
-          <span className="text-white/20 hidden md:block">·</span>
-          <span className="hidden md:flex items-center gap-1.5">
-            <Shield className="w-3 h-3 text-blue-400 shrink-0" />
-            <span>Secure UK checkout</span>
-          </span>
-        </div>
-        {/* Cart progress — shows when cart has items */}
-        {subtotal > 0 && subtotal < FREE_SHIPPING_THRESHOLD && (
-          <div className="relative hidden sm:flex items-center gap-2 ml-2">
-            <div className="w-20 h-1.5 bg-white/[0.07] rounded-full overflow-hidden">
-              <div
-                className="h-full bg-emerald-400 rounded-full transition-all duration-500"
-                style={{ width: `${Math.min((subtotal / FREE_SHIPPING_THRESHOLD) * 100, 100)}%` }}
-              />
-            </div>
-            <span className="text-[10px] text-emerald-400 font-semibold whitespace-nowrap">
-              £{(FREE_SHIPPING_THRESHOLD - subtotal).toFixed(2)} to free shipping
-            </span>
-          </div>
-        )}
-      </div>}
+      {!isCleanPage && <TopStripe />}
 
       {/* ═══════════════════════════════════════════════════════════════
           PREMIUM NAVBAR — hidden on auth pages
