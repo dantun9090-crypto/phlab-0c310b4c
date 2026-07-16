@@ -266,7 +266,7 @@ export function Navigation({
         {navLinks.map(link => (
           <DesktopNavItem key={link.name} link={link} isActive={isActive} />
         ))}
-        {user && (
+        {user && isAdmin && (
           <Link to="/admin"
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-semibold"
             style={{ color: '#60a5fa' }}>
