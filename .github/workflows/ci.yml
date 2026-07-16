@@ -176,6 +176,9 @@ jobs:
       # phase logs, and retries transient infra/network failures before failing.
       - name: Production build with retry + diagnostics
         run: bun run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
 
       - name: Upload production build logs
         if: always()
