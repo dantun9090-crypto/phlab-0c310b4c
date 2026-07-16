@@ -62,7 +62,7 @@ export default function CoALookup() {
     });
     if (!hit) return null;
     return {
-      slug: hit.slug,
+      slug: hit.slug || '',
       name: hit.name,
       purity: hit.purity,
       coaUrl: pickCoaUrl(hit),
