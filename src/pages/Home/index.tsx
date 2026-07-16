@@ -1352,7 +1352,7 @@ export default function HomePage() {
       {/* ════════════════════════════════
           MOBILE STICKY BAR
       ════════════════════════════════ */}
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50" style={{
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-30" style={{
         background: 'rgba(3,10,20,0.97)',
         borderTop: '1px solid rgba(16,185,129,0.15)',
         padding: 'max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left))',
