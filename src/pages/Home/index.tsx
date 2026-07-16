@@ -1388,7 +1388,7 @@ export default function HomePage() {
       {/* ════════════════════════════════
           MOBILE STICKY BAR
       ════════════════════════════════ */}
-      <div className="fixed left-0 right-0 z-[97]" style={{
+      <div data-mobile-sticky-bar className="fixed left-0 right-0 z-[97]" style={{
         bottom: 'calc(env(safe-area-inset-bottom, 0px) + 42px)',
         background: 'rgba(3,10,20,0.97)',
         borderTop: '1px solid rgba(16,185,129,0.15)',
