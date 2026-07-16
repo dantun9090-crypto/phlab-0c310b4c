@@ -278,7 +278,7 @@ export function Navigation({
       </nav>
 
       {/* MOBILE DRAWER */}
-      <div className="fixed left-0 right-0 bottom-0 z-[98] md:hidden transition-opacity duration-300"
+      <div className="fixed left-0 right-0 bottom-0 z-[10018] md:hidden transition-opacity duration-300"
         style={{
           top: mobileMenuTop,
           background: 'rgba(0,4,12,0.86)',
@@ -288,7 +288,7 @@ export function Navigation({
         onClick={onMobileMenuToggle} aria-hidden="true" />
 
       <div role="dialog" aria-modal="true" aria-label="Navigation menu"
-        className="fixed right-0 z-[99] md:hidden flex flex-col"
+        className="fixed right-0 z-[10019] md:hidden flex flex-col"
         style={{
           width: 'min(320px, 90vw)',
           top: mobileMenuTop,
