@@ -735,8 +735,30 @@ export default function BannerTab() {
                       onChange={e => set('edgeFadeOpacity', Number(e.target.value))}
                       className="w-full accent-blue-500 cursor-pointer" />
                   </div>
+                  {/* Blend color */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[#2a4a7a] text-xs">Blend colour</span>
+                      <label className="inline-flex items-center gap-1.5 text-[#9cb8d9] text-[11px] cursor-pointer">
+                        <input type="checkbox" checked={banner.edgeFadeUsePageBg}
+                          onChange={e => set('edgeFadeUsePageBg', e.target.checked)}
+                          className="accent-blue-500" />
+                        Auto (page background)
+                      </label>
+                    </div>
+                    {!banner.edgeFadeUsePageBg && (
+                      <div className="flex items-center gap-2">
+                        <input type="color" value={banner.edgeFadeColor}
+                          onChange={e => set('edgeFadeColor', e.target.value)}
+                          className="w-9 h-9 rounded-lg cursor-pointer border border-white/10 bg-transparent" />
+                        <input type="text" value={banner.edgeFadeColor}
+                          onChange={e => set('edgeFadeColor', e.target.value)}
+                          className="flex-1 bg-white border border-gray-300 text-gray-900 text-xs font-mono py-1.5 px-2 rounded-lg" />
+                      </div>
+                    )}
+                  </div>
                   <p className="text-[10px] text-[#2a4a7a] leading-relaxed">
-                    Fades the banner's left &amp; right edges into the page background so the image doesn't look boxed. Uses the Home wrapper background (<code className="text-[#9cb8d9]">--phl-page-bg</code>).
+                    Fades the banner's left &amp; right edges into the chosen background. Auto reads <code className="text-[#9cb8d9]">--phl-page-bg</code> so themes flow through.
                   </p>
                 </div>
               )}
