@@ -4,6 +4,9 @@ const NewsletterPopup = lazy(() => import('@/components/NewsletterPopup'));
 import SmartBanner from '@/components/SmartBanner';
 import { useSSRBanner } from '@/legacy/SSRDataContext';
 import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
+import HeroMoleculeCanvas from '@/components/HeroMoleculeCanvas';
+import CoALookup from '@/components/CoALookup';
+import { useMagneticHover } from '@/hooks/useMagneticHover';
 
 import { Link } from 'react-router-dom';
 const AnimatedBackground = lazy(() => import('@/components/AnimatedBackground').then(m => ({ default: m.AnimatedBackground })));
