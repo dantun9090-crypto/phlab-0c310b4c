@@ -157,18 +157,22 @@ jobs:
           cat /tmp/rollback-response.json
           [ "$HTTP" = "200" ] || { echo "::error::rollback upload failed"; exit 1; }
 
-      - name: Purge cache after rollback
+      - name: Purge cache after rollback (scoped)
         if: failure() && steps.snapshot.outputs.have_snapshot == 'true'
         env:
           CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID_PHLABS }}
         run: |
-          curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache" \
+          set -euo pipefail
+          resp=$(curl -sS -o /tmp/purge-rollback.json -w "%{http_code}" \
+            -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache" \
             -H "Authorization: Bearer $CF_API_TOKEN" \
             -H "Content-Type: application/json" \
-            --data '{"purge_everything":true}'
-          echo
-          echo "Edge cache purged after rollback"
+            --data '{"files":["https://phlabs.co.uk/","https://phlabs.co.uk/products","https://phlabs.co.uk/sitemap.xml","https://phlabs.co.uk/robots.txt","https://phlabs.co.uk/llms.txt","https://phlabs.co.uk/google-merchant-feed.xml","https://phlabs.co.uk/google-merchant-feed-free.xml","https://phlabs.co.uk/feed.xml"]}')
+          echo "HTTP $resp"
+          cat /tmp/purge-rollback.json
+          [ "$resp" = "200" ] || { echo "::error::Rollback purge failed"; exit 1; }
+          echo "Edge cache purged (scoped) after rollback"
 
       - name: Verify rollback restored /__health
         if: failure() && steps.snapshot.outputs.have_snapshot == 'true'
