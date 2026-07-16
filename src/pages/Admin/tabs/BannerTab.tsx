@@ -683,6 +683,51 @@ export default function BannerTab() {
               )}
             </div>
 
+            {/* Desktop edge fade — blends banner's left/right edges into the page bg */}
+            <div className="space-y-2 border-t border-white/5 pt-4">
+              <div className="flex items-center justify-between">
+                <label className="text-[#9cb8d9] text-xs font-medium flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-[#2a4a7a]" /> Desktop Edge Fade
+                </label>
+                <button
+                  onClick={() => set('edgeFadeEnabled', !banner.edgeFadeEnabled)}
+                  aria-label={`Desktop edge fade: ${banner.edgeFadeEnabled ? 'enabled' : 'disabled'}`}
+                  aria-pressed={banner.edgeFadeEnabled}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${banner.edgeFadeEnabled ? 'bg-blue-600' : 'bg-[#0f2640]'}`}>
+                  <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${banner.edgeFadeEnabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                </button>
+              </div>
+              {banner.edgeFadeEnabled && (
+                <div className="space-y-3 pl-1">
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-[#2a4a7a] text-xs">Width (per side)</span>
+                      <span className="text-[#9cb8d9] text-xs font-mono">{banner.edgeFadeWidthPct}%</span>
+                    </div>
+                    <input type="range" min={4} max={30} step={1}
+                      value={banner.edgeFadeWidthPct}
+                      onChange={e => set('edgeFadeWidthPct', Number(e.target.value))}
+                      className="w-full accent-blue-500 cursor-pointer" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-[#2a4a7a] text-xs">Opacity (blend strength)</span>
+                      <span className="text-[#9cb8d9] text-xs font-mono">{banner.edgeFadeOpacity}%</span>
+                    </div>
+                    <input type="range" min={0} max={100} step={5}
+                      value={banner.edgeFadeOpacity}
+                      onChange={e => set('edgeFadeOpacity', Number(e.target.value))}
+                      className="w-full accent-blue-500 cursor-pointer" />
+                  </div>
+                  <p className="text-[10px] text-[#2a4a7a] leading-relaxed">
+                    Fades the banner's left &amp; right edges into the page background so the image doesn't look boxed. Uses the Home wrapper background (<code className="text-[#9cb8d9]">--phl-page-bg</code>).
+                  </p>
+                </div>
+              )}
+            </div>
+
+
+
             {/* Text overlay */}
             <div className="space-y-2 border-t border-white/5 pt-4">
               <div className="flex items-center justify-between">
