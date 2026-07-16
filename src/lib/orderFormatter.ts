@@ -8,8 +8,26 @@ export interface LiveOrder {
   productName: string;   // "BPC-157 5mg"
   productImage?: string; // optional thumbnail
   createdAtMs: number;   // epoch ms
-  userId?: string;
+  /**
+   * Short non-reversible hash (first 16 hex chars of sha256(uid)) so the
+   * client can still hide the viewer's own orders without ever exposing the
+   * raw Firebase UID. Optional — absent for guest orders.
+   */
+  userHash?: string;
   status?: string;
+}
+
+// Tiny sync SHA-256 for short strings; matches SubtleCrypto output.
+// Cached require so we don't pay lookup cost per row.
+let _cryptoHash: ((s: string) => string) | null = null;
+function shortHash(input: string): string {
+  if (!_cryptoHash) {
+    // Node/Worker crypto module is available in the server runtime.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const nodeCrypto = require('crypto') as typeof import('crypto');
+    _cryptoHash = (s: string) => nodeCrypto.createHash('sha256').update(s).digest('hex').slice(0, 16);
+  }
+  return _cryptoHash(input);
 }
 
 interface RawOrderLike {
