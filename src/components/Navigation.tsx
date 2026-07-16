@@ -288,7 +288,7 @@ export function Navigation({
         onClick={onMobileMenuToggle} aria-hidden="true" />
 
       <div role="dialog" aria-modal="true" aria-label="Navigation menu"
-        className="fixed right-0 z-[10019] md:hidden flex flex-col"
+        className="fixed right-0 z-[2147483647] md:hidden flex flex-col"
         style={{
           width: 'min(320px, 90vw)',
           top: mobileMenuTop,
