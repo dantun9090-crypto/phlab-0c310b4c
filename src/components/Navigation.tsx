@@ -238,7 +238,7 @@ export function Navigation({
 }: { user: any; isAdmin?: boolean; isMobileMenuOpen: boolean; onMobileMenuToggle: () => void; }) {
   const location = useLocation();
   const navLinks = useNavLinks();
-  const mobileMenuTop = 'calc(32px + 64px + var(--rg-banner-h, 0px))';
+  const mobileMenuTop = '0px';
   const isActive = (href: string) =>
     href === '/' ? location.pathname === '/' : location.pathname.startsWith(href);
 
