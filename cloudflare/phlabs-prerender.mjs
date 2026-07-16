@@ -162,6 +162,30 @@ function stripHostingInjectedScriptsFromHtml(html) {
     );
 }
 
+// Inject <link rel="preload" as="image" fetchpriority="high"> for the first
+// <img src="/_img?..."> in the prerendered body so the browser can start
+// downloading the LCP candidate before React hydrates. No-op when no such
+// image is found, or when a matching preload link is already present.
+function injectHeroImagePreload(html) {
+  if (!html) return html;
+  const imgMatch = html.match(/<img\b[^>]*\bsrc=(["'])(\/_img[^"']+)\1[^>]*>/i);
+  if (!imgMatch) return html;
+  const heroUrl = imgMatch[2];
+  const heroUrlEsc = heroUrl.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  if (html.includes('rel="preload"') && html.includes(heroUrl)) {
+    // Already preloaded — leave head untouched.
+    return html;
+  }
+  const preloadTag =
+    '<link rel="preload" as="image" href="' +
+    heroUrlEsc +
+    '" fetchpriority="high">';
+  const headMatch = html.match(/<head\b[^>]*>/i);
+  if (!headMatch) return html;
+  const insertAt = headMatch.index + headMatch[0].length;
+  return html.slice(0, insertAt) + preloadTag + html.slice(insertAt);
+}
+
 function simplifyStrictDynamicCsp(headers) {
   const csp = headers.get("Content-Security-Policy") || headers.get("content-security-policy") || "";
   if (!csp || !csp.includes("strict-dynamic")) return;
@@ -322,6 +346,25 @@ export default {
     }
 
     if (isProxyRoute(path)) {
+      // /_img is a content-addressed image proxy (u/w/f/q params fully
+      // identify the output). CF's default behaviour on this route stamps
+      // a __cf_bm Bot Management cookie → cf-cache-status: DYNAMIC, so
+      // every cold page view re-fetches the same bytes from Firebase.
+      // Force cacheEverything with a 24h TTL and strip Set-Cookie so the
+      // response is safely shareable across users.
+      if (path === "/_img" || path === "/_img/") {
+        const imgRes = await fetch(request, {
+          cf: { cacheTtl: 86400, cacheEverything: true },
+        });
+        const imgHeaders = new Headers(imgRes.headers);
+        imgHeaders.delete("set-cookie");
+        imgHeaders.delete("Set-Cookie");
+        return new Response(imgRes.body, {
+          status: imgRes.status,
+          statusText: imgRes.statusText,
+          headers: imgHeaders,
+        });
+      }
       // Build assets are content-addressed and may legitimately disappear when
       // the hosting platform evicts an older deployment. Never let Cloudflare
       // store a 404 for /assets/*.js|css as immutable, otherwise stale HTML can
@@ -435,7 +478,7 @@ export default {
           return response;
         }
 
-        const body = stripHostingInjectedScriptsFromHtml(await prerenderRes.text());
+        const body = injectHeroImagePreload(stripHostingInjectedScriptsFromHtml(await prerenderRes.text()));
 
         if (body.includes("__CSP_NONCE__")) {
           console.error("[PHL-CRIT] Prerendered HTML contains __CSP_NONCE__");
@@ -551,7 +594,7 @@ export default {
       const prerenderMs = Date.now() - prerenderStart;
 
       if (prerenderRes && prerenderRes.ok) {
-        const body = stripHostingInjectedScriptsFromHtml(await prerenderRes.text());
+        const body = injectHeroImagePreload(stripHostingInjectedScriptsFromHtml(await prerenderRes.text()));
         if (body.includes("__CSP_NONCE__")) {
           console.error("[PHL-CRIT] Prerendered HTML contains __CSP_NONCE__ — falling back to origin");
         } else {
