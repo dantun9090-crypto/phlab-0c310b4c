@@ -595,9 +595,11 @@ export default {
       } else if (prerenderRes) {
         console.warn("[PHL-WARN] Prerender.io returned " + prerenderRes.status + " for browser — falling back to origin");
       }
-      // fall through to origin path below (do NOT populate edge cache with
-      // an origin shell — it would poison the prerendered cache slot).
+      // fall through to origin path below — disable edge cache populate so
+      // an origin hydration shell never poisons the prerendered cache slot.
+      wEligible = false;
     }
+
 
 
     const originStart = Date.now();
