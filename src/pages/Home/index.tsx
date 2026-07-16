@@ -542,17 +542,29 @@ export default function HomePage() {
                 style={{ height: responsiveHeight, objectFit: banner.objectFit || 'cover', objectPosition: `${banner.objectPositionX ?? 50}% ${banner.objectPositionY ?? 50}%`, display: 'block' }} />
 
           )}
-          {/* Edge fades — mobile-only (hidden at md+). Blend the banner's
-              left/right into --phl-page-bg so narrow screens don't feel boxed.
-              Desktop keeps clean straight edges. */}
-          <div
-            className="absolute inset-y-0 left-0 pointer-events-none z-[8] md:hidden"
-            style={{ width: 'clamp(48px, 14vw, 140px)', background: 'linear-gradient(to right, var(--phl-page-bg) 0%, var(--phl-page-bg) 15%, color-mix(in oklab, var(--phl-page-bg) 70%, transparent) 55%, transparent 100%)' }}
-          />
-          <div
-            className="absolute inset-y-0 right-0 pointer-events-none z-[8] md:hidden"
-            style={{ width: 'clamp(48px, 14vw, 140px)', background: 'linear-gradient(to left, var(--phl-page-bg) 0%, var(--phl-page-bg) 15%, color-mix(in oklab, var(--phl-page-bg) 70%, transparent) 55%, transparent 100%)' }}
-          />
+          {/* Edge fades — admin-tunable via Banner tab (edgeFadeEnabled,
+              edgeFadeWidthPct, edgeFadeOpacity). Colors read from
+              --phl-page-bg on the Home wrapper so themes flow through. */}
+          {(banner.edgeFadeEnabled !== false) && (() => {
+            const widthPct = Math.max(0, Math.min(30, banner.edgeFadeWidthPct ?? 12));
+            const opacity = Math.max(0, Math.min(100, banner.edgeFadeOpacity ?? 100)) / 100;
+            const mid = `color-mix(in oklab, var(--phl-page-bg) ${Math.round(75 * opacity)}%, transparent)`;
+            const start = opacity >= 0.999
+              ? 'var(--phl-page-bg)'
+              : `color-mix(in oklab, var(--phl-page-bg) ${Math.round(100 * opacity)}%, transparent)`;
+            return (
+              <>
+                <div
+                  className="absolute inset-y-0 left-0 pointer-events-none z-[8]"
+                  style={{ width: `${widthPct}%`, background: `linear-gradient(to right, ${start} 0%, ${start} 15%, ${mid} 55%, transparent 100%)` }}
+                />
+                <div
+                  className="absolute inset-y-0 right-0 pointer-events-none z-[8]"
+                  style={{ width: `${widthPct}%`, background: `linear-gradient(to left, ${start} 0%, ${start} 15%, ${mid} 55%, transparent 100%)` }}
+                />
+              </>
+            );
+          })()}
 
 
 
