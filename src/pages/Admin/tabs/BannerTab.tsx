@@ -963,6 +963,28 @@ export default function BannerTab() {
                       style={{ background: gradMap[banner.gradientDirection] }} />
                   );
                 })()}
+                {/* Edge fade preview */}
+                {banner.edgeFadeEnabled && (() => {
+                  const widthPct = Math.max(0, Math.min(30, banner.edgeFadeWidthPct));
+                  const opacity = Math.max(0, Math.min(100, banner.edgeFadeOpacity)) / 100;
+                  const bg = banner.edgeFadeUsePageBg ? '#030a14' : banner.edgeFadeColor;
+                  const toRgba = (hex: string, a: number) => {
+                    const h = hex.replace('#', '');
+                    const n = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+                    const r = parseInt(n.slice(0, 2), 16), g = parseInt(n.slice(2, 4), 16), b = parseInt(n.slice(4, 6), 16);
+                    return `rgba(${r},${g},${b},${a})`;
+                  };
+                  const start = toRgba(bg, opacity);
+                  const mid = toRgba(bg, 0.75 * opacity);
+                  return (
+                    <>
+                      <div className="absolute inset-y-0 left-0 pointer-events-none z-[8]"
+                        style={{ width: `${widthPct}%`, background: `linear-gradient(to right, ${start} 0%, ${start} 15%, ${mid} 55%, transparent 100%)` }} />
+                      <div className="absolute inset-y-0 right-0 pointer-events-none z-[8]"
+                        style={{ width: `${widthPct}%`, background: `linear-gradient(to left, ${start} 0%, ${start} 15%, ${mid} 55%, transparent 100%)` }} />
+                    </>
+                  );
+                })()}
                 {/* Text overlay */}
                 {banner.textOverlayEnabled && (banner.textOverlayHeading || banner.textOverlaySubtext) && (
                   <div className={`absolute inset-0 flex flex-col pointer-events-none px-6 py-4 z-10
