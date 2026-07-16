@@ -693,7 +693,13 @@ export default function CheckoutPage() {
     }
   };
 
+  // Stable cart id for telemetry correlation across events in one attempt.
+  const buildCartId = () => cart.map(i => `${i.id}:${i.variantId ?? ''}:${i.quantity}`).join('|');
+
   const handleSubmit = async () => {
+    // Pay click telemetry — fires for EVERY click, including disabled/blocked
+    // ones (button onClick still runs on some flows). Non-blocking.
+    logCheckoutEvent({ stage: 'pay_click', cartId: buildCartId(), timestamp: Date.now() });
     // Run ALL step validations so the user is told exactly which field is missing.
     // Previously we only ran step 3 and returned silently — on small viewports
     // the error rendered far above the button so the Pay click looked like a no-op.
