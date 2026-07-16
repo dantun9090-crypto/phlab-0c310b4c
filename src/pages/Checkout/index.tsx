@@ -23,6 +23,8 @@ import type { CartItem } from '@/components/Layout';
 import { useFreeGiftConfig, freeGiftApplies, eligibleGifts } from '@/lib/free-gift-config';
 import FreeGiftPicker from '@/components/checkout/FreeGiftPicker';
 import { trackAddPaymentInfo, trackBeginCheckout, trackViewCart, type GaItem } from '@/lib/analytics';
+import { logCheckoutEvent } from '@/lib/checkoutTelemetry';
+import { callPreflightWithRetry } from '@/lib/checkoutPreflightRetry';
 
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
 import NoCacheHead from '@/components/NoCacheHead';
@@ -162,6 +164,10 @@ export default function CheckoutPage() {
   const [preflightIssues, setPreflightIssues] = useState<PreflightIssue[]>([]);
   const [preflightChecking, setPreflightChecking] = useState(false);
   const [preflightOk, setPreflightOk] = useState(false);
+  // Preflight retry state — surfaces "Retrying (1/3)…" in the inline
+  // message while transient network / 5xx failures are being re-tried.
+  const [preflightRetry, setPreflightRetry] = useState<{ attempt: number; total: number } | null>(null);
+  const [preflightExhausted, setPreflightExhausted] = useState(false);
   const preflightRunId = useRef(0);
 
   useEffect(() => {
@@ -173,22 +179,37 @@ export default function CheckoutPage() {
     const runId = ++preflightRunId.current;
     const handle = setTimeout(async () => {
       setPreflightChecking(true);
+      const cartId = cart.map(i => `${i.id}:${i.variantId ?? ''}:${i.quantity}`).join('|');
+      const startedAt = Date.now();
+      logCheckoutEvent({ stage: 'preflight_start', cartId, timestamp: startedAt });
       try {
         const idToken = auth.currentUser && !auth.currentUser.isAnonymous
           ? await auth.currentUser.getIdToken().catch(() => null)
           : null;
-        const result = await validateCartPrices({
-          data: {
-            items: cart.map(item => ({
-              productId: String(item.id),
-              variantId: item.variantId ? String(item.variantId) : null,
-              quantity: item.quantity,
-            })),
-            idToken,
+        const result = await callPreflightWithRetry(
+          () => validateCartPrices({
+            data: {
+              items: cart.map(item => ({
+                productId: String(item.id),
+                variantId: item.variantId ? String(item.variantId) : null,
+                quantity: item.quantity,
+              })),
+              idToken,
+            },
+          }),
+          {
+            maxRetries: 3,
+            baseDelayMs: 1000,
+            onAttempt: (attempt, total) => {
+              if (runId !== preflightRunId.current) return;
+              if (attempt > 1) setPreflightRetry({ attempt, total });
+            },
           },
-        });
+        );
         // Ignore late responses if cart changed again mid-flight.
         if (runId !== preflightRunId.current) return;
+        setPreflightRetry(null);
+        setPreflightExhausted(false);
 
         const issues: PreflightIssue[] = [];
 
@@ -260,14 +281,42 @@ export default function CheckoutPage() {
 
         setPreflightIssues(issues);
         setPreflightOk(issues.length === 0 && result.ok);
-      } catch {
-        // Network / server fault — don't block checkout. The final createOrder
-        // call re-validates every price/stock line server-side, so the user
-        // can still place the order; we just clear the transient issues.
+        logCheckoutEvent({
+          stage: 'preflight_success',
+          cartId,
+          responseSummary: `items=${result.items.length} issues=${issues.length} ok=${result.ok}`,
+          durationMs: Date.now() - startedAt,
+        });
+      } catch (err) {
+        // Retries exhausted (or non-retryable error). Don't block checkout —
+        // the final createOrder call re-validates every price/stock line
+        // server-side, so the user can still place the order. Surface the
+        // "preflight_failed" reason via disabledReason for UX transparency.
         if (runId === preflightRunId.current) {
           setPreflightIssues([]);
           setPreflightOk(false);
+          setPreflightRetry(null);
+          setPreflightExhausted(true);
         }
+        const e = err as { statusCode?: number; status?: number; message?: string; name?: string };
+        const statusCode = e?.statusCode ?? e?.status;
+        const errorType: 'network' | 'timeout' | 'validation' | 'unknown' =
+          e?.name === 'AbortError' || e?.name === 'TimeoutError'
+            ? 'timeout'
+            : typeof statusCode === 'number' && statusCode >= 400 && statusCode < 500
+              ? 'validation'
+              : typeof statusCode === 'number' || !e?.message
+                ? 'network'
+                : 'unknown';
+        logCheckoutEvent({
+          stage: 'preflight_fail',
+          cartId,
+          errorType,
+          errorMessage: String(e?.message ?? err ?? 'unknown').slice(0, 300),
+          statusCode: typeof statusCode === 'number' ? statusCode : undefined,
+          durationMs: Date.now() - startedAt,
+          retryCount: 3,
+        });
       } finally {
         if (runId === preflightRunId.current) setPreflightChecking(false);
       }
@@ -644,7 +693,53 @@ export default function CheckoutPage() {
     }
   };
 
+  // Stable cart id for telemetry correlation across events in one attempt.
+  const buildCartId = () => cart.map(i => `${i.id}:${i.variantId ?? ''}:${i.quantity}`).join('|');
+
+  type DisabledReasonKey = 'cart_empty' | 'preflight_failed' | 'price_mismatch' | 'validation_errors' | 'submitting';
+  const disabledReason: DisabledReasonKey | null = (() => {
+    if (isPlacing) return 'submitting';
+    if (cart.length === 0) return 'cart_empty';
+    if (preflightIssues.some(i => i.kind === 'price_mismatch')) return 'price_mismatch';
+    if (preflightIssues.length > 0) return 'validation_errors';
+    if (preflightExhausted) return 'preflight_failed';
+    if (preflightRetry) return 'preflight_failed';
+    return null;
+  })();
+  const disabledReasonMessage: string | null = (() => {
+    switch (disabledReason) {
+      case 'cart_empty': return 'Your cart is empty';
+      case 'preflight_failed':
+        if (preflightRetry) return `Price validation failed. Retrying (${preflightRetry.attempt}/${preflightRetry.total})…`;
+        if (preflightExhausted) return 'Price validation unavailable. Please refresh the page.';
+        return 'Price validation failed. Retrying…';
+      case 'price_mismatch': return 'Cart price has changed. Please review.';
+      case 'validation_errors': return 'Please fix the errors above';
+      case 'submitting': return 'Payment in progress…';
+      default: return null;
+    }
+  })();
+  // Pay button stays enabled while retrying so the user can still proceed
+  // (createOrder re-validates every price server-side).
+  const payDisabled = isPlacing || cart.length === 0 || preflightIssues.length > 0 || preflightExhausted;
+
+  const handleDisabledPayClick = () => {
+    const el = typeof document !== 'undefined'
+      ? document.getElementById('checkout-validation-banner')
+      : null;
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('ring-2', 'ring-yellow-400', 'ring-offset-2', 'ring-offset-transparent');
+      setTimeout(() => {
+        el.classList.remove('ring-2', 'ring-yellow-400', 'ring-offset-2', 'ring-offset-transparent');
+      }, 1400);
+    }
+  };
+
   const handleSubmit = async () => {
+    // Pay click telemetry — fires for EVERY click, including disabled/blocked
+    // ones (button onClick still runs on some flows). Non-blocking.
+    logCheckoutEvent({ stage: 'pay_click', cartId: buildCartId(), timestamp: Date.now() });
     // Run ALL step validations so the user is told exactly which field is missing.
     // Previously we only ran step 3 and returned silently — on small viewports
     // the error rendered far above the button so the Pay click looked like a no-op.
@@ -759,6 +854,9 @@ export default function CheckoutPage() {
       // and writes the order document via the service account (bypassing
       // client-writable rules). The client never supplies totalAmount.
       let serverResult: Awaited<ReturnType<typeof createOrder>>;
+      const orderTelemetryCartId = buildCartId();
+      const orderStartedAt = Date.now();
+      logCheckoutEvent({ stage: 'create_order_start', cartId: orderTelemetryCartId, timestamp: orderStartedAt });
       try {
         // Always send the idToken if we have a current user (including
         // anonymous) so the order document is linked to the same UID the
@@ -800,8 +898,20 @@ export default function CheckoutPage() {
             idToken,
           },
         });
+        logCheckoutEvent({
+          stage: 'create_order_success',
+          cartId: orderTelemetryCartId,
+          orderId: serverResult.orderId,
+          durationMs: Date.now() - orderStartedAt,
+        });
       } catch (err: any) {
         const msg = String(err?.message || '');
+        logCheckoutEvent({
+          stage: 'create_order_fail',
+          cartId: orderTelemetryCartId,
+          error: msg.slice(0, 300),
+          durationMs: Date.now() - orderStartedAt,
+        });
         if (/no longer exists|could not verify price/i.test(msg)) setCartStale(true);
         setErrors(prev => ({
           ...prev,
@@ -871,10 +981,24 @@ export default function CheckoutPage() {
           } catch { /* ignore */ }
 
           setFenaStep('redirecting');
+          logCheckoutEvent({
+            stage: 'redirect_target',
+            cartId: orderTelemetryCartId,
+            url: parsed.toString(),
+            timestamp: Date.now(),
+          });
           setTimeout(() => { window.location.href = parsed.toString(); }, 250);
           return;
         } catch (err: any) {
           setFenaStep('failed');
+          logCheckoutEvent({
+            stage: 'gateway_error',
+            cartId: orderTelemetryCartId,
+            gateway: 'wallid',
+            errorCode: String(err?.code ?? err?.name ?? 'wallid_error'),
+            errorMessage: String(err?.message ?? 'unknown').slice(0, 300),
+            timestamp: Date.now(),
+          });
           setLoginError(err?.message || 'Could not start Pay by Bank. Please try again or use Manual Bank Transfer.');
           setIsPlacing(false);
           return;
@@ -1200,7 +1324,7 @@ export default function CheckoutPage() {
               {/* Pre-flight validation findings (price drift / missing variants
                   / out of stock) — shown before the user reaches the pay step. */}
               {preflightIssues.length > 0 && (
-                <div className="flex items-start gap-3 bg-red-500/10 border border-red-500/40 rounded-xl p-3">
+                <div id="checkout-validation-banner" className="flex items-start gap-3 bg-red-500/10 border border-red-500/40 rounded-xl p-3 transition-shadow">
                   <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
                     <p className="text-red-300 text-sm font-medium">
@@ -1782,21 +1906,34 @@ export default function CheckoutPage() {
 
                     {/* Place order button */}
                     <button
-                      onClick={handleSubmit}
-                      disabled={isPlacing || preflightIssues.length > 0}
+                      id="checkout-pay-button"
+                      data-testid="checkout-pay-button"
+                      onClick={() => {
+                        if (payDisabled) {
+                          handleDisabledPayClick();
+                          return;
+                        }
+                        void handleSubmit();
+                      }}
+                      disabled={payDisabled}
+                      style={payDisabled ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
                       className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2"
                     >
                       {isPlacing ? (
                         <>
-                          <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                          </svg>
-                          Placing Order...
+                          <span
+                            aria-hidden="true"
+                            className="inline-block w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin"
+                          />
+                          Processing…
                         </>
                       ) : preflightIssues.length > 0 ? (
                         <>
                           <AlertTriangle className="w-4 h-4" /> Resolve cart issues to continue
+                        </>
+                      ) : preflightExhausted ? (
+                        <>
+                          <AlertTriangle className="w-4 h-4" /> Price validation unavailable — refresh
                         </>
                       ) : (
                         <>
@@ -1804,6 +1941,14 @@ export default function CheckoutPage() {
                         </>
                       )}
                     </button>
+                    {disabledReasonMessage && (
+                      <p
+                        data-testid="checkout-disabled-reason"
+                        className="text-red-400 text-[14px] mt-2"
+                      >
+                        Cannot proceed: {disabledReasonMessage}
+                      </p>
+                    )}
 
                     {/* Trust row */}
                     <div className="flex items-center justify-center gap-5 pt-1">
