@@ -188,22 +188,19 @@ export default function PaymentMethodOptions({
         if (anchorTop != null && clickTarget) {
           const newTop = clickTarget.getBoundingClientRect().top;
           const delta = newTop - anchorTop;
-          if (Math.abs(delta) > 1) {
+          // Only re-anchor small layout shifts (< 400px). Larger deltas mean
+          // a big section expanded/collapsed and re-anchoring compounds into
+          // the "infinite scroll" feel users reported on Manual Bank Transfer.
+          if (Math.abs(delta) > 1 && Math.abs(delta) < 400) {
             window.scrollBy({ top: delta, left: 0, behavior: "auto" });
           }
         }
-        if (next === "bank_transfer" && manualDetailsRef.current) {
-          const rect = manualDetailsRef.current.getBoundingClientRect();
-          const vh = window.innerHeight || 0;
-          if (rect.bottom > vh || rect.top < 0) {
-            manualDetailsRef.current.scrollIntoView({
-              behavior: "smooth",
-              block: "nearest",
-            });
-          }
-        }
+        // Deliberately no scrollIntoView here — details render inline
+        // directly below the selected option; forcing scroll caused the
+        // page to keep chasing the expanding accordion.
       });
     });
+
   };
 
   return (
