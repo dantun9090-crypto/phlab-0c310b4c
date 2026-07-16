@@ -1189,7 +1189,10 @@ export default function CheckoutPage() {
         } catch (err: any) {
           if (paymentAttemptRef.current !== paymentAttemptId) return;
           setFenaStep('failed');
-          setLoginError(err?.message || 'Could not start Pay by Bank. Please try again or use Manual Bank Transfer.');
+          const failMsg = err?.message || 'Payment could not be started — please try again.';
+          setLoginError(failMsg);
+          console.error('[PAYMENT] gateway_fail method=pay_by_bank', err);
+          try { toast.error(failMsg); } catch { /* toast optional */ }
           setIsPlacing(false);
           return;
         }
