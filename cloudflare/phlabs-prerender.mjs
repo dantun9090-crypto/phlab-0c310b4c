@@ -611,6 +611,11 @@ export default {
       ctx.waitUntil((async () => {
         try {
           const buf = await new Response(b).arrayBuffer();
+          // STORE GUARD: never cache empty/truncated bodies. Real HTML
+          // shells are 50KB+; anything under 10KB is a deploy-race artifact
+          // (0-byte origin, error page). Storing one would replay a blank
+          // homepage to every visitor until manual purge.
+          if (buf.byteLength < 10000) return;
           const snapshot = new Response(buf, {
             status: out.status,
             statusText: out.statusText,
