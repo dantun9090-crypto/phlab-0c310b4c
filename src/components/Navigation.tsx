@@ -238,6 +238,7 @@ export function Navigation({
 }: { user: any; isAdmin?: boolean; isMobileMenuOpen: boolean; onMobileMenuToggle: () => void; }) {
   const location = useLocation();
   const navLinks = useNavLinks();
+  const mobileMenuTop = 'calc(32px + 64px + var(--rg-banner-h, 0px))';
   const isActive = (href: string) =>
     href === '/' ? location.pathname === '/' : location.pathname.startsWith(href);
 
@@ -277,8 +278,9 @@ export function Navigation({
       </nav>
 
       {/* MOBILE DRAWER */}
-      <div className="fixed inset-0 z-[98] md:hidden transition-opacity duration-300"
+      <div className="fixed left-0 right-0 bottom-0 z-[98] md:hidden transition-opacity duration-300"
         style={{
+          top: mobileMenuTop,
           background: 'rgba(0,4,12,0.86)',
           opacity: isMobileMenuOpen ? 1 : 0,
           pointerEvents: isMobileMenuOpen ? 'auto' : 'none',
@@ -289,7 +291,7 @@ export function Navigation({
         className="fixed right-0 z-[99] md:hidden flex flex-col"
         style={{
           width: 'min(320px, 90vw)',
-          top: 'calc(32px + 56px + var(--rg-banner-h, 0px))',
+          top: mobileMenuTop,
           bottom: 0,
           background: '#040d1a',
           borderLeft: '1px solid rgba(255,255,255,0.06)',
