@@ -808,7 +808,9 @@ export default function CheckoutPage() {
         return 'Price validation failed. Retrying…';
       case 'price_mismatch': return 'Cart price has changed. Please review.';
       case 'validation_errors': return 'Please fix the errors above';
-      case 'submitting': return 'Payment in progress…';
+      case 'submitting': return pendingPaymentUrl
+        ? 'Payment page ready — tap Open payment if it did not open.'
+        : 'Opening payment page…';
       default: return null;
     }
   })();
@@ -2075,7 +2077,7 @@ export default function CheckoutPage() {
                         </>
                       )}
                     </button>
-                    {disabledReasonMessage && (
+                    {disabledReasonMessage && !isPlacing && (
                       <p
                         data-testid="checkout-disabled-reason"
                         className="text-red-400 text-[14px] mt-2"
@@ -2083,7 +2085,15 @@ export default function CheckoutPage() {
                         Cannot proceed: {disabledReasonMessage}
                       </p>
                     )}
-                    {isPlacing && paymentRecoveryVisible && (
+                    {isPlacing && disabledReasonMessage && (
+                      <p
+                        data-testid="checkout-disabled-reason"
+                        className="text-yellow-200 text-[14px] mt-2"
+                      >
+                        {disabledReasonMessage}
+                      </p>
+                    )}
+                    {isPlacing && (
                       <div className="mt-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-100">
                         <p className="mb-3">
                           {pendingPaymentUrl
