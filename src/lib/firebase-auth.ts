@@ -13,6 +13,7 @@ import {
   browserLocalPersistence,
   browserSessionPersistence,
   indexedDBLocalPersistence,
+  inMemoryPersistence,
 } from 'firebase/auth';
 import type { User as FirebaseUser } from 'firebase/auth';
 
@@ -43,6 +44,12 @@ export const auth = getAuth(app);
 // Default = persistent (indexedDB / localStorage) so a refresh OR a full
 // browser restart keeps the user signed in. Only when the user explicitly
 // opted out (`php_auth_remember === '0'`) do we downgrade to session-only.
+//
+// Final fallback: inMemoryPersistence. When the user's device has a full
+// disk or corrupted IndexedDB (Firefox QuotaExceededError code 22 —
+// "Encountered full disk while opening backing store"), all disk-backed
+// stores fail. Without an in-memory fallback, signInWithEmailAndPassword
+// aborts and the user is locked out of their own account.
 const REMEMBER_KEY = 'php_auth_remember';
 if (typeof window !== 'undefined') {
   let remembered = true;
@@ -50,18 +57,23 @@ if (typeof window !== 'undefined') {
     if (window.localStorage.getItem(REMEMBER_KEY) === '0') remembered = false;
   } catch { /* storage blocked → assume remembered */ }
 
-  if (remembered) {
-    // Try indexedDB first (survives browser restart), fall back to localStorage.
+  const applyPersistent = () =>
     setPersistence(auth, indexedDBLocalPersistence).catch(() =>
-      setPersistence(auth, browserLocalPersistence).catch((e) => {
-        console.warn('[auth] persistent setPersistence failed:', e);
+      setPersistence(auth, browserLocalPersistence).catch(() =>
+        setPersistence(auth, inMemoryPersistence).catch((e) => {
+          console.warn('[auth] all persistence backends failed:', e);
+        }),
+      ),
+    );
+  const applySession = () =>
+    setPersistence(auth, browserSessionPersistence).catch(() =>
+      setPersistence(auth, inMemoryPersistence).catch((e) => {
+        console.warn('[auth] session/in-memory persistence failed:', e);
       }),
     );
-  } else {
-    setPersistence(auth, browserSessionPersistence).catch((e) => {
-      console.warn('[auth] session setPersistence failed:', e);
-    });
-  }
+
+  if (remembered) applyPersistent();
+  else applySession();
 }
 
 export { onAuthStateChanged };
