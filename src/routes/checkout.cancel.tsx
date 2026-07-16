@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { XCircle } from "lucide-react";
-import { auth } from "@/lib/firebase";
+// NOTE: `@/lib/firebase` (Firebase Auth) pulls browser-only APIs and crashes
+// the Cloudflare Worker SSR runtime. Import it lazily inside useEffect.
 
 export const Route = createFileRoute("/checkout/cancel")({
   head: () => ({
