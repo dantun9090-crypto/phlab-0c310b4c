@@ -121,10 +121,10 @@ for (const f of routeFiles) {
 // `tests/sitemap-policy-consistency.test.ts` already covers deeper checks.
 const policySrc = readFileSync(POLICY_LIB, "utf8");
 const transactional =
-  [...policySrc.matchAll(/"(\/[a-z-]+)"[,\s]/g)]
+  [...policySrc.matchAll(/"(\/[A-Za-z0-9._/-]+)"[,\s]/g)]
     .map((m) => m[1])
     .filter((p) =>
-      /\/(cart|checkout|payment|account|login|register|admin|api|webhook|server-functions|lovable|vip-store)$/.test(
+      /\/(cart|checkout|order|payment|account|login|register|admin|api|webhook|server-functions|lovable|mcp|\.mcp|\.well-known|vip-store)$/.test(
         p,
       ),
     );
