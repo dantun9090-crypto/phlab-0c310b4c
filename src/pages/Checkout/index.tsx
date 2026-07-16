@@ -142,7 +142,55 @@ export default function CheckoutPage() {
   const [paymentOptions, setPaymentOptions] = useState<CheckoutPaymentOptions | null>(null);
   const [wallidEnabled, setWallidEnabled] = useState<boolean>(false);
   const [, setSummaryExpanded] = useState(false);
+  const [paymentRecoveryVisible, setPaymentRecoveryVisible] = useState(false);
   const stepRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const paymentAttemptRef = useRef(0);
+  const paymentAbortRef = useRef<AbortController | null>(null);
+  const paymentRecoveryTimerRef = useRef<number | null>(null);
+  const paymentWatchdogTimerRef = useRef<number | null>(null);
+
+  const clearPaymentTimers = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    if (paymentRecoveryTimerRef.current !== null) {
+      window.clearTimeout(paymentRecoveryTimerRef.current);
+      paymentRecoveryTimerRef.current = null;
+    }
+    if (paymentWatchdogTimerRef.current !== null) {
+      window.clearTimeout(paymentWatchdogTimerRef.current);
+      paymentWatchdogTimerRef.current = null;
+    }
+  }, []);
+
+  const startPaymentTimers = useCallback((attemptId: number) => {
+    if (typeof window === 'undefined') return;
+    clearPaymentTimers();
+    setPaymentRecoveryVisible(false);
+    paymentRecoveryTimerRef.current = window.setTimeout(() => {
+      if (paymentAttemptRef.current === attemptId) setPaymentRecoveryVisible(true);
+    }, 8000);
+    paymentWatchdogTimerRef.current = window.setTimeout(() => {
+      if (paymentAttemptRef.current !== attemptId) return;
+      paymentAttemptRef.current += 1;
+      paymentAbortRef.current?.abort();
+      paymentAbortRef.current = null;
+      clearPaymentTimers();
+      setPaymentRecoveryVisible(false);
+      setFenaStep('failed');
+      setIsPlacing(false);
+      setLoginError('Payment did not open. Please check your connection and try again. No payment has been taken.');
+    }, 35000);
+  }, [clearPaymentTimers]);
+
+  const cancelPaymentAttempt = useCallback((message = 'Payment attempt cancelled. Please try again.') => {
+    paymentAttemptRef.current += 1;
+    paymentAbortRef.current?.abort();
+    paymentAbortRef.current = null;
+    clearPaymentTimers();
+    setPaymentRecoveryVisible(false);
+    setFenaStep('failed');
+    setIsPlacing(false);
+    setLoginError(message);
+  }, [clearPaymentTimers]);
 
   // Reset in-flight payment state when the page is restored from bfcache
   // (browser back from Wallid/Fena) OR becomes visible again after tabbing
@@ -151,6 +199,11 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const clearInFlight = () => {
+      paymentAttemptRef.current += 1;
+      paymentAbortRef.current?.abort();
+      paymentAbortRef.current = null;
+      clearPaymentTimers();
+      setPaymentRecoveryVisible(false);
       setIsPlacing(false);
       setFenaStep('idle');
       setLoginError('');
@@ -163,12 +216,15 @@ export default function CheckoutPage() {
       if (document.visibilityState === 'visible') clearInFlight();
     };
     window.addEventListener('pageshow', onPageShow);
+    window.addEventListener('focus', clearInFlight);
     document.addEventListener('visibilitychange', onVisibility);
     return () => {
       window.removeEventListener('pageshow', onPageShow);
+      window.removeEventListener('focus', clearInFlight);
       document.removeEventListener('visibilitychange', onVisibility);
+      clearPaymentTimers();
     };
-  }, []);
+  }, [clearPaymentTimers]);
   const successRef = useRef<HTMLElement | null>(null);
 
   // Banner state: set when the cart we loaded was in the legacy shape and
@@ -854,6 +910,11 @@ export default function CheckoutPage() {
     } catch { /* analytics never blocks payment */ }
 
     setIsPlacing(true);
+    const paymentAttemptId = paymentAttemptRef.current + 1;
+    paymentAttemptRef.current = paymentAttemptId;
+    paymentAbortRef.current?.abort();
+    paymentAbortRef.current = new AbortController();
+    startPaymentTimers(paymentAttemptId);
     setLoginError('');
     if (form.paymentMethod === 'pay_by_bank') {
       setFenaStep('creating-order');
@@ -868,6 +929,7 @@ export default function CheckoutPage() {
       if (form.createAccount && !firebaseUser) {
         try {
           const newUser = await registerUser(form.email, form.password, form.firstName, form.lastName);
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
           userId = newUser.user.uid;
         } catch (error: any) {
           if (error.code === 'auth/email-already-in-use') {
@@ -883,6 +945,7 @@ export default function CheckoutPage() {
       if (!userId) {
         try {
           const anon = await signInAnonymously(auth);
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
           userId = anon.user.uid;
         } catch {
           // Guest checkout — no auth needed, Firestore rules allow public create
@@ -940,6 +1003,7 @@ export default function CheckoutPage() {
             idToken,
           },
         });
+        if (paymentAttemptRef.current !== paymentAttemptId) return;
         logCheckoutEvent({
           stage: 'create_order_success',
           cartId: orderTelemetryCartId,
@@ -947,6 +1011,7 @@ export default function CheckoutPage() {
           durationMs: Date.now() - orderStartedAt,
         });
       } catch (err: any) {
+        if (paymentAttemptRef.current !== paymentAttemptId) return;
         const msg = String(err?.message || '');
         logCheckoutEvent({
           stage: 'create_order_fail',
@@ -992,6 +1057,7 @@ export default function CheckoutPage() {
           const res = await fetch('/api/payments/create', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
+            signal: paymentAbortRef.current?.signal,
             body: JSON.stringify({
               idToken: wallidIdToken,
               orderId,
@@ -1010,7 +1076,9 @@ export default function CheckoutPage() {
               })),
             }),
           });
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
           const data = await res.json().catch(() => ({} as any));
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
           if (!res.ok || !data.payment_link) {
             throw new Error(data?.error || 'Could not start Pay by Bank.');
           }
@@ -1036,6 +1104,7 @@ export default function CheckoutPage() {
           setTimeout(() => { window.location.replace(parsed.toString()); }, 250);
           return;
         } catch (err: any) {
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
           setFenaStep('failed');
           logCheckoutEvent({
             stage: 'gateway_error',
@@ -1060,12 +1129,15 @@ export default function CheckoutPage() {
           let current = auth.currentUser;
           if (!current) {
             const anon = await signInAnonymously(auth);
+            if (paymentAttemptRef.current !== paymentAttemptId) return;
             current = anon.user;
           }
           const idTokenForFena = await current.getIdToken();
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
           const { hppUrl, gateway, externalPaymentId } = await createGatewayPaymentLink({
             data: { orderId, idToken: idTokenForFena },
           });
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
           // Allowlist redirect hosts per gateway — defence-in-depth.
           let parsed: URL;
           try { parsed = new URL(hppUrl); } catch { throw new Error('Invalid payment redirect URL.'); }
@@ -1091,6 +1163,7 @@ export default function CheckoutPage() {
           setTimeout(() => { window.location.replace(parsed.toString()); }, 250);
           return;
         } catch (err: any) {
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
           setFenaStep('failed');
           setLoginError(err?.message || 'Could not start Pay by Bank. Please try again or use Manual Bank Transfer.');
           setIsPlacing(false);
@@ -1132,10 +1205,16 @@ export default function CheckoutPage() {
       setCart([]);
       setOrderPlaced(true);
     } catch (err: any) {
+      if (paymentAttemptRef.current !== paymentAttemptId) return;
       setLoginError('Failed to place order. Please try again.');
       console.error(err);
     } finally {
-      setIsPlacing(false);
+      if (paymentAttemptRef.current === paymentAttemptId) {
+        paymentAbortRef.current = null;
+        clearPaymentTimers();
+        setPaymentRecoveryVisible(false);
+        setIsPlacing(false);
+      }
     }
   };
 
@@ -1998,6 +2077,18 @@ export default function CheckoutPage() {
                       >
                         Cannot proceed: {disabledReasonMessage}
                       </p>
+                    )}
+                    {isPlacing && paymentRecoveryVisible && (
+                      <div className="mt-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-100">
+                        <p className="mb-3">Still waiting for the payment window. If nothing opened, cancel and try again.</p>
+                        <button
+                          type="button"
+                          onClick={() => cancelPaymentAttempt('Payment attempt cancelled. Please try again. No payment has been taken.')}
+                          className="min-h-[44px] rounded-lg border border-yellow-400/50 px-4 py-2 text-sm font-semibold text-yellow-50 hover:bg-yellow-400/10"
+                        >
+                          Cancel payment attempt
+                        </button>
+                      </div>
                     )}
 
                     {/* Trust row */}
