@@ -27,6 +27,10 @@ const SITEMAP_SRC = readFileSync(
   resolve(process.cwd(), "src/routes/sitemap[.]xml.ts"),
   "utf8",
 );
+const SITEMAP_ENTRIES_SRC = readFileSync(
+  resolve(process.cwd(), "src/lib/sitemap-entries.ts"),
+  "utf8",
+);
 const ROBOTS_TXT = readFileSync(
   resolve(process.cwd(), "src/assets/robots.txt"),
   "utf8",
@@ -45,12 +49,12 @@ function extractSitemapBaseUrl(): string {
   throw new Error("Could not resolve BASE_URL in sitemap source");
 }
 
-/** Extract every static entry path from the `staticEntries` array literal. */
+/** Extract every static entry path from buildStaticEntries(), the sitemap source of truth. */
 function extractStaticSitemapPaths(): string[] {
-  const block = SITEMAP_SRC.match(
-    /const\s+staticEntries[\s\S]*?\[([\s\S]*?)\];/,
+  const block = SITEMAP_ENTRIES_SRC.match(
+    /function\s+buildStaticEntries[\s\S]*?return\s+\[([\s\S]*?)\];\s*}/,
   );
-  if (!block) throw new Error("staticEntries block not found in sitemap source");
+  if (!block) throw new Error("buildStaticEntries() block not found in sitemap entries source");
   return Array.from(block[1].matchAll(/path:\s*"(\/[^"]*)"/g), (m) => m[1]);
 }
 
@@ -74,8 +78,11 @@ describe("CI guardrail — sitemap ↔ canonical ↔ robots", () => {
   it("robots.txt Sitemap: directive matches the live sitemap URL", () => {
     const directives = extractRobotsSitemapDirectives();
     expect(directives.length, "robots.txt must declare a Sitemap").toBeGreaterThan(0);
-    // Exactly one sitemap, pointing at our canonical host + /sitemap.xml.
-    expect(directives).toEqual([`${SITE_URL}/sitemap.xml`]);
+    // Primary XML sitemap and Bing URL feed, both on the canonical host.
+    expect(directives).toEqual([
+      `${SITE_URL}/sitemap.xml`,
+      `${SITE_URL}/bing-feed.xml`,
+    ]);
   });
 
   it("robots.txt does NOT reference any non-canonical host", () => {

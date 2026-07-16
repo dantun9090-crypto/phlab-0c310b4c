@@ -24,6 +24,7 @@ import ROBOTS_TXT_RAW from "../assets/robots.txt?raw";
 export const TRANSACTIONAL_PREFIXES = [
   "/cart",
   "/checkout",
+  "/order",              // Wallid redirect aliases → canonical /checkout/* routes
   "/payment",            // /payment/success, /payment/cancel
   "/account",
   "/login",
@@ -33,6 +34,9 @@ export const TRANSACTIONAL_PREFIXES = [
   "/webhook",
   "/server-functions",
   "/lovable",
+  "/mcp",
+  "/.mcp",
+  "/.well-known",
   "/vip-store",
 ] as const;
 
@@ -48,6 +52,12 @@ export const NEVER_INDEX_EXACT = new Set<string>([
   "/$",                  // TanStack splat catch-all
   "/not-found",
   "/search",
+  "/install",
+  "/orders-modal",
+  "/privacy-requests",
+  "/request-catalog",
+  "/sentry-test",
+  "/watchdog-panel",
 ]);
 
 export interface RobotsRule {
