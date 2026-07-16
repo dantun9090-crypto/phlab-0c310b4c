@@ -179,22 +179,37 @@ export default function CheckoutPage() {
     const runId = ++preflightRunId.current;
     const handle = setTimeout(async () => {
       setPreflightChecking(true);
+      const cartId = cart.map(i => `${i.id}:${i.variantId ?? ''}:${i.quantity}`).join('|');
+      const startedAt = Date.now();
+      logCheckoutEvent({ stage: 'preflight_start', cartId, timestamp: startedAt });
       try {
         const idToken = auth.currentUser && !auth.currentUser.isAnonymous
           ? await auth.currentUser.getIdToken().catch(() => null)
           : null;
-        const result = await validateCartPrices({
-          data: {
-            items: cart.map(item => ({
-              productId: String(item.id),
-              variantId: item.variantId ? String(item.variantId) : null,
-              quantity: item.quantity,
-            })),
-            idToken,
+        const result = await callPreflightWithRetry(
+          () => validateCartPrices({
+            data: {
+              items: cart.map(item => ({
+                productId: String(item.id),
+                variantId: item.variantId ? String(item.variantId) : null,
+                quantity: item.quantity,
+              })),
+              idToken,
+            },
+          }),
+          {
+            maxRetries: 3,
+            baseDelayMs: 1000,
+            onAttempt: (attempt, total) => {
+              if (runId !== preflightRunId.current) return;
+              if (attempt > 1) setPreflightRetry({ attempt, total });
+            },
           },
-        });
+        );
         // Ignore late responses if cart changed again mid-flight.
         if (runId !== preflightRunId.current) return;
+        setPreflightRetry(null);
+        setPreflightExhausted(false);
 
         const issues: PreflightIssue[] = [];
 
@@ -266,14 +281,42 @@ export default function CheckoutPage() {
 
         setPreflightIssues(issues);
         setPreflightOk(issues.length === 0 && result.ok);
-      } catch {
-        // Network / server fault — don't block checkout. The final createOrder
-        // call re-validates every price/stock line server-side, so the user
-        // can still place the order; we just clear the transient issues.
+        logCheckoutEvent({
+          stage: 'preflight_success',
+          cartId,
+          responseSummary: `items=${result.items.length} issues=${issues.length} ok=${result.ok}`,
+          durationMs: Date.now() - startedAt,
+        });
+      } catch (err) {
+        // Retries exhausted (or non-retryable error). Don't block checkout —
+        // the final createOrder call re-validates every price/stock line
+        // server-side, so the user can still place the order. Surface the
+        // "preflight_failed" reason via disabledReason for UX transparency.
         if (runId === preflightRunId.current) {
           setPreflightIssues([]);
           setPreflightOk(false);
+          setPreflightRetry(null);
+          setPreflightExhausted(true);
         }
+        const e = err as { statusCode?: number; status?: number; message?: string; name?: string };
+        const statusCode = e?.statusCode ?? e?.status;
+        const errorType: 'network' | 'timeout' | 'validation' | 'unknown' =
+          e?.name === 'AbortError' || e?.name === 'TimeoutError'
+            ? 'timeout'
+            : typeof statusCode === 'number' && statusCode >= 400 && statusCode < 500
+              ? 'validation'
+              : typeof statusCode === 'number' || !e?.message
+                ? 'network'
+                : 'unknown';
+        logCheckoutEvent({
+          stage: 'preflight_fail',
+          cartId,
+          errorType,
+          errorMessage: String(e?.message ?? err ?? 'unknown').slice(0, 300),
+          statusCode: typeof statusCode === 'number' ? statusCode : undefined,
+          durationMs: Date.now() - startedAt,
+          retryCount: 3,
+        });
       } finally {
         if (runId === preflightRunId.current) setPreflightChecking(false);
       }
