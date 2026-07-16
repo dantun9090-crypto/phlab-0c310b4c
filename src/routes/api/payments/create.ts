@@ -112,6 +112,16 @@ export const Route = createFileRoute("/api/payments/create")({
         // 4) Use the authoritative DB amount + email for the Wallid charge
         const trustedAmount = ctx.amountGbp;
         const trustedEmail = ctx.customerEmail || customerEmail;
+        const chargeItems = [
+          {
+            name: `PH Labs Order ${ctx.reference || orderId}`,
+            category: "Research Peptides",
+            price: trustedAmount,
+            image_url: items.find((item) => item.image_url?.startsWith("https://"))?.image_url
+              || "https://phlabs.co.uk/og-image.jpg",
+            product_url: "https://phlabs.co.uk",
+          },
+        ];
 
         const successUrl = `https://phlabs.co.uk/checkout/success?order_id=${encodeURIComponent(orderId)}`;
         const failUrl = `https://phlabs.co.uk/checkout/cancel?order_id=${encodeURIComponent(orderId)}`;
@@ -122,7 +132,7 @@ export const Route = createFileRoute("/api/payments/create")({
             amount: trustedAmount,
             currency,
             customerEmail: trustedEmail,
-            items,
+            items: chargeItems,
             successUrl,
             failUrl,
           });
@@ -136,7 +146,7 @@ export const Route = createFileRoute("/api/payments/create")({
             currency,
             status: String(wallid.status || "pending"),
             customer_email: trustedEmail,
-            metadata: { items, user_uid: user?.uid ?? null, guest_payment_token: Boolean(paymentToken), raw: wallid } as never,
+            metadata: { items: chargeItems, user_uid: user?.uid ?? null, guest_payment_token: Boolean(paymentToken), raw: wallid } as never,
           });
           if (dbErr) {
             console.error("[Wallid] DB insert failed:", dbErr.message);
