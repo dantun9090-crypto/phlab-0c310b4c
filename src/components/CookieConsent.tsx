@@ -42,6 +42,12 @@ function savePreferences(prefs: CookiePreferences) {
 }
 
 export function CookieConsent() {
+  // Initialize dismissed from localStorage synchronously so a stored consent
+  // hides the banner on first paint — no flash, no reload race.
+  const [dismissed, setDismissed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try { return !!localStorage.getItem(STORAGE_KEY); } catch { return false; }
+  });
   const [visible, setVisible] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [analytics, setAnalytics] = useState(false);
