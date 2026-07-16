@@ -1371,6 +1371,7 @@ export default function CheckoutPage() {
   return (
     <>
     <NoCacheHead title="Checkout — PH Labs" />
+    <SonnerToaster position="top-center" richColors closeButton />
     <section id="checkout" data-checkout-scope className="min-h-screen bg-[#060f1e] pt-20 pb-16">
       <div className="max-w-5xl mx-auto px-4">
 
