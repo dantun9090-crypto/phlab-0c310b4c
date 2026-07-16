@@ -715,18 +715,23 @@ export default function HomePage() {
 
               {/* CTAs */}
               <div className="flex flex-wrap gap-4">
-                <Link to="/products"
-                  aria-label="Browse Catalogue"
-                  className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl font-bold text-sm text-white transition-all duration-300"
+                <MagneticBrowseCTA />
+                <Link to="/lab-reports"
+                  aria-label="Lab reports and CoA"
+                  className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl font-semibold text-sm"
                   style={{
-                    background: 'linear-gradient(135deg, #0ea572 0%, #10b981 50%, #059669 100%)',
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    color: '#a8c8e8',
+                    transition: 'background .2s ease, color .2s ease',
                   }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = 'rgba(74,222,128,0.42)'}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = 'rgba(74,222,128,0.2)'}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; (e.currentTarget as HTMLElement).style.color = '#e4f0ff'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.color = '#a8c8e8'; }}
                 >
-                  Browse Catalogue
-                  <ArrowRight className="w-4 h-4" />
+                  <FileCheck className="w-4 h-4" />
+                  Lab Reports
                 </Link>
+              </div>
                 <Link to="/lab-reports"
                   aria-label="Lab reports and CoA"
                   className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl font-semibold text-sm transition-all duration-300"
