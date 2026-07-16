@@ -757,8 +757,20 @@ const DYNAMIC_ASSET_EXACT = new Set<string>([
   "/sitemap-articles.xml",
   "/sitemap-index.xml",
 ]);
+// Google Merchant / RSS feeds. Google fetches these on a schedule; a short
+// edge cache (15 min, SWR 1h) drops p50 from ~3s origin render to a few ms
+// on HIT without hiding meaningful staleness (fresh publish still purges
+// them via the scoped post-deploy purge).
+const FEED_PATHS = new Set<string>([
+  "/google-merchant-feed.xml",
+  "/google-merchant-feed-free.xml",
+]);
+function isFeedPath(pathname: string): boolean {
+  return FEED_PATHS.has(pathname);
+}
 function isDynamicAssetPath(pathname: string): boolean {
   if (DYNAMIC_ASSET_EXACT.has(pathname)) return true;
+  if (isFeedPath(pathname)) return true;
   if (/^\/sitemap[-a-z0-9]*\.xml$/i.test(pathname)) return true;
   for (const p of DYNAMIC_ASSET_PREFIXES) {
     if (pathname.startsWith(p)) return true;
@@ -775,20 +787,34 @@ function applyDynamicAssetCacheHeaders(response: Response, url: URL): Response {
     headers.set("expires", "0");
     headers.delete("etag");
     headers.delete("last-modified");
+    headers.set("cdn-cache-control", "no-store");
+    headers.set("cloudflare-cdn-cache-control", "no-store");
+    headers.set("surrogate-control", "no-store");
+  } else if (isFeedPath(url.pathname)) {
+    // Browser: 5 min soft cache, must-revalidate. CDN: 15 min HIT + 1h SWR.
+    // Feeds are re-fetched by Google on a schedule; a short edge cache keeps
+    // Google-Bot HITs cheap without hiding fresh publishes (post-deploy
+    // scoped purge evicts feed URLs explicitly).
+    headers.set("cache-control", "public, max-age=300, must-revalidate");
+    headers.set("cdn-cache-control", "public, max-age=900, stale-while-revalidate=3600");
+    headers.set("cloudflare-cdn-cache-control", "public, max-age=900, stale-while-revalidate=3600");
+    headers.delete("surrogate-control");
+    headers.delete("pragma");
+    headers.delete("expires");
   } else {
-    // Browser: 5 min soft cache, must-revalidate on every use.
+    // sitemap, robots. Browser: 5 min soft cache, must-revalidate on every use.
     // CDN (Cloudflare + any upstream surrogate): no-store, so the edge never
     // pins a stale copy after content is re-uploaded.
     headers.set("cache-control", "public, max-age=300, must-revalidate");
     headers.delete("pragma");
     headers.delete("expires");
+    headers.set("cdn-cache-control", "no-store");
+    headers.set("cloudflare-cdn-cache-control", "no-store");
+    headers.set("surrogate-control", "no-store");
   }
-  headers.set("cdn-cache-control", "no-store");
-  headers.set("cloudflare-cdn-cache-control", "no-store");
-  headers.set("surrogate-control", "no-store");
   headers.delete("age");
   if (url.pathname === "/robots.txt") headers.delete("x-robots-tag");
-  headers.set("x-phl-cache-policy", "dynamic-asset");
+  headers.set("x-phl-cache-policy", isFeedPath(url.pathname) ? "feed-short-cache" : "dynamic-asset");
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
