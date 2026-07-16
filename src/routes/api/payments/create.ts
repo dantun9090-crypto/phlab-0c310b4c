@@ -117,7 +117,8 @@ export const Route = createFileRoute("/api/payments/create")({
             name: `PH Labs Order ${ctx.reference || orderId}`,
             category: "Research Peptides",
             price: trustedAmount,
-            image_url: items.find((item) => item.image_url?.startsWith("https://"))?.image_url,
+            image_url: items.find((item) => item.image_url?.startsWith("https://"))?.image_url
+              || "https://phlabs.co.uk/og-image.jpg",
             product_url: "https://phlabs.co.uk",
           },
         ];
