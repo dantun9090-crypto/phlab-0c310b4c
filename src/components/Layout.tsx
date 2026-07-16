@@ -628,6 +628,7 @@ export function Layout({ children }: LayoutProps) {
           PERSISTENT SHIPPING TOP BAR — hidden on auth/admin pages
       ═══════════════════════════════════════════════════════════════ */}
       {!isCleanPage && <div
+        data-shipping-top-bar
         className="fixed left-0 right-0 z-[51] flex items-center justify-center gap-4 px-4 text-center"
         style={{
           top: researchBannerOffset,
