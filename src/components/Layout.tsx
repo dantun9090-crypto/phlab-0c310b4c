@@ -929,7 +929,7 @@ export function Layout({ children }: LayoutProps) {
         <div className="fixed inset-0 z-[10001] flex justify-end" onClick={(e) => { if (e.target === e.currentTarget) closeCart(); }}>
           <div className="absolute inset-0 bg-black/75 pointer-events-none" />
 
-          <div className="relative w-full max-w-lg bg-gray-900 shadow-2xl border-l border-white/10 flex flex-col" style={{ height: '100dvh', maxHeight: '100dvh' }} onClick={e => e.stopPropagation()}>
+          <div data-cart-scope className="relative w-full max-w-lg bg-gray-900 shadow-2xl border-l border-white/10 flex flex-col" style={{ height: '100dvh', maxHeight: '100dvh' }} onClick={e => e.stopPropagation()}>
             {/* Scroll Up/Down buttons — desktop only */}
             <div className="hidden md:flex flex-col gap-1.5 absolute right-3 top-1/2 -translate-y-1/2 z-10">
               <button
