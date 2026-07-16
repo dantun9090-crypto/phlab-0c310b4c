@@ -548,10 +548,14 @@ export default function HomePage() {
           {(banner.edgeFadeEnabled !== false) && (() => {
             const widthPct = Math.max(0, Math.min(30, banner.edgeFadeWidthPct ?? 12));
             const opacity = Math.max(0, Math.min(100, banner.edgeFadeOpacity ?? 100)) / 100;
-            const mid = `color-mix(in oklab, var(--phl-page-bg) ${Math.round(75 * opacity)}%, transparent)`;
+            const useBg = banner.edgeFadeUsePageBg !== false && !banner.edgeFadeColor
+              ? true
+              : (banner.edgeFadeUsePageBg !== false);
+            const baseColor = useBg ? 'var(--phl-page-bg)' : (banner.edgeFadeColor || 'var(--phl-page-bg)');
+            const mid = `color-mix(in oklab, ${baseColor} ${Math.round(75 * opacity)}%, transparent)`;
             const start = opacity >= 0.999
-              ? 'var(--phl-page-bg)'
-              : `color-mix(in oklab, var(--phl-page-bg) ${Math.round(100 * opacity)}%, transparent)`;
+              ? baseColor
+              : `color-mix(in oklab, ${baseColor} ${Math.round(100 * opacity)}%, transparent)`;
             return (
               <>
                 <div
