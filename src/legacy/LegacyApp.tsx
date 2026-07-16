@@ -33,6 +33,14 @@ export default function LegacyApp({
 
   useEffect(() => {
     try { performance.mark('legacy-app-mount-start'); } catch { /* ignore */ }
+    // Track whether the tab was ever hidden between mount-start and mount-end.
+    // Backgrounded tabs throttle rAF/timers, so a "77 s mount" in the console
+    // is really just the browser suspending our RAF callback while the user
+    // was on another tab — not a real perf regression. We skip the log in
+    // that case so the signal isn't drowned by phantom stalls.
+    let wasHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
+    const onVis = () => { if (document.visibilityState === 'hidden') wasHidden = true; };
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVis);
     primeLegacyRouter();
 
     // Preload HomePage lazy children in parallel with LegacyApp mount so they
@@ -52,10 +60,12 @@ export default function LegacyApp({
         performance.mark('legacy-app-mount-end');
         performance.measure('legacy-app-mount', 'legacy-app-mount-start', 'legacy-app-mount-end');
         const m = performance.getEntriesByName('legacy-app-mount')[0];
-        if (m) console.log('[PERF] LegacyApp mount:', m.duration.toFixed(1), 'ms');
+        if (m && !wasHidden) console.log('[PERF] LegacyApp mount:', m.duration.toFixed(1), 'ms');
       } catch { /* ignore */ }
+      if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVis);
     });
   }, [mounted]);
+
 
   if (!mounted) {
     return (
