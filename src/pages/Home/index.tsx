@@ -542,17 +542,16 @@ export default function HomePage() {
                 style={{ height: responsiveHeight, objectFit: banner.objectFit || 'cover', objectPosition: `${banner.objectPositionX ?? 50}% ${banner.objectPositionY ?? 50}%`, display: 'block' }} />
 
           )}
-          {/* Edge fades — inherit the page background via --phl-page-bg on the
-              Home wrapper. Change the wrapper's background there and these
-              gradients follow automatically. `color-mix` derives the mid-stop
-              at 75% opacity without hardcoding the color. */}
+          {/* Edge fades — mobile-only (hidden at md+). Blend the banner's
+              left/right into --phl-page-bg so narrow screens don't feel boxed.
+              Desktop keeps clean straight edges. */}
           <div
-            className="absolute inset-y-0 left-0 pointer-events-none z-[8]"
-            style={{ width: 'clamp(64px, 18vw, 320px)', background: 'linear-gradient(to right, var(--phl-page-bg) 0%, var(--phl-page-bg) 20%, color-mix(in oklab, var(--phl-page-bg) 75%, transparent) 55%, transparent 100%)' }}
+            className="absolute inset-y-0 left-0 pointer-events-none z-[8] md:hidden"
+            style={{ width: 'clamp(48px, 14vw, 140px)', background: 'linear-gradient(to right, var(--phl-page-bg) 0%, var(--phl-page-bg) 15%, color-mix(in oklab, var(--phl-page-bg) 70%, transparent) 55%, transparent 100%)' }}
           />
           <div
-            className="absolute inset-y-0 right-0 pointer-events-none z-[8]"
-            style={{ width: 'clamp(64px, 18vw, 320px)', background: 'linear-gradient(to left, var(--phl-page-bg) 0%, var(--phl-page-bg) 20%, color-mix(in oklab, var(--phl-page-bg) 75%, transparent) 55%, transparent 100%)' }}
+            className="absolute inset-y-0 right-0 pointer-events-none z-[8] md:hidden"
+            style={{ width: 'clamp(48px, 14vw, 140px)', background: 'linear-gradient(to left, var(--phl-page-bg) 0%, var(--phl-page-bg) 15%, color-mix(in oklab, var(--phl-page-bg) 70%, transparent) 55%, transparent 100%)' }}
           />
 
 
