@@ -4,6 +4,9 @@ const NewsletterPopup = lazy(() => import('@/components/NewsletterPopup'));
 import SmartBanner from '@/components/SmartBanner';
 import { useSSRBanner } from '@/legacy/SSRDataContext';
 import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
+import HeroMoleculeCanvas from '@/components/HeroMoleculeCanvas';
+import CoALookup from '@/components/CoALookup';
+import { useMagneticHover } from '@/hooks/useMagneticHover';
 
 import { Link } from 'react-router-dom';
 const AnimatedBackground = lazy(() => import('@/components/AnimatedBackground').then(m => ({ default: m.AnimatedBackground })));
@@ -144,6 +147,30 @@ const CATEGORY_MAP: Record<string, { label: string; color: string }> = {
   'melanotan': { label: 'Melanocortin', color: '#ec4899' },
   'pt-141': { label: 'Melanocortin', color: '#ec4899' },
 };
+
+/**
+ * Primary hero CTA — magnetic hover on pointer:fine devices, no-op on
+ * touch or reduced-motion. Isolated so the hook attaches to a stable
+ * ref without touching the surrounding layout.
+ */
+function MagneticBrowseCTA() {
+  const ref = useMagneticHover<HTMLAnchorElement>(0.22);
+  return (
+    <Link
+      ref={ref}
+      to="/products"
+      aria-label="Browse Catalogue"
+      className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl font-bold text-sm text-white"
+      style={{
+        background: 'linear-gradient(135deg, #0ea572 0%, #10b981 50%, #06b6d4 100%)',
+        boxShadow: '0 12px 32px -12px rgba(16,185,129,0.55)',
+      }}
+    >
+      Browse Catalogue
+      <ArrowRight className="w-4 h-4" />
+    </Link>
+  );
+}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function HomePage() {
@@ -630,11 +657,16 @@ export default function HomePage() {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          paddingTop: 'calc(var(--nav-h, 72px) + var(--rg-banner-h, 34px) + 3rem)',
+          paddingTop: 'calc(var(--nav-h, 72px) + var(--rg-banner-h, 0px) + 3rem)',
           paddingBottom: '4rem',
         }}
       >
         {showHeroEffects && <Suspense fallback={null}><AnimatedBackground variant="blue" /></Suspense>}
+
+        {/* Molecule field — canvas 2D, initialises after window load,
+            pauses when hidden, disabled under prefers-reduced-motion.
+            Renders behind hero content (z-index:1); hero text uses z-10. */}
+        <HeroMoleculeCanvas density={40} />
 
         {/* Radial glow accent — pointer-events off, composited layer after LCP */}
         <div className="absolute pointer-events-none" style={{
@@ -672,17 +704,17 @@ export default function HomePage() {
 
               {/* H1 */}
               <div>
-                <h1 style={{
+                <h1 className="font-display" style={{
                   fontSize: 'clamp(1.75rem, 7.5vw, 4.2rem)',
                   fontWeight: 900,
                   lineHeight: 1.04,
-                  letterSpacing: 0,
+                  letterSpacing: '-0.015em',
                   color: '#f0f8ff',
                   maxWidth: '100%',
                   overflowWrap: 'break-word',
                 }}>
                   <span style={{ display: 'block' }}>Pro Peptide Research Lab </span>
-                  <span style={{ display: 'block', color: '#10b981' }}>For In-Vitro Research</span>
+                  <span className="phl-gradient-text" style={{ display: 'block' }}>For In-Vitro Research</span>
                   <span style={{ display: 'block', color: '#c9d8f0', fontWeight: 400, fontSize: '0.72em', overflowWrap: 'break-word' }}>HPLC-Verified ≥99% Purity · CoA Per Batch</span>
                 </h1>
               </div>
@@ -707,25 +739,15 @@ export default function HomePage() {
 
               {/* CTAs */}
               <div className="flex flex-wrap gap-4">
-                <Link to="/products"
-                  aria-label="Browse Catalogue"
-                  className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl font-bold text-sm text-white transition-all duration-300"
-                  style={{
-                    background: 'linear-gradient(135deg, #0ea572 0%, #10b981 50%, #059669 100%)',
-                  }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = 'rgba(74,222,128,0.42)'}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = 'rgba(74,222,128,0.2)'}
-                >
-                  Browse Catalogue
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
+                <MagneticBrowseCTA />
                 <Link to="/lab-reports"
                   aria-label="Lab reports and CoA"
-                  className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl font-semibold text-sm transition-all duration-300"
+                  className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl font-semibold text-sm"
                   style={{
                     background: 'rgba(255,255,255,0.04)',
                     border: '1px solid rgba(255,255,255,0.12)',
                     color: '#a8c8e8',
+                    transition: 'background .2s ease, color .2s ease',
                   }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; (e.currentTarget as HTMLElement).style.color = '#e4f0ff'; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.color = '#a8c8e8'; }}
@@ -1391,6 +1413,9 @@ export default function HomePage() {
           </Link>
         </div>
       </div>
+
+      {/* CoA batch lookup — between products and SEO/footer */}
+      <CoALookup />
 
       {/* SEO link-index — SSR-rendered hub linking to every product + article */}
       <HomeSeoIndex />

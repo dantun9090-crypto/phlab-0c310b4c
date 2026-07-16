@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, ShoppingCart, Edit2, FlaskConical, ShieldCheck, FileText } from 'lucide-react';
+import { CheckCircle2, ShoppingCart, Edit2, FlaskConical, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getProductImage } from '@/lib/productImages';
 import type { Product } from '@/lib/firebase';
@@ -7,6 +7,7 @@ import { nameToSlug } from '@/lib/seedProducts';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
 import { cfImgProps } from '@/lib/cf-image';
 import { CoaModal } from './CoaModal';
+import PuritySignature from './PuritySignature';
 
 
 interface ProductCardProps {
@@ -97,7 +98,7 @@ export function ProductCard({
     <div
       ref={isAboveFold ? undefined : revealRef}
       data-product-card={slug || product.id || 'product'}
-      className={`group relative rounded-2xl overflow-hidden flex flex-col transition-all duration-300 ${isAboveFold ? '' : 'scroll-reveal'}`}
+      className={`group relative rounded-2xl overflow-hidden flex flex-col phl-hover-lift ${isAboveFold ? '' : 'scroll-reveal'}`}
       style={{
         background: 'rgba(255,255,255,0.025)',
         border: '1px solid rgba(255,255,255,0.06)',
@@ -145,15 +146,21 @@ export function ProductCard({
           </div>
         )}
 
-        {/* Top right — HPLC badge */}
+        {/* Top right — HPLC purity signature (mini chromatogram + %). */}
         <div className="absolute top-3 right-3">
-          <span className="px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1" style={{
-            background: 'rgba(4,12,24,0.85)',
-            border: '1px solid rgba(16,185,129,0.3)',
-            color: '#4ade80',
-          }}>
-            <ShieldCheck style={{ width: 10, height: 10 }} />
-            ≥99%
+          <span
+            className="px-2 py-1 rounded-lg flex items-center gap-1.5"
+            style={{
+              background: 'rgba(4,12,24,0.85)',
+              border: '1px solid rgba(16,185,129,0.3)',
+            }}
+          >
+            <PuritySignature
+              purity={product.purity || '≥99%'}
+              width={44}
+              height={18}
+              showLabel={true}
+            />
           </span>
         </div>
 

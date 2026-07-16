@@ -40,7 +40,7 @@ export function DisclaimerBanner() {
       className="w-full bg-[#1a1a2e] border-b border-[#2a2a3e] py-1 px-3"
       style={{
         position: 'fixed',
-        top: 'calc(var(--rg-banner-h, 0px) + 32px + 64px)',
+        top: 'calc(var(--rg-banner-h, 0px) + 36px + 64px)',
         left: 0,
         right: 0,
         zIndex: 49,

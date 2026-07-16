@@ -27,6 +27,7 @@ import { PRODUCT_ID_TO_SLUG } from '@/lib/product-id-slug-map';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 import { ResearchContentBlock } from '@/components/ResearchContentBlock';
+import PuritySignature from '@/components/PuritySignature';
 
 // Maps product name keywords → Resources article slug
 const ARTICLE_MAP: Record<string, { slug: string; title: string; excerpt: string }> = {
@@ -1742,7 +1743,21 @@ export default function ProductDetail() {
             {/* ── CoA mention ── */}
             <div className="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-500/[0.05] border border-emerald-500/20">
               <FileText className="w-4 h-4 text-emerald-400 shrink-0" />
-              <p className="text-emerald-300/80 text-xs font-medium">Full Certificate of Analysis (CoA) included with every order — HPLC + mass spectrometry data on request.</p>
+              <p className="text-emerald-300/80 text-xs font-medium flex-1">Full Certificate of Analysis (CoA) included with every order — HPLC + mass spectrometry data on request.</p>
+            </div>
+
+            {/* ── Purity signature — larger HPLC chromatogram motif ── */}
+            <div className="flex items-center gap-4 p-4 rounded-xl border border-emerald-500/25" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.06), rgba(6,182,212,0.05))' }}>
+              <PuritySignature
+                purity={product.purity || '≥99%'}
+                width={160}
+                height={48}
+                showLabel={true}
+              />
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#4ade80' }}>Batch signature</div>
+                <div className="text-xs text-[#c8dff5] mt-0.5">Representative HPLC chromatogram — one dominant peak, minimal impurities. Actual per-batch trace ships with your CoA.</div>
+              </div>
             </div>
 
           </motion.div>

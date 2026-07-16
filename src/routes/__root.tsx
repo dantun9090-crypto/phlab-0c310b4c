@@ -10,6 +10,7 @@ import {
 import { Component, useEffect, useState, type ReactNode } from "react";
 
 import { PageTransition } from "@/components/PageTransition";
+import ViewTransitions from "@/components/ViewTransitions";
 import appCss from "../styles.css?url";
 // logoUrl import removed — the previous data:URL preload of the inlined
 // logo wasted ~3 KB per SSR response (preloading a data URL is a no-op).
@@ -1544,6 +1545,7 @@ function RootComponent() {
       <QueryClientProvider client={queryClient}>
         <PageviewBeacon />
         <PageTransition />
+        <ViewTransitions />
         {/* DayNightToggle moved into the header (Layout.tsx) */}
       </QueryClientProvider>
     </RootHydrationBoundary>

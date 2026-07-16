@@ -1,6 +1,10 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+/* Display font — Space Grotesk (variable, self-hosted via fontsource).
+   Fontsource ships font-display: swap by default, so this never blocks
+   render and the LCP heading paints in the fallback family first. */
+@import "@fontsource-variable/space-grotesk";
 /* CLS prevention — must load on every route, in parallel with the main
    CSS, so legacy-styles.css doesn't serial-fetch it (FCP regression). */
 @import "./styles/cls-fixes.css";
@@ -492,7 +496,7 @@ html.light [data-keep-dark] * {
    JS sets --phl-popup-top dynamically by measuring the disclaimer strip. */
 .phl-live-sales-popup {
   position: fixed;
-  top: var(--phl-popup-top, calc(var(--rg-banner-h, 0px) + 32px + 64px + var(--phl-disclaimer-h, 28px) + 8px + env(safe-area-inset-top, 0px)));
+  top: var(--phl-popup-top, calc(var(--rg-banner-h, 0px) + 36px + 64px + var(--phl-disclaimer-h, 28px) + 8px + env(safe-area-inset-top, 0px)));
   left: calc(12px + env(safe-area-inset-left, 0px));
   right: auto;
   bottom: auto;
@@ -665,4 +669,69 @@ body {
 [data-checkout-scope],
 [data-cart-scope] {
   overflow-wrap: anywhere;
+}
+
+/* ═══════════════════════════════════════════════════════
+   VISUAL WOW — DESIGN TOKENS + UTILITIES
+   Display font (Space Grotesk) for h1/h2, glassmorphism,
+   gradient text, hover-lift, view-transition timing.
+   ═══════════════════════════════════════════════════════ */
+:root {
+  --font-display: "Space Grotesk Variable", "Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --phl-grad-brand: linear-gradient(90deg, #10b981 0%, #06b6d4 100%);
+}
+
+h1, h2, .font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+.phl-gradient-text {
+  background: var(--phl-grad-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.phl-glass {
+  background: linear-gradient(135deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
+  backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  position: relative;
+}
+.phl-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(16,185,129,0.35), rgba(6,182,212,0.15) 45%, rgba(255,255,255,0.05));
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .phl-hover-lift {
+    transition: transform .2s ease, box-shadow .2s ease;
+    will-change: transform;
+  }
+  .phl-hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 42px -18px rgba(16,185,129,0.35), 0 6px 16px -8px rgba(6,182,212,0.18);
+  }
+}
+
+/* View Transitions — subtle 150ms cross-fade on route change.
+   Browsers without the API ignore this entirely. */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 150ms;
+    animation-timing-function: ease-out;
+  }
 }
