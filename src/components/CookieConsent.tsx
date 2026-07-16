@@ -42,6 +42,12 @@ function savePreferences(prefs: CookiePreferences) {
 }
 
 export function CookieConsent() {
+  // Initialize dismissed from localStorage synchronously so a stored consent
+  // hides the banner on first paint — no flash, no reload race.
+  const [dismissed, setDismissed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try { return !!localStorage.getItem(STORAGE_KEY); } catch { return false; }
+  });
   const [visible, setVisible] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [analytics, setAnalytics] = useState(false);
@@ -56,6 +62,7 @@ export function CookieConsent() {
         setMarketing(!!existing.marketing);
       }
       setShowDetails(true);
+      setDismissed(false);
       setVisible(true);
     };
     window.addEventListener(OPEN_EVENT, onOpen as EventListener);
@@ -67,8 +74,12 @@ export function CookieConsent() {
     // the gate's primary CTA and the user can't enter the store.
     let timer: ReturnType<typeof setTimeout> | null = null;
     const show = () => {
+      if (getCookiePreferences()) return; // guard: consent may have been stored between mount and delayed show
       if (timer) clearTimeout(timer);
-      timer = setTimeout(() => setVisible(true), 600);
+      timer = setTimeout(() => {
+        if (getCookiePreferences()) return;
+        setVisible(true);
+      }, 600);
     };
 
     const isGateBlocking = () => {
@@ -112,6 +123,7 @@ export function CookieConsent() {
   const acceptAll = () => {
     savePreferences({ essential: true, analytics: true, marketing: true });
     setVisible(false);
+    setDismissed(true);
   };
 
   const rejectAll = () => {
@@ -119,12 +131,18 @@ export function CookieConsent() {
     setAnalytics(false);
     setMarketing(false);
     setVisible(false);
+    setDismissed(true);
   };
 
   const acceptSelected = () => {
     savePreferences({ essential: true, analytics, marketing });
     setVisible(false);
+    setDismissed(true);
   };
+
+  // Consent already stored → do not render the banner at all. The footer
+  // "Cookie Settings" link dispatches OPEN_EVENT which resets `dismissed`.
+  if (dismissed) return null;
 
   return (
     <div
