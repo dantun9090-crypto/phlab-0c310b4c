@@ -73,8 +73,12 @@ export function CookieConsent() {
     // the gate's primary CTA and the user can't enter the store.
     let timer: ReturnType<typeof setTimeout> | null = null;
     const show = () => {
+      if (getCookiePreferences()) return; // guard: consent may have been stored between mount and delayed show
       if (timer) clearTimeout(timer);
-      timer = setTimeout(() => setVisible(true), 600);
+      timer = setTimeout(() => {
+        if (getCookiePreferences()) return;
+        setVisible(true);
+      }, 600);
     };
 
     const isGateBlocking = () => {
