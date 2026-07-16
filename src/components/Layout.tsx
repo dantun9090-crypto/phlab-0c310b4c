@@ -44,6 +44,7 @@ import { WhatsAppIcon, FacebookIcon, InstagramIcon, TwitterXIcon, YoutubeIcon } 
 import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 import { initVisitorTracking, trackVisitorPageView } from '@/lib/visitor-tracking';
 import { DisclaimerBanner } from './DisclaimerBanner';
+import TopStripe from './TopStripe';
 
 interface SiteSettings {
   whatsappNumber?: string;
