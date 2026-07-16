@@ -14,7 +14,8 @@ import type { Product } from '@/lib/firebase';
 // Articles bundle (~196KB) is loaded lazily — only when the search panel opens —
 // to keep it off the critical path of every page render.
 type ArticleLite = { title: string; subtitle?: string; slug: string };
-import { CookieConsent } from '@/components/CookieConsent';
+// Lazy: cookie banner only paints once, after hydration — off the LCP critical path.
+const CookieConsent = lazy(() => import('@/components/CookieConsent').then(m => ({ default: m.CookieConsent })));
 // Lazy: pulls framer-motion (~40 KB gz). Only rendered inside the cart drawer,
 // which is closed at first paint — keep it off the LCP critical path.
 const RecentlyViewedProducts = lazy(() =>
