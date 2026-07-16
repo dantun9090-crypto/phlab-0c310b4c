@@ -553,7 +553,8 @@ export default function HomePage() {
             </div>
           )}
         </div>
-      ) : (
+        );
+      })() : (
         // Reserve banner height BEFORE resolve to prevent CLS shift on hero when
         // banner arrives async (matches Lighthouse-flagged 0.27+0.24 shifts).
         !bannerResolved && expectBanner ? <div aria-hidden="true" style={{ minHeight: 320 }} /> : null
