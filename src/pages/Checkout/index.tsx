@@ -1134,7 +1134,10 @@ export default function CheckoutPage() {
             errorMessage: String(err?.message ?? 'unknown').slice(0, 300),
             timestamp: Date.now(),
           });
-          setLoginError(err?.message || 'Could not start Pay by Bank. Please try again or use Manual Bank Transfer.');
+          const failMsg = err?.message || 'Payment could not be started — please try again.';
+          setLoginError(failMsg);
+          console.error('[PAYMENT] gateway_fail method=wallid', err);
+          try { toast.error(failMsg); } catch { /* toast optional */ }
           setIsPlacing(false);
           return;
         }
