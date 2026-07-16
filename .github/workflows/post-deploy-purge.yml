@@ -20,7 +20,7 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Purge Cloudflare edge cache (phlabs.co.uk zone)
+      - name: Purge Cloudflare edge cache (scoped — HTML + feeds only, phlabs.co.uk zone)
         env:
           CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID_PHLABS }}
           CF_ZONE_ID_LEGACY: ${{ secrets.CF_ZONE_ID }}
@@ -33,18 +33,21 @@ jobs:
             echo "::error::Cloudflare zone/token secret missing"
             exit 1
           fi
+          # Scoped purge only — never purge_everything. Hashed /assets/* are
+          # immutable and must survive every deploy; wiping them 404s open
+          # sessions. See .lovable/memory/post-publish-edge-purge.md.
           resp=$(curl -sS -o /tmp/purge.json -w "%{http_code}" \
             -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
             -H "Authorization: Bearer ${CF_API_TOKEN}" \
             -H "Content-Type: application/json" \
-            --data '{"purge_everything":true}')
+            --data '{"files":["https://phlabs.co.uk/","https://phlabs.co.uk/products","https://phlabs.co.uk/sitemap.xml","https://phlabs.co.uk/robots.txt","https://phlabs.co.uk/llms.txt","https://phlabs.co.uk/google-merchant-feed.xml","https://phlabs.co.uk/google-merchant-feed-free.xml","https://phlabs.co.uk/feed.xml"]}')
           echo "HTTP $resp"
           cat /tmp/purge.json
           if [ "$resp" != "200" ]; then
             echo "::error::Purge failed"
             exit 1
           fi
-          echo "✅ Edge cache purged"
+          echo "✅ Edge cache purged (scoped)"
 
       - name: Verify build-id tags and versioned assets after purge
         run: |

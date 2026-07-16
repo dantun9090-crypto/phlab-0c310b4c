@@ -35,7 +35,7 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_API }}
           command: pages deploy dist --project-name=phlabs --branch=main --commit-dirty=true
 
-      - name: Purge Cloudflare edge cache
+      - name: Purge Cloudflare edge cache (scoped — HTML + feeds only)
         if: success()
         env:
           CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -46,15 +46,19 @@ jobs:
             echo "::warning::CLOUDFLARE_ZONE_ID_PHLABS secret not set — skipping edge cache purge"
             exit 0
           fi
+          # Scoped purge: HTML + feeds only. NEVER purge_everything — hashed
+          # /assets/* are content-hashed + immutable and must survive every
+          # deploy, otherwise users with an already-open page get chunk 404
+          # → blank page. See .lovable/memory/post-publish-edge-purge.md.
           resp=$(curl -sS -o /tmp/purge.json -w "%{http_code}" \
             -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
             -H "Authorization: Bearer ${CF_API_TOKEN}" \
             -H "Content-Type: application/json" \
-            --data '{"purge_everything":true}')
+            --data '{"files":["https://phlabs.co.uk/","https://phlabs.co.uk/products","https://phlabs.co.uk/sitemap.xml","https://phlabs.co.uk/robots.txt","https://phlabs.co.uk/llms.txt","https://phlabs.co.uk/google-merchant-feed.xml","https://phlabs.co.uk/google-merchant-feed-free.xml","https://phlabs.co.uk/feed.xml"]}')
           echo "HTTP $resp"
           cat /tmp/purge.json
           if [ "$resp" != "200" ]; then
             echo "::error::Cache purge failed"
             exit 1
           fi
-          echo "✅ Edge cache purged"
+          echo "✅ Edge cache purged (scoped)"
