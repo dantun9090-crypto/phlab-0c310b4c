@@ -25,6 +25,7 @@ import FreeGiftPicker from '@/components/checkout/FreeGiftPicker';
 import { trackAddPaymentInfo, trackBeginCheckout, trackViewCart, type GaItem } from '@/lib/analytics';
 import { logCheckoutEvent } from '@/lib/checkoutTelemetry';
 import { callPreflightWithRetry } from '@/lib/checkoutPreflightRetry';
+import { toast } from 'sonner';
 
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
 import NoCacheHead from '@/components/NoCacheHead';
