@@ -143,7 +143,9 @@ import { createRoot } from "react-dom/client";
 import LegacyClientApp from "./legacy/LegacyClientApp";
 import { installClientErrorReporter, reportClientError } from "./lib/client-error-reporter";
 import { initSwTelemetry } from "./lib/swTelemetry";
-import { initSentry } from "./lib/sentry";
+// Sentry: dynamic import only. A static import here would pull vendor-sentry
+// into the entry modulepreload graph (~200KB) and eat mobile LCP even though
+// initSentry() itself runs after requestIdleCallback below.
 import { installChunkAutoRecovery } from "./lib/chunk-auto-recovery";
 import { installImageErrorAutoReset } from "./lib/image-error-auto-reset";
 import { installBuildIdForceReload } from "./lib/build-id-force-reload";
