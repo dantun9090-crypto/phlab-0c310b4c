@@ -1516,7 +1516,9 @@ export function Layout({ children }: LayoutProps) {
       </footer>}
 
       {/* GDPR Cookie Consent Banner */}
-      {siteSettings.cookieConsentEnabled && !isLandingPage && <CookieConsent />}
+      {siteSettings.cookieConsentEnabled && !isLandingPage && (
+        <Suspense fallback={null}><CookieConsent /></Suspense>
+      )}
 
       {/* Admin Quick-Access Button — only visible to admins */}
       {isAdmin && (
