@@ -21,10 +21,13 @@ body {
   margin: 0;
 }
 
-/* Fixed navigation height — prevents shift */
+/* Fixed navigation height — prevents shift.
+   Unified TopStripe = 36px replaces the legacy 34px research banner
+   + 32px shipping bar. --rg-banner-h stays 0 unless a page explicitly
+   overrides it. */
 .main-navigation {
   position: fixed;
-  top: calc(var(--rg-banner-h, 34px) + 32px);
+  top: calc(var(--rg-banner-h, 0px) + 36px);
   left: 0;
   right: 0;
   height: 64px;
@@ -39,12 +42,12 @@ body {
 
 /* Content padding to account for fixed header */
 .main-content {
-  padding-top: calc(var(--rg-banner-h, 34px) + 32px + 64px);
+  padding-top: calc(var(--rg-banner-h, 0px) + 36px + 64px);
 }
 
 @media (min-width: 1024px) {
   .main-content {
-    padding-top: calc(var(--rg-banner-h, 34px) + 32px + 80px);
+    padding-top: calc(var(--rg-banner-h, 0px) + 36px + 80px);
   }
 }
 
