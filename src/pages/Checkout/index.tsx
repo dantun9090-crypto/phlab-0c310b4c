@@ -25,6 +25,7 @@ import FreeGiftPicker from '@/components/checkout/FreeGiftPicker';
 import { trackAddPaymentInfo, trackBeginCheckout, trackViewCart, type GaItem } from '@/lib/analytics';
 import { logCheckoutEvent } from '@/lib/checkoutTelemetry';
 import { callPreflightWithRetry } from '@/lib/checkoutPreflightRetry';
+import { toast, Toaster as SonnerToaster } from 'sonner';
 
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
 import NoCacheHead from '@/components/NoCacheHead';
@@ -180,8 +181,11 @@ export default function CheckoutPage() {
       setPendingPaymentUrl(null);
       setFenaStep('failed');
       setIsPlacing(false);
-      setLoginError('Payment did not open. Please check your connection and try again. No payment has been taken.');
-    }, 35000);
+      const msg = 'Payment could not be started — please try again.';
+      setLoginError(msg);
+      console.warn('[PAYMENT] watchdog_timeout — attempt reset after 10s');
+      try { toast.error(msg); } catch { /* toast optional */ }
+    }, 10000);
   }, [clearPaymentTimers]);
 
   const cancelPaymentAttempt = useCallback((message = 'Payment attempt cancelled. Please try again.') => {
@@ -833,12 +837,22 @@ export default function CheckoutPage() {
   };
 
   const handlePayButtonActivate = () => {
-    if (isPlacing) return;
+    // Idempotent click guard — while an attempt is in flight, ignore further
+    // clicks so we never place duplicate orders on a double-tap.
+    if (isPlacing) {
+      console.log('[PAYMENT] click_ignored reason=in_flight method=' + form.paymentMethod);
+      return;
+    }
     if (payDisabled) {
+      console.log('[PAYMENT] click_blocked reason=disabled method=' + form.paymentMethod);
       handleDisabledPayClick();
       return;
     }
-    void handleSubmit();
+    console.log('[PAYMENT] click_accepted method=' + form.paymentMethod + ' total=£' + total);
+    void handleSubmit().then(
+      () => console.log('[PAYMENT] submit_settled method=' + form.paymentMethod),
+      (err) => console.error('[PAYMENT] submit_error method=' + form.paymentMethod, err),
+    );
   };
 
   const handleSubmit = async () => {
@@ -1120,7 +1134,10 @@ export default function CheckoutPage() {
             errorMessage: String(err?.message ?? 'unknown').slice(0, 300),
             timestamp: Date.now(),
           });
-          setLoginError(err?.message || 'Could not start Pay by Bank. Please try again or use Manual Bank Transfer.');
+          const failMsg = err?.message || 'Payment could not be started — please try again.';
+          setLoginError(failMsg);
+          console.error('[PAYMENT] gateway_fail method=wallid', err);
+          try { toast.error(failMsg); } catch { /* toast optional */ }
           setIsPlacing(false);
           return;
         }
@@ -1172,7 +1189,10 @@ export default function CheckoutPage() {
         } catch (err: any) {
           if (paymentAttemptRef.current !== paymentAttemptId) return;
           setFenaStep('failed');
-          setLoginError(err?.message || 'Could not start Pay by Bank. Please try again or use Manual Bank Transfer.');
+          const failMsg = err?.message || 'Payment could not be started — please try again.';
+          setLoginError(failMsg);
+          console.error('[PAYMENT] gateway_fail method=pay_by_bank', err);
+          try { toast.error(failMsg); } catch { /* toast optional */ }
           setIsPlacing(false);
           return;
         }
@@ -1351,6 +1371,7 @@ export default function CheckoutPage() {
   return (
     <>
     <NoCacheHead title="Checkout — PH Labs" />
+    <SonnerToaster position="top-center" richColors closeButton />
     <section id="checkout" data-checkout-scope className="min-h-screen bg-[#060f1e] pt-20 pb-16">
       <div className="max-w-5xl mx-auto px-4">
 
