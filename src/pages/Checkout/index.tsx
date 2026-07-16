@@ -1051,7 +1051,9 @@ export default function CheckoutPage() {
           // after the bank confirms payment. If the user cancels/aborts
           // the redirect, the cart stays intact and they can retry.
           try { localStorage.setItem('php_pending_order', orderId); } catch { /* ignore */ }
-          setTimeout(() => { window.location.href = parsed.toString(); }, 250);
+          // See wallid branch above: replace() prevents back-nav to
+          // stale one-time gateway URLs (Fena/TrueLayer 404 on revisit).
+          setTimeout(() => { window.location.replace(parsed.toString()); }, 250);
           return;
         } catch (err: any) {
           setFenaStep('failed');
