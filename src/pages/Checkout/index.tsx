@@ -143,6 +143,32 @@ export default function CheckoutPage() {
   const [wallidEnabled, setWallidEnabled] = useState<boolean>(false);
   const [, setSummaryExpanded] = useState(false);
   const stepRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
+  // Reset in-flight payment state when the page is restored from bfcache
+  // (browser back from Wallid/Fena) OR becomes visible again after tabbing
+  // away. Without this the Pay button stays stuck as "Payment in progress…"
+  // with a blank spinner because isPlacing / fenaStep never got cleared.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const clearInFlight = () => {
+      setIsPlacing(false);
+      setFenaStep('idle');
+      setLoginError('');
+    };
+    const onPageShow = (e: PageTransitionEvent) => {
+      // persisted=true means the page came from bfcache (browser back).
+      if (e.persisted) clearInFlight();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') clearInFlight();
+    };
+    window.addEventListener('pageshow', onPageShow);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('pageshow', onPageShow);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, []);
   const successRef = useRef<HTMLElement | null>(null);
 
   // Banner state: set when the cart we loaded was in the legacy shape and
