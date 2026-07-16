@@ -49,12 +49,12 @@ function extractSitemapBaseUrl(): string {
   throw new Error("Could not resolve BASE_URL in sitemap source");
 }
 
-/** Extract every static entry path from the `staticEntries` array literal. */
+/** Extract every static entry path from buildStaticEntries(), the sitemap source of truth. */
 function extractStaticSitemapPaths(): string[] {
-  const block = SITEMAP_SRC.match(
-    /const\s+staticEntries[\s\S]*?\[([\s\S]*?)\];/,
+  const block = SITEMAP_ENTRIES_SRC.match(
+    /function\s+buildStaticEntries[\s\S]*?return\s+\[([\s\S]*?)\];\s*}/,
   );
-  if (!block) throw new Error("staticEntries block not found in sitemap source");
+  if (!block) throw new Error("buildStaticEntries() block not found in sitemap entries source");
   return Array.from(block[1].matchAll(/path:\s*"(\/[^"]*)"/g), (m) => m[1]);
 }
 
