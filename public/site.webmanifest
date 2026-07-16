@@ -113,7 +113,7 @@
       "data": "/widgets/quick-shop.data.json",
       "type": "application/json",
       "screenshots": [
-        { "src": "/screenshots/desktop-1.jpg", "sizes": "1280x720", "label": "PH Labs Quick Shop widget" }
+        { "src": "/screenshots/widget-quick-shop.jpg", "sizes": "1024x1024", "type": "image/jpeg", "label": "PH Labs Quick Shop widget" }
       ],
       "icons": [
         { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }
