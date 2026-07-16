@@ -66,10 +66,14 @@ export default function ResearchGate() {
   const ctaRef = useRef<HTMLButtonElement | null>(null);
   const prevFocusRef = useRef<HTMLElement | null>(null);
 
-  // Hydration-safe: read localStorage only after mount so SSR HTML and the
-  // first client render match.
+  // The sticky yellow research tape has been retired — the unified
+  // TopStripe now rotates a "For Laboratory Research Only" message.
+  // We keep the confirmation MODAL intact but never mount the banner.
+  // --rg-banner-h stays 0 so downstream offsets never shift.
   useEffect(() => {
-    if (!isConfirmed()) setBannerVisible(true);
+    // Intentional no-op: bannerVisible remains false for the lifetime
+    // of the component. Kept as an effect so future re-introduction is
+    // a single-line change if needed.
   }, []);
 
 
