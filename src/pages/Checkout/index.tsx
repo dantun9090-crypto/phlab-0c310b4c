@@ -2078,6 +2078,18 @@ export default function CheckoutPage() {
                         Cannot proceed: {disabledReasonMessage}
                       </p>
                     )}
+                    {isPlacing && paymentRecoveryVisible && (
+                      <div className="mt-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-100">
+                        <p className="mb-3">Still waiting for the payment window. If nothing opened, cancel and try again.</p>
+                        <button
+                          type="button"
+                          onClick={() => cancelPaymentAttempt('Payment attempt cancelled. Please try again. No payment has been taken.')}
+                          className="min-h-[44px] rounded-lg border border-yellow-400/50 px-4 py-2 text-sm font-semibold text-yellow-50 hover:bg-yellow-400/10"
+                        >
+                          Cancel payment attempt
+                        </button>
+                      </div>
+                    )}
 
                     {/* Trust row */}
                     <div className="flex items-center justify-center gap-5 pt-1">
