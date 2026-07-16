@@ -181,8 +181,11 @@ export default function CheckoutPage() {
       setPendingPaymentUrl(null);
       setFenaStep('failed');
       setIsPlacing(false);
-      setLoginError('Payment did not open. Please check your connection and try again. No payment has been taken.');
-    }, 35000);
+      const msg = 'Payment could not be started — please try again.';
+      setLoginError(msg);
+      console.warn('[PAYMENT] watchdog_timeout — attempt reset after 10s');
+      try { toast.error(msg); } catch { /* toast optional */ }
+    }, 10000);
   }, [clearPaymentTimers]);
 
   const cancelPaymentAttempt = useCallback((message = 'Payment attempt cancelled. Please try again.') => {
