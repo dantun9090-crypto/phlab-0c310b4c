@@ -50,6 +50,7 @@ import { Route as ResourcesSlugRouteImport } from './routes/resources.$slug'
 import { Route as ResearchTirzepatideVsRetatrutideRouteImport } from './routes/research.tirzepatide-vs-retatrutide'
 import { Route as ResearchRetatrutideUkRouteImport } from './routes/research.retatrutide-uk'
 import { Route as ResearchRetatrutideComprehensiveGuideRouteImport } from './routes/research.retatrutide-comprehensive-guide'
+import { Route as ResearchPt141UkRouteImport } from './routes/research.pt-141-uk'
 import { Route as ResearchCjc1295IpamorelinSynergyRouteImport } from './routes/research.cjc-1295-ipamorelin-synergy'
 import { Route as ResearchBpc157VsTb500RouteImport } from './routes/research.bpc-157-vs-tb-500'
 import { Route as ResearchBpc157UkRouteImport } from './routes/research.bpc-157-uk'
@@ -346,6 +347,11 @@ const ResearchRetatrutideComprehensiveGuideRoute =
     path: '/retatrutide-comprehensive-guide',
     getParentRoute: () => ResearchRoute,
   } as any)
+const ResearchPt141UkRoute = ResearchPt141UkRouteImport.update({
+  id: '/pt-141-uk',
+  path: '/pt-141-uk',
+  getParentRoute: () => ResearchRoute,
+} as any)
 const ResearchCjc1295IpamorelinSynergyRoute =
   ResearchCjc1295IpamorelinSynergyRouteImport.update({
     id: '/cjc-1295-ipamorelin-synergy',
@@ -862,6 +868,7 @@ export interface FileRoutesByFullPath {
   '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
   '/research/bpc-157-vs-tb-500': typeof ResearchBpc157VsTb500Route
   '/research/cjc-1295-ipamorelin-synergy': typeof ResearchCjc1295IpamorelinSynergyRoute
+  '/research/pt-141-uk': typeof ResearchPt141UkRoute
   '/research/retatrutide-comprehensive-guide': typeof ResearchRetatrutideComprehensiveGuideRoute
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
   '/research/tirzepatide-vs-retatrutide': typeof ResearchTirzepatideVsRetatrutideRoute
@@ -988,6 +995,7 @@ export interface FileRoutesByTo {
   '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
   '/research/bpc-157-vs-tb-500': typeof ResearchBpc157VsTb500Route
   '/research/cjc-1295-ipamorelin-synergy': typeof ResearchCjc1295IpamorelinSynergyRoute
+  '/research/pt-141-uk': typeof ResearchPt141UkRoute
   '/research/retatrutide-comprehensive-guide': typeof ResearchRetatrutideComprehensiveGuideRoute
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
   '/research/tirzepatide-vs-retatrutide': typeof ResearchTirzepatideVsRetatrutideRoute
@@ -1117,6 +1125,7 @@ export interface FileRoutesById {
   '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
   '/research/bpc-157-vs-tb-500': typeof ResearchBpc157VsTb500Route
   '/research/cjc-1295-ipamorelin-synergy': typeof ResearchCjc1295IpamorelinSynergyRoute
+  '/research/pt-141-uk': typeof ResearchPt141UkRoute
   '/research/retatrutide-comprehensive-guide': typeof ResearchRetatrutideComprehensiveGuideRoute
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
   '/research/tirzepatide-vs-retatrutide': typeof ResearchTirzepatideVsRetatrutideRoute
@@ -1246,6 +1255,7 @@ export interface FileRouteTypes {
     | '/research/bpc-157-uk'
     | '/research/bpc-157-vs-tb-500'
     | '/research/cjc-1295-ipamorelin-synergy'
+    | '/research/pt-141-uk'
     | '/research/retatrutide-comprehensive-guide'
     | '/research/retatrutide-uk'
     | '/research/tirzepatide-vs-retatrutide'
@@ -1372,6 +1382,7 @@ export interface FileRouteTypes {
     | '/research/bpc-157-uk'
     | '/research/bpc-157-vs-tb-500'
     | '/research/cjc-1295-ipamorelin-synergy'
+    | '/research/pt-141-uk'
     | '/research/retatrutide-comprehensive-guide'
     | '/research/retatrutide-uk'
     | '/research/tirzepatide-vs-retatrutide'
@@ -1500,6 +1511,7 @@ export interface FileRouteTypes {
     | '/research/bpc-157-uk'
     | '/research/bpc-157-vs-tb-500'
     | '/research/cjc-1295-ipamorelin-synergy'
+    | '/research/pt-141-uk'
     | '/research/retatrutide-comprehensive-guide'
     | '/research/retatrutide-uk'
     | '/research/tirzepatide-vs-retatrutide'
@@ -1965,6 +1977,13 @@ declare module '@tanstack/react-router' {
       path: '/retatrutide-comprehensive-guide'
       fullPath: '/research/retatrutide-comprehensive-guide'
       preLoaderRoute: typeof ResearchRetatrutideComprehensiveGuideRouteImport
+      parentRoute: typeof ResearchRoute
+    }
+    '/research/pt-141-uk': {
+      id: '/research/pt-141-uk'
+      path: '/pt-141-uk'
+      fullPath: '/research/pt-141-uk'
+      preLoaderRoute: typeof ResearchPt141UkRouteImport
       parentRoute: typeof ResearchRoute
     }
     '/research/cjc-1295-ipamorelin-synergy': {
@@ -2614,6 +2633,7 @@ interface ResearchRouteChildren {
   ResearchBpc157UkRoute: typeof ResearchBpc157UkRoute
   ResearchBpc157VsTb500Route: typeof ResearchBpc157VsTb500Route
   ResearchCjc1295IpamorelinSynergyRoute: typeof ResearchCjc1295IpamorelinSynergyRoute
+  ResearchPt141UkRoute: typeof ResearchPt141UkRoute
   ResearchRetatrutideComprehensiveGuideRoute: typeof ResearchRetatrutideComprehensiveGuideRoute
   ResearchRetatrutideUkRoute: typeof ResearchRetatrutideUkRoute
   ResearchTirzepatideVsRetatrutideRoute: typeof ResearchTirzepatideVsRetatrutideRoute
@@ -2625,6 +2645,7 @@ const ResearchRouteChildren: ResearchRouteChildren = {
   ResearchBpc157UkRoute: ResearchBpc157UkRoute,
   ResearchBpc157VsTb500Route: ResearchBpc157VsTb500Route,
   ResearchCjc1295IpamorelinSynergyRoute: ResearchCjc1295IpamorelinSynergyRoute,
+  ResearchPt141UkRoute: ResearchPt141UkRoute,
   ResearchRetatrutideComprehensiveGuideRoute:
     ResearchRetatrutideComprehensiveGuideRoute,
   ResearchRetatrutideUkRoute: ResearchRetatrutideUkRoute,
