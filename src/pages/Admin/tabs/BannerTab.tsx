@@ -39,6 +39,10 @@ interface BannerConfig {
   gradientDirection: 'bottom' | 'top' | 'left' | 'right' | 'center';
   gradientColor: string;
   gradientIntensity: number;   // 0–100
+  // Desktop edge fade — blends banner's left/right into the page background
+  edgeFadeEnabled: boolean;
+  edgeFadeWidthPct: number;    // 4–30 (% of banner width per side)
+  edgeFadeOpacity: number;     // 0–100 (mid-stop opacity)
   textOverlayEnabled: boolean;
   textOverlayHeading: string;
   textOverlaySubtext: string;
