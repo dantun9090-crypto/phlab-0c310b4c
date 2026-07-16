@@ -994,7 +994,11 @@ export default function CheckoutPage() {
             url: parsed.toString(),
             timestamp: Date.now(),
           });
-          setTimeout(() => { window.location.href = parsed.toString(); }, 250);
+          // Use replace() so /checkout is dropped from history — pressing
+          // browser back on Wallid's multi-step page won't strand the user
+          // on a one-time-use Wallid URL that 404s. They'll go straight back
+          // to whatever preceded checkout (cart/product page).
+          setTimeout(() => { window.location.replace(parsed.toString()); }, 250);
           return;
         } catch (err: any) {
           setFenaStep('failed');
