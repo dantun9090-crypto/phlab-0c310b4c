@@ -637,7 +637,7 @@ export function Layout({ children }: LayoutProps) {
       ═══════════════════════════════════════════════════════════════ */}
       {!isAuthPage && <header
         className={`site-header fixed left-0 right-0 border-b border-white/[0.06] ${isMobileMenuOpen ? 'z-[10020]' : 'z-[100]'}`}
-        style={{ background: '#030a14', top: `calc(${researchBannerOffset} + 32px)`, paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}
+        style={{ background: '#030a14', top: `calc(${researchBannerOffset} + 36px)`, paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}
       >
         <div className="w-full pl-4 pr-4 sm:pl-4 sm:pr-6">
           <div className="navbar flex items-center justify-between h-[64px]">
