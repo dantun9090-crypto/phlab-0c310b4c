@@ -496,7 +496,7 @@ html.light [data-keep-dark] * {
    JS sets --phl-popup-top dynamically by measuring the disclaimer strip. */
 .phl-live-sales-popup {
   position: fixed;
-  top: var(--phl-popup-top, calc(var(--rg-banner-h, 0px) + 32px + 64px + var(--phl-disclaimer-h, 28px) + 8px + env(safe-area-inset-top, 0px)));
+  top: var(--phl-popup-top, calc(var(--rg-banner-h, 0px) + 36px + 64px + var(--phl-disclaimer-h, 28px) + 8px + env(safe-area-inset-top, 0px)));
   left: calc(12px + env(safe-area-inset-left, 0px));
   right: auto;
   bottom: auto;
