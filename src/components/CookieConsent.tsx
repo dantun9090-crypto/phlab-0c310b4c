@@ -62,6 +62,7 @@ export function CookieConsent() {
         setMarketing(!!existing.marketing);
       }
       setShowDetails(true);
+      setDismissed(false);
       setVisible(true);
     };
     window.addEventListener(OPEN_EVENT, onOpen as EventListener);
