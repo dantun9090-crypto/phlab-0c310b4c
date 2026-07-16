@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import LegacyClientApp from "@/legacy/LegacyClientApp";
 import { fetchPromoBanner } from "@/lib/firestore-rest";
-import { cfImg, cfSrcSet } from "@/lib/cf-image";
 
 
 const HOME_TITLE = "HPLC-Verified Research Peptides UK | PH Labs";
@@ -12,12 +11,7 @@ const HOME_DESCRIPTION =
 const HOME_URL = "https://phlabs.co.uk/";
 const HOME_OG_IMAGE = "https://phlabs.co.uk/og-image.jpg";
 
-// Widths mirror <img> in src/pages/Home/index.tsx so the preloaded bytes
-// are the same variant the browser eventually renders (no wasted preload).
-const BANNER_WIDTHS = [480, 640, 800, 1024, 1280, 1600];
-const BANNER_SIZES = "(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1600px";
-const BANNER_QUALITY = 82;
-const BANNER_FALLBACK_WIDTH = 800;
+
 
 // Mirrors the visible FAQ section rendered by src/pages/Home/index.tsx.
 // Kept inline so the FAQPage JSON-LD ships in SSR HTML (crawler-visible)
