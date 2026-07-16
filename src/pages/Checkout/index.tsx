@@ -837,12 +837,22 @@ export default function CheckoutPage() {
   };
 
   const handlePayButtonActivate = () => {
-    if (isPlacing) return;
+    // Idempotent click guard — while an attempt is in flight, ignore further
+    // clicks so we never place duplicate orders on a double-tap.
+    if (isPlacing) {
+      console.log('[PAYMENT] click_ignored reason=in_flight method=' + form.paymentMethod);
+      return;
+    }
     if (payDisabled) {
+      console.log('[PAYMENT] click_blocked reason=disabled method=' + form.paymentMethod);
       handleDisabledPayClick();
       return;
     }
-    void handleSubmit();
+    console.log('[PAYMENT] click_accepted method=' + form.paymentMethod + ' total=£' + total);
+    void handleSubmit().then(
+      () => console.log('[PAYMENT] submit_settled method=' + form.paymentMethod),
+      (err) => console.error('[PAYMENT] submit_error method=' + form.paymentMethod, err),
+    );
   };
 
   const handleSubmit = async () => {
