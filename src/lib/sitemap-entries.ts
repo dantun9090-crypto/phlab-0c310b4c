@@ -28,6 +28,7 @@ function buildStaticEntries(today: string): SitemapEntry[] {
     { path: "/research/retatrutide-uk", lastmod: today, changefreq: "weekly", priority: "0.9" },
     { path: "/research/retatrutide-comprehensive-guide", lastmod: today, changefreq: "weekly", priority: "0.9" },
     { path: "/research/bpc-157-uk", lastmod: today, changefreq: "weekly", priority: "0.9" },
+    { path: "/research/pt-141-uk", lastmod: today, changefreq: "weekly", priority: "0.9" },
     { path: "/research/bpc-157-vs-tb-500", lastmod: today, changefreq: "weekly", priority: "0.9" },
     { path: "/research/bpc-157-tb-500-synergy", lastmod: today, changefreq: "weekly", priority: "0.9" },
     { path: "/research/tirzepatide-vs-retatrutide", lastmod: today, changefreq: "weekly", priority: "0.9" },
