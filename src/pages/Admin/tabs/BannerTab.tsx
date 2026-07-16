@@ -969,14 +969,23 @@ export default function BannerTab() {
                     ${banner.textOverlayPosition === 'top' ? 'justify-start' : banner.textOverlayPosition === 'bottom' ? 'justify-end' : 'justify-center'}
                     ${banner.textOverlayAlign === 'left' ? 'items-start' : banner.textOverlayAlign === 'right' ? 'items-end' : 'items-center'}`}>
                     {banner.textOverlayHeading && (
-                      <div className="text-white font-bold text-lg drop-shadow-lg leading-tight"
-                        style={{ textAlign: banner.textOverlayAlign }}>
+                      <div className="drop-shadow-lg leading-tight"
+                        style={{
+                          textAlign: banner.textOverlayAlign,
+                          color: banner.textOverlayHeadingColor,
+                          fontSize: `${banner.textOverlayHeadingSizePx}px`,
+                          fontWeight: banner.textOverlayHeadingWeight,
+                        }}>
                         {banner.textOverlayHeading}
                       </div>
                     )}
                     {banner.textOverlaySubtext && (
-                      <div className="text-white/80 text-xs mt-1 drop-shadow"
-                        style={{ textAlign: banner.textOverlayAlign }}>
+                      <div className="mt-1 drop-shadow"
+                        style={{
+                          textAlign: banner.textOverlayAlign,
+                          color: banner.textOverlaySubtextColor,
+                          fontSize: `${banner.textOverlaySubtextSizePx}px`,
+                        }}>
                         {banner.textOverlaySubtext}
                       </div>
                     )}
