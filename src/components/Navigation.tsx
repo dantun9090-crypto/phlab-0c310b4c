@@ -299,7 +299,6 @@ export function Navigation({
           transform: isMobileMenuOpen ? 'translateX(0)' : 'translateX(100%)',
           transition: 'transform 0.32s cubic-bezier(0.4,0,0.2,1)',
           pointerEvents: isMobileMenuOpen ? 'auto' : 'none',
-          visibility: isMobileMenuOpen ? 'visible' : 'hidden',
         }}>
         {/* Drawer header: MENU label + close X */}
         <div className="flex items-center justify-between px-5 shrink-0 gap-3"
