@@ -696,6 +696,46 @@ export default function CheckoutPage() {
   // Stable cart id for telemetry correlation across events in one attempt.
   const buildCartId = () => cart.map(i => `${i.id}:${i.variantId ?? ''}:${i.quantity}`).join('|');
 
+  type DisabledReasonKey = 'cart_empty' | 'preflight_failed' | 'price_mismatch' | 'validation_errors' | 'submitting';
+  const disabledReason: DisabledReasonKey | null = (() => {
+    if (isPlacing) return 'submitting';
+    if (cart.length === 0) return 'cart_empty';
+    if (preflightIssues.some(i => i.kind === 'price_mismatch')) return 'price_mismatch';
+    if (preflightIssues.length > 0) return 'validation_errors';
+    if (preflightExhausted) return 'preflight_failed';
+    if (preflightRetry) return 'preflight_failed';
+    return null;
+  })();
+  const disabledReasonMessage: string | null = (() => {
+    switch (disabledReason) {
+      case 'cart_empty': return 'Your cart is empty';
+      case 'preflight_failed':
+        if (preflightRetry) return `Price validation failed. Retrying (${preflightRetry.attempt}/${preflightRetry.total})…`;
+        if (preflightExhausted) return 'Price validation unavailable. Please refresh the page.';
+        return 'Price validation failed. Retrying…';
+      case 'price_mismatch': return 'Cart price has changed. Please review.';
+      case 'validation_errors': return 'Please fix the errors above';
+      case 'submitting': return 'Payment in progress…';
+      default: return null;
+    }
+  })();
+  // Pay button stays enabled while retrying so the user can still proceed
+  // (createOrder re-validates every price server-side).
+  const payDisabled = isPlacing || cart.length === 0 || preflightIssues.length > 0 || preflightExhausted;
+
+  const handleDisabledPayClick = () => {
+    const el = typeof document !== 'undefined'
+      ? document.getElementById('checkout-validation-banner')
+      : null;
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('ring-2', 'ring-yellow-400', 'ring-offset-2', 'ring-offset-transparent');
+      setTimeout(() => {
+        el.classList.remove('ring-2', 'ring-yellow-400', 'ring-offset-2', 'ring-offset-transparent');
+      }, 1400);
+    }
+  };
+
   const handleSubmit = async () => {
     // Pay click telemetry — fires for EVERY click, including disabled/blocked
     // ones (button onClick still runs on some flows). Non-blocking.
