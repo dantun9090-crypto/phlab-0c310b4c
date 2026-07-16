@@ -1011,6 +1011,19 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
         const nextSet = versionSrcset(el.getAttribute("srcset"));
         if (nextSet) el.setAttribute("srcset", nextSet);
       },
+    }).on('link[rel="modulepreload"]', {
+      // Drop modulepreload for chunks that are ONLY reached via dynamic
+      // import() at click time — jsPDF (admin label print) and Sentry
+      // (idle-callback boot). TanStack Start's SSR manifest can list them
+      // as static deps of the entry, so vite's build.modulePreload
+      // resolveDependencies filter (client index only) does not remove
+      // them from the SSR-rendered head. This strips them at the wire.
+      element(el) {
+        const href = el.getAttribute("href") || "";
+        if (/\/(?:assets|_build)\/vendor-(?:pdf|sentry)-[A-Za-z0-9_-]+\.(?:js|mjs)(?:$|\?)/.test(href)) {
+          (el as unknown as { remove: () => void }).remove();
+        }
+      },
     });
     if (strict) {
       // Stamp nonce on every <script> and <style> element so TanStack
