@@ -478,7 +478,7 @@ export default {
           return response;
         }
 
-        const body = stripHostingInjectedScriptsFromHtml(await prerenderRes.text());
+        const body = injectHeroImagePreload(stripHostingInjectedScriptsFromHtml(await prerenderRes.text()));
 
         if (body.includes("__CSP_NONCE__")) {
           console.error("[PHL-CRIT] Prerendered HTML contains __CSP_NONCE__");
