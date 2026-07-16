@@ -234,8 +234,8 @@ function DesktopNavItem({ link, isActive }: { link: NavLink; isActive: (href: st
 }
 
 export function Navigation({
-  user, isMobileMenuOpen, onMobileMenuToggle,
-}: { user: any; isMobileMenuOpen: boolean; onMobileMenuToggle: () => void; }) {
+  user, isAdmin, isMobileMenuOpen, onMobileMenuToggle,
+}: { user: any; isAdmin?: boolean; isMobileMenuOpen: boolean; onMobileMenuToggle: () => void; }) {
   const location = useLocation();
   const navLinks = useNavLinks();
   const isActive = (href: string) =>
@@ -266,7 +266,7 @@ export function Navigation({
         {navLinks.map(link => (
           <DesktopNavItem key={link.name} link={link} isActive={isActive} />
         ))}
-        {user && (
+        {user && isAdmin && (
           <Link to="/admin"
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-semibold"
             style={{ color: '#60a5fa' }}>
@@ -331,12 +331,14 @@ export function Navigation({
                 <Shield className="w-4 h-4 opacity-60" />
                 <span className="text-[15px]">My Account</span>
               </Link>
-              <Link to="/admin" onClick={onMobileMenuToggle}
-                className="flex items-center gap-3 px-4 py-3.5 rounded-2xl font-semibold min-h-[52px]"
-                style={{ background: 'rgba(59,130,246,0.08)', color: '#93c5fd', border: '1px solid rgba(59,130,246,0.15)' }}>
-                <Crown className="w-4 h-4 opacity-60" />
-                <span className="text-[15px]">Admin Panel</span>
-              </Link>
+              {isAdmin && (
+                <Link to="/admin" onClick={onMobileMenuToggle}
+                  className="flex items-center gap-3 px-4 py-3.5 rounded-2xl font-semibold min-h-[52px]"
+                  style={{ background: 'rgba(59,130,246,0.08)', color: '#93c5fd', border: '1px solid rgba(59,130,246,0.15)' }}>
+                  <Crown className="w-4 h-4 opacity-60" />
+                  <span className="text-[15px]">Admin Panel</span>
+                </Link>
+              )}
             </>
           ) : (
             <Link to="/login" onClick={onMobileMenuToggle}

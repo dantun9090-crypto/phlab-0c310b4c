@@ -685,6 +685,7 @@ export function Layout({ children }: LayoutProps) {
             {/* ── Desktop + Mobile Nav (Navigation component) ── */}
             <Navigation
               user={firebaseUser}
+              isAdmin={isAdmin}
               isMobileMenuOpen={isMobileMenuOpen}
               onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             />
