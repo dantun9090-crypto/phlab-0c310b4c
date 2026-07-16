@@ -542,6 +542,16 @@ export default function HomePage() {
                 style={{ height: responsiveHeight, objectFit: banner.objectFit || 'cover', objectPosition: `${banner.objectPositionX ?? 50}% ${banner.objectPositionY ?? 50}%`, display: 'block' }} />
 
           )}
+          {/* Edge fades — blend the banner's left/right into the page bg (#030a14) */}
+          <div
+            className="absolute inset-y-0 left-0 pointer-events-none z-[8]"
+            style={{ width: 'clamp(48px, 12vw, 200px)', background: 'linear-gradient(to right, #030a14 0%, rgba(3,10,20,0.85) 40%, transparent 100%)' }}
+          />
+          <div
+            className="absolute inset-y-0 right-0 pointer-events-none z-[8]"
+            style={{ width: 'clamp(48px, 12vw, 200px)', background: 'linear-gradient(to left, #030a14 0%, rgba(3,10,20,0.85) 40%, transparent 100%)' }}
+          />
+
 
 
           {bannerOverlayHeading && (
