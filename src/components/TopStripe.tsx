@@ -46,8 +46,8 @@ export default function TopStripe() {
       style={{
         height: '36px',
         background:
-          'linear-gradient(90deg, #047857 0%, #10b981 45%, #06b6d4 100%)',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
+          'linear-gradient(90deg, #030914 0%, #040d1a 50%, #061426 100%)',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
         color: '#f0fdfa',
         fontSize: '12px',
         fontWeight: 600,
