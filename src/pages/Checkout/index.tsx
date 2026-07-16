@@ -814,6 +814,9 @@ export default function CheckoutPage() {
       // and writes the order document via the service account (bypassing
       // client-writable rules). The client never supplies totalAmount.
       let serverResult: Awaited<ReturnType<typeof createOrder>>;
+      const orderTelemetryCartId = buildCartId();
+      const orderStartedAt = Date.now();
+      logCheckoutEvent({ stage: 'create_order_start', cartId: orderTelemetryCartId, timestamp: orderStartedAt });
       try {
         // Always send the idToken if we have a current user (including
         // anonymous) so the order document is linked to the same UID the
@@ -855,8 +858,20 @@ export default function CheckoutPage() {
             idToken,
           },
         });
+        logCheckoutEvent({
+          stage: 'create_order_success',
+          cartId: orderTelemetryCartId,
+          orderId: serverResult.orderId,
+          durationMs: Date.now() - orderStartedAt,
+        });
       } catch (err: any) {
         const msg = String(err?.message || '');
+        logCheckoutEvent({
+          stage: 'create_order_fail',
+          cartId: orderTelemetryCartId,
+          error: msg.slice(0, 300),
+          durationMs: Date.now() - orderStartedAt,
+        });
         if (/no longer exists|could not verify price/i.test(msg)) setCartStale(true);
         setErrors(prev => ({
           ...prev,
