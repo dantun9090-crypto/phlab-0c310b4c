@@ -1142,7 +1142,7 @@ export default function CheckoutPage() {
   // ── Order Success ──
   if (orderPlaced) {
     return (
-      <section ref={successRef} id="checkout-success" className="min-h-screen bg-[#060f1e] flex items-center justify-center px-4 py-16">
+      <section ref={successRef} id="checkout-success" data-checkout-scope className="min-h-screen bg-[#060f1e] flex items-center justify-center px-4 py-16">
         <div className="w-full max-w-lg text-center">
           <div className="flex justify-center mb-6">
             <div className="w-20 h-20 rounded-full bg-emerald-500/15 flex items-center justify-center">
@@ -1265,7 +1265,7 @@ export default function CheckoutPage() {
   return (
     <>
     <NoCacheHead title="Checkout — PH Labs" />
-    <section id="checkout" className="min-h-screen bg-[#060f1e] pt-20 pb-16">
+    <section id="checkout" data-checkout-scope className="min-h-screen bg-[#060f1e] pt-20 pb-16">
       <div className="max-w-5xl mx-auto px-4">
 
         {/* Header */}
