@@ -1442,3 +1442,17 @@ body {
   font-family: var(--font-sans-fallback);
 }
 
+
+/* ═══════════════════════════════════════════════════════
+   MOBILE DRAWER OWNS THE SCREEN
+   When the hamburger menu is open on mobile, hide the three
+   fixed bars (shipping top bar, research-gate tape, cookie
+   consent banner) so the drawer isn't visually crowded.
+   ═══════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  body.mobile-drawer-open [data-shipping-top-bar],
+  body.mobile-drawer-open #research-gate-banner,
+  body.mobile-drawer-open [data-cookie-consent] {
+    display: none !important;
+  }
+}
