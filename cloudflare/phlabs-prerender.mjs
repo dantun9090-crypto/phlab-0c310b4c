@@ -151,6 +151,67 @@ async function buildCspHeader(hashes) {
   return CSP_BASE + "; " + scriptSrc + "; " + scriptSrcElem;
 }
 
+// Browser prerender CSP: adds 'self' so the /assets entry <script src> is
+// allowed (older browsers use 'self'; strict-dynamic covers its imports;
+// inline hashes cover watchdog/build-killer). Inline hash tokens include
+// their own single-quotes.
+async function buildCspHeaderBrowserSelf(hashes) {
+  const hashList = hashes.join(" ");
+  const scriptSrc = "script-src 'self' " + hashList + " 'strict-dynamic' 'unsafe-eval'";
+  const scriptSrcElem = "script-src-elem 'self' " + hashList + " 'strict-dynamic'";
+  return CSP_BASE + "; " + scriptSrc + "; " + scriptSrcElem;
+}
+
+// Extract the executable boot payload from the LIVE origin shell so we can
+// re-inject it into the prerender.io snapshot (which strips executable
+// scripts, leaving only application/ld+json). Returns:
+//   - entry: the <script type="module" src="/assets/index-<hash>.js"> tag
+//   - preloads: <link rel="modulepreload"> for index + vendor-react ONLY
+//   - inlineScripts: every inline (no-src) <script> block verbatim — that's
+//     the watchdog + build-killer origin emits in the shell head/body.
+function extractOriginShellBoot(originHtml) {
+  const inlineScripts = [];
+  const inlineRe = /<script(?![^>]*\bsrc=)[^>]*>[\s\S]*?<\/script>/gi;
+  let m;
+  while ((m = inlineRe.exec(originHtml)) !== null) {
+    // Skip application/ld+json and application/json (data blobs, not code).
+    if (/type=["'](?:application\/ld\+json|application\/json|importmap)["']/i.test(m[0])) continue;
+    inlineScripts.push(m[0]);
+  }
+  const entryMatch = originHtml.match(
+    /<script\b[^>]*\btype=["']module["'][^>]*\bsrc=["']\/assets\/index-[^"']+["'][^>]*><\/script>/i,
+  );
+  const entry = entryMatch ? entryMatch[0] : "";
+  const preloads = [];
+  const preloadRe = /<link\b[^>]*\brel=["']modulepreload["'][^>]*>/gi;
+  let pm;
+  while ((pm = preloadRe.exec(originHtml)) !== null) {
+    const tag = pm[0];
+    if (/\bhref=["']\/assets\/(?:index|vendor-react)-[^"']+["']/i.test(tag)) {
+      preloads.push(tag);
+    }
+  }
+  return { entry, preloads, inlineScripts };
+}
+
+function injectOriginShellBoot(prerenderHtml, boot) {
+  if (!boot) return prerenderHtml;
+  const injection = boot.preloads.join("") + boot.inlineScripts.join("") + boot.entry;
+  if (!injection) return prerenderHtml;
+  if (/<\/head>/i.test(prerenderHtml)) {
+    return prerenderHtml.replace(/<\/head>/i, injection + "</head>");
+  }
+  if (/<body\b[^>]*>/i.test(prerenderHtml)) {
+    return prerenderHtml.replace(/<body\b[^>]*>/i, (m) => m + injection);
+  }
+  return prerenderHtml + injection;
+}
+
+function edgeHtmlCacheKeyWithBuild(url, buildId) {
+  const bidPart = buildId ? "?__bid=" + encodeURIComponent(buildId) : "";
+  return new Request(url.origin + url.pathname + bidPart, { method: "GET" });
+}
+
 function stripHostingInjectedScriptsFromHtml(html) {
   return html
     .replace(/<script\b[^>]*\bsrc=["']https:\/\/plausible\.io\/js\/[^"']+["'][^>]*><\/script>/gi, "")
