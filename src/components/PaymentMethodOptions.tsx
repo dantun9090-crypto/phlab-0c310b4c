@@ -24,7 +24,6 @@ import {
 } from "lucide-react";
 
 import UkBankBadges from "@/components/UkBankBadges";
-import WallidTrustElements from "@/components/WallidTrustElements";
 import type { CheckoutPaymentOptions } from "@/lib/payments/types";
 
 export interface PaymentMethodOptionsProps {
@@ -113,6 +112,20 @@ function WhatHappensNext() {
           ))}
         </ol>
       )}
+    </div>
+  );
+}
+
+function WallidCheckoutTrustInline({ className = "" }: { className?: string }) {
+  return (
+    <div
+      data-testid="wallid-trust-elements"
+      className={`mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-center ${className}`}
+    >
+      <p className="text-sm font-semibold text-emerald-200">Pay by Bank — Open Banking secure checkout</p>
+      <p className="mt-1 text-[11px] leading-snug text-slate-400">
+        Your payment is processed securely via FCA-regulated open banking. No card details stored.
+      </p>
     </div>
   );
 }
@@ -227,7 +240,7 @@ export default function PaymentMethodOptions({
               <div id={primaryInstructionsId}>
                 <WhatHappensNext />
               </div>
-              {wallidEnabled && <WallidTrustElements className="mt-3" showBadges={false} />}
+              {wallidEnabled && <WallidCheckoutTrustInline />}
             </>
           )}
         </div>
