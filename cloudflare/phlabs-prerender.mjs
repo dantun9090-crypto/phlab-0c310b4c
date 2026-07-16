@@ -162,6 +162,30 @@ function stripHostingInjectedScriptsFromHtml(html) {
     );
 }
 
+// Inject <link rel="preload" as="image" fetchpriority="high"> for the first
+// <img src="/_img?..."> in the prerendered body so the browser can start
+// downloading the LCP candidate before React hydrates. No-op when no such
+// image is found, or when a matching preload link is already present.
+function injectHeroImagePreload(html) {
+  if (!html) return html;
+  const imgMatch = html.match(/<img\b[^>]*\bsrc=(["'])(\/_img[^"']+)\1[^>]*>/i);
+  if (!imgMatch) return html;
+  const heroUrl = imgMatch[2];
+  const heroUrlEsc = heroUrl.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  if (html.includes('rel="preload"') && html.includes(heroUrl)) {
+    // Already preloaded — leave head untouched.
+    return html;
+  }
+  const preloadTag =
+    '<link rel="preload" as="image" href="' +
+    heroUrlEsc +
+    '" fetchpriority="high">';
+  const headMatch = html.match(/<head\b[^>]*>/i);
+  if (!headMatch) return html;
+  const insertAt = headMatch.index + headMatch[0].length;
+  return html.slice(0, insertAt) + preloadTag + html.slice(insertAt);
+}
+
 function simplifyStrictDynamicCsp(headers) {
   const csp = headers.get("Content-Security-Policy") || headers.get("content-security-policy") || "";
   if (!csp || !csp.includes("strict-dynamic")) return;
