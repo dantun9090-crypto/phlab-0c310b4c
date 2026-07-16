@@ -719,9 +719,10 @@ export default function CheckoutPage() {
       default: return null;
     }
   })();
-  // Pay button stays enabled while retrying so the user can still proceed
-  // (createOrder re-validates every price server-side).
-  const payDisabled = isPlacing || cart.length === 0 || preflightIssues.length > 0 || preflightExhausted;
+  // Pay button stays enabled while retrying or after preflight exhaustion so
+  // the user can still proceed — createOrder re-validates every price/stock
+  // line server-side, so a flaky preflight must never lock out checkout.
+  const payDisabled = isPlacing || cart.length === 0 || preflightIssues.length > 0;
 
   const handleDisabledPayClick = () => {
     const el = typeof document !== 'undefined'
