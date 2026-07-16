@@ -47,7 +47,7 @@ const customerSchema = z.object({
   lastName:  z.string().trim().min(1).max(80),
   email:     z.string().trim().email().max(320),
   phone:     z.string().trim().max(40).optional().default(''),
-  address:   z.string().trim().min(4, 'Street address is required').max(200),
+  address:   z.string().trim().min(1, 'Street address is required').max(200),
   city:      z.string().trim().min(1).max(80),
   postcode:  z.string().trim().min(1).max(20),
   country:   z.string().trim().min(1).max(80),
