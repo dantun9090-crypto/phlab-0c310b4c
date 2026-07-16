@@ -498,35 +498,32 @@ export default {
     }
 
     // ── 3. BROWSER branch: Cache API-backed HTML edge cache ──────────────────
-    // Repeat visits get served from caches.default in ~50-150ms while the wire
-    // contract stays no-store (browsers + CDN tier still see no-store). The
-    // cached entry carries a private public,max-age=HTML_EDGE_TTL_S header
-    // that only the Cache API sees; applyBrowserHtmlNoCache() rewrites the
-    // response on every hit before it goes over the wire.
+    // For public cache-eligible routes we now serve the SAME fully-rendered
+    // HTML the bot branch produces (Prerender.io → hash-CSP) to humans too.
+    // This fixes mobile LCP: origin ships a hydration-only shell whose only
+    // <h1> is a watchdog, so the real hero paints ~4s after TTFB. Prerender
+    // returns the fully-hydrated static HTML with the real hero text in the
+    // raw body.
     //
-    // Cached CSP (per-request nonce in the header + matching nonce attrs in
-    // the body) is replayed as a consistent pair — do NOT re-nonce at edge.
+    // Non-eligible browser paths (admin, auth, cart, checkout, /api/…) keep
+    // the original origin+per-request-nonce pass-through path below.
     const cache = caches.default;
-    const wEligible = warmCacheEligible(path);
+    let wEligible = warmCacheEligible(path);
     if (wEligible) {
       const cacheKey = edgeHtmlCacheKey(url);
       const cached = await cache.match(cacheKey);
       if (cached) {
         // READ SELF-HEAL: buffer cached body and verify it is a real HTML
-        // shell. A previous deploy briefly stored a 0-byte origin response
-        // and replayed a blank homepage until manual purge. If the cached
-        // body is suspiciously small, evict and fall through to origin.
+        // shell. If suspiciously small (<10KB), evict and fall through.
         const buf = await cached.arrayBuffer();
         if (buf.byteLength < 10000) {
           ctx.waitUntil(cache.delete(cacheKey));
         } else {
           const headers = new Headers(cached.headers);
-          // Cache API entry carried a private public,max-age header only for
-          // storage TTL. On the wire we serve no-store, just like the origin.
           applyBrowserHtmlNoCache(headers, path);
-          headers.delete("cf-cache-status"); // Cache API must not surface one
+          headers.delete("cf-cache-status");
           const total = Date.now() - startTime;
-          headers.set("X-PHL-Via", "edge-html-hit;bot=0;total=" + total + "ms");
+          headers.set("X-PHL-Via", "edge-html-hit;bot=0;prerender=1;total=" + total + "ms");
           headers.set("Server-Timing", `edge-html;desc="HIT", origin;dur=0, worker;dur=${total}`);
           return new Response(buf, {
             status: cached.status,
@@ -535,7 +532,75 @@ export default {
           });
         }
       }
+
+      // MISS: fetch prerendered HTML and build a hash-CSP response.
+      const prerenderStart = Date.now();
+      const prerenderUrl = PRERENDER_SERVICE + "/" + encodeURIComponent(url.toString());
+      let prerenderRes;
+      try {
+        prerenderRes = await fetch(prerenderUrl, {
+          headers: {
+            "X-Prerender-Token": env.PRERENDER_TOKEN || "",
+            "User-Agent": request.headers.get("User-Agent") || "",
+          },
+        });
+      } catch (e) {
+        console.warn("[PHL-WARN] Prerender.io fetch threw for browser — falling back to origin: " + (e && e.message));
+        prerenderRes = null;
+      }
+      const prerenderMs = Date.now() - prerenderStart;
+
+      if (prerenderRes && prerenderRes.ok) {
+        const body = stripHostingInjectedScriptsFromHtml(await prerenderRes.text());
+        if (body.includes("__CSP_NONCE__")) {
+          console.error("[PHL-CRIT] Prerendered HTML contains __CSP_NONCE__ — falling back to origin");
+        } else {
+          const hashStart = Date.now();
+          const response = await buildHashCspResponse(body, prerenderRes.status, prerenderRes.statusText);
+          const hashMs = Date.now() - hashStart;
+          const buf = await response.clone().arrayBuffer();
+          if (buf.byteLength >= 10000) {
+            const snapshotHeaders = new Headers();
+            response.headers.forEach((value, name) => {
+              const n = name.toLowerCase();
+              if (n === "set-cookie" || n === "connection" || n === "keep-alive" ||
+                  n === "transfer-encoding" || n === "cf-ray" || n === "cf-request-id" ||
+                  n === "server-timing" || n === "x-phl-via" || n === "age" ||
+                  n === "date" || n === "cache-control" || n === "cdn-cache-control" ||
+                  n === "cloudflare-cdn-cache-control" || n === "surrogate-control" ||
+                  n === "pragma" || n === "expires" || n === "content-length") return;
+              snapshotHeaders.set(name, value);
+            });
+            snapshotHeaders.set("Cache-Control", "public, max-age=" + HTML_EDGE_TTL_S);
+            const cacheKey2 = edgeHtmlCacheKey(url);
+            ctx.waitUntil(cache.put(cacheKey2, new Response(buf, {
+              status: response.status,
+              statusText: response.statusText,
+              headers: snapshotHeaders,
+            })).catch((e) => {
+              console.warn("[PHL Worker] edge HTML cache populate failed: " + (e && e.message));
+            }));
+          }
+          const outHeaders = new Headers(response.headers);
+          applyBrowserHtmlNoCache(outHeaders, path);
+          const total = Date.now() - startTime;
+          outHeaders.set("X-PHL-Via", "edge-html-miss;bot=0;prerender=OK;origin=" + prerenderMs + "ms;hash=" + hashMs + "ms;total=" + total + "ms");
+          outHeaders.set("Server-Timing", `edge-html;desc="MISS", origin;dur=${prerenderMs}, csp-hash;dur=${hashMs}, worker;dur=${total}`);
+          return new Response(buf, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: outHeaders,
+          });
+        }
+      } else if (prerenderRes) {
+        console.warn("[PHL-WARN] Prerender.io returned " + prerenderRes.status + " for browser — falling back to origin");
+      }
+      // fall through to origin path below — disable edge cache populate so
+      // an origin hydration shell never poisons the prerendered cache slot.
+      wEligible = false;
     }
+
+
 
     const originStart = Date.now();
     // Bypass CF's cache on the origin subrequest — we manage HTML caching via

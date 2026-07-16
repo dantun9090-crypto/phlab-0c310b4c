@@ -34,6 +34,18 @@ export default defineConfig({
       // Hidden source maps: emit .map files for error tracking without
       // exposing a sourceMappingURL in the shipped JS.
       sourcemap: "hidden",
+      // Trim modulepreload for chunks that are ONLY reached via dynamic
+      // import at click time (jsPDF from admin label print; Sentry from an
+      // idle-callback in src/client.tsx). Vite by default resolves the full
+      // dependency graph and can emit <link rel="modulepreload"> for these
+      // async chunks in the HTML shell — ~640KB of wasted bytes on every
+      // mobile visitor. Filter them out; when the code actually needs them
+      // the dynamic import() will fetch on demand.
+      modulePreload: {
+        resolveDependencies: (_filename, deps) =>
+          deps.filter((d) => !/\bvendor-(pdf|sentry)-[A-Za-z0-9_-]+\.js$/.test(d)),
+      },
+
       rollupOptions: {
         output: {
           entryFileNames: "assets/[name]-[hash].js",
