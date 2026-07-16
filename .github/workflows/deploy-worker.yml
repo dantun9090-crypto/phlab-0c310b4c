@@ -63,31 +63,42 @@ jobs:
         run: npx --yes wrangler@4 deploy phlabs-prerender.mjs --name phlabs-prerender --compatibility-date 2025-09-24 --compatibility-flags nodejs_compat
 
 
-      - name: Purge Cloudflare Cache (phlabs.co.uk)
+      - name: Purge Cloudflare Cache (phlabs.co.uk — scoped HTML + feeds)
         env:
           CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID_PHLABS }}
         run: |
-          curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache" \
+          set -euo pipefail
+          # NEVER purge_everything — hashed /assets/* are immutable and must
+          # survive every deploy; wiping them 404s open sessions.
+          # See .lovable/memory/post-publish-edge-purge.md.
+          resp=$(curl -sS -o /tmp/purge-phlabs.json -w "%{http_code}" \
+            -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache" \
             -H "Authorization: Bearer $CF_API_TOKEN" \
             -H "Content-Type: application/json" \
-            --data '{"purge_everything":true}'
-          echo
-          echo "Cache purged for phlabs.co.uk"
+            --data '{"files":["https://phlabs.co.uk/","https://phlabs.co.uk/products","https://phlabs.co.uk/sitemap.xml","https://phlabs.co.uk/robots.txt","https://phlabs.co.uk/llms.txt","https://phlabs.co.uk/google-merchant-feed.xml","https://phlabs.co.uk/google-merchant-feed-free.xml","https://phlabs.co.uk/feed.xml"]}')
+          echo "HTTP $resp"
+          cat /tmp/purge-phlabs.json
+          [ "$resp" = "200" ] || { echo "::error::Cache purge failed"; exit 1; }
+          echo "Cache purged (scoped) for phlabs.co.uk"
 
       # check-domains-allow-next-line
-      - name: Purge Cloudflare Cache (legacy prohealth zone)
+      - name: Purge Cloudflare Cache (legacy prohealth zone — scoped)
         if: ${{ env.CF_ZONE_ID != '' }}
         env:
           CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID_PROHEALTH }}
         run: |
-          curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache" \
+          set -euo pipefail
+          resp=$(curl -sS -o /tmp/purge-legacy.json -w "%{http_code}" \
+            -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache" \
             -H "Authorization: Bearer $CF_API_TOKEN" \
             -H "Content-Type: application/json" \
-            --data '{"purge_everything":true}'
-          echo
-          echo "Cache purged for legacy zone"
+            --data '{"files":["https://prohealthpeptides.co.uk/","https://prohealthpeptides.co.uk/sitemap.xml","https://prohealthpeptides.co.uk/robots.txt","https://prohealthpeptides.co.uk/google-merchant-feed-free.xml"]}')
+          echo "HTTP $resp"
+          cat /tmp/purge-legacy.json
+          [ "$resp" = "200" ] || { echo "::error::Legacy zone purge failed"; exit 1; }
+          echo "Cache purged (scoped) for legacy zone"
 
       - name: Wait for edge propagation
         run: sleep 10
