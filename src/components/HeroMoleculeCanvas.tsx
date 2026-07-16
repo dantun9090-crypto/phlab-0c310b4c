@@ -48,7 +48,8 @@ export default function HeroMoleculeCanvas({ density = 40, className }: Props) {
 
     const init = () => {
       resize();
-      particles = new Array(density).fill(0).map(() => ({
+      const effective = width < 768 ? Math.min(density, 20) : density;
+      particles = new Array(effective).fill(0).map(() => ({
         x: Math.random() * width,
         y: Math.random() * height,
         vx: (Math.random() - 0.5) * 0.22,
