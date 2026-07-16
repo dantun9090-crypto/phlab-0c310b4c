@@ -161,6 +161,17 @@ export function Layout({ children }: LayoutProps) {
     };
   }, [isCartOpen, isMobileMenuOpen]);
 
+  // While the mobile nav drawer is open, mark the body so global CSS
+  // can hide the shipping bar, research-gate tape, and cookie banner —
+  // giving the drawer full ownership of the mobile viewport.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const cls = 'mobile-drawer-open';
+    if (isMobileMenuOpen) document.body.classList.add(cls);
+    else document.body.classList.remove(cls);
+    return () => { document.body.classList.remove(cls); };
+  }, [isMobileMenuOpen]);
+
 
   // Google Analytics 4 — load once on mount, then fire page_view on every SPA route change
   useEffect(() => {
