@@ -633,11 +633,16 @@ export default function HomePage() {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          paddingTop: 'calc(var(--nav-h, 72px) + var(--rg-banner-h, 34px) + 3rem)',
+          paddingTop: 'calc(var(--nav-h, 72px) + var(--rg-banner-h, 0px) + 3rem)',
           paddingBottom: '4rem',
         }}
       >
         {showHeroEffects && <Suspense fallback={null}><AnimatedBackground variant="blue" /></Suspense>}
+
+        {/* Molecule field — canvas 2D, initialises after window load,
+            pauses when hidden, disabled under prefers-reduced-motion.
+            Renders behind hero content (z-index:1); hero text uses z-10. */}
+        <HeroMoleculeCanvas density={40} />
 
         {/* Radial glow accent — pointer-events off, composited layer after LCP */}
         <div className="absolute pointer-events-none" style={{
@@ -675,17 +680,17 @@ export default function HomePage() {
 
               {/* H1 */}
               <div>
-                <h1 style={{
+                <h1 className="font-display" style={{
                   fontSize: 'clamp(1.75rem, 7.5vw, 4.2rem)',
                   fontWeight: 900,
                   lineHeight: 1.04,
-                  letterSpacing: 0,
+                  letterSpacing: '-0.015em',
                   color: '#f0f8ff',
                   maxWidth: '100%',
                   overflowWrap: 'break-word',
                 }}>
                   <span style={{ display: 'block' }}>Pro Peptide Research Lab </span>
-                  <span style={{ display: 'block', color: '#10b981' }}>For In-Vitro Research</span>
+                  <span className="phl-gradient-text" style={{ display: 'block' }}>For In-Vitro Research</span>
                   <span style={{ display: 'block', color: '#c9d8f0', fontWeight: 400, fontSize: '0.72em', overflowWrap: 'break-word' }}>HPLC-Verified ≥99% Purity · CoA Per Batch</span>
                 </h1>
               </div>
@@ -1394,6 +1399,9 @@ export default function HomePage() {
           </Link>
         </div>
       </div>
+
+      {/* CoA batch lookup — between products and SEO/footer */}
+      <CoALookup />
 
       {/* SEO link-index — SSR-rendered hub linking to every product + article */}
       <HomeSeoIndex />
