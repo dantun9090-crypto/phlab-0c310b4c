@@ -214,7 +214,7 @@ jobs:
         if: hashFiles('dist/sbom.cdx.json') != ''
         uses: sigstore/cosign-installer@v4.1.2
         with:
-          cosign-release: v3.1.1
+          cosign-release: v3.0.6
 
       - name: Sign SBOM (cosign keyless)
         if: hashFiles('dist/sbom.cdx.json') != ''
@@ -379,7 +379,7 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@v4.1.2
         with:
-          cosign-release: v3.1.1
+          cosign-release: v3.0.6
 
       - name: Download SBOM bundle artifact
         uses: actions/download-artifact@v5
