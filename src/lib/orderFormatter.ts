@@ -79,6 +79,7 @@ export const mapRawOrderToLive = (raw: RawOrderLike): LiveOrder | null => {
     'UK';
   const createdAtMs = toMs(raw.orderDate) || toMs(raw.createdAt) || Date.now();
 
+  const rawUid = raw.customer?.uid || raw.userId;
   return {
     id,
     initial: firstInitial(firstName),
@@ -86,7 +87,7 @@ export const mapRawOrderToLive = (raw: RawOrderLike): LiveOrder | null => {
     productName,
     productImage: item?.image || item?.imageUrl,
     createdAtMs,
-    userId: raw.customer?.uid || raw.userId,
+    userHash: rawUid ? shortHash(String(rawUid)) : undefined,
     status: raw.status,
   };
 };
