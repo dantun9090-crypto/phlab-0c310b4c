@@ -6,6 +6,17 @@ import { createLegacyRouter } from "./AppRouter";
 import { SSRDataProvider, type SSRBanner } from "./SSRDataContext";
 import "@/legacy-styles.css";
 
+// Kick off the Home chunk download at module-eval time (parallel with
+// LegacyApp's own mount). Without this the waterfall is:
+//   LegacyApp chunk → LegacyApp mount → RouterProvider matches "/" →
+//   THEN fetch @/pages/Home chunk → parse → first render.
+// That waterfall was the ~2.5 s LegacyApp→HomePage gap in perf logs.
+// Firing the import here overlaps the Home chunk fetch with LegacyApp
+// rendering, so by the time the router matches "/" the module is ready.
+if (typeof window !== "undefined" && window.location.pathname === "/") {
+  void import("@/pages/Home");
+}
+
 let browserRouter: ReturnType<typeof createLegacyRouter> | null = null;
 
 export function primeLegacyRouter() {
