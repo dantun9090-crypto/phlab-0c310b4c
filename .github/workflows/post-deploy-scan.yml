@@ -50,7 +50,7 @@ jobs:
       # just shipped to phlabs.co.uk) to this workflow's GitHub OIDC
       # identity, with a Rekor transparency-log entry as proof.
       - name: Install cosign
-        uses: sigstore/cosign-installer@v3
+        uses: sigstore/cosign-installer@v4.1.2
         with:
           cosign-release: v3.1.1
 

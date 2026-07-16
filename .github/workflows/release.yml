@@ -65,7 +65,7 @@ jobs:
         run: bun run sbom:validate dist/sbom.cdx.json
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@v3
+        uses: sigstore/cosign-installer@v4.1.2
         with:
           cosign-release: v3.1.1
 
@@ -200,7 +200,7 @@ jobs:
           bun-version: "1.2.21"
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@v3
+        uses: sigstore/cosign-installer@v4.1.2
         with:
           cosign-release: v3.1.1
 
