@@ -148,6 +148,30 @@ const CATEGORY_MAP: Record<string, { label: string; color: string }> = {
   'pt-141': { label: 'Melanocortin', color: '#ec4899' },
 };
 
+/**
+ * Primary hero CTA — magnetic hover on pointer:fine devices, no-op on
+ * touch or reduced-motion. Isolated so the hook attaches to a stable
+ * ref without touching the surrounding layout.
+ */
+function MagneticBrowseCTA() {
+  const ref = useMagneticHover<HTMLAnchorElement>(0.22);
+  return (
+    <Link
+      ref={ref}
+      to="/products"
+      aria-label="Browse Catalogue"
+      className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl font-bold text-sm text-white"
+      style={{
+        background: 'linear-gradient(135deg, #0ea572 0%, #10b981 50%, #06b6d4 100%)',
+        boxShadow: '0 12px 32px -12px rgba(16,185,129,0.55)',
+      }}
+    >
+      Browse Catalogue
+      <ArrowRight className="w-4 h-4" />
+    </Link>
+  );
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
