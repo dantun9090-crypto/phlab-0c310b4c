@@ -377,6 +377,22 @@ async function buildHashCspResponse(body, status, statusText) {
   return new Response(body, { status, statusText, headers });
 }
 
+// Browser variant: adds 'self' to script-src{,-elem} so the /assets entry
+// module <script src> is executable; hashes cover the inline watchdog +
+// build-killer; strict-dynamic covers dynamically imported chunks.
+async function buildHashCspResponseBrowserSelf(body, status, statusText) {
+  const hashes = await extractScriptHashes(body);
+  const headers = new Headers();
+  headers.set("Content-Type", "text/html; charset=utf-8");
+  headers.set("Content-Security-Policy", await buildCspHeaderBrowserSelf(hashes));
+  headers.set("X-Frame-Options", "DENY");
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  headers.set("Permissions-Policy", "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()");
+  applyBrowserHtmlNoCache(headers);
+  return new Response(body, { status, statusText, headers });
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // MAIN HANDLER
 // ═══════════════════════════════════════════════════════════════════════════════
