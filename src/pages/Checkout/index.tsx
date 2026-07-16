@@ -143,6 +143,7 @@ export default function CheckoutPage() {
   const [wallidEnabled, setWallidEnabled] = useState<boolean>(false);
   const [, setSummaryExpanded] = useState(false);
   const [paymentRecoveryVisible, setPaymentRecoveryVisible] = useState(false);
+  const [pendingPaymentUrl, setPendingPaymentUrl] = useState<string | null>(null);
   const stepRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const paymentAttemptRef = useRef(0);
   const paymentAbortRef = useRef<AbortController | null>(null);
@@ -165,6 +166,7 @@ export default function CheckoutPage() {
     if (typeof window === 'undefined') return;
     clearPaymentTimers();
     setPaymentRecoveryVisible(false);
+    setPendingPaymentUrl(null);
     paymentRecoveryTimerRef.current = window.setTimeout(() => {
       if (paymentAttemptRef.current === attemptId) setPaymentRecoveryVisible(true);
     }, 8000);
@@ -175,6 +177,7 @@ export default function CheckoutPage() {
       paymentAbortRef.current = null;
       clearPaymentTimers();
       setPaymentRecoveryVisible(false);
+      setPendingPaymentUrl(null);
       setFenaStep('failed');
       setIsPlacing(false);
       setLoginError('Payment did not open. Please check your connection and try again. No payment has been taken.');
@@ -187,6 +190,7 @@ export default function CheckoutPage() {
     paymentAbortRef.current = null;
     clearPaymentTimers();
     setPaymentRecoveryVisible(false);
+    setPendingPaymentUrl(null);
     setFenaStep('failed');
     setIsPlacing(false);
     setLoginError(message);
@@ -204,6 +208,7 @@ export default function CheckoutPage() {
       paymentAbortRef.current = null;
       clearPaymentTimers();
       setPaymentRecoveryVisible(false);
+      setPendingPaymentUrl(null);
       setIsPlacing(false);
       setFenaStep('idle');
       setLoginError('');
@@ -803,7 +808,9 @@ export default function CheckoutPage() {
         return 'Price validation failed. Retrying…';
       case 'price_mismatch': return 'Cart price has changed. Please review.';
       case 'validation_errors': return 'Please fix the errors above';
-      case 'submitting': return 'Payment in progress…';
+      case 'submitting': return pendingPaymentUrl
+        ? 'Payment page ready — tap Open payment if it did not open.'
+        : 'Opening payment page…';
       default: return null;
     }
   })();
@@ -1097,11 +1104,10 @@ export default function CheckoutPage() {
             url: parsed.toString(),
             timestamp: Date.now(),
           });
-          // Use replace() so /checkout is dropped from history — pressing
-          // browser back on Wallid's multi-step page won't strand the user
-          // on a one-time-use Wallid URL that 404s. They'll go straight back
-          // to whatever preceded checkout (cart/product page).
-          setTimeout(() => { window.location.replace(parsed.toString()); }, 250);
+          const paymentUrl = parsed.toString();
+          setPendingPaymentUrl(paymentUrl);
+          setPaymentRecoveryVisible(true);
+          window.location.assign(paymentUrl);
           return;
         } catch (err: any) {
           if (paymentAttemptRef.current !== paymentAttemptId) return;
@@ -1158,9 +1164,10 @@ export default function CheckoutPage() {
           // after the bank confirms payment. If the user cancels/aborts
           // the redirect, the cart stays intact and they can retry.
           try { localStorage.setItem('php_pending_order', orderId); } catch { /* ignore */ }
-          // See wallid branch above: replace() prevents back-nav to
-          // stale one-time gateway URLs (Fena/TrueLayer 404 on revisit).
-          setTimeout(() => { window.location.replace(parsed.toString()); }, 250);
+          const paymentUrl = parsed.toString();
+          setPendingPaymentUrl(paymentUrl);
+          setPaymentRecoveryVisible(true);
+          window.location.assign(paymentUrl);
           return;
         } catch (err: any) {
           if (paymentAttemptRef.current !== paymentAttemptId) return;
@@ -2070,7 +2077,7 @@ export default function CheckoutPage() {
                         </>
                       )}
                     </button>
-                    {disabledReasonMessage && (
+                    {disabledReasonMessage && !isPlacing && (
                       <p
                         data-testid="checkout-disabled-reason"
                         className="text-red-400 text-[14px] mt-2"
@@ -2078,16 +2085,38 @@ export default function CheckoutPage() {
                         Cannot proceed: {disabledReasonMessage}
                       </p>
                     )}
-                    {isPlacing && paymentRecoveryVisible && (
+                    {isPlacing && disabledReasonMessage && (
+                      <p
+                        data-testid="checkout-disabled-reason"
+                        className="text-yellow-200 text-[14px] mt-2"
+                      >
+                        {disabledReasonMessage}
+                      </p>
+                    )}
+                    {isPlacing && (
                       <div className="mt-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-100">
-                        <p className="mb-3">Still waiting for the payment window. If nothing opened, cancel and try again.</p>
-                        <button
-                          type="button"
-                          onClick={() => cancelPaymentAttempt('Payment attempt cancelled. Please try again. No payment has been taken.')}
-                          className="min-h-[44px] rounded-lg border border-yellow-400/50 px-4 py-2 text-sm font-semibold text-yellow-50 hover:bg-yellow-400/10"
-                        >
-                          Cancel payment attempt
-                        </button>
+                        <p className="mb-3">
+                          {pendingPaymentUrl
+                            ? 'Payment page is ready. If your browser did not open it, tap Open payment.'
+                            : 'Still waiting for the payment window. If nothing opened, cancel and try again.'}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {pendingPaymentUrl && (
+                            <a
+                              href={pendingPaymentUrl}
+                              className="min-h-[44px] rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                            >
+                              Open payment
+                            </a>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => cancelPaymentAttempt('Payment attempt cancelled. Please try again. No payment has been taken.')}
+                            className="min-h-[44px] rounded-lg border border-yellow-400/50 px-4 py-2 text-sm font-semibold text-yellow-50 hover:bg-yellow-400/10"
+                          >
+                            Cancel payment attempt
+                          </button>
+                        </div>
                       </div>
                     )}
 
