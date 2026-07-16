@@ -769,6 +769,15 @@ export default function CheckoutPage() {
     }
   };
 
+  const handlePayButtonActivate = () => {
+    if (isPlacing) return;
+    if (payDisabled) {
+      handleDisabledPayClick();
+      return;
+    }
+    void handleSubmit();
+  };
+
   const handleSubmit = async () => {
     // Pay click telemetry — fires for EVERY click, including disabled/blocked
     // ones (button onClick still runs on some flows). Non-blocking.
@@ -1947,14 +1956,16 @@ export default function CheckoutPage() {
                     <button
                       id="checkout-pay-button"
                       data-testid="checkout-pay-button"
-                      onClick={() => {
-                        if (payDisabled) {
+                      type="button"
+                      onClick={handlePayButtonActivate}
+                      onTouchStart={(event) => {
+                        if (payDisabled && !isPlacing) {
+                          event.preventDefault();
                           handleDisabledPayClick();
-                          return;
                         }
-                        void handleSubmit();
                       }}
-                      disabled={payDisabled}
+                      disabled={isPlacing}
+                      aria-disabled={payDisabled}
                       style={payDisabled ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
                       className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2"
                     >
