@@ -582,51 +582,51 @@ export default {
       out.headers.delete("Last-Modified");
     }
 
-    // Populate the edge HTML cache on successful HTML pass-through. Tee the
-    // body: one stream to the browser, one buffered into caches.default.
+    // Populate the edge HTML cache on successful HTML pass-through. Buffer
+    // the body ONCE (origin sends chunked transfer-encoding, no
+    // Content-Length header), then serve from the buffer AND cache from the
+    // same buffer. Avoids any tee/waitUntil race that silently dropped
+    // cache.put and made every request an edge-html-miss.
     // Skip if origin sent Set-Cookie (per-user response) — must never share.
     const ctype = out.headers.get("Content-Type") || "";
     const hasSetCookie = out.headers.has("set-cookie") || out.headers.has("Set-Cookie");
     if (wEligible && out.status === 200 && ctype.includes("text/html") && out.body && !hasSetCookie) {
-      const [a, b] = out.body.tee();
-      // Snapshot response headers so cache hits replay the exact CSP (with
-      // its original per-request nonce), build id, and content-type. Filter
-      // hop-by-hop / connection headers that mustn't be replayed. CRITICAL:
-      // Cache API refuses no-store responses — override to a private
-      // public,max-age header that only the Cache API sees (the wire keeps
-      // no-store via applyBrowserHtmlNoCache on every hit + miss).
-      const snapshotHeaders = new Headers();
-      out.headers.forEach((value, name) => {
-        const n = name.toLowerCase();
-        if (n === "set-cookie" || n === "connection" || n === "keep-alive" ||
-            n === "transfer-encoding" || n === "cf-ray" || n === "cf-request-id" ||
-            n === "server-timing" || n === "x-phl-via" || n === "age" ||
-            n === "date" || n === "cache-control" || n === "cdn-cache-control" ||
-            n === "cloudflare-cdn-cache-control" || n === "surrogate-control" ||
-            n === "pragma" || n === "expires") return;
-        snapshotHeaders.set(name, value);
-      });
-      snapshotHeaders.set("Cache-Control", "public, max-age=" + HTML_EDGE_TTL_S);
-      const cacheKey = edgeHtmlCacheKey(url);
-      ctx.waitUntil((async () => {
-        try {
-          const buf = await new Response(b).arrayBuffer();
-          // STORE GUARD: never cache empty/truncated bodies. Real HTML
-          // shells are 50KB+; anything under 10KB is a deploy-race artifact
-          // (0-byte origin, error page). Storing one would replay a blank
-          // homepage to every visitor until manual purge.
-          if (buf.byteLength < 10000) return;
-          const snapshot = new Response(buf, {
-            status: out.status,
-            statusText: out.statusText,
-            headers: snapshotHeaders,
-          });
-          await cache.put(cacheKey, snapshot);
-        } catch (e) {
+      const buf = await out.clone().arrayBuffer();
+      // STORE GUARD: measure ACTUAL body bytes (not Content-Length, which
+      // is absent on chunked HTML). Real shells are 50KB+; <10KB is a
+      // deploy-race artifact (0-byte origin, error page) that would replay
+      // a blank homepage to every visitor until manual purge.
+      if (buf.byteLength >= 10000) {
+        // Snapshot response headers so cache hits replay the exact CSP
+        // (with its original per-request nonce), build id, and
+        // content-type. Filter hop-by-hop / connection headers that
+        // mustn't be replayed. CRITICAL: Cache API refuses no-store
+        // responses — override to a private public,max-age header that
+        // only the Cache API sees (the wire keeps no-store via
+        // applyBrowserHtmlNoCache on every hit + miss).
+        const snapshotHeaders = new Headers();
+        out.headers.forEach((value, name) => {
+          const n = name.toLowerCase();
+          if (n === "set-cookie" || n === "connection" || n === "keep-alive" ||
+              n === "transfer-encoding" || n === "cf-ray" || n === "cf-request-id" ||
+              n === "server-timing" || n === "x-phl-via" || n === "age" ||
+              n === "date" || n === "cache-control" || n === "cdn-cache-control" ||
+              n === "cloudflare-cdn-cache-control" || n === "surrogate-control" ||
+              n === "pragma" || n === "expires" || n === "content-length") return;
+          snapshotHeaders.set(name, value);
+        });
+        snapshotHeaders.set("Cache-Control", "public, max-age=" + HTML_EDGE_TTL_S);
+        const cacheKey = edgeHtmlCacheKey(url);
+        const snapshot = new Response(buf, {
+          status: out.status,
+          statusText: out.statusText,
+          headers: snapshotHeaders,
+        });
+        ctx.waitUntil(cache.put(cacheKey, snapshot).catch((e) => {
           console.warn("[PHL Worker] edge HTML cache populate failed: " + (e && e.message));
-        }
-      })());
-      return new Response(a, { status: out.status, statusText: out.statusText, headers: out.headers });
+        }));
+      }
+      return new Response(buf, { status: out.status, statusText: out.statusText, headers: out.headers });
     }
     return out;
   },
