@@ -33,6 +33,7 @@ function CheckoutCancelPage() {
     // cancel their own pending order.
     (async () => {
       try {
+        const { auth } = await import("@/lib/firebase");
         const idToken = auth.currentUser
           ? await auth.currentUser.getIdToken().catch(() => null)
           : null;
