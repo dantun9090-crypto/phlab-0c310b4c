@@ -910,6 +910,11 @@ export default function CheckoutPage() {
     } catch { /* analytics never blocks payment */ }
 
     setIsPlacing(true);
+    const paymentAttemptId = paymentAttemptRef.current + 1;
+    paymentAttemptRef.current = paymentAttemptId;
+    paymentAbortRef.current?.abort();
+    paymentAbortRef.current = new AbortController();
+    startPaymentTimers(paymentAttemptId);
     setLoginError('');
     if (form.paymentMethod === 'pay_by_bank') {
       setFenaStep('creating-order');
@@ -924,6 +929,7 @@ export default function CheckoutPage() {
       if (form.createAccount && !firebaseUser) {
         try {
           const newUser = await registerUser(form.email, form.password, form.firstName, form.lastName);
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
           userId = newUser.user.uid;
         } catch (error: any) {
           if (error.code === 'auth/email-already-in-use') {
@@ -939,6 +945,7 @@ export default function CheckoutPage() {
       if (!userId) {
         try {
           const anon = await signInAnonymously(auth);
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
           userId = anon.user.uid;
         } catch {
           // Guest checkout — no auth needed, Firestore rules allow public create
@@ -996,6 +1003,7 @@ export default function CheckoutPage() {
             idToken,
           },
         });
+        if (paymentAttemptRef.current !== paymentAttemptId) return;
         logCheckoutEvent({
           stage: 'create_order_success',
           cartId: orderTelemetryCartId,
@@ -1003,6 +1011,7 @@ export default function CheckoutPage() {
           durationMs: Date.now() - orderStartedAt,
         });
       } catch (err: any) {
+        if (paymentAttemptRef.current !== paymentAttemptId) return;
         const msg = String(err?.message || '');
         logCheckoutEvent({
           stage: 'create_order_fail',
@@ -1048,6 +1057,7 @@ export default function CheckoutPage() {
           const res = await fetch('/api/payments/create', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
+            signal: paymentAbortRef.current?.signal,
             body: JSON.stringify({
               idToken: wallidIdToken,
               orderId,
@@ -1066,7 +1076,9 @@ export default function CheckoutPage() {
               })),
             }),
           });
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
           const data = await res.json().catch(() => ({} as any));
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
           if (!res.ok || !data.payment_link) {
             throw new Error(data?.error || 'Could not start Pay by Bank.');
           }
@@ -1092,6 +1104,7 @@ export default function CheckoutPage() {
           setTimeout(() => { window.location.replace(parsed.toString()); }, 250);
           return;
         } catch (err: any) {
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
           setFenaStep('failed');
           logCheckoutEvent({
             stage: 'gateway_error',
@@ -1116,12 +1129,15 @@ export default function CheckoutPage() {
           let current = auth.currentUser;
           if (!current) {
             const anon = await signInAnonymously(auth);
+            if (paymentAttemptRef.current !== paymentAttemptId) return;
             current = anon.user;
           }
           const idTokenForFena = await current.getIdToken();
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
           const { hppUrl, gateway, externalPaymentId } = await createGatewayPaymentLink({
             data: { orderId, idToken: idTokenForFena },
           });
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
           // Allowlist redirect hosts per gateway — defence-in-depth.
           let parsed: URL;
           try { parsed = new URL(hppUrl); } catch { throw new Error('Invalid payment redirect URL.'); }
@@ -1147,6 +1163,7 @@ export default function CheckoutPage() {
           setTimeout(() => { window.location.replace(parsed.toString()); }, 250);
           return;
         } catch (err: any) {
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
           setFenaStep('failed');
           setLoginError(err?.message || 'Could not start Pay by Bank. Please try again or use Manual Bank Transfer.');
           setIsPlacing(false);
@@ -1188,10 +1205,16 @@ export default function CheckoutPage() {
       setCart([]);
       setOrderPlaced(true);
     } catch (err: any) {
+      if (paymentAttemptRef.current !== paymentAttemptId) return;
       setLoginError('Failed to place order. Please try again.');
       console.error(err);
     } finally {
-      setIsPlacing(false);
+      if (paymentAttemptRef.current === paymentAttemptId) {
+        paymentAbortRef.current = null;
+        clearPaymentTimers();
+        setPaymentRecoveryVisible(false);
+        setIsPlacing(false);
+      }
     }
   };
 
