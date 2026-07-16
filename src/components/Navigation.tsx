@@ -331,12 +331,14 @@ export function Navigation({
                 <Shield className="w-4 h-4 opacity-60" />
                 <span className="text-[15px]">My Account</span>
               </Link>
-              <Link to="/admin" onClick={onMobileMenuToggle}
-                className="flex items-center gap-3 px-4 py-3.5 rounded-2xl font-semibold min-h-[52px]"
-                style={{ background: 'rgba(59,130,246,0.08)', color: '#93c5fd', border: '1px solid rgba(59,130,246,0.15)' }}>
-                <Crown className="w-4 h-4 opacity-60" />
-                <span className="text-[15px]">Admin Panel</span>
-              </Link>
+              {isAdmin && (
+                <Link to="/admin" onClick={onMobileMenuToggle}
+                  className="flex items-center gap-3 px-4 py-3.5 rounded-2xl font-semibold min-h-[52px]"
+                  style={{ background: 'rgba(59,130,246,0.08)', color: '#93c5fd', border: '1px solid rgba(59,130,246,0.15)' }}>
+                  <Crown className="w-4 h-4 opacity-60" />
+                  <span className="text-[15px]">Admin Panel</span>
+                </Link>
+              )}
             </>
           ) : (
             <Link to="/login" onClick={onMobileMenuToggle}
