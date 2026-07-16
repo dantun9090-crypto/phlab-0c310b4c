@@ -79,19 +79,13 @@ export const Route = createFileRoute("/")({
       { rel: "preconnect", href: "https://firestore.googleapis.com", crossOrigin: "" },
       { rel: "preconnect", href: "https://firebasestorage.googleapis.com", crossOrigin: "" },
       { rel: "dns-prefetch", href: "https://firebasestorage.googleapis.com" },
-      // LCP preload — banner image is the largest above-the-fold element.
-      // Same href/srcset/sizes as the rendered <img>, so the browser
-      // reuses the preloaded bytes instead of a second network request.
-      ...(bannerSrc
-        ? [{
-            rel: "preload",
-            as: "image",
-            href: bannerSrc,
-            imageSrcSet: bannerSrcSet,
-            imageSizes: BANNER_SIZES,
-            fetchPriority: "high",
-          } as unknown as { rel: string; as: string; href: string }]
-        : []),
+      // LCP preload removed 2026-07-16: the banner <img> already emits its
+      // own srcset request within the same tick, and the preload variant
+      // frequently didn't match the picked srcset candidate on non-1600px
+      // viewports — producing "preloaded but not used" warnings, especially
+      // when users SPA-navigated away from `/` before the browser could
+      // consume the preload. Home LCP stays well within budget without it.
+
     ],
 
 
