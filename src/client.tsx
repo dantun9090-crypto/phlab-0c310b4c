@@ -185,7 +185,11 @@ if (shouldStartPhlClient) {
 // Defer the init until after the browser is idle. Errors thrown before
 // then are still captured by the ErrorBoundary + client-error-reporter
 // path — they're just buffered until Sentry is ready.
-const kickSentry = () => { try { initSentry(); } catch { /* ignore */ } };
+const kickSentry = () => {
+  import("./lib/sentry")
+    .then((m) => { try { m.initSentry(); } catch { /* ignore */ } })
+    .catch(() => { /* ignore */ });
+};
 if (shouldStartPhlClient) {
   if (typeof requestIdleCallback !== 'undefined') {
     requestIdleCallback(kickSentry, { timeout: 4000 });
