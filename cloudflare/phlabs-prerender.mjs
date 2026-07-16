@@ -568,6 +568,13 @@ export default {
           const total = Date.now() - startTime;
           headers.set("X-PHL-Via", "edge-html-hit;bot=0;prerender=1;total=" + total + "ms");
           headers.set("Server-Timing", `edge-html;desc="HIT", origin;dur=0, worker;dur=${total}`);
+          // Restamp build-id headers on the wire so post-deploy health probes
+          // (which require both x-build-id and cf-cache-build-id) pass on HIT.
+          const hitBid = headers.get("x-phl-build-id") || headers.get("x-build-id") || "";
+          if (hitBid) {
+            headers.set("x-build-id", hitBid);
+            headers.set("cf-cache-build-id", hitBid);
+          }
           return new Response(buf, {
             status: cached.status,
             statusText: cached.statusText,
@@ -576,9 +583,14 @@ export default {
         }
       }
 
-      // MISS: fetch prerendered HTML and build a hash-CSP response.
+      // MISS: fetch prerendered HTML in parallel with a lightweight origin
+      // HEAD to capture x-build-id (Prerender.io does not carry it).
       const prerenderStart = Date.now();
       const prerenderUrl = PRERENDER_SERVICE + "/" + encodeURIComponent(url.toString());
+      const originHeadPromise = fetch(new Request(url.toString(), {
+        method: "HEAD",
+        headers: { "User-Agent": request.headers.get("User-Agent") || "" },
+      }), { cf: { cacheTtl: 0, cacheEverything: false } }).catch(() => null);
       let prerenderRes;
       try {
         prerenderRes = await fetch(prerenderUrl, {
@@ -592,6 +604,8 @@ export default {
         prerenderRes = null;
       }
       const prerenderMs = Date.now() - prerenderStart;
+      const originHeadRes = await originHeadPromise;
+      const buildId = (originHeadRes && (originHeadRes.headers.get("x-build-id") || originHeadRes.headers.get("x-phl-build-id"))) || "";
 
       if (prerenderRes && prerenderRes.ok) {
         const body = injectHeroImagePreload(stripHostingInjectedScriptsFromHtml(await prerenderRes.text()));
@@ -615,6 +629,11 @@ export default {
               snapshotHeaders.set(name, value);
             });
             snapshotHeaders.set("Cache-Control", "public, max-age=" + HTML_EDGE_TTL_S);
+            if (buildId) {
+              snapshotHeaders.set("x-build-id", buildId);
+              snapshotHeaders.set("x-phl-build-id", buildId);
+              snapshotHeaders.set("cf-cache-build-id", buildId);
+            }
             const cacheKey2 = edgeHtmlCacheKey(url);
             ctx.waitUntil(cache.put(cacheKey2, new Response(buf, {
               status: response.status,
@@ -626,6 +645,10 @@ export default {
           }
           const outHeaders = new Headers(response.headers);
           applyBrowserHtmlNoCache(outHeaders, path);
+          if (buildId) {
+            outHeaders.set("x-build-id", buildId);
+            outHeaders.set("cf-cache-build-id", buildId);
+          }
           const total = Date.now() - startTime;
           outHeaders.set("X-PHL-Via", "edge-html-miss;bot=0;prerender=OK;origin=" + prerenderMs + "ms;hash=" + hashMs + "ms;total=" + total + "ms");
           outHeaders.set("Server-Timing", `edge-html;desc="MISS", origin;dur=${prerenderMs}, csp-hash;dur=${hashMs}, worker;dur=${total}`);
