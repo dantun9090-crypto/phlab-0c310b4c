@@ -39,6 +39,9 @@ jobs:
 
       - name: Build (runs prebuild guards + postbuild dist scan)
         run: bun run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
 
       - name: Post-build guard — scan dist/ + e2e/ for forbidden literals
         run: bun scripts/check-dist-domains.ts
