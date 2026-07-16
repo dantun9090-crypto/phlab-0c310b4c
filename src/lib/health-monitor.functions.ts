@@ -186,6 +186,36 @@ export async function runHealthProbe(): Promise<HealthProbeResult> {
   };
 }
 
+// Scoped auto-purge for health-check triggers. NEVER purge_everything —
+// hashed /assets/* are immutable and must survive every deploy, otherwise
+// users with an already-open page 404 on the next chunk load.
+async function collectScopedHealthPurgeUrls(): Promise<string[]> {
+  const ORIGIN_URL = 'https://phlabs.co.uk';
+  const feeds = [
+    `${ORIGIN_URL}/google-merchant-feed.xml`,
+    `${ORIGIN_URL}/google-merchant-feed-free.xml`,
+  ];
+  const fallback = [`${ORIGIN_URL}/`, `${ORIGIN_URL}/products`];
+  const hostRe = /^https:\/\/(www\.)?phlabs\.co\.uk\//;
+  let htmlUrls: string[] = [];
+  try {
+    const res = await fetch(`${ORIGIN_URL}/sitemap.xml`, {
+      headers: { Accept: 'application/xml' },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (res.ok) {
+      const xml = await res.text();
+      htmlUrls = Array.from(new Set(
+        Array.from(xml.matchAll(/<loc>([^<]+)<\/loc>/g))
+          .map((m) => m[1].trim())
+          .filter((u) => hostRe.test(u))
+          .filter((u) => !/\.(xml|txt|json|js|css|png|jpg|jpeg|webp|avif|svg|ico|woff2?|pdf)$/i.test(u)),
+      )).slice(0, 30 - feeds.length - fallback.length);
+    }
+  } catch { /* ignore */ }
+  return Array.from(new Set([...htmlUrls, ...fallback, ...feeds])).slice(0, 30);
+}
+
 export async function purgeCloudflareEverything(): Promise<{
   ok: boolean;
   status: number;
@@ -194,6 +224,7 @@ export async function purgeCloudflareEverything(): Promise<{
   const token = process.env.CLOUDFLARE_API_TOKEN;
   if (!token) return { ok: false, status: 0, detail: 'CLOUDFLARE_API_TOKEN missing' };
   try {
+    const files = await collectScopedHealthPurgeUrls();
     const res = await fetch(
       `https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache`,
       {
@@ -202,7 +233,9 @@ export async function purgeCloudflareEverything(): Promise<{
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ purge_everything: true }),
+        // Scoped purge — NEVER purge_everything. Hashed /assets/* are
+        // content-hashed + immutable and must survive every purge.
+        body: JSON.stringify({ files }),
         signal: AbortSignal.timeout(15_000),
       },
     );
