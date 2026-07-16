@@ -27,6 +27,10 @@ const SITEMAP_SRC = readFileSync(
   resolve(process.cwd(), "src/routes/sitemap[.]xml.ts"),
   "utf8",
 );
+const SITEMAP_ENTRIES_SRC = readFileSync(
+  resolve(process.cwd(), "src/lib/sitemap-entries.ts"),
+  "utf8",
+);
 const ROBOTS_TXT = readFileSync(
   resolve(process.cwd(), "src/assets/robots.txt"),
   "utf8",
