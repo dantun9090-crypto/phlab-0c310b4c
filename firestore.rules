@@ -543,7 +543,14 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    match /checkoutTelemetry/{doc} {
+      allow create: if true;  // anonymous users can create telemetry logs
+      allow read: if false;   // no one reads directly — only admin via console
+      allow update, delete: if false;
+    }
+
     // ---------- default deny ----------
+
     match /{document=**} {
       allow read, write: if false;
     }
