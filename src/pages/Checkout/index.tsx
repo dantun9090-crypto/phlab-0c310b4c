@@ -1075,6 +1075,10 @@ export default function CheckoutPage() {
           if (!wallidIdToken && !paymentToken) {
             throw new Error('Could not secure your payment session. Please refresh and try again.');
           }
+          const firstImage = cart.find(item => typeof (item as any).image === 'string' && (item as any).image.startsWith('https://')) as any;
+          const publicOrigin = typeof window !== 'undefined' && window.location.protocol === 'https:'
+            ? window.location.origin
+            : null;
           const res = await fetch('/api/payments/create', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
@@ -1086,15 +1090,16 @@ export default function CheckoutPage() {
               amount: Number(totalAmount),
               currency: 'GBP',
               customerEmail: form.email,
-              items: cart.map(item => ({
-                name: item.name,
+              // Wallid validates the payment total against the item total.
+              // Send one order-summary line at the server-confirmed total so
+              // shipping/discounts cannot make the gateway reject checkout.
+              items: [{
+                name: `PH Labs Order ${orderId}`,
                 category: 'Research Peptides',
-                price: Number(item.priceNum),
-                image_url: (item as any).image || undefined,
-                product_url: typeof window !== 'undefined'
-                  ? `${window.location.origin}/products/${(item as any).slug || item.id}`
-                  : undefined,
-              })),
+                price: Number(totalAmount),
+                image_url: firstImage?.image || undefined,
+                product_url: publicOrigin || undefined,
+              }],
             }),
           });
           if (paymentAttemptRef.current !== paymentAttemptId) return;
