@@ -3,8 +3,8 @@
 // Bot/prerender branch: UA sniff -> Prerender.io -> hash-CSP -> cache separately.
 // TTFB: ~50-80ms cache HIT (browser), ~75ms (prerender).
 //
-// Deploy version: 2026-07-14.01 — bypass browser HTML edge cache completely;
-// cached home shells were masking fresh publishes.
+// Deploy version: 2026-07-16.01 — browser prerender re-injects origin
+// shell boot (entry <script>, modulepreloads, watchdog); CSP adds 'self'.
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ORIGIN & ROUTING
@@ -149,6 +149,67 @@ async function buildCspHeader(hashes) {
   const scriptSrc = "script-src " + hashList + " 'strict-dynamic' 'unsafe-eval'";
   const scriptSrcElem = "script-src-elem " + hashList + " 'strict-dynamic'";
   return CSP_BASE + "; " + scriptSrc + "; " + scriptSrcElem;
+}
+
+// Browser prerender CSP: adds 'self' so the /assets entry <script src> is
+// allowed (older browsers use 'self'; strict-dynamic covers its imports;
+// inline hashes cover watchdog/build-killer). Inline hash tokens include
+// their own single-quotes.
+async function buildCspHeaderBrowserSelf(hashes) {
+  const hashList = hashes.join(" ");
+  const scriptSrc = "script-src 'self' " + hashList + " 'strict-dynamic' 'unsafe-eval'";
+  const scriptSrcElem = "script-src-elem 'self' " + hashList + " 'strict-dynamic'";
+  return CSP_BASE + "; " + scriptSrc + "; " + scriptSrcElem;
+}
+
+// Extract the executable boot payload from the LIVE origin shell so we can
+// re-inject it into the prerender.io snapshot (which strips executable
+// scripts, leaving only application/ld+json). Returns:
+//   - entry: the <script type="module" src="/assets/index-<hash>.js"> tag
+//   - preloads: <link rel="modulepreload"> for index + vendor-react ONLY
+//   - inlineScripts: every inline (no-src) <script> block verbatim — that's
+//     the watchdog + build-killer origin emits in the shell head/body.
+function extractOriginShellBoot(originHtml) {
+  const inlineScripts = [];
+  const inlineRe = /<script(?![^>]*\bsrc=)[^>]*>[\s\S]*?<\/script>/gi;
+  let m;
+  while ((m = inlineRe.exec(originHtml)) !== null) {
+    // Skip application/ld+json and application/json (data blobs, not code).
+    if (/type=["'](?:application\/ld\+json|application\/json|importmap)["']/i.test(m[0])) continue;
+    inlineScripts.push(m[0]);
+  }
+  const entryMatch = originHtml.match(
+    /<script\b[^>]*\btype=["']module["'][^>]*\bsrc=["']\/assets\/index-[^"']+["'][^>]*><\/script>/i,
+  );
+  const entry = entryMatch ? entryMatch[0] : "";
+  const preloads = [];
+  const preloadRe = /<link\b[^>]*\brel=["']modulepreload["'][^>]*>/gi;
+  let pm;
+  while ((pm = preloadRe.exec(originHtml)) !== null) {
+    const tag = pm[0];
+    if (/\bhref=["']\/assets\/(?:index|vendor-react)-[^"']+["']/i.test(tag)) {
+      preloads.push(tag);
+    }
+  }
+  return { entry, preloads, inlineScripts };
+}
+
+function injectOriginShellBoot(prerenderHtml, boot) {
+  if (!boot) return prerenderHtml;
+  const injection = boot.preloads.join("") + boot.inlineScripts.join("") + boot.entry;
+  if (!injection) return prerenderHtml;
+  if (/<\/head>/i.test(prerenderHtml)) {
+    return prerenderHtml.replace(/<\/head>/i, injection + "</head>");
+  }
+  if (/<body\b[^>]*>/i.test(prerenderHtml)) {
+    return prerenderHtml.replace(/<body\b[^>]*>/i, (m) => m + injection);
+  }
+  return prerenderHtml + injection;
+}
+
+function edgeHtmlCacheKeyWithBuild(url, buildId) {
+  const bidPart = buildId ? "?__bid=" + encodeURIComponent(buildId) : "";
+  return new Request(url.origin + url.pathname + bidPart, { method: "GET" });
 }
 
 function stripHostingInjectedScriptsFromHtml(html) {
@@ -308,6 +369,22 @@ async function buildHashCspResponse(body, status, statusText) {
   const headers = new Headers();
   headers.set("Content-Type", "text/html; charset=utf-8");
   headers.set("Content-Security-Policy", await buildCspHeader(hashes));
+  headers.set("X-Frame-Options", "DENY");
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  headers.set("Permissions-Policy", "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()");
+  applyBrowserHtmlNoCache(headers);
+  return new Response(body, { status, statusText, headers });
+}
+
+// Browser variant: adds 'self' to script-src{,-elem} so the /assets entry
+// module <script src> is executable; hashes cover the inline watchdog +
+// build-killer; strict-dynamic covers dynamically imported chunks.
+async function buildHashCspResponseBrowserSelf(body, status, statusText) {
+  const hashes = await extractScriptHashes(body);
+  const headers = new Headers();
+  headers.set("Content-Type", "text/html; charset=utf-8");
+  headers.set("Content-Security-Policy", await buildCspHeaderBrowserSelf(hashes));
   headers.set("X-Frame-Options", "DENY");
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -541,19 +618,45 @@ export default {
     }
 
     // ── 3. BROWSER branch: Cache API-backed HTML edge cache ──────────────────
-    // For public cache-eligible routes we now serve the SAME fully-rendered
-    // HTML the bot branch produces (Prerender.io → hash-CSP) to humans too.
-    // This fixes mobile LCP: origin ships a hydration-only shell whose only
-    // <h1> is a watchdog, so the real hero paints ~4s after TTFB. Prerender
-    // returns the fully-hydrated static HTML with the real hero text in the
-    // raw body.
+    // For public cache-eligible routes we serve the fully-rendered prerender
+    // snapshot to humans, but re-inject the LIVE origin shell's executable
+    // boot (entry module <script>, index+vendor-react modulepreloads, and
+    // the inline watchdog/build-killer). Prerender.io strips executable
+    // scripts; without re-injection React never boots and the site is dead.
+    //
+    // Cache key is scoped by origin's current x-build-id — a deploy issues
+    // a new build id and immediately invalidates every stale prerender
+    // entry, so we can never replay a shell pointing at deleted /assets
+    // chunks.
     //
     // Non-eligible browser paths (admin, auth, cart, checkout, /api/…) keep
     // the original origin+per-request-nonce pass-through path below.
     const cache = caches.default;
     let wEligible = warmCacheEligible(path);
     if (wEligible) {
-      const cacheKey = edgeHtmlCacheKey(url);
+      // Fetch a fresh origin GET up-front. We need it either way:
+      //   - build id → cache key scope + wire headers
+      //   - shell boot payload → re-inject into prerender snapshot on MISS
+      // Bypass CF cache so a stale shell can't poison the build id.
+      const originStart = Date.now();
+      const originShellPromise = fetch(new Request(url.toString(), {
+        method: "GET",
+        headers: {
+          "User-Agent": request.headers.get("User-Agent") || "",
+          "Accept": "text/html,application/xhtml+xml",
+        },
+      }), { cf: { cacheTtl: 0, cacheEverything: false } }).catch((e) => {
+        console.warn("[PHL-WARN] origin shell fetch threw: " + (e && e.message));
+        return null;
+      });
+      const originShellRes = await originShellPromise;
+      const originShellMs = Date.now() - originStart;
+      const buildId = (originShellRes && (
+        originShellRes.headers.get("x-build-id") ||
+        originShellRes.headers.get("x-phl-build-id")
+      )) || "";
+
+      const cacheKey = edgeHtmlCacheKeyWithBuild(url, buildId);
       const cached = await cache.match(cacheKey);
       if (cached) {
         // READ SELF-HEAL: buffer cached body and verify it is a real HTML
@@ -570,7 +673,7 @@ export default {
           headers.set("Server-Timing", `edge-html;desc="HIT", origin;dur=0, worker;dur=${total}`);
           // Restamp build-id headers on the wire so post-deploy health probes
           // (which require both x-build-id and cf-cache-build-id) pass on HIT.
-          const hitBid = headers.get("x-phl-build-id") || headers.get("x-build-id") || "";
+          const hitBid = buildId || headers.get("x-phl-build-id") || headers.get("x-build-id") || "";
           if (hitBid) {
             headers.set("x-build-id", hitBid);
             headers.set("cf-cache-build-id", hitBid);
@@ -583,14 +686,9 @@ export default {
         }
       }
 
-      // MISS: fetch prerendered HTML in parallel with a lightweight origin
-      // HEAD to capture x-build-id (Prerender.io does not carry it).
+      // MISS: fetch prerender.io. Origin GET already ran (originShellRes).
       const prerenderStart = Date.now();
       const prerenderUrl = PRERENDER_SERVICE + "/" + encodeURIComponent(url.toString());
-      const originHeadPromise = fetch(new Request(url.toString(), {
-        method: "HEAD",
-        headers: { "User-Agent": request.headers.get("User-Agent") || "" },
-      }), { cf: { cacheTtl: 0, cacheEverything: false } }).catch(() => null);
       let prerenderRes;
       try {
         prerenderRes = await fetch(prerenderUrl, {
@@ -604,16 +702,28 @@ export default {
         prerenderRes = null;
       }
       const prerenderMs = Date.now() - prerenderStart;
-      const originHeadRes = await originHeadPromise;
-      const buildId = (originHeadRes && (originHeadRes.headers.get("x-build-id") || originHeadRes.headers.get("x-phl-build-id"))) || "";
 
-      if (prerenderRes && prerenderRes.ok) {
-        const body = injectHeroImagePreload(stripHostingInjectedScriptsFromHtml(await prerenderRes.text()));
+      // Extract origin shell boot payload (entry <script>, modulepreloads,
+      // inline watchdog/build-killer). Required to make prerender executable.
+      let boot = null;
+      if (originShellRes && originShellRes.ok) {
+        try {
+          const originHtml = await originShellRes.clone().text();
+          boot = extractOriginShellBoot(originHtml);
+        } catch (e) {
+          console.warn("[PHL-WARN] origin shell parse threw: " + (e && e.message));
+        }
+      }
+
+      if (prerenderRes && prerenderRes.ok && boot && boot.entry) {
+        const raw = await prerenderRes.text();
+        const withBoot = injectOriginShellBoot(raw, boot);
+        const body = injectHeroImagePreload(stripHostingInjectedScriptsFromHtml(withBoot));
         if (body.includes("__CSP_NONCE__")) {
           console.error("[PHL-CRIT] Prerendered HTML contains __CSP_NONCE__ — falling back to origin");
         } else {
           const hashStart = Date.now();
-          const response = await buildHashCspResponse(body, prerenderRes.status, prerenderRes.statusText);
+          const response = await buildHashCspResponseBrowserSelf(body, prerenderRes.status, prerenderRes.statusText);
           const hashMs = Date.now() - hashStart;
           const buf = await response.clone().arrayBuffer();
           if (buf.byteLength >= 10000) {
@@ -634,8 +744,7 @@ export default {
               snapshotHeaders.set("x-phl-build-id", buildId);
               snapshotHeaders.set("cf-cache-build-id", buildId);
             }
-            const cacheKey2 = edgeHtmlCacheKey(url);
-            ctx.waitUntil(cache.put(cacheKey2, new Response(buf, {
+            ctx.waitUntil(cache.put(cacheKey, new Response(buf, {
               status: response.status,
               statusText: response.statusText,
               headers: snapshotHeaders,
@@ -650,21 +759,48 @@ export default {
             outHeaders.set("cf-cache-build-id", buildId);
           }
           const total = Date.now() - startTime;
-          outHeaders.set("X-PHL-Via", "edge-html-miss;bot=0;prerender=OK;origin=" + prerenderMs + "ms;hash=" + hashMs + "ms;total=" + total + "ms");
-          outHeaders.set("Server-Timing", `edge-html;desc="MISS", origin;dur=${prerenderMs}, csp-hash;dur=${hashMs}, worker;dur=${total}`);
+          outHeaders.set(
+            "X-PHL-Via",
+            "edge-html-miss;bot=0;prerender=OK;origin=" + originShellMs +
+              "ms;prerender=" + prerenderMs + "ms;hash=" + hashMs +
+              "ms;total=" + total + "ms",
+          );
+          outHeaders.set(
+            "Server-Timing",
+            `edge-html;desc="MISS", origin;dur=${originShellMs}, prerender;dur=${prerenderMs}, csp-hash;dur=${hashMs}, worker;dur=${total}`,
+          );
           return new Response(buf, {
             status: response.status,
             statusText: response.statusText,
             headers: outHeaders,
           });
         }
-      } else if (prerenderRes) {
+      } else if (prerenderRes && !prerenderRes.ok) {
         console.warn("[PHL-WARN] Prerender.io returned " + prerenderRes.status + " for browser — falling back to origin");
+      } else if (!boot || !boot.entry) {
+        console.warn("[PHL-WARN] Origin shell missing entry <script> — falling back to origin passthrough");
       }
-      // fall through to origin path below — disable edge cache populate so
-      // an origin hydration shell never poisons the prerendered cache slot.
+      // Fallback: serve the origin shell we already fetched, unchanged.
+      // Never populate the prerender cache slot with a hydration-only shell.
       wEligible = false;
+      if (originShellRes && originShellRes.ok) {
+        const passRes = await buildBrowserResponse(originShellRes, path);
+        const out = new Response(passRes.body, {
+          status: passRes.status,
+          statusText: passRes.statusText,
+          headers: passRes.headers,
+        });
+        if (buildId) {
+          out.headers.set("x-build-id", buildId);
+          out.headers.set("cf-cache-build-id", buildId);
+        }
+        const total = Date.now() - startTime;
+        out.headers.set("X-PHL-Via", "edge-html-miss;bot=0;fallback=origin;origin=" + originShellMs + "ms;total=" + total + "ms");
+        out.headers.set("Server-Timing", `edge-html;desc="FALLBACK", origin;dur=${originShellMs}, worker;dur=${total}`);
+        return out;
+      }
     }
+
 
 
 
