@@ -3,8 +3,8 @@
 // Bot/prerender branch: UA sniff -> Prerender.io -> hash-CSP -> cache separately.
 // TTFB: ~50-80ms cache HIT (browser), ~75ms (prerender).
 //
-// Deploy version: 2026-07-14.01 — bypass browser HTML edge cache completely;
-// cached home shells were masking fresh publishes.
+// Deploy version: 2026-07-16.01 — browser prerender re-injects origin
+// shell boot (entry <script>, modulepreloads, watchdog); CSP adds 'self'.
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ORIGIN & ROUTING
