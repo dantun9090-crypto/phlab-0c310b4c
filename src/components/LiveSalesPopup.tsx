@@ -52,17 +52,35 @@ export default function LiveSalesPopup() {
 
   const isHomePage = pathname === '/' || pathname === '/index';
   const currentUid = auth.currentUser?.uid;
+  const [currentUidHash, setCurrentUidHash] = useState<string | null>(null);
+
+  // Compute the same short sha256 hash the server exposes, so we can hide
+  // the viewer's own orders without ever transmitting their raw UID.
+  useEffect(() => {
+    if (!currentUid || typeof window === 'undefined' || !window.crypto?.subtle) {
+      setCurrentUidHash(null);
+      return;
+    }
+    const data = new TextEncoder().encode(currentUid);
+    window.crypto.subtle.digest('SHA-256', data).then((buf) => {
+      const hex = Array.from(new Uint8Array(buf))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('')
+        .slice(0, 16);
+      setCurrentUidHash(hex);
+    }).catch(() => setCurrentUidHash(null));
+  }, [currentUid]);
 
   // Filter eligible orders (recent, not own). Refreshed live via sanitized API.
   const eligible = useMemo(() => {
     const cutoff = Date.now() - MAX_AGE_MS;
     const list = recentOrders.filter((o) => {
       const hasUsableTime = Number.isFinite(o.createdAtMs) && o.createdAtMs > 0;
-      return (!hasUsableTime || o.createdAtMs >= cutoff) && (!currentUid || o.userId !== currentUid);
+      return (!hasUsableTime || o.createdAtMs >= cutoff) && (!currentUidHash || o.userHash !== currentUidHash);
     });
     dlog('pool refresh — recentOrders:', recentOrders.length, 'eligible:', list.length, list);
     return list;
-  }, [recentOrders, currentUid]);
+  }, [recentOrders, currentUidHash]);
 
   // Keep ref in sync so the rotation interval always sees the freshest pool
   // without tearing down on every snapshot.
