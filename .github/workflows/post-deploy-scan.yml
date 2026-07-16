@@ -39,6 +39,8 @@ jobs:
         run: bun run build
         env:
           BUILD_ID: ${{ github.sha }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
 
       - name: Generate SBOM
         run: bun run sbom
