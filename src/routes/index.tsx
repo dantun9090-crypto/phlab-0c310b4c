@@ -53,11 +53,9 @@ export const Route = createFileRoute("/")({
   // Public content routes must SSR a non-empty body. Do not disable SSR
   // here or wrap the route in deferred loading with an empty fallback; that combination
   // caused staging to stick on the boot loader after publishes.
-  head: (ctx) => {
-    const banner = ctx.loaderData?.banner ?? null;
-    const bannerSrc = banner?.imageUrl ? cfImg(banner.imageUrl, { width: BANNER_FALLBACK_WIDTH, quality: BANNER_QUALITY }) : "";
-    const bannerSrcSet = banner?.imageUrl ? cfSrcSet(banner.imageUrl, BANNER_WIDTHS, { quality: BANNER_QUALITY }) : undefined;
+  head: () => {
     return {
+
     meta: [
       { title: HOME_TITLE },
       { name: "description", content: HOME_DESCRIPTION },
