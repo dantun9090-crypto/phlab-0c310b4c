@@ -243,8 +243,10 @@ test.describe('Checkout — Germany', () => {
 
     // Wait for the order-create call to be observed.
     await expect.poll(() => orderPayloads.length, { timeout: 10_000 }).toBeGreaterThan(0);
-    const payload = orderPayloads[0] as { data?: { customer?: Record<string, string> } };
-    const customer = payload?.data?.customer ?? (payload as any)?.customer;
+    // `orderPayloads[0]` is already the unwrapped createOrder input (see the
+    // route handler above), so `customer` lives at the top level.
+    const customer = (orderPayloads[0] as { customer?: Record<string, string> })?.customer;
+
     expect(customer?.country).toBe('Germany');
     expect(customer?.postcode).toBe('10115');
     expect(customer?.city).toBe('Berlin');
