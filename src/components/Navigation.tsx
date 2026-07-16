@@ -278,7 +278,7 @@ export function Navigation({
       </nav>
 
       {/* MOBILE DRAWER */}
-      <div className="fixed left-0 right-0 bottom-0 z-[10018] md:hidden transition-opacity duration-300"
+      <div className="fixed left-0 right-0 bottom-0 z-[2147483646] md:hidden transition-opacity duration-300"
         style={{
           top: mobileMenuTop,
           background: 'rgba(0,4,12,0.86)',
