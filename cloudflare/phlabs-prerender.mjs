@@ -470,33 +470,68 @@ export default {
       return withBrowserHtmlNoCache(response, path);
     }
 
-    // ── 3. BROWSER branch: pass-through (origin serves SSR + nonce CSP) ─────
-    // Note: origin at phlab.lovable.app 302-redirects back to phlabs.co.uk on
-    // direct fetches, so we cannot cache/rewrite here without a loop. Browsers
-    // keep using origin's per-request nonce CSP; hash-CSP applies to bots only.
+    // ── 2b. FEED branch: short edge cache for Google Merchant feeds ────────
+    // These render live on origin (~3s) and Google fetches them on a schedule.
+    // Serve from Cloudflare's colo cache with 15 min TTL + 1h SWR so botfetch
+    // is cheap on HIT. Post-deploy scoped purge evicts these URLs explicitly.
+    if (/^\/google-merchant-feed(-free)?\.xml$/.test(path)) {
+      const feedStart = Date.now();
+      const feedRes = await fetch(request, {
+        cf: { cacheTtl: 900, cacheEverything: true },
+      });
+      const feedMs = Date.now() - feedStart;
+      const headers = new Headers(feedRes.headers);
+      // Do NOT force no-store: origin still emits no-store on the route, but
+      // we override so the browser + CDN treat it as short-cacheable.
+      headers.set("Cache-Control", "public, max-age=300, must-revalidate");
+      headers.set("CDN-Cache-Control", "public, max-age=900, stale-while-revalidate=3600");
+      headers.set("Cloudflare-CDN-Cache-Control", "public, max-age=900, stale-while-revalidate=3600");
+      headers.delete("Surrogate-Control");
+      headers.delete("Pragma");
+      headers.delete("Expires");
+      headers.set("X-PHL-Via", "feed-edge;origin=" + feedMs + "ms;total=" + (Date.now() - startTime) + "ms");
+      return new Response(feedRes.body, {
+        status: feedRes.status,
+        statusText: feedRes.statusText,
+        headers,
+      });
+    }
+
+    // ── 3. BROWSER branch: Cache API-backed HTML edge cache ──────────────────
+    // Repeat visits get served from caches.default in ~50-150ms while the wire
+    // contract stays no-store (browsers + CDN tier still see no-store). The
+    // cached entry carries a private public,max-age=HTML_EDGE_TTL_S header
+    // that only the Cache API sees; applyBrowserHtmlNoCache() rewrites the
+    // response on every hit before it goes over the wire.
     //
-    // Worker-internal warm cache is disabled while publish freshness is the
-    // priority; stale isolate memory must not mask a fresh deploy.
-    const wKey = warmCacheKey(url);
+    // Cached CSP (per-request nonce in the header + matching nonce attrs in
+    // the body) is replayed as a consistent pair — do NOT re-nonce at edge.
+    const cache = caches.default;
     const wEligible = warmCacheEligible(path);
     if (wEligible) {
-      const warm = warmCacheGet(wKey);
-      if (warm) {
-        const headers = new Headers(warm.headers);
-        // Force no-store on the wire even from warm hits — the cache is
-        // isolate-internal only; browsers/CDN must still fetch fresh next time.
+      const cacheKey = edgeHtmlCacheKey(url);
+      const cached = await cache.match(cacheKey);
+      if (cached) {
+        const headers = new Headers(cached.headers);
+        // Cache API entry carried a private public,max-age header only for
+        // storage TTL. On the wire we serve no-store, just like the origin.
         applyBrowserHtmlNoCache(headers, path);
+        headers.delete("cf-cache-status"); // Cache API must not surface one
         const total = Date.now() - startTime;
-        headers.set("X-PHL-Via", "warm-hit;bot=0;total=" + total + "ms");
-        headers.set("Server-Timing", `warm-cache;desc="HIT", origin;dur=0, worker;dur=${total}`);
-        return new Response(warm.body, { status: 200, headers });
+        headers.set("X-PHL-Via", "edge-html-hit;bot=0;total=" + total + "ms");
+        headers.set("Server-Timing", `edge-html;desc="HIT", origin;dur=0, worker;dur=${total}`);
+        return new Response(cached.body, {
+          status: cached.status,
+          statusText: cached.statusText,
+          headers,
+        });
       }
     }
 
     const originStart = Date.now();
-    // Bypass CF's cache on every human HTML subrequest, including `/`, so a
-    // Cache Rule or inherited edge config cannot replay a stale shell pointing
-    // at deleted build chunks.
+    // Bypass CF's cache on the origin subrequest — we manage HTML caching via
+    // caches.default ourselves so a stray Cache Rule cannot replay a stale
+    // shell pointing at deleted build chunks.
     const originRes = await fetch(request, { cf: { cacheTtl: 0, cacheEverything: false } });
     const originMs = Date.now() - originStart;
     const passRes = await buildBrowserResponse(originRes, path);
@@ -505,8 +540,8 @@ export default {
       statusText: passRes.statusText,
       headers: passRes.headers,
     });
-    out.headers.set("X-PHL-Via", "passthrough;bot=0;warm=" + (wEligible ? "miss" : "skip") + ";origin=" + originMs + "ms;total=" + (Date.now() - startTime) + "ms");
-    out.headers.set("Server-Timing", `warm-cache;desc="${wEligible ? "MISS" : "SKIP"}", origin;dur=${originMs}, worker;dur=${Date.now() - startTime}`);
+    out.headers.set("X-PHL-Via", "edge-html-miss;bot=0;warm=" + (wEligible ? "miss" : "skip") + ";origin=" + originMs + "ms;total=" + (Date.now() - startTime) + "ms");
+    out.headers.set("Server-Timing", `edge-html;desc="${wEligible ? "MISS" : "SKIP"}", origin;dur=${originMs}, worker;dur=${Date.now() - startTime}`);
     // Strip cf-cache-status on non-home HTML shells: we bypass CF cache on the
     // origin subrequest for these paths and force no-store, so any residual
     // cf-cache-status inherited from the subrequest is misleading and would
@@ -538,31 +573,43 @@ export default {
       out.headers.delete("Last-Modified");
     }
 
-    // Populate the warm cache on successful HTML pass-through. We tee the
-    // body: one stream to the browser, one buffered into isolate memory.
+    // Populate the edge HTML cache on successful HTML pass-through. Tee the
+    // body: one stream to the browser, one buffered into caches.default.
     // Skip if origin sent Set-Cookie (per-user response) — must never share.
     const ctype = out.headers.get("Content-Type") || "";
     const hasSetCookie = out.headers.has("set-cookie") || out.headers.has("Set-Cookie");
     if (wEligible && out.status === 200 && ctype.includes("text/html") && out.body && !hasSetCookie) {
       const [a, b] = out.body.tee();
-      // Snapshot response headers so warm hits replay the exact CSP (with its
-      // original per-request nonce), build id, and content-type. Filter out
-      // hop-by-hop / connection headers that mustn't be replayed.
-      const snapshot = [];
+      // Snapshot response headers so cache hits replay the exact CSP (with
+      // its original per-request nonce), build id, and content-type. Filter
+      // hop-by-hop / connection headers that mustn't be replayed. CRITICAL:
+      // Cache API refuses no-store responses — override to a private
+      // public,max-age header that only the Cache API sees (the wire keeps
+      // no-store via applyBrowserHtmlNoCache on every hit + miss).
+      const snapshotHeaders = new Headers();
       out.headers.forEach((value, name) => {
         const n = name.toLowerCase();
         if (n === "set-cookie" || n === "connection" || n === "keep-alive" ||
             n === "transfer-encoding" || n === "cf-ray" || n === "cf-request-id" ||
             n === "server-timing" || n === "x-phl-via" || n === "age" ||
-            n === "date") return;
-        snapshot.push([name, value]);
+            n === "date" || n === "cache-control" || n === "cdn-cache-control" ||
+            n === "cloudflare-cdn-cache-control" || n === "surrogate-control" ||
+            n === "pragma" || n === "expires") return;
+        snapshotHeaders.set(name, value);
       });
+      snapshotHeaders.set("Cache-Control", "public, max-age=" + HTML_EDGE_TTL_S);
+      const cacheKey = edgeHtmlCacheKey(url);
       ctx.waitUntil((async () => {
         try {
           const buf = await new Response(b).arrayBuffer();
-          warmCacheSet(wKey, buf, snapshot);
+          const snapshot = new Response(buf, {
+            status: out.status,
+            statusText: out.statusText,
+            headers: snapshotHeaders,
+          });
+          await cache.put(cacheKey, snapshot);
         } catch (e) {
-          console.warn("[PHL Worker] warm cache populate failed: " + (e && e.message));
+          console.warn("[PHL Worker] edge HTML cache populate failed: " + (e && e.message));
         }
       })());
       return new Response(a, { status: out.status, statusText: out.statusText, headers: out.headers });
