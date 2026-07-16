@@ -891,7 +891,7 @@ export function Layout({ children }: LayoutProps) {
         className="flex-1"
         style={isAuthPage
           ? { paddingTop: 0 }
-          : { paddingTop: 'calc(var(--rg-banner-h, 34px) + 32px + 64px + var(--phl-disclaimer-h, 0px) + env(safe-area-inset-top))' }
+          : { paddingTop: 'calc(var(--rg-banner-h, 0px) + 36px + 64px + var(--phl-disclaimer-h, 0px) + env(safe-area-inset-top))' }
         }
       >
         {children}
