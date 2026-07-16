@@ -66,6 +66,38 @@ async function logPostPublishStep(
 }
 
 
+// Scoped-purge URL discovery. Mirrors src/lib/cache-admin.functions.ts
+// scope='html' (top HTML routes from sitemap, ≤30) and appends the Google
+// Merchant feeds. NEVER purge_everything — hashed /assets/* are immutable
+// and must survive every deploy, otherwise open sessions 404 on chunk load.
+async function collectScopedPurgeUrls(): Promise<string[]> {
+  const feeds = [
+    `${ORIGIN}/google-merchant-feed.xml`,
+    `${ORIGIN}/google-merchant-feed-free.xml`,
+  ];
+  const seenHosts = /^https:\/\/(www\.)?phlabs\.co\.uk\//;
+  let htmlUrls: string[] = [];
+  try {
+    const res = await fetch(`${ORIGIN}/sitemap.xml`, {
+      headers: { Accept: 'application/xml' },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (res.ok) {
+      const xml = await res.text();
+      htmlUrls = Array.from(new Set(
+        Array.from(xml.matchAll(/<loc>([^<]+)<\/loc>/g))
+          .map((m) => m[1].trim())
+          .filter((u) => seenHosts.test(u))
+          .filter((u) => !/\.(xml|txt|json|js|css|png|jpg|jpeg|webp|avif|svg|ico|woff2?|pdf)$/i.test(u)),
+      )).slice(0, 30 - feeds.length);
+    }
+  } catch { /* ignore */ }
+  // Always include the homepage and /products even if sitemap fetch failed.
+  const fallback = [`${ORIGIN}/`, `${ORIGIN}/products`];
+  const merged = Array.from(new Set([...htmlUrls, ...fallback, ...feeds]));
+  return merged.slice(0, 30);
+}
+
 async function purgeEverything(buildId: string): Promise<{ ok: boolean; status: number; body?: string; error?: string; durationMs: number }> {
   const started = Date.now();
   const token = process.env.CLOUDFLARE_API_TOKEN;
@@ -73,14 +105,17 @@ async function purgeEverything(buildId: string): Promise<{ ok: boolean; status: 
     await logPostPublishStep(buildId, 'cf.purge.skip', { error: 'CLOUDFLARE_API_TOKEN missing', durationMs: 0 });
     return { ok: false, status: 0, error: 'CLOUDFLARE_API_TOKEN missing', durationMs: 0 };
   }
-  await logPostPublishStep(buildId, 'cf.purge.start', { zoneId: CF_ZONE_ID });
+  const files = await collectScopedPurgeUrls();
+  await logPostPublishStep(buildId, 'cf.purge.start', { zoneId: CF_ZONE_ID, scope: 'html+feeds', fileCount: files.length });
   try {
     const res = await fetch(
       `https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache`,
       {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ purge_everything: true }),
+        // Scoped purge — NEVER purge_everything. Hashed /assets/* are
+        // immutable and must survive every deploy.
+        body: JSON.stringify({ files }),
         signal: AbortSignal.timeout(15_000),
       },
     );
@@ -90,6 +125,7 @@ async function purgeEverything(buildId: string): Promise<{ ok: boolean; status: 
       status: res.status,
       ok: res.ok,
       durationMs,
+      fileCount: files.length,
       bodyPreview: body.slice(0, 300),
     });
     return { ok: res.ok, status: res.status, body: body.slice(0, 2000), durationMs };

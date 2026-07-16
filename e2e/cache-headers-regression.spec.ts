@@ -162,7 +162,40 @@ test.describe("cache headers · dynamic assets (CDN no-store)", () => {
       // CF must not be replaying a cached object.
       expect(NEVER_CF_HIT, `cf-cache-status (${h.cfStatus})`).not.toContain(h.cfStatus);
     });
+}
+
+// ---------------------------------------------------------------------------
+// 2b. Feeds — Google Merchant XML feeds served from short edge cache.
+//      Browser tier soft-caches (≤5 min, must-revalidate).
+//      CDN tier caches ≥15 min with SWR. cf-cache-status MAY be HIT.
+// ---------------------------------------------------------------------------
+const FEEDS = [
+  "/google-merchant-feed.xml",
+  "/google-merchant-feed-free.xml",
+];
+
+test.describe("cache headers · feeds (CDN short-cache)", () => {
+  for (const path of FEEDS) {
+    test(`feed ${path}`, async ({ request }) => {
+      const h = await head(request, path);
+      expect([200, 301, 302], `status for ${path} (was ${h.status})`).toContain(h.status);
+      if (h.status !== 200) return;
+
+      // CDN MUST allow short caching — max-age >= 900.
+      const cdnHeader = h.cdn || h.surrogate;
+      expect(cdnHeader, `cdn-cache-control present for ${path}`).not.toBe("");
+      const cdnMaxAge = parseDirective(cdnHeader, "max-age") ?? 0;
+      expect(cdnMaxAge, `cdn max-age >= 900 (was ${cdnMaxAge})`).toBeGreaterThanOrEqual(900);
+      expect(cdnHeader.toLowerCase(), `cdn no-store not allowed on feed (${cdnHeader})`).not.toContain("no-store");
+
+      // Browser tier soft-cache only.
+      expect(h.cacheControl.toLowerCase(), `no immutable on feed ${path}`).not.toContain("immutable");
+      const browserMaxAge = parseDirective(h.cacheControl, "max-age") ?? 0;
+      expect(browserMaxAge, `browser max-age <= 300 (was ${browserMaxAge})`).toBeLessThanOrEqual(300);
+      // cf-cache-status MAY be HIT on feeds — no assertion.
+    });
   }
+});
 });
 
 // ---------------------------------------------------------------------------
