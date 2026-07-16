@@ -238,7 +238,7 @@ export function Navigation({
 }: { user: any; isAdmin?: boolean; isMobileMenuOpen: boolean; onMobileMenuToggle: () => void; }) {
   const location = useLocation();
   const navLinks = useNavLinks();
-  const mobileMenuTop = 'calc(32px + 64px + var(--rg-banner-h, 0px))';
+  const mobileMenuTop = '0px';
   const isActive = (href: string) =>
     href === '/' ? location.pathname === '/' : location.pathname.startsWith(href);
 
@@ -293,12 +293,14 @@ export function Navigation({
           width: 'min(320px, 90vw)',
           top: mobileMenuTop,
           bottom: 0,
+          height: '100dvh',
           background: '#040d1a',
           borderLeft: '1px solid rgba(255,255,255,0.06)',
           boxShadow: '-24px 0 80px rgba(0,0,0,0.6)',
           transform: isMobileMenuOpen ? 'translateX(0)' : 'translateX(100%)',
           transition: 'transform 0.32s cubic-bezier(0.4,0,0.2,1)',
           pointerEvents: isMobileMenuOpen ? 'auto' : 'none',
+          overflow: 'hidden',
         }}>
         {/* Drawer header: MENU label + close X */}
         <div className="flex items-center justify-between px-5 shrink-0 gap-3"

@@ -161,6 +161,17 @@ export function Layout({ children }: LayoutProps) {
     };
   }, [isCartOpen, isMobileMenuOpen]);
 
+  // While the mobile nav drawer is open, mark the body so global CSS
+  // can hide the shipping bar, research-gate tape, and cookie banner —
+  // giving the drawer full ownership of the mobile viewport.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const cls = 'mobile-drawer-open';
+    if (isMobileMenuOpen) document.body.classList.add(cls);
+    else document.body.classList.remove(cls);
+    return () => { document.body.classList.remove(cls); };
+  }, [isMobileMenuOpen]);
+
 
   // Google Analytics 4 — load once on mount, then fire page_view on every SPA route change
   useEffect(() => {
@@ -617,6 +628,7 @@ export function Layout({ children }: LayoutProps) {
           PERSISTENT SHIPPING TOP BAR — hidden on auth/admin pages
       ═══════════════════════════════════════════════════════════════ */}
       {!isCleanPage && <div
+        data-shipping-top-bar
         className="fixed left-0 right-0 z-[51] flex items-center justify-center gap-4 px-4 text-center"
         style={{
           top: researchBannerOffset,

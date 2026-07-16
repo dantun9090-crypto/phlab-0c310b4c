@@ -146,6 +146,7 @@ export function CookieConsent() {
 
   return (
     <div
+      data-cookie-consent
       className={`fixed bottom-0 sm:bottom-4 left-0 right-0 sm:left-4 sm:right-4 z-[9999] flex justify-center transition-all duration-300 ease-out ${
         visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
       }`}
