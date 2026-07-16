@@ -40,62 +40,36 @@ const IMMUTABLE_BUILD_ASSET_CACHE_CONTROL = "public, max-age=31536000, immutable
 const HASHED_STATIC_ASSET_RE = /(?:^|\/)[^/?#]+(?:[-._][a-f0-9]{8,}|-[A-Za-z0-9_-]{8,})\.(?:js|mjs|css|woff2?|ttf|otf)$/i;
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// WORKER-INTERNAL HTML WARM CACHE (Task 1.1)
+// EDGE HTML CACHE (caches.default)
 // ─────────────────────────────────────────────────────────────────────────────
-// Per-isolate in-memory cache for sanitized browser HTML shells. Serves TTFB
-// ~5–30ms on hit while keeping the CDN/browser contract at no-store — the
-// CDN never sees the cached bytes, only this Worker isolate does. Hits are
-// bounded by isolate lifetime (typically minutes) and WARM_TTL_MS.
+// Repeat visits to public HTML routes get served from Cloudflare's shared
+// Cache API in ~50-150ms instead of 0.6-2.3s origin TTFB, WITHOUT changing
+// the wire contract (browsers and CDN tier still see no-store; CSP nonce +
+// strict-dynamic is replayed verbatim as a consistent pair).
 //
-// SAFETY: Only cache successful (2xx) text/html responses on GET. Never cache
-// authenticated / sensitive paths — those are excluded by prefix below.
+// Freshness after deploy: the scoped post-deploy purge evicts "/" and
+// "/products" explicitly; all other entries expire within HTML_EDGE_TTL_S
+// anyway; the client-side build-killer script is the final safety net.
 // ═══════════════════════════════════════════════════════════════════════════════
-const WARM_TTL_MS = 20_000; // 20s per-isolate HTML shell cache — bounds stale window after deploy.
-const WARM_MAX_ENTRIES = 64;
+const HTML_EDGE_TTL_S = 300; // 5 min entry TTL for cached HTML shells
 const WARM_SKIP_PREFIXES = [
   "/admin", "/auth", "/login", "/logout", "/account",
   "/cart", "/checkout", "/payment", "/register", "/api/", "/downloads/",
 ];
-/** @type {Map<string, { body: ArrayBuffer, headers: Array<[string,string]>, expiresAt: number }>} */
-const htmlWarmCache = new Map();
-
-function warmCacheKey(url) {
-  // Key on pathname only — HTML shells are identical across query strings for
-  // our routes, and query-string variance would blow the cache with tracking
-  // params (utm_*, gclid, fbclid). Skip if the path is sensitive.
-  return url.pathname;
-}
-
-function warmCacheGet(key) {
-  const hit = htmlWarmCache.get(key);
-  if (!hit) return null;
-  if (Date.now() > hit.expiresAt) {
-    htmlWarmCache.delete(key);
-    return null;
-  }
-  return hit;
-}
-
-function warmCacheSet(key, body, headers) {
-  if (htmlWarmCache.size >= WARM_MAX_ENTRIES) {
-    // Simple FIFO eviction — delete oldest.
-    const firstKey = htmlWarmCache.keys().next().value;
-    if (firstKey !== undefined) htmlWarmCache.delete(firstKey);
-  }
-  htmlWarmCache.set(key, { body, headers, expiresAt: Date.now() + WARM_TTL_MS });
-}
 
 function warmCacheEligible(path) {
-  // Warm HTML shells only for public, user-agnostic routes. Auth/checkout/cart
-  // and API/downloads are excluded so no per-user or dynamic body is cached.
-  // 20s TTL bounds any post-deploy staleness on a single isolate; new isolates
-  // (spun up frequently by CF) always hit origin first.
   if (!path) return false;
   for (const prefix of WARM_SKIP_PREFIXES) {
     if (path === prefix || path.startsWith(prefix + "/") || path.startsWith(prefix)) return false;
   }
   return true;
 }
+
+function edgeHtmlCacheKey(url) {
+  // Ignore query string — utm/gclid/fbclid must not fragment the cache.
+  return new Request(url.origin + url.pathname, { method: "GET" });
+}
+
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // BOT DETECTION
