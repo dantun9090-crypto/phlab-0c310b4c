@@ -142,7 +142,55 @@ export default function CheckoutPage() {
   const [paymentOptions, setPaymentOptions] = useState<CheckoutPaymentOptions | null>(null);
   const [wallidEnabled, setWallidEnabled] = useState<boolean>(false);
   const [, setSummaryExpanded] = useState(false);
+  const [paymentRecoveryVisible, setPaymentRecoveryVisible] = useState(false);
   const stepRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const paymentAttemptRef = useRef(0);
+  const paymentAbortRef = useRef<AbortController | null>(null);
+  const paymentRecoveryTimerRef = useRef<number | null>(null);
+  const paymentWatchdogTimerRef = useRef<number | null>(null);
+
+  const clearPaymentTimers = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    if (paymentRecoveryTimerRef.current !== null) {
+      window.clearTimeout(paymentRecoveryTimerRef.current);
+      paymentRecoveryTimerRef.current = null;
+    }
+    if (paymentWatchdogTimerRef.current !== null) {
+      window.clearTimeout(paymentWatchdogTimerRef.current);
+      paymentWatchdogTimerRef.current = null;
+    }
+  }, []);
+
+  const startPaymentTimers = useCallback((attemptId: number) => {
+    if (typeof window === 'undefined') return;
+    clearPaymentTimers();
+    setPaymentRecoveryVisible(false);
+    paymentRecoveryTimerRef.current = window.setTimeout(() => {
+      if (paymentAttemptRef.current === attemptId) setPaymentRecoveryVisible(true);
+    }, 8000);
+    paymentWatchdogTimerRef.current = window.setTimeout(() => {
+      if (paymentAttemptRef.current !== attemptId) return;
+      paymentAttemptRef.current += 1;
+      paymentAbortRef.current?.abort();
+      paymentAbortRef.current = null;
+      clearPaymentTimers();
+      setPaymentRecoveryVisible(false);
+      setFenaStep('failed');
+      setIsPlacing(false);
+      setLoginError('Payment did not open. Please check your connection and try again. No payment has been taken.');
+    }, 35000);
+  }, [clearPaymentTimers]);
+
+  const cancelPaymentAttempt = useCallback((message = 'Payment attempt cancelled. Please try again.') => {
+    paymentAttemptRef.current += 1;
+    paymentAbortRef.current?.abort();
+    paymentAbortRef.current = null;
+    clearPaymentTimers();
+    setPaymentRecoveryVisible(false);
+    setFenaStep('failed');
+    setIsPlacing(false);
+    setLoginError(message);
+  }, [clearPaymentTimers]);
 
   // Reset in-flight payment state when the page is restored from bfcache
   // (browser back from Wallid/Fena) OR becomes visible again after tabbing
@@ -151,6 +199,11 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const clearInFlight = () => {
+      paymentAttemptRef.current += 1;
+      paymentAbortRef.current?.abort();
+      paymentAbortRef.current = null;
+      clearPaymentTimers();
+      setPaymentRecoveryVisible(false);
       setIsPlacing(false);
       setFenaStep('idle');
       setLoginError('');
@@ -163,12 +216,15 @@ export default function CheckoutPage() {
       if (document.visibilityState === 'visible') clearInFlight();
     };
     window.addEventListener('pageshow', onPageShow);
+    window.addEventListener('focus', clearInFlight);
     document.addEventListener('visibilitychange', onVisibility);
     return () => {
       window.removeEventListener('pageshow', onPageShow);
+      window.removeEventListener('focus', clearInFlight);
       document.removeEventListener('visibilitychange', onVisibility);
+      clearPaymentTimers();
     };
-  }, []);
+  }, [clearPaymentTimers]);
   const successRef = useRef<HTMLElement | null>(null);
 
   // Banner state: set when the cart we loaded was in the legacy shape and
