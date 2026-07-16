@@ -250,6 +250,20 @@ const SKIP_CSR_ROUTES: readonly string[] = [
   "/research/retatrutide-comprehensive-guide",
   "/research/retatrutide-uk",
   "/research/tirzepatide-vs-retatrutide",
+  // Checkout / payment return pages are self-contained TanStack routes.
+  // If CSR/LegacyApp takes over on these paths, LegacyApp's react-router
+  // has no matching route, wipes the SSR HTML, logs [PHL 404], and takes
+  // ~17s to finally land the visitor on the homepage. Skip CSR here so
+  // the SSR content (which the useEffect in checkout.cancel.tsx already
+  // hydrates client-side for the cancel API call) stays put.
+  "/checkout/cancel",
+  "/checkout/cancelled",
+  "/checkout/success",
+  "/order/cancel",
+  "/order/cancelled",
+  "/order/success",
+  "/payment/cancel",
+  "/payment/success",
 ];
 const SKIP_CSR_PREFIXES: readonly string[] = ["/compare/"];
 
