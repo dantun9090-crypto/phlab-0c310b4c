@@ -67,7 +67,9 @@ export default function Login() {
       })
       .catch(() => {});
     const unsub = onAuthStateChanged(auth, (u) => {
-      if (u) navigate(redirectTarget, { replace: true });
+      // Skip anonymous guest sessions (Checkout creates them silently);
+      // only redirect real signed-in users so the login form stays reachable.
+      if (u && !u.isAnonymous) navigate(redirectTarget, { replace: true });
     });
     return () => { cancelled = true; unsub(); };
     // redirectTarget is derived from the URL — stable per render

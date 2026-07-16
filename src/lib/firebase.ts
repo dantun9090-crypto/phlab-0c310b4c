@@ -23,8 +23,10 @@ import {
   // in client-only code paths.
   // EmailAuthProvider intentionally NOT imported here — same reason as above.
   // Consumers import it directly from 'firebase/auth' in client-only paths.
-
-  reauthenticateWithCredential,
+  // reauthenticateWithCredential intentionally NOT imported here — same
+  // reason: Worker/SSR export shape does not expose it, causing
+  // "reauthenticateWithCredential is not defined" during SSR of Account /
+  // checkout.success. Account page imports it directly from 'firebase/auth'.
   updatePassword,
   setPersistence,
   browserLocalPersistence,
@@ -1705,7 +1707,7 @@ export const saveOrder = async (userId: string, orderData: any) => {
   );
 };
 
-export { Timestamp, doc, getDoc, getDocFromServer, getDocs, getDocsFromServer, collection, query, where, orderBy, limit, deleteDoc, updateDoc, onSnapshot, writeBatch, runTransaction, addDoc, setDoc, onAuthStateChanged, signInAnonymously, signOut, reauthenticateWithCredential, updatePassword, sendEmailVerification, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, storageRef, uploadBytesResumable, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata };
+export { Timestamp, doc, getDoc, getDocFromServer, getDocs, getDocsFromServer, collection, query, where, orderBy, limit, deleteDoc, updateDoc, onSnapshot, writeBatch, runTransaction, addDoc, setDoc, onAuthStateChanged, signInAnonymously, signOut, updatePassword, sendEmailVerification, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, storageRef, uploadBytesResumable, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata };
 export type { FirebaseUser };
 
 // ==================== FIREBASE STORAGE UPLOADS ====================
