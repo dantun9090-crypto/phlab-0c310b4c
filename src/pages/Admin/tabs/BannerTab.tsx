@@ -819,6 +819,71 @@ export default function BannerTab() {
                         ))}
                       </div>
                     </div>
+                    </div>
+                  </div>
+
+                  {/* Colours */}
+                  <div className="grid grid-cols-2 gap-3 pt-1 border-t border-white/5">
+                    <div>
+                      <label className="block text-[#2a4a7a] text-xs mb-1 flex items-center gap-1"><Palette className="w-3 h-3" /> Heading colour</label>
+                      <div className="flex items-center gap-2">
+                        <input type="color" value={banner.textOverlayHeadingColor}
+                          onChange={e => set('textOverlayHeadingColor', e.target.value)}
+                          className="w-9 h-9 rounded-lg cursor-pointer border border-white/10 bg-transparent" />
+                        <input type="text" value={banner.textOverlayHeadingColor}
+                          onChange={e => set('textOverlayHeadingColor', e.target.value)}
+                          className="flex-1 min-w-0 bg-white border border-gray-300 text-gray-900 text-xs font-mono py-1.5 px-2 rounded-lg" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[#2a4a7a] text-xs mb-1 flex items-center gap-1"><Palette className="w-3 h-3" /> Subtext colour</label>
+                      <div className="flex items-center gap-2">
+                        <input type="color" value={banner.textOverlaySubtextColor}
+                          onChange={e => set('textOverlaySubtextColor', e.target.value)}
+                          className="w-9 h-9 rounded-lg cursor-pointer border border-white/10 bg-transparent" />
+                        <input type="text" value={banner.textOverlaySubtextColor}
+                          onChange={e => set('textOverlaySubtextColor', e.target.value)}
+                          className="flex-1 min-w-0 bg-white border border-gray-300 text-gray-900 text-xs font-mono py-1.5 px-2 rounded-lg" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sizes */}
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <label className="text-[#2a4a7a] text-xs">Heading size</label>
+                      <span className="text-[#9cb8d9] text-xs font-mono">{banner.textOverlayHeadingSizePx}px</span>
+                    </div>
+                    <input type="range" min={14} max={64} step={1}
+                      value={banner.textOverlayHeadingSizePx}
+                      onChange={e => set('textOverlayHeadingSizePx', Number(e.target.value))}
+                      className="w-full accent-green-500 cursor-pointer" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <label className="text-[#2a4a7a] text-xs">Subtext size</label>
+                      <span className="text-[#9cb8d9] text-xs font-mono">{banner.textOverlaySubtextSizePx}px</span>
+                    </div>
+                    <input type="range" min={10} max={32} step={1}
+                      value={banner.textOverlaySubtextSizePx}
+                      onChange={e => set('textOverlaySubtextSizePx', Number(e.target.value))}
+                      className="w-full accent-green-500 cursor-pointer" />
+                  </div>
+
+                  {/* Heading weight */}
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <label className="text-[#2a4a7a] text-xs">Heading weight</label>
+                      <span className="text-[#9cb8d9] text-xs font-mono">{banner.textOverlayHeadingWeight}</span>
+                    </div>
+                    <div className="flex gap-1">
+                      {[400, 600, 700, 800, 900].map(w => (
+                        <button key={w} onClick={() => set('textOverlayHeadingWeight', w)}
+                          className={`flex-1 py-1 rounded-lg text-xs font-medium transition-colors ${banner.textOverlayHeadingWeight === w ? 'bg-green-700 text-white' : 'bg-[#0f2640]/60 text-[#9cb8d9] hover:text-white hover:bg-[#0f2640]'}`}>
+                          {w}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
