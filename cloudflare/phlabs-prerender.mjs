@@ -568,6 +568,13 @@ export default {
           const total = Date.now() - startTime;
           headers.set("X-PHL-Via", "edge-html-hit;bot=0;prerender=1;total=" + total + "ms");
           headers.set("Server-Timing", `edge-html;desc="HIT", origin;dur=0, worker;dur=${total}`);
+          // Restamp build-id headers on the wire so post-deploy health probes
+          // (which require both x-build-id and cf-cache-build-id) pass on HIT.
+          const hitBid = headers.get("x-phl-build-id") || headers.get("x-build-id") || "";
+          if (hitBid) {
+            headers.set("x-build-id", hitBid);
+            headers.set("cf-cache-build-id", hitBid);
+          }
           return new Response(buf, {
             status: cached.status,
             statusText: cached.statusText,
