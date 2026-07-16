@@ -234,8 +234,8 @@ function DesktopNavItem({ link, isActive }: { link: NavLink; isActive: (href: st
 }
 
 export function Navigation({
-  user, isMobileMenuOpen, onMobileMenuToggle,
-}: { user: any; isMobileMenuOpen: boolean; onMobileMenuToggle: () => void; }) {
+  user, isAdmin, isMobileMenuOpen, onMobileMenuToggle,
+}: { user: any; isAdmin?: boolean; isMobileMenuOpen: boolean; onMobileMenuToggle: () => void; }) {
   const location = useLocation();
   const navLinks = useNavLinks();
   const isActive = (href: string) =>
