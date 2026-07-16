@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import LegacyClientApp from "@/legacy/LegacyClientApp";
 import { fetchPromoBanner } from "@/lib/firestore-rest";
-import { cfImg, cfSrcSet } from "@/lib/cf-image";
 
 
 const HOME_TITLE = "HPLC-Verified Research Peptides UK | PH Labs";
@@ -12,12 +11,7 @@ const HOME_DESCRIPTION =
 const HOME_URL = "https://phlabs.co.uk/";
 const HOME_OG_IMAGE = "https://phlabs.co.uk/og-image.jpg";
 
-// Widths mirror <img> in src/pages/Home/index.tsx so the preloaded bytes
-// are the same variant the browser eventually renders (no wasted preload).
-const BANNER_WIDTHS = [480, 640, 800, 1024, 1280, 1600];
-const BANNER_SIZES = "(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1600px";
-const BANNER_QUALITY = 82;
-const BANNER_FALLBACK_WIDTH = 800;
+
 
 // Mirrors the visible FAQ section rendered by src/pages/Home/index.tsx.
 // Kept inline so the FAQPage JSON-LD ships in SSR HTML (crawler-visible)
@@ -53,11 +47,9 @@ export const Route = createFileRoute("/")({
   // Public content routes must SSR a non-empty body. Do not disable SSR
   // here or wrap the route in deferred loading with an empty fallback; that combination
   // caused staging to stick on the boot loader after publishes.
-  head: (ctx) => {
-    const banner = ctx.loaderData?.banner ?? null;
-    const bannerSrc = banner?.imageUrl ? cfImg(banner.imageUrl, { width: BANNER_FALLBACK_WIDTH, quality: BANNER_QUALITY }) : "";
-    const bannerSrcSet = banner?.imageUrl ? cfSrcSet(banner.imageUrl, BANNER_WIDTHS, { quality: BANNER_QUALITY }) : undefined;
+  head: () => {
     return {
+
     meta: [
       { title: HOME_TITLE },
       { name: "description", content: HOME_DESCRIPTION },
@@ -79,19 +71,13 @@ export const Route = createFileRoute("/")({
       { rel: "preconnect", href: "https://firestore.googleapis.com", crossOrigin: "" },
       { rel: "preconnect", href: "https://firebasestorage.googleapis.com", crossOrigin: "" },
       { rel: "dns-prefetch", href: "https://firebasestorage.googleapis.com" },
-      // LCP preload — banner image is the largest above-the-fold element.
-      // Same href/srcset/sizes as the rendered <img>, so the browser
-      // reuses the preloaded bytes instead of a second network request.
-      ...(bannerSrc
-        ? [{
-            rel: "preload",
-            as: "image",
-            href: bannerSrc,
-            imageSrcSet: bannerSrcSet,
-            imageSizes: BANNER_SIZES,
-            fetchPriority: "high",
-          } as unknown as { rel: string; as: string; href: string }]
-        : []),
+      // LCP preload removed 2026-07-16: the banner <img> already emits its
+      // own srcset request within the same tick, and the preload variant
+      // frequently didn't match the picked srcset candidate on non-1600px
+      // viewports — producing "preloaded but not used" warnings, especially
+      // when users SPA-navigated away from `/` before the browser could
+      // consume the preload. Home LCP stays well within budget without it.
+
     ],
 
 
