@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, ShoppingCart, Edit2, FlaskConical, ShieldCheck, FileText } from 'lucide-react';
+import { CheckCircle2, ShoppingCart, Edit2, FlaskConical, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getProductImage } from '@/lib/productImages';
 import type { Product } from '@/lib/firebase';
