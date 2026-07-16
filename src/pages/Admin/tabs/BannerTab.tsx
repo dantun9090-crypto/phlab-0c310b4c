@@ -43,11 +43,20 @@ interface BannerConfig {
   edgeFadeEnabled: boolean;
   edgeFadeWidthPct: number;    // 4–30 (% of banner width per side)
   edgeFadeOpacity: number;     // 0–100 (mid-stop opacity)
+  // Edge fade blend color — empty string = use page background token
+  edgeFadeUsePageBg: boolean;
+  edgeFadeColor: string;
   textOverlayEnabled: boolean;
   textOverlayHeading: string;
   textOverlaySubtext: string;
   textOverlayAlign: 'left' | 'center' | 'right';
   textOverlayPosition: 'top' | 'center' | 'bottom';
+  // Text styling
+  textOverlayHeadingColor: string;
+  textOverlaySubtextColor: string;
+  textOverlayHeadingSizePx: number;   // base (mobile) heading size in px
+  textOverlaySubtextSizePx: number;   // base (mobile) subtext size in px
+  textOverlayHeadingWeight: number;   // 400–900
   updatedAt?: any;
 }
 
@@ -70,11 +79,18 @@ const DEFAULTS: BannerConfig = {
   edgeFadeEnabled: true,
   edgeFadeWidthPct: 12,
   edgeFadeOpacity: 100,
+  edgeFadeUsePageBg: true,
+  edgeFadeColor: '#030a14',
   textOverlayEnabled: false,
   textOverlayHeading: '',
   textOverlaySubtext: '',
   textOverlayAlign: 'center',
   textOverlayPosition: 'center',
+  textOverlayHeadingColor: '#ffffff',
+  textOverlaySubtextColor: '#e4f0ff',
+  textOverlayHeadingSizePx: 24,
+  textOverlaySubtextSizePx: 13,
+  textOverlayHeadingWeight: 800,
 };
 
 export default function BannerTab() {
