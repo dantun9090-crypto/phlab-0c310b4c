@@ -756,21 +756,6 @@ export default function HomePage() {
                   Lab Reports
                 </Link>
               </div>
-                <Link to="/lab-reports"
-                  aria-label="Lab reports and CoA"
-                  className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl font-semibold text-sm transition-all duration-300"
-                  style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    color: '#a8c8e8',
-                  }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; (e.currentTarget as HTMLElement).style.color = '#e4f0ff'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.color = '#a8c8e8'; }}
-                >
-                  <FileCheck className="w-4 h-4" />
-                  Lab Reports
-                </Link>
-              </div>
             </div>
 
             {/* Right — Stats card panel */}
