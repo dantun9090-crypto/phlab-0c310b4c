@@ -611,7 +611,13 @@ export default function CheckoutPage() {
 
   const setField = useCallback(<K extends keyof CheckoutForm>(key: K, val: CheckoutForm[K]) => {
     setForm(prev => ({ ...prev, [key]: val }));
-    if (errors[key]) setErrors(prev => { const e = { ...prev }; delete e[key]; return e; });
+    // Map form field -> error key (some errors use different keys than the field name)
+    const errorKeyMap: Partial<Record<keyof CheckoutForm, string>> = {
+      ageVerified: 'age',
+      acceptedTerms: 'terms',
+    };
+    const errKey = errorKeyMap[key] ?? (key as string);
+    if (errors[errKey]) setErrors(prev => { const e = { ...prev }; delete e[errKey]; return e; });
   }, [errors]);
 
   const validateStep = (step: Step): Record<string, string> => {
