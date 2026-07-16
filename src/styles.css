@@ -623,3 +623,46 @@ body {
 [data-chart] .recharts-sector[stroke="#fff"] { stroke: transparent; }
 [data-chart] .recharts-sector { outline: none; }
 [data-chart] .recharts-surface { outline: none; }
+
+/* ============================================================
+   Cart / Checkout mobile & Safari hardening
+   Non-destructive: only affects containers explicitly opted-in
+   via [data-checkout-scope] or [data-cart-scope] wrappers, plus
+   the /checkout page and cart drawer components. Adds:
+   - iOS-safe input font-size (>=16px prevents auto-zoom)
+   - touch-action: manipulation on tap targets (removes 300ms delay)
+   - Min 44x44 CSS px tap targets (Apple/Google a11y guideline)
+   ============================================================ */
+[data-checkout-scope] input:not([type="checkbox"]):not([type="radio"]),
+[data-checkout-scope] select,
+[data-checkout-scope] textarea,
+[data-cart-scope] input:not([type="checkbox"]):not([type="radio"]),
+[data-cart-scope] select,
+[data-cart-scope] textarea {
+  font-size: 16px;
+}
+
+[data-checkout-scope] button,
+[data-checkout-scope] [role="button"],
+[data-checkout-scope] a[href],
+[data-cart-scope] button,
+[data-cart-scope] [role="button"],
+[data-cart-scope] a[href] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Tap-target minimums — apply only to primary action buttons in cart
+   & checkout, so we don't inflate icon buttons that already opt out
+   via [data-compact-tap]. */
+[data-checkout-scope] button:not([data-compact-tap]):not([data-icon-only]),
+[data-cart-scope] button:not([data-compact-tap]):not([data-icon-only]) {
+  min-height: 44px;
+}
+
+/* Prevent horizontal scroll from long unbreakable strings (order IDs,
+   emails) in cart / checkout summaries on narrow viewports. */
+[data-checkout-scope],
+[data-cart-scope] {
+  overflow-wrap: anywhere;
+}
