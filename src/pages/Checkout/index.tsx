@@ -23,6 +23,8 @@ import type { CartItem } from '@/components/Layout';
 import { useFreeGiftConfig, freeGiftApplies, eligibleGifts } from '@/lib/free-gift-config';
 import FreeGiftPicker from '@/components/checkout/FreeGiftPicker';
 import { trackAddPaymentInfo, trackBeginCheckout, trackViewCart, type GaItem } from '@/lib/analytics';
+import { logCheckoutEvent } from '@/lib/checkoutTelemetry';
+import { callPreflightWithRetry } from '@/lib/checkoutPreflightRetry';
 
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
 import NoCacheHead from '@/components/NoCacheHead';
@@ -162,6 +164,10 @@ export default function CheckoutPage() {
   const [preflightIssues, setPreflightIssues] = useState<PreflightIssue[]>([]);
   const [preflightChecking, setPreflightChecking] = useState(false);
   const [preflightOk, setPreflightOk] = useState(false);
+  // Preflight retry state — surfaces "Retrying (1/3)…" in the inline
+  // message while transient network / 5xx failures are being re-tried.
+  const [preflightRetry, setPreflightRetry] = useState<{ attempt: number; total: number } | null>(null);
+  const [preflightExhausted, setPreflightExhausted] = useState(false);
   const preflightRunId = useRef(0);
 
   useEffect(() => {
