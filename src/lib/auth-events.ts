@@ -107,11 +107,18 @@ export function logAuthEvent(input: AuthEventInput): void {
       },
     );
 
-    // Fire-and-forget Firestore write — don't await, don't block UX
+    // Fire-and-forget Firestore write — don't await, don't block UX.
+    // Swallow benign errors:
+    // - `already-exists`: offline queue replay wrote the same event twice
+    // - `permission-denied`: rules reject anonymous writes on certain events
+    // Neither breaks auth, so we don't need to alarm the console.
     addDoc(collection(db, 'auth_events'), payload).catch((e) => {
+      const code = e?.code || '';
+      if (code === 'already-exists' || code === 'permission-denied') return;
       // eslint-disable-next-line no-console
-      console.warn('[auth-event] Firestore write failed', e?.code || e?.message || e);
+      console.warn('[auth-event] Firestore write failed', code || e?.message || e);
     });
+
   } catch (e) {
     // Logging must NEVER break auth flow
     // eslint-disable-next-line no-console
