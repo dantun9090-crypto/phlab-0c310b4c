@@ -94,7 +94,7 @@ jobs:
             -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache" \
             -H "Authorization: Bearer $CF_API_TOKEN" \
             -H "Content-Type: application/json" \
-            --data '{"files":["https://prohealthpeptides.co.uk/","https://prohealthpeptides.co.uk/sitemap.xml","https://prohealthpeptides.co.uk/robots.txt","https://prohealthpeptides.co.uk/google-merchant-feed-free.xml"]}')
+            --data '{"files":["https://prohealthpeptides.co.uk/","https://prohealthpeptides.co.uk/sitemap.xml","https://prohealthpeptides.co.uk/robots.txt","https://prohealthpeptides.co.uk/google-merchant-feed-free.xml"]}')  # check-domains-allow-line: legacy proxy zone purge target
           echo "HTTP $resp"
           cat /tmp/purge-legacy.json
           [ "$resp" = "200" ] || { echo "::error::Legacy zone purge failed"; exit 1; }
