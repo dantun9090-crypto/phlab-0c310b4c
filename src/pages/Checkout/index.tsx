@@ -1284,12 +1284,7 @@ export default function CheckoutPage() {
               {/* Pre-flight validation findings (price drift / missing variants
                   / out of stock) — shown before the user reaches the pay step. */}
               {preflightIssues.length > 0 && (
-                <div id="checkout-validation-banner" className="flex items-start gap-3 bg-red-500/10 border border-red-500/40 rounded-xl p-3 transition-shadow" data-flash-target></div>
-              )}
-              {/* Original banner content preserved below — the extra wrapper
-                  above is stripped because we only need the id; keep original */}
-              {preflightIssues.length > 0 && false && (
-                <div className="flex items-start gap-3 bg-red-500/10 border border-red-500/40 rounded-xl p-3">
+                <div id="checkout-validation-banner" className="flex items-start gap-3 bg-red-500/10 border border-red-500/40 rounded-xl p-3 transition-shadow">
                   <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
                     <p className="text-red-300 text-sm font-medium">
