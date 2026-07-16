@@ -43,11 +43,20 @@ interface BannerConfig {
   edgeFadeEnabled: boolean;
   edgeFadeWidthPct: number;    // 4–30 (% of banner width per side)
   edgeFadeOpacity: number;     // 0–100 (mid-stop opacity)
+  // Edge fade blend color — empty string = use page background token
+  edgeFadeUsePageBg: boolean;
+  edgeFadeColor: string;
   textOverlayEnabled: boolean;
   textOverlayHeading: string;
   textOverlaySubtext: string;
   textOverlayAlign: 'left' | 'center' | 'right';
   textOverlayPosition: 'top' | 'center' | 'bottom';
+  // Text styling
+  textOverlayHeadingColor: string;
+  textOverlaySubtextColor: string;
+  textOverlayHeadingSizePx: number;   // base (mobile) heading size in px
+  textOverlaySubtextSizePx: number;   // base (mobile) subtext size in px
+  textOverlayHeadingWeight: number;   // 400–900
   updatedAt?: any;
 }
 
@@ -70,11 +79,18 @@ const DEFAULTS: BannerConfig = {
   edgeFadeEnabled: true,
   edgeFadeWidthPct: 12,
   edgeFadeOpacity: 100,
+  edgeFadeUsePageBg: true,
+  edgeFadeColor: '#030a14',
   textOverlayEnabled: false,
   textOverlayHeading: '',
   textOverlaySubtext: '',
   textOverlayAlign: 'center',
   textOverlayPosition: 'center',
+  textOverlayHeadingColor: '#ffffff',
+  textOverlaySubtextColor: '#e4f0ff',
+  textOverlayHeadingSizePx: 24,
+  textOverlaySubtextSizePx: 13,
+  textOverlayHeadingWeight: 800,
 };
 
 export default function BannerTab() {
@@ -719,8 +735,30 @@ export default function BannerTab() {
                       onChange={e => set('edgeFadeOpacity', Number(e.target.value))}
                       className="w-full accent-blue-500 cursor-pointer" />
                   </div>
+                  {/* Blend color */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[#2a4a7a] text-xs">Blend colour</span>
+                      <label className="inline-flex items-center gap-1.5 text-[#9cb8d9] text-[11px] cursor-pointer">
+                        <input type="checkbox" checked={banner.edgeFadeUsePageBg}
+                          onChange={e => set('edgeFadeUsePageBg', e.target.checked)}
+                          className="accent-blue-500" />
+                        Auto (page background)
+                      </label>
+                    </div>
+                    {!banner.edgeFadeUsePageBg && (
+                      <div className="flex items-center gap-2">
+                        <input type="color" value={banner.edgeFadeColor}
+                          onChange={e => set('edgeFadeColor', e.target.value)}
+                          className="w-9 h-9 rounded-lg cursor-pointer border border-white/10 bg-transparent" />
+                        <input type="text" value={banner.edgeFadeColor}
+                          onChange={e => set('edgeFadeColor', e.target.value)}
+                          className="flex-1 bg-white border border-gray-300 text-gray-900 text-xs font-mono py-1.5 px-2 rounded-lg" />
+                      </div>
+                    )}
+                  </div>
                   <p className="text-[10px] text-[#2a4a7a] leading-relaxed">
-                    Fades the banner's left &amp; right edges into the page background so the image doesn't look boxed. Uses the Home wrapper background (<code className="text-[#9cb8d9]">--phl-page-bg</code>).
+                    Fades the banner's left &amp; right edges into the chosen background. Auto reads <code className="text-[#9cb8d9]">--phl-page-bg</code> so themes flow through.
                   </p>
                 </div>
               )}
@@ -780,6 +818,71 @@ export default function BannerTab() {
                           </button>
                         ))}
                       </div>
+                    </div>
+                  </div>
+
+
+                  {/* Colours */}
+                  <div className="grid grid-cols-2 gap-3 pt-1 border-t border-white/5">
+                    <div>
+                      <label className="block text-[#2a4a7a] text-xs mb-1 flex items-center gap-1"><Palette className="w-3 h-3" /> Heading colour</label>
+                      <div className="flex items-center gap-2">
+                        <input type="color" value={banner.textOverlayHeadingColor}
+                          onChange={e => set('textOverlayHeadingColor', e.target.value)}
+                          className="w-9 h-9 rounded-lg cursor-pointer border border-white/10 bg-transparent" />
+                        <input type="text" value={banner.textOverlayHeadingColor}
+                          onChange={e => set('textOverlayHeadingColor', e.target.value)}
+                          className="flex-1 min-w-0 bg-white border border-gray-300 text-gray-900 text-xs font-mono py-1.5 px-2 rounded-lg" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[#2a4a7a] text-xs mb-1 flex items-center gap-1"><Palette className="w-3 h-3" /> Subtext colour</label>
+                      <div className="flex items-center gap-2">
+                        <input type="color" value={banner.textOverlaySubtextColor}
+                          onChange={e => set('textOverlaySubtextColor', e.target.value)}
+                          className="w-9 h-9 rounded-lg cursor-pointer border border-white/10 bg-transparent" />
+                        <input type="text" value={banner.textOverlaySubtextColor}
+                          onChange={e => set('textOverlaySubtextColor', e.target.value)}
+                          className="flex-1 min-w-0 bg-white border border-gray-300 text-gray-900 text-xs font-mono py-1.5 px-2 rounded-lg" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sizes */}
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <label className="text-[#2a4a7a] text-xs">Heading size</label>
+                      <span className="text-[#9cb8d9] text-xs font-mono">{banner.textOverlayHeadingSizePx}px</span>
+                    </div>
+                    <input type="range" min={14} max={64} step={1}
+                      value={banner.textOverlayHeadingSizePx}
+                      onChange={e => set('textOverlayHeadingSizePx', Number(e.target.value))}
+                      className="w-full accent-green-500 cursor-pointer" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <label className="text-[#2a4a7a] text-xs">Subtext size</label>
+                      <span className="text-[#9cb8d9] text-xs font-mono">{banner.textOverlaySubtextSizePx}px</span>
+                    </div>
+                    <input type="range" min={10} max={32} step={1}
+                      value={banner.textOverlaySubtextSizePx}
+                      onChange={e => set('textOverlaySubtextSizePx', Number(e.target.value))}
+                      className="w-full accent-green-500 cursor-pointer" />
+                  </div>
+
+                  {/* Heading weight */}
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <label className="text-[#2a4a7a] text-xs">Heading weight</label>
+                      <span className="text-[#9cb8d9] text-xs font-mono">{banner.textOverlayHeadingWeight}</span>
+                    </div>
+                    <div className="flex gap-1">
+                      {[400, 600, 700, 800, 900].map(w => (
+                        <button key={w} onClick={() => set('textOverlayHeadingWeight', w)}
+                          className={`flex-1 py-1 rounded-lg text-xs font-medium transition-colors ${banner.textOverlayHeadingWeight === w ? 'bg-green-700 text-white' : 'bg-[#0f2640]/60 text-[#9cb8d9] hover:text-white hover:bg-[#0f2640]'}`}>
+                          {w}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -860,20 +963,51 @@ export default function BannerTab() {
                       style={{ background: gradMap[banner.gradientDirection] }} />
                   );
                 })()}
+                {/* Edge fade preview */}
+                {banner.edgeFadeEnabled && (() => {
+                  const widthPct = Math.max(0, Math.min(30, banner.edgeFadeWidthPct));
+                  const opacity = Math.max(0, Math.min(100, banner.edgeFadeOpacity)) / 100;
+                  const bg = banner.edgeFadeUsePageBg ? '#030a14' : banner.edgeFadeColor;
+                  const toRgba = (hex: string, a: number) => {
+                    const h = hex.replace('#', '');
+                    const n = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+                    const r = parseInt(n.slice(0, 2), 16), g = parseInt(n.slice(2, 4), 16), b = parseInt(n.slice(4, 6), 16);
+                    return `rgba(${r},${g},${b},${a})`;
+                  };
+                  const start = toRgba(bg, opacity);
+                  const mid = toRgba(bg, 0.75 * opacity);
+                  return (
+                    <>
+                      <div className="absolute inset-y-0 left-0 pointer-events-none z-[8]"
+                        style={{ width: `${widthPct}%`, background: `linear-gradient(to right, ${start} 0%, ${start} 15%, ${mid} 55%, transparent 100%)` }} />
+                      <div className="absolute inset-y-0 right-0 pointer-events-none z-[8]"
+                        style={{ width: `${widthPct}%`, background: `linear-gradient(to left, ${start} 0%, ${start} 15%, ${mid} 55%, transparent 100%)` }} />
+                    </>
+                  );
+                })()}
                 {/* Text overlay */}
                 {banner.textOverlayEnabled && (banner.textOverlayHeading || banner.textOverlaySubtext) && (
                   <div className={`absolute inset-0 flex flex-col pointer-events-none px-6 py-4 z-10
                     ${banner.textOverlayPosition === 'top' ? 'justify-start' : banner.textOverlayPosition === 'bottom' ? 'justify-end' : 'justify-center'}
                     ${banner.textOverlayAlign === 'left' ? 'items-start' : banner.textOverlayAlign === 'right' ? 'items-end' : 'items-center'}`}>
                     {banner.textOverlayHeading && (
-                      <div className="text-white font-bold text-lg drop-shadow-lg leading-tight"
-                        style={{ textAlign: banner.textOverlayAlign }}>
+                      <div className="drop-shadow-lg leading-tight"
+                        style={{
+                          textAlign: banner.textOverlayAlign,
+                          color: banner.textOverlayHeadingColor,
+                          fontSize: `${banner.textOverlayHeadingSizePx}px`,
+                          fontWeight: banner.textOverlayHeadingWeight,
+                        }}>
                         {banner.textOverlayHeading}
                       </div>
                     )}
                     {banner.textOverlaySubtext && (
-                      <div className="text-white/80 text-xs mt-1 drop-shadow"
-                        style={{ textAlign: banner.textOverlayAlign }}>
+                      <div className="mt-1 drop-shadow"
+                        style={{
+                          textAlign: banner.textOverlayAlign,
+                          color: banner.textOverlaySubtextColor,
+                          fontSize: `${banner.textOverlaySubtextSizePx}px`,
+                        }}>
                         {banner.textOverlaySubtext}
                       </div>
                     )}

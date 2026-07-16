@@ -548,10 +548,14 @@ export default function HomePage() {
           {(banner.edgeFadeEnabled !== false) && (() => {
             const widthPct = Math.max(0, Math.min(30, banner.edgeFadeWidthPct ?? 12));
             const opacity = Math.max(0, Math.min(100, banner.edgeFadeOpacity ?? 100)) / 100;
-            const mid = `color-mix(in oklab, var(--phl-page-bg) ${Math.round(75 * opacity)}%, transparent)`;
+            const useBg = banner.edgeFadeUsePageBg !== false && !banner.edgeFadeColor
+              ? true
+              : (banner.edgeFadeUsePageBg !== false);
+            const baseColor = useBg ? 'var(--phl-page-bg)' : (banner.edgeFadeColor || 'var(--phl-page-bg)');
+            const mid = `color-mix(in oklab, ${baseColor} ${Math.round(75 * opacity)}%, transparent)`;
             const start = opacity >= 0.999
-              ? 'var(--phl-page-bg)'
-              : `color-mix(in oklab, var(--phl-page-bg) ${Math.round(100 * opacity)}%, transparent)`;
+              ? baseColor
+              : `color-mix(in oklab, ${baseColor} ${Math.round(100 * opacity)}%, transparent)`;
             return (
               <>
                 <div
@@ -570,9 +574,19 @@ export default function HomePage() {
 
           {bannerOverlayHeading && (
             <div className={`absolute inset-0 flex flex-col z-[10] pointer-events-none px-6 ${bannerOverlayAlign} ${bannerOverlayPosition}`}>
-              <p className="font-black text-white max-w-2xl" style={{ fontSize: 'clamp(1.5rem,4vw,3rem)', textShadow: '0 2px 24px rgba(0,0,0,0.7)' }}>{bannerOverlayHeading}</p>
+              <p className="max-w-2xl" style={{
+                fontSize: `clamp(${banner?.textOverlayHeadingSizePx ?? 24}px, 4vw, ${Math.round((banner?.textOverlayHeadingSizePx ?? 24) * 2)}px)`,
+                fontWeight: banner?.textOverlayHeadingWeight ?? 900,
+                color: banner?.textOverlayHeadingColor || '#ffffff',
+                textShadow: '0 2px 24px rgba(0,0,0,0.7)',
+                lineHeight: 1.1,
+              }}>{bannerOverlayHeading}</p>
               {bannerOverlaySubtext && (
-                <p className="mt-3 text-white/80 text-sm font-medium max-w-xl" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.5)' }}>{bannerOverlaySubtext}</p>
+                <p className="mt-3 font-medium max-w-xl" style={{
+                  fontSize: `clamp(${banner?.textOverlaySubtextSizePx ?? 13}px, 1.6vw, ${Math.round((banner?.textOverlaySubtextSizePx ?? 13) * 1.6)}px)`,
+                  color: banner?.textOverlaySubtextColor || 'rgba(255,255,255,0.8)',
+                  textShadow: '0 1px 8px rgba(0,0,0,0.5)',
+                }}>{bannerOverlaySubtext}</p>
               )}
             </div>
           )}
