@@ -994,7 +994,11 @@ export default function CheckoutPage() {
             url: parsed.toString(),
             timestamp: Date.now(),
           });
-          setTimeout(() => { window.location.href = parsed.toString(); }, 250);
+          // Use replace() so /checkout is dropped from history — pressing
+          // browser back on Wallid's multi-step page won't strand the user
+          // on a one-time-use Wallid URL that 404s. They'll go straight back
+          // to whatever preceded checkout (cart/product page).
+          setTimeout(() => { window.location.replace(parsed.toString()); }, 250);
           return;
         } catch (err: any) {
           setFenaStep('failed');
@@ -1047,7 +1051,9 @@ export default function CheckoutPage() {
           // after the bank confirms payment. If the user cancels/aborts
           // the redirect, the cart stays intact and they can retry.
           try { localStorage.setItem('php_pending_order', orderId); } catch { /* ignore */ }
-          setTimeout(() => { window.location.href = parsed.toString(); }, 250);
+          // See wallid branch above: replace() prevents back-nav to
+          // stale one-time gateway URLs (Fena/TrueLayer 404 on revisit).
+          setTimeout(() => { window.location.replace(parsed.toString()); }, 250);
           return;
         } catch (err: any) {
           setFenaStep('failed');
