@@ -150,17 +150,34 @@ test.describe('Checkout — Germany', () => {
   });
 
   test('valid German address advances and submits with Germany + PLZ payload', async ({ page }) => {
-    // Intercept the order-creation server function so the test does not
-    // hit Firestore or real payment providers. Assert the payload shape.
+    // Intercept the TanStack server-function calls so the test does not hit
+    // Firestore or real payment providers.
+    //
+    // NOTE: TanStack Start emits URLs shaped `/_serverFn/<hash>` — the
+    // function name is NOT in the URL. We must identify calls by inspecting
+    // the POST body, not the path. Discriminators:
+    //   • createOrder payload → contains `ageVerified` + `customer`
+    //   • validateCartPrices payload → contains `items` array (no `customer`)
     const orderPayloads: Array<Record<string, unknown>> = [];
     await page.route('**/_serverFn/**', async (route) => {
       const req = route.request();
-      const url = req.url();
-      if (req.method() === 'POST' && /create-?[Oo]rder|createOrder/.test(url)) {
-        try {
-          const body = req.postDataJSON();
-          orderPayloads.push(body);
-        } catch { /* ignore */ }
+      if (req.method() !== 'POST') return route.continue();
+
+      let body: any = null;
+      try { body = req.postDataJSON(); } catch { /* not JSON */ }
+
+      // TanStack wraps args as an array or `{ data }`; unwrap both shapes.
+      const unwrap = (b: any): any => {
+        if (Array.isArray(b)) return b[0];
+        if (b && typeof b === 'object' && 'data' in b) return b.data;
+        return b;
+      };
+      const payload = unwrap(body);
+      const payloadStr = JSON.stringify(payload ?? {});
+
+      // createOrder — has the age-gate literal and a customer block.
+      if (/"ageVerified"\s*:\s*true/.test(payloadStr) && /"customer"\s*:/.test(payloadStr)) {
+        orderPayloads.push(payload);
         return route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -179,12 +196,11 @@ test.describe('Checkout — Germany', () => {
           }),
         });
       }
-      return route.continue();
-    });
-    // Also stub cart validation so unknown seeded productId doesn't hard-fail.
-    await page.route('**/_serverFn/**', async (route) => {
-      const url = route.request().url();
-      if (/validate-?[Cc]art|validateCartPrices/.test(url)) {
+
+      // validateCartPrices — items array, no customer block. The real fn
+      // rejects the seeded fake `productId` ("Product … no longer exists"),
+      // which blocks step 3 and hides the pay button. Stub a happy result.
+      if (/"items"\s*:\s*\[/.test(payloadStr) && !/"customer"\s*:/.test(payloadStr)) {
         return route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -201,7 +217,8 @@ test.describe('Checkout — Germany', () => {
           }),
         });
       }
-      return route.fallback();
+
+      return route.continue();
     });
 
     await page.goto('/checkout');
@@ -214,6 +231,7 @@ test.describe('Checkout — Germany', () => {
     // Pick standard shipping.
     await page.getByText(/Standard 1–3 Day Delivery/i).first().click();
     await page.getByRole('button', { name: /continue|next/i }).first().click();
+
 
     // Step 3 — confirm 18+ and Terms, then pay.
     await page.getByLabel(/18\s*years?\s*(of age)?\s*or\s*older|18\s*or\s*older|18\+/i).check();
