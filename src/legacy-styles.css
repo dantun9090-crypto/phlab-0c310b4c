@@ -1454,6 +1454,7 @@ body {
    ═══════════════════════════════════════════════════════ */
 @media (max-width: 767px) {
   body.mobile-drawer-open [data-shipping-top-bar],
+  body.mobile-drawer-open [data-top-stripe],
   body.mobile-drawer-open #research-gate-banner,
   body.mobile-drawer-open [data-cookie-consent] {
     display: none !important;
