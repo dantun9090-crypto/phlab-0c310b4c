@@ -159,8 +159,56 @@ export default function PaymentMethodOptions({
     manualSelected ? "ring-2 ring-emerald-500/50" : ""
   }`;
 
+  const rootRef = useRef<HTMLDivElement>(null);
+  const manualDetailsRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * Scroll-preserving selection change.
+   *
+   * When the primary card's expanded content (WhatHappensNext + trust inline)
+   * mounts/unmounts, the manual card jumps up or down and it feels like the
+   * whole page scrolled to the top. We capture the clicked button's viewport
+   * position before the state change, then after paint re-anchor window
+   * scroll so the button stays at the same y — no visible jump.
+   *
+   * For manual bank transfer we additionally scroll its details into view
+   * (gentle, block: 'nearest') once it's expanded.
+   */
+  const handleSelect = (
+    next: "pay_by_bank" | "bank_transfer" | "wallid",
+    clickTarget: HTMLElement | null,
+  ) => {
+    if (next === value) return;
+    console.log(`[PAYMENT] select method=${next}`);
+    const anchorTop = clickTarget?.getBoundingClientRect().top ?? null;
+    onChange(next);
+    if (typeof window === "undefined") return;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (anchorTop != null && clickTarget) {
+          const newTop = clickTarget.getBoundingClientRect().top;
+          const delta = newTop - anchorTop;
+          if (Math.abs(delta) > 1) {
+            window.scrollBy({ top: delta, left: 0, behavior: "auto" });
+          }
+        }
+        if (next === "bank_transfer" && manualDetailsRef.current) {
+          const rect = manualDetailsRef.current.getBoundingClientRect();
+          const vh = window.innerHeight || 0;
+          if (rect.bottom > vh || rect.top < 0) {
+            manualDetailsRef.current.scrollIntoView({
+              behavior: "smooth",
+              block: "nearest",
+            });
+          }
+        }
+      });
+    });
+  };
+
   return (
     <div
+      ref={rootRef}
       role="radiogroup"
       aria-label="Choose how you want to pay"
       className="space-y-3"
@@ -183,7 +231,7 @@ export default function PaymentMethodOptions({
           <button
             type="button"
             data-testid={primaryTestId}
-            onClick={() => onChange(primaryValue)}
+            onClick={(e) => handleSelect(primaryValue, e.currentTarget)}
             role="radio"
             aria-checked={primarySelected}
             aria-describedby={primarySelected ? primaryInstructionsId : undefined}
@@ -251,7 +299,7 @@ export default function PaymentMethodOptions({
         <button
           type="button"
           data-testid="manual-bank-transfer-button"
-          onClick={() => onChange("bank_transfer")}
+          onClick={(e) => handleSelect("bank_transfer", e.currentTarget)}
           role="radio"
           aria-checked={manualSelected}
           className={manualCardClass}
@@ -277,6 +325,44 @@ export default function PaymentMethodOptions({
             Your order will be reserved for 48 hours. Confirmation email sent immediately.
           </p>
         </button>
+
+        {/* Inline expanded details — accordion under the manual card so
+            selecting it never scrolls the page to the top. */}
+        <div
+          ref={manualDetailsRef}
+          data-testid="manual-bank-transfer-details"
+          aria-hidden={!manualSelected}
+          className={`grid transition-all duration-300 ease-out ${
+            manualSelected
+              ? "grid-rows-[1fr] opacity-100 mt-2"
+              : "grid-rows-[0fr] opacity-0 mt-0"
+          }`}
+        >
+          <div className="overflow-hidden">
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-slate-200 space-y-2">
+              <p className="font-semibold text-emerald-200">
+                How Manual Bank Transfer works
+              </p>
+              <ol className="list-decimal list-inside space-y-1 text-slate-300 text-[13px] leading-relaxed">
+                <li>Place your order — we reserve your items for 48 hours.</li>
+                <li>
+                  You'll get an email with our UK bank details and a unique
+                  reference number.
+                </li>
+                <li>
+                  Transfer the total from your bank app using that reference.
+                </li>
+                <li>
+                  Once funds clear, we ship your order and email tracking.
+                </li>
+              </ol>
+              <p className="text-[11px] text-slate-400 pt-1">
+                No card details required. Reference expires after 48 hours if
+                unpaid.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
