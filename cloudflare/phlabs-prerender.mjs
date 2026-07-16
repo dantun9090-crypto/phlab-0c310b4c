@@ -508,7 +508,7 @@ export default {
     // Non-eligible browser paths (admin, auth, cart, checkout, /api/…) keep
     // the original origin+per-request-nonce pass-through path below.
     const cache = caches.default;
-    const wEligible = warmCacheEligible(path);
+    let wEligible = warmCacheEligible(path);
     if (wEligible) {
       const cacheKey = edgeHtmlCacheKey(url);
       const cached = await cache.match(cacheKey);
