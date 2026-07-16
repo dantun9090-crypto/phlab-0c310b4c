@@ -2085,14 +2085,28 @@ export default function CheckoutPage() {
                     )}
                     {isPlacing && paymentRecoveryVisible && (
                       <div className="mt-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-100">
-                        <p className="mb-3">Still waiting for the payment window. If nothing opened, cancel and try again.</p>
-                        <button
-                          type="button"
-                          onClick={() => cancelPaymentAttempt('Payment attempt cancelled. Please try again. No payment has been taken.')}
-                          className="min-h-[44px] rounded-lg border border-yellow-400/50 px-4 py-2 text-sm font-semibold text-yellow-50 hover:bg-yellow-400/10"
-                        >
-                          Cancel payment attempt
-                        </button>
+                        <p className="mb-3">
+                          {pendingPaymentUrl
+                            ? 'Payment page is ready. If your browser did not open it, tap Open payment.'
+                            : 'Still waiting for the payment window. If nothing opened, cancel and try again.'}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {pendingPaymentUrl && (
+                            <a
+                              href={pendingPaymentUrl}
+                              className="min-h-[44px] rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                            >
+                              Open payment
+                            </a>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => cancelPaymentAttempt('Payment attempt cancelled. Please try again. No payment has been taken.')}
+                            className="min-h-[44px] rounded-lg border border-yellow-400/50 px-4 py-2 text-sm font-semibold text-yellow-50 hover:bg-yellow-400/10"
+                          >
+                            Cancel payment attempt
+                          </button>
+                        </div>
                       </div>
                     )}
 
