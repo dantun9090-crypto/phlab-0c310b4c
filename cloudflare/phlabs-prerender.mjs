@@ -512,19 +512,28 @@ export default {
       const cacheKey = edgeHtmlCacheKey(url);
       const cached = await cache.match(cacheKey);
       if (cached) {
-        const headers = new Headers(cached.headers);
-        // Cache API entry carried a private public,max-age header only for
-        // storage TTL. On the wire we serve no-store, just like the origin.
-        applyBrowserHtmlNoCache(headers, path);
-        headers.delete("cf-cache-status"); // Cache API must not surface one
-        const total = Date.now() - startTime;
-        headers.set("X-PHL-Via", "edge-html-hit;bot=0;total=" + total + "ms");
-        headers.set("Server-Timing", `edge-html;desc="HIT", origin;dur=0, worker;dur=${total}`);
-        return new Response(cached.body, {
-          status: cached.status,
-          statusText: cached.statusText,
-          headers,
-        });
+        // READ SELF-HEAL: buffer cached body and verify it is a real HTML
+        // shell. A previous deploy briefly stored a 0-byte origin response
+        // and replayed a blank homepage until manual purge. If the cached
+        // body is suspiciously small, evict and fall through to origin.
+        const buf = await cached.arrayBuffer();
+        if (buf.byteLength < 10000) {
+          ctx.waitUntil(cache.delete(cacheKey));
+        } else {
+          const headers = new Headers(cached.headers);
+          // Cache API entry carried a private public,max-age header only for
+          // storage TTL. On the wire we serve no-store, just like the origin.
+          applyBrowserHtmlNoCache(headers, path);
+          headers.delete("cf-cache-status"); // Cache API must not surface one
+          const total = Date.now() - startTime;
+          headers.set("X-PHL-Via", "edge-html-hit;bot=0;total=" + total + "ms");
+          headers.set("Server-Timing", `edge-html;desc="HIT", origin;dur=0, worker;dur=${total}`);
+          return new Response(buf, {
+            status: cached.status,
+            statusText: cached.statusText,
+            headers,
+          });
+        }
       }
     }
 
