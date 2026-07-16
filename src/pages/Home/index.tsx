@@ -1352,13 +1352,15 @@ export default function HomePage() {
       {/* ════════════════════════════════
           MOBILE STICKY BAR
       ════════════════════════════════ */}
-      <div className="fixed bottom-0 left-0 right-0 z-30" style={{
+      <div className="fixed left-0 right-0 z-50" style={{
+        bottom: 'calc(env(safe-area-inset-bottom, 0px) + 42px)',
         background: 'rgba(3,10,20,0.97)',
         borderTop: '1px solid rgba(16,185,129,0.15)',
-        padding: 'max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left))',
+        padding: '12px max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left))',
         transform: 'translateZ(0)',
         contain: 'layout paint',
       }}>
+
         <div className="flex items-center gap-3">
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold" style={{ color: '#4ade80' }}>
