@@ -941,10 +941,24 @@ export default function CheckoutPage() {
           } catch { /* ignore */ }
 
           setFenaStep('redirecting');
+          logCheckoutEvent({
+            stage: 'redirect_target',
+            cartId: orderTelemetryCartId,
+            url: parsed.toString(),
+            timestamp: Date.now(),
+          });
           setTimeout(() => { window.location.href = parsed.toString(); }, 250);
           return;
         } catch (err: any) {
           setFenaStep('failed');
+          logCheckoutEvent({
+            stage: 'gateway_error',
+            cartId: orderTelemetryCartId,
+            gateway: 'wallid',
+            errorCode: String(err?.code ?? err?.name ?? 'wallid_error'),
+            errorMessage: String(err?.message ?? 'unknown').slice(0, 300),
+            timestamp: Date.now(),
+          });
           setLoginError(err?.message || 'Could not start Pay by Bank. Please try again or use Manual Bank Transfer.');
           setIsPlacing(false);
           return;
