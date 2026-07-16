@@ -1551,7 +1551,7 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* WhatsApp Floating Button */}
-      {siteSettings.whatsappNumber && !location.pathname.startsWith('/checkout') && (
+      {siteSettings.whatsappNumber && location.pathname === '/contact' && (
         <a
           href={`https://wa.me/${siteSettings.whatsappNumber}`}
           target="_blank"
