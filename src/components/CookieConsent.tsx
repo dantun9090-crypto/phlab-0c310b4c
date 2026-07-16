@@ -122,6 +122,7 @@ export function CookieConsent() {
   const acceptAll = () => {
     savePreferences({ essential: true, analytics: true, marketing: true });
     setVisible(false);
+    setDismissed(true);
   };
 
   const rejectAll = () => {
@@ -129,12 +130,18 @@ export function CookieConsent() {
     setAnalytics(false);
     setMarketing(false);
     setVisible(false);
+    setDismissed(true);
   };
 
   const acceptSelected = () => {
     savePreferences({ essential: true, analytics, marketing });
     setVisible(false);
+    setDismissed(true);
   };
+
+  // Consent already stored → do not render the banner at all. The footer
+  // "Cookie Settings" link dispatches OPEN_EVENT which resets `dismissed`.
+  if (dismissed) return null;
 
   return (
     <div
