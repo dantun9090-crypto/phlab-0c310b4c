@@ -322,6 +322,25 @@ export default {
     }
 
     if (isProxyRoute(path)) {
+      // /_img is a content-addressed image proxy (u/w/f/q params fully
+      // identify the output). CF's default behaviour on this route stamps
+      // a __cf_bm Bot Management cookie → cf-cache-status: DYNAMIC, so
+      // every cold page view re-fetches the same bytes from Firebase.
+      // Force cacheEverything with a 24h TTL and strip Set-Cookie so the
+      // response is safely shareable across users.
+      if (path === "/_img" || path === "/_img/") {
+        const imgRes = await fetch(request, {
+          cf: { cacheTtl: 86400, cacheEverything: true },
+        });
+        const imgHeaders = new Headers(imgRes.headers);
+        imgHeaders.delete("set-cookie");
+        imgHeaders.delete("Set-Cookie");
+        return new Response(imgRes.body, {
+          status: imgRes.status,
+          statusText: imgRes.statusText,
+          headers: imgHeaders,
+        });
+      }
       // Build assets are content-addressed and may legitimately disappear when
       // the hosting platform evicts an older deployment. Never let Cloudflare
       // store a 404 for /assets/*.js|css as immutable, otherwise stale HTML can
