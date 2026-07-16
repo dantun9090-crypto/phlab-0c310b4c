@@ -78,8 +78,11 @@ describe("CI guardrail — sitemap ↔ canonical ↔ robots", () => {
   it("robots.txt Sitemap: directive matches the live sitemap URL", () => {
     const directives = extractRobotsSitemapDirectives();
     expect(directives.length, "robots.txt must declare a Sitemap").toBeGreaterThan(0);
-    // Exactly one sitemap, pointing at our canonical host + /sitemap.xml.
-    expect(directives).toEqual([`${SITE_URL}/sitemap.xml`]);
+    // Primary XML sitemap and Bing URL feed, both on the canonical host.
+    expect(directives).toEqual([
+      `${SITE_URL}/sitemap.xml`,
+      `${SITE_URL}/bing-feed.xml`,
+    ]);
   });
 
   it("robots.txt does NOT reference any non-canonical host", () => {
