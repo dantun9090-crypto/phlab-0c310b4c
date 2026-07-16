@@ -131,7 +131,7 @@ export default function LiveSalesPopup() {
   useEffect(() => {
     if (!latestNewOrder || !isHomePage) return;
     if (Date.now() < snoozeUntilRef.current) return;
-    if (currentUid && latestNewOrder.userId === currentUid) return;
+    if (currentUidHash && latestNewOrder.userHash === currentUidHash) return;
     dlog('new order arrived:', latestNewOrder.id);
     showOrder(latestNewOrder);
     // eslint-disable-next-line react-hooks/exhaustive-deps
