@@ -131,13 +131,18 @@ jobs:
             echo "::warning::PRERENDER_TOKEN missing — skipping recache"
             exit 0
           fi
+          # Recache the __prt-marked variant: the worker forwards bot requests
+          # to prerender.io with __prt=1 appended, so prerender.io must key its
+          # snapshot by the same URL. The renderer's request comes back through
+          # the worker, hits the __prt passthrough, and renders the LIVE origin
+          # shell — breaking the self-staling loop.
           URLS=(
-            "https://phlabs.co.uk/"
-            "https://phlabs.co.uk/products"
-            "https://phlabs.co.uk/products/retatrutide"
-            "https://phlabs.co.uk/products/bpc-157"
-            "https://phlabs.co.uk/products/tirzepatide"
-            "https://phlabs.co.uk/quality-control"
+            "https://phlabs.co.uk/?__prt=1"
+            "https://phlabs.co.uk/products?__prt=1"
+            "https://phlabs.co.uk/products/retatrutide?__prt=1"
+            "https://phlabs.co.uk/products/bpc-157?__prt=1"
+            "https://phlabs.co.uk/products/tirzepatide?__prt=1"
+            "https://phlabs.co.uk/quality-control?__prt=1"
           )
           # Prerender.io keys snapshots per UA class (desktop vs mobile). A
           # recache without adaptiveType only refreshes ONE bucket — usually
