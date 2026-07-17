@@ -8,7 +8,12 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  signInAnonymously,
+  // signInAnonymously intentionally NOT imported here — firebase/auth's
+  // Worker/SSR export shape does not expose it, so evaluating the
+  // module-level re-export throws "signInAnonymously is not defined"
+  // during SSR of any route that imports from '@/lib/firebase'
+  // (Checkout, etc.). Consumers dynamic-import it from 'firebase/auth'
+  // in client-only paths (see src/pages/Checkout/index.tsx).
   sendPasswordResetEmail,
   sendEmailVerification,
   GoogleAuthProvider,
