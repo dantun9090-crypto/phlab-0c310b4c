@@ -952,9 +952,18 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   // fetches the current chunk. Also blocks stale `modulepreload` warmups
   // and `link[imagesrcset]` responsive images.
   const ASSET_PATH_RE = /^\/(?:assets|_build)\//;
+  // JS/module assets are ALREADY content-hashed by Vite. Appending ?v= to
+  // <script src> and <link rel=modulepreload> caused a double-boot regression
+  // (2026-07-17): TanStack Start's inline SSR bootstrap `import()`s the entry
+  // via the un-versioned URL, while the rewriter versioned the static
+  // <script src>. Two different URLs → two module executions → the client
+  // guard logs "Duplicate client boot blocked" and the catalog stalls.
+  // Keep versioning ONLY for non-JS assets (images, CSS, fonts).
+  const JS_ASSET_RE = /\.(?:js|mjs)(?:$|\?)/i;
   const versionUrl = (raw: string | null): string | null => {
     if (!raw) return null;
     if (!ASSET_PATH_RE.test(raw)) return null;
+    if (JS_ASSET_RE.test(raw)) return null;
     if (raw.includes("?v=") || raw.includes("&v=")) return null;
     const sep = raw.includes("?") ? "&" : "?";
     return `${raw}${sep}v=${encodeURIComponent(buildId)}`;
