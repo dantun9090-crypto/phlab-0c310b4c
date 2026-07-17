@@ -539,7 +539,11 @@ export default function HomePage() {
         // the banner never dominates the fold on ultra-wide screens.
         const baseH = banner.heightPx || 320;
         const capH = Math.max(baseH, 560);
-        const responsiveHeight = `clamp(${baseH}px, 38vw, ${capH}px)`;
+        // Desktop hero halved to a slim wide strip (objectFit: cover keeps
+        // quality — the image is cropped, never stretched).
+        const desktopCap = Math.round(capH / 2);
+        const mobileMin = Math.round(baseH * 0.7);
+        const responsiveHeight = `clamp(${mobileMin}px, 22vw, ${desktopCap}px)`;
         return (
         <div className="relative w-full overflow-hidden" style={{ minHeight: responsiveHeight }}>
           {banner.overlayEnabled && (
