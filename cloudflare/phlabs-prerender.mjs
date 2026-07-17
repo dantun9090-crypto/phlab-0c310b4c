@@ -666,26 +666,68 @@ export default {
     }
 
     // ── 3. BROWSER branch: Cache API-backed HTML edge cache ──────────────────
-    // For public cache-eligible routes we serve the fully-rendered prerender
-    // snapshot to humans, but re-inject the LIVE origin shell's executable
-    // boot (entry module <script>, index+vendor-react modulepreloads, and
-    // the inline watchdog/build-killer). Prerender.io strips executable
-    // scripts; without re-injection React never boots and the site is dead.
+    // Post-incident (2026-07-17) rules:
+    //   • HIT path must NEVER await origin first. Serve the cached bytes,
+    //     then (via ctx.waitUntil) fetch origin build-id and evict if it
+    //     differs from the build-id stored on the cached entry.
+    //   • Origin fetch only runs on true MISS.
+    //   • On MISS the prerendered body must pass isSaneRenderedHtml()
+    //     (size, non-empty root, matching /assets/index-*.js, no watchdog
+    //     marker) before ANY cache.put. Fail => origin passthrough, no cache.
+    //   • x-phl-swr-refill header (future SWR PR) forces a MISS and prevents
+    //     recursive refill loops.
     //
-    // Cache key is scoped by origin's current x-build-id — a deploy issues
-    // a new build id and immediately invalidates every stale prerender
-    // entry, so we can never replay a shell pointing at deleted /assets
-    // chunks.
-    //
-    // Non-eligible browser paths (admin, auth, cart, checkout, /api/…) keep
-    // the original origin+per-request-nonce pass-through path below.
+    // Non-eligible browser paths (admin, auth, cart, checkout, /api/…) fall
+    // through to the origin+per-request-nonce pass-through path below.
     const cache = caches.default;
     let wEligible = warmCacheEligible(path);
-    if (wEligible) {
-      // Fetch a fresh origin GET up-front. We need it either way:
-      //   - build id → cache key scope + wire headers
-      //   - shell boot payload → re-inject into prerender snapshot on MISS
-      // Bypass CF cache so a stale shell can't poison the build id.
+    const swrRefill = request.headers.get("x-phl-swr-refill") === "1";
+    if (wEligible && !swrRefill) {
+      const cacheKey = edgeHtmlCacheKey(url);
+      const cached = await cache.match(cacheKey);
+      if (cached) {
+        const buf = await cached.arrayBuffer();
+        if (buf.byteLength < 10000) {
+          // Suspiciously small — evict, fall through to MISS path.
+          ctx.waitUntil(cache.delete(cacheKey));
+        } else {
+          const headers = new Headers(cached.headers);
+          applyBrowserHtmlNoCache(headers, path);
+          headers.delete("cf-cache-status");
+          const cachedBid =
+            headers.get("x-phl-build-id") || headers.get("x-build-id") || "";
+          const total = Date.now() - startTime;
+          headers.set("X-PHL-Via", "edge-html-hit;bot=0;prerender=1;total=" + total + "ms");
+          headers.set("Server-Timing", `edge-html;desc="HIT", origin;dur=0, worker;dur=${total}`);
+          if (cachedBid) {
+            headers.set("x-build-id", cachedBid);
+            headers.set("cf-cache-build-id", cachedBid);
+          }
+          // Background build-id validation: never blocks the customer.
+          ctx.waitUntil((async () => {
+            try {
+              const probe = await fetch(new Request(url.toString(), {
+                method: "GET",
+                headers: { "User-Agent": "phlabs-worker/build-id-check" },
+              }), { cf: { cacheTtl: 0, cacheEverything: false } });
+              if (!probe || !probe.ok) return;
+              const liveBid =
+                probe.headers.get("x-build-id") ||
+                probe.headers.get("x-phl-build-id") || "";
+              if (liveBid && cachedBid && liveBid !== cachedBid) {
+                await cache.delete(cacheKey);
+              }
+            } catch { /* best-effort */ }
+          })());
+          return new Response(buf, {
+            status: cached.status,
+            statusText: cached.statusText,
+            headers,
+          });
+        }
+      }
+
+      // MISS: fetch origin shell + prerender in parallel.
       const originStart = Date.now();
       const originShellPromise = fetch(new Request(url.toString(), {
         method: "GET",
@@ -697,73 +739,43 @@ export default {
         console.warn("[PHL-WARN] origin shell fetch threw: " + (e && e.message));
         return null;
       });
-      const originShellRes = await originShellPromise;
+
+      const prerenderStart = Date.now();
+      const prerenderUrl = PRERENDER_SERVICE + "/" + encodeURIComponent(url.toString());
+      const prerenderPromise = fetch(prerenderUrl, {
+        headers: {
+          "X-Prerender-Token": env.PRERENDER_TOKEN || "",
+          "User-Agent": request.headers.get("User-Agent") || "",
+        },
+      }).catch((e) => {
+        console.warn("[PHL-WARN] Prerender.io fetch threw: " + (e && e.message));
+        return null;
+      });
+
+      const [originShellRes, prerenderRes] = await Promise.all([
+        originShellPromise, prerenderPromise,
+      ]);
       const originShellMs = Date.now() - originStart;
+      const prerenderMs = Date.now() - prerenderStart;
       const buildId = (originShellRes && (
         originShellRes.headers.get("x-build-id") ||
         originShellRes.headers.get("x-phl-build-id")
       )) || "";
 
-      const cacheKey = edgeHtmlCacheKeyWithBuild(url, buildId);
-      const cached = await cache.match(cacheKey);
-      if (cached) {
-        // READ SELF-HEAL: buffer cached body and verify it is a real HTML
-        // shell. If suspiciously small (<10KB), evict and fall through.
-        const buf = await cached.arrayBuffer();
-        if (buf.byteLength < 10000) {
-          ctx.waitUntil(cache.delete(cacheKey));
-        } else {
-          const headers = new Headers(cached.headers);
-          applyBrowserHtmlNoCache(headers, path);
-          headers.delete("cf-cache-status");
-          const total = Date.now() - startTime;
-          headers.set("X-PHL-Via", "edge-html-hit;bot=0;prerender=1;total=" + total + "ms");
-          headers.set("Server-Timing", `edge-html;desc="HIT", origin;dur=0, worker;dur=${total}`);
-          // Restamp build-id headers on the wire so post-deploy health probes
-          // (which require both x-build-id and cf-cache-build-id) pass on HIT.
-          const hitBid = buildId || headers.get("x-phl-build-id") || headers.get("x-build-id") || "";
-          if (hitBid) {
-            headers.set("x-build-id", hitBid);
-            headers.set("cf-cache-build-id", hitBid);
-          }
-          return new Response(buf, {
-            status: cached.status,
-            statusText: cached.statusText,
-            headers,
-          });
-        }
-      }
-
-      // MISS: fetch prerender.io. Origin GET already ran (originShellRes).
-      const prerenderStart = Date.now();
-      const prerenderUrl = PRERENDER_SERVICE + "/" + encodeURIComponent(url.toString());
-      let prerenderRes;
-      try {
-        prerenderRes = await fetch(prerenderUrl, {
-          headers: {
-            "X-Prerender-Token": env.PRERENDER_TOKEN || "",
-            "User-Agent": request.headers.get("User-Agent") || "",
-          },
-        });
-      } catch (e) {
-        console.warn("[PHL-WARN] Prerender.io fetch threw for browser — falling back to origin: " + (e && e.message));
-        prerenderRes = null;
-      }
-      const prerenderMs = Date.now() - prerenderStart;
-
-      // Extract origin shell boot payload (entry <script>, modulepreloads,
-      // inline watchdog/build-killer). Required to make prerender executable.
+      // Extract origin boot payload + entry filename for the sanity guard.
       let boot = null;
+      let originEntryPath = "";
       if (originShellRes && originShellRes.ok) {
         try {
           const originHtml = await originShellRes.clone().text();
           boot = extractOriginShellBoot(originHtml);
+          originEntryPath = extractIndexAssetPath(originHtml);
         } catch (e) {
           console.warn("[PHL-WARN] origin shell parse threw: " + (e && e.message));
         }
       }
 
-      if (prerenderRes && prerenderRes.ok && boot && boot.entry) {
+      if (prerenderRes && prerenderRes.ok && boot && boot.entry && originEntryPath) {
         const raw = await prerenderRes.text();
         const withBoot = injectOriginShellBoot(raw, boot);
         const body = injectHeroImagePreload(stripHostingInjectedScriptsFromHtml(withBoot));
@@ -774,7 +786,12 @@ export default {
           const response = await buildHashCspResponseBrowserSelf(body, prerenderRes.status, prerenderRes.statusText);
           const hashMs = Date.now() - hashStart;
           const buf = await response.clone().arrayBuffer();
-          if (buf.byteLength >= 10000) {
+
+          // Sanity guard BEFORE any cache.put.
+          const sanity = isSaneRenderedHtml(body, originEntryPath);
+          if (!sanity.ok) {
+            console.warn("[PHL-CRIT] Prerender sanity guard failed (" + sanity.reason + ") — serving origin passthrough, caching nothing");
+          } else {
             const snapshotHeaders = new Headers();
             response.headers.forEach((value, name) => {
               const n = name.toLowerCase();
@@ -799,34 +816,37 @@ export default {
             })).catch((e) => {
               console.warn("[PHL Worker] edge HTML cache populate failed: " + (e && e.message));
             }));
+
+            const outHeaders = new Headers(response.headers);
+            applyBrowserHtmlNoCache(outHeaders, path);
+            if (buildId) {
+              outHeaders.set("x-build-id", buildId);
+              outHeaders.set("cf-cache-build-id", buildId);
+            }
+            const total = Date.now() - startTime;
+            outHeaders.set(
+              "X-PHL-Via",
+              "edge-html-miss;bot=0;prerender=OK;origin=" + originShellMs +
+                "ms;prerender=" + prerenderMs + "ms;hash=" + hashMs +
+                "ms;total=" + total + "ms",
+            );
+            outHeaders.set(
+              "Server-Timing",
+              `edge-html;desc="MISS", origin;dur=${originShellMs}, prerender;dur=${prerenderMs}, csp-hash;dur=${hashMs}, worker;dur=${total}`,
+            );
+            return new Response(buf, {
+              status: response.status,
+              statusText: response.statusText,
+              headers: outHeaders,
+            });
           }
-          const outHeaders = new Headers(response.headers);
-          applyBrowserHtmlNoCache(outHeaders, path);
-          if (buildId) {
-            outHeaders.set("x-build-id", buildId);
-            outHeaders.set("cf-cache-build-id", buildId);
-          }
-          const total = Date.now() - startTime;
-          outHeaders.set(
-            "X-PHL-Via",
-            "edge-html-miss;bot=0;prerender=OK;origin=" + originShellMs +
-              "ms;prerender=" + prerenderMs + "ms;hash=" + hashMs +
-              "ms;total=" + total + "ms",
-          );
-          outHeaders.set(
-            "Server-Timing",
-            `edge-html;desc="MISS", origin;dur=${originShellMs}, prerender;dur=${prerenderMs}, csp-hash;dur=${hashMs}, worker;dur=${total}`,
-          );
-          return new Response(buf, {
-            status: response.status,
-            statusText: response.statusText,
-            headers: outHeaders,
-          });
         }
       } else if (prerenderRes && !prerenderRes.ok) {
         console.warn("[PHL-WARN] Prerender.io returned " + prerenderRes.status + " for browser — falling back to origin");
       } else if (!boot || !boot.entry) {
         console.warn("[PHL-WARN] Origin shell missing entry <script> — falling back to origin passthrough");
+      } else if (!originEntryPath) {
+        console.warn("[PHL-WARN] Could not extract origin entry filename — falling back to origin passthrough");
       }
       // Fallback: serve the origin shell we already fetched, unchanged.
       // Never populate the prerender cache slot with a hydration-only shell.
@@ -848,6 +868,7 @@ export default {
         return out;
       }
     }
+
 
 
 
