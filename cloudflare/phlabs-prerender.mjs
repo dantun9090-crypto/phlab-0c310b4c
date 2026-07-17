@@ -924,6 +924,7 @@ export default {
           snapshotHeaders.set(name, value);
         });
         snapshotHeaders.set("Cache-Control", "public, max-age=" + HTML_EDGE_TTL_S);
+        snapshotHeaders.set("x-phl-filled-at", String(Date.now()));
         const cacheKey = edgeHtmlCacheKey(url);
         const snapshot = new Response(buf, {
           status: out.status,
