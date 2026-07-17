@@ -71,21 +71,28 @@ async function main() {
     }
 
     // ── Cookie banner: click "Accept All" ─────────────────────────
-    const acceptBtn = page
-      .locator(
-        'button:has-text("Accept all"), button:has-text("Accept All"), button:has-text("Accept")',
-      )
-      .first();
+    // Exact selector only — the page has multiple "Accept"-matching
+    // buttons (an empty icon button + the real banner CTA). A loose
+    // `has-text("Accept")` + `.first()` clicks the no-op icon and leaves
+    // php_cookie_consent unset, failing the gate.
+    const acceptBtn = page.getByRole("button", { name: "Accept All", exact: true });
     try {
       await acceptBtn.waitFor({ state: "visible", timeout: 8000 });
-      log('cookie banner "Accept" visible — clicking');
+      log('cookie banner "Accept All" visible — clicking');
       await acceptBtn.click();
-      // Banner should hide within 3s.
-      await acceptBtn
-        .waitFor({ state: "hidden", timeout: 5000 })
-        .catch(() => fail("cookie banner did not hide after Accept click"));
+      // Assert via consent state, not locator visibility (the banner
+      // node may unmount and leave a stale locator).
+      await page
+        .waitForFunction(
+          () => !!localStorage.getItem("php_cookie_consent"),
+          null,
+          { timeout: 5000 },
+        )
+        .catch(() =>
+          fail("php_cookie_consent not set after Accept All click"),
+        );
     } catch (e) {
-      if (!/did not hide/.test(String(e && e.message))) {
+      if (!/php_cookie_consent/.test(String(e && e.message))) {
         log("no cookie banner visible — continuing");
       } else {
         throw e;
