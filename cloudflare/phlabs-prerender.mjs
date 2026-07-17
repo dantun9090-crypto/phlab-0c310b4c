@@ -779,6 +779,7 @@ export default {
               snapshotHeaders.set(name, value);
             });
             snapshotHeaders.set("Cache-Control", "public, max-age=" + HTML_EDGE_TTL_S);
+            snapshotHeaders.set("x-phl-filled-at", String(Date.now()));
             if (buildId) {
               snapshotHeaders.set("x-build-id", buildId);
               snapshotHeaders.set("x-phl-build-id", buildId);
