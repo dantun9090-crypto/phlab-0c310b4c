@@ -127,7 +127,12 @@ export function useSEO(pageKey: string, fallback: SEOData) {
 
     // Apply fallback immediately so first paint contains correct meta.
     apply(fallback);
-    if (typeof window !== 'undefined') (window as any).prerenderReady = true;
+    // Flip prerenderReady for routes that don't gate on data. Data-dependent
+    // routes (Home, Products, ProductDetail) call markPrerenderPending() and
+    // raise __phlPrerenderHold — respect that so we don't snapshot early.
+    if (typeof window !== 'undefined' && !(window as any).__phlPrerenderHold) {
+      (window as any).prerenderReady = true;
+    }
 
     // Then asynchronously merge Firestore overrides if present.
     (async () => {

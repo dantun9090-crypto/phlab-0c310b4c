@@ -20,6 +20,7 @@ import type { Product } from '@/lib/firebase';
 // Firebase is dynamically imported below to keep it off the home-route critical chunk.
 const loadFirebase = () => import('@/lib/firebase');
 import { nameToSlug } from '@/lib/seedProducts';
+import { markPrerenderPending, markPrerenderReady, flipPrerenderReadyWhenRendered } from '@/lib/prerender-ready';
 import { sendPublicMail } from '@/lib/sendPublicMail';
 import { cfImgProps } from '@/lib/cf-image';
 
@@ -233,11 +234,20 @@ export default function HomePage() {
   useEffect(() => {
     // Defer cached product load past LCP window — avoids TBT and a permanent live stream
     let cancelled = false;
+    // Hold the prerender.io snapshot open until the hero product grid has
+    // real markup in the DOM. Without this, prerender.io was caching the
+    // 52 KB "Taking longer than usual" shell for /.
+    markPrerenderPending();
     const loadProducts = () => {
       loadFirebase().then(({ getAllProducts }) => getAllProducts()).then((prods: Product[]) => {
-        if (!cancelled) setProducts(prods);
+        if (cancelled) return;
+        setProducts(prods);
+        // Wait for the first product tiles to render, then flip ready.
+        flipPrerenderReadyWhenRendered('[data-product-card], [data-home-product]', Math.min(prods.length, 3));
       }).catch(() => {
-        if (!cancelled) setProducts([]);
+        if (cancelled) return;
+        setProducts([]);
+        markPrerenderReady();
       });
     };
     if (typeof requestIdleCallback !== 'undefined') {
