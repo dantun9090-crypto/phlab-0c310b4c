@@ -563,7 +563,17 @@ export default {
       return fetch(request);
     }
 
+    // ── 1b. PRERENDER RENDERER passthrough — break the self-staling loop
+    if (url.searchParams.has("__prt")) {
+      const clean = new URL(request.url);
+      clean.searchParams.delete("__prt");
+      return fetch(new Request(clean.toString(), request), {
+        cf: { cacheTtl: 0, cacheEverything: false },
+      });
+    }
+
     // ── 2. BOT branch: Prerender.io -> hash-CSP -> cache separately ─────────
+
     if (isBot) {
       const cacheKey = new Request(url.toString() + "?__prerender=1", { method: "GET" });
       const cache = caches.default;
