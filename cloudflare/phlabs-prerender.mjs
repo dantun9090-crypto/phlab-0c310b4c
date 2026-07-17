@@ -9,7 +9,12 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // ORIGIN & ROUTING
 // ═══════════════════════════════════════════════════════════════════════════════
-const ORIGIN = "https://phlabs-prod.web.app";
+// NOTE: Origin-host rendering was attempted (ORIGIN=phlabs-prod.web.app) but
+// no such Firebase Hosting site is deployed (verified 404 "Site Not Found").
+// We render the public phlabs.co.uk URL through prerender.io and break the
+// self-staling loop below by detecting prerender.io's renderer at the top
+// of the bot branch and passing it through to origin unchanged.
+const ORIGIN = "https://phlabs.co.uk";
 const PROXY_HOST = "phlabs.co.uk";
 const PRERENDER_SERVICE = "https://service.prerender.io";
 
@@ -573,6 +578,30 @@ export default {
     }
 
     // ── 2. BOT branch: Prerender.io -> hash-CSP -> cache separately ─────────
+
+    // ── 1c. PRERENDER.IO RENDERER passthrough — break the self-staling loop.
+    // When prerender.io's headless renderer fetches https://phlabs.co.uk/...
+    // it hits this worker. If we classified it as a bot and re-forwarded to
+    // prerender.io, prerender serves ITS OWN cached snapshot back to itself,
+    // stale forever. Detect the renderer by UA (/prerender/i) or any
+    // X-Prerender-* header and passthrough to real origin with cache off.
+    {
+      const inboundUA = request.headers.get("User-Agent") || "";
+      let hasPrerenderHeader = false;
+      for (const [k] of request.headers) {
+        if (k.toLowerCase().startsWith("x-prerender")) { hasPrerenderHeader = true; break; }
+      }
+      if (/prerender/i.test(inboundUA) || hasPrerenderHeader) {
+        // TEMP DEBUG: capture renderer signature for one deploy cycle. Remove
+        // once we've confirmed the detection pattern in wrangler tail.
+        try {
+          const hdrDump = {};
+          for (const [k, v] of request.headers) hdrDump[k] = v;
+          console.log("[PHL-DEBUG] renderer passthrough url=" + url.toString() + " ua=" + inboundUA + " headers=" + JSON.stringify(hdrDump));
+        } catch {}
+        return fetch(request, { cf: { cacheTtl: 0, cacheEverything: false } });
+      }
+    }
 
     if (isBot) {
       const cacheKey = new Request(url.toString() + "?__prerender=1", { method: "GET" });
