@@ -5,26 +5,45 @@
  * `window.prerenderReady`. While it is `false`, the snapshot is held;
  * when it flips to `true`, the current DOM is captured.
  *
- * Use these helpers to coordinate "wait until real content is in the DOM"
- * across routes so we never snapshot an empty shell.
+ * Contract (post-2026-07-17 stale-watchdog-snapshot incident):
+ *  1. The root inline script sets `window.prerenderReady = false` as
+ *     early as possible (before any React code runs).
+ *  2. Data-dependent routes call `markPrerenderPending()` synchronously
+ *     when their loader starts — that sets `prerenderReady = false` AND
+ *     raises the `__phlPrerenderHold` flag so useSEO's route-agnostic
+ *     flip can't overwrite the pending state.
+ *  3. On data-loaded, routes call `markPrerenderReady()` (directly or
+ *     via `flipPrerenderReadyWhen*`) which clears the hold and sets
+ *     `prerenderReady = true`.
+ *  4. If the blank watchdog fires we intentionally leave
+ *     `prerenderReady = false` so prerender.io waits (up to its own
+ *     timeout, ~20s) rather than snapshotting the fallback overlay.
  */
 
 const MAX_WAIT_MS_DEFAULT = 8000;
 
+type PrerenderWindow = Window & {
+  prerenderReady?: boolean;
+  __phlPrerenderHold?: boolean;
+};
+
 /**
- * No-op: route loaders now provide data synchronously to prerender, so we
- * never want to set prerenderReady=false (it would block snapshot capture
- * while we wait for client-side Firebase reads that aren't required for SEO).
+ * Mark the current route as data-pending. Holds the prerender snapshot
+ * open until the route calls `markPrerenderReady` (or a flip helper).
  */
 export function markPrerenderPending(): void {
   if (typeof window === 'undefined') return;
-  (window as any).prerenderReady = true;
+  const w = window as PrerenderWindow;
+  w.prerenderReady = false;
+  w.__phlPrerenderHold = true;
 }
 
-/** Force-flip prerenderReady to true (use for hard errors / abort paths). */
+/** Flip prerenderReady to true and release the pending hold. */
 export function markPrerenderReady(): void {
   if (typeof window === 'undefined') return;
-  (window as any).prerenderReady = true;
+  const w = window as PrerenderWindow;
+  w.__phlPrerenderHold = false;
+  w.prerenderReady = true;
 }
 
 export interface WaitForDomOptions {

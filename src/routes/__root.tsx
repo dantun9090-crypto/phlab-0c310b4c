@@ -1302,6 +1302,20 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <meta httpEquiv="Pragma" content="no-cache" />
         <meta httpEquiv="Expires" content="0" />
         <meta name="build-id" content={typeof __BUILD_ID__ === "string" ? __BUILD_ID__ : "dev"} />
+        {/* Prerender.io contract: hold the snapshot until the app signals
+            content is in the DOM. Data-dependent routes flip this to true
+            via markPrerenderReady(); blank-watchdog fallback intentionally
+            leaves it false so prerender.io waits rather than caching the
+            "Taking longer than usual" overlay. Belt-and-braces safety net
+            flips ready after 15s so pages that forget to signal still get
+            snapshotted eventually. */}
+        <script
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{window.prerenderReady=false;window.__phlPrerenderHold=false;setTimeout(function(){try{if(window.prerenderReady!==true)window.prerenderReady=true;}catch(e){}},15000);}catch(e){}})();",
+          }}
+        />
         <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: FRESH_HTML_RECOVERY }} />
         {/* Logo asset is Vite-inlined as a data:image/webp URL (small file
             under the assetsInlineLimit), so it ships inside the HTML shell
