@@ -41,16 +41,31 @@ jobs:
           CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_API }}
         run: |
           mkdir -p /tmp/rollback
+          # IMPORTANT: use /content endpoint. The bare
+          # /workers/scripts/{name} endpoint returns multipart/form-data for
+          # module workers, which cannot be re-uploaded verbatim as the main
+          # module (CF rejects it with a 400 metadata error — the cause of
+          # the previous rollback failures). /content returns the raw ESM.
           HTTP=$(curl -sS -o /tmp/rollback/phlabs-prerender.mjs -w "%{http_code}" \
-            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/workers/scripts/phlabs-prerender" \
-            -H "Authorization: Bearer $CF_API_TOKEN")
+            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/workers/scripts/phlabs-prerender/content" \
+            -H "Authorization: Bearer $CF_API_TOKEN" \
+            -H "Accept: application/javascript+module")
           echo "snapshot HTTP $HTTP"
-          if [ "$HTTP" = "200" ] && [ -s /tmp/rollback/phlabs-prerender.mjs ]; then
+          BYTES=$(wc -c < /tmp/rollback/phlabs-prerender.mjs 2>/dev/null || echo 0)
+          FIRST=$(head -c 80 /tmp/rollback/phlabs-prerender.mjs | tr -d '\n' || true)
+          echo "snapshot bytes=$BYTES firstBytes='$FIRST'"
+          # Sanity: must start like real ESM (import/export/comment) and be >5KB.
+          if [ "$HTTP" = "200" ] && [ "$BYTES" -gt 5000 ] \
+             && head -c 200 /tmp/rollback/phlabs-prerender.mjs | grep -qE '^(import |export |//|/\*|"use )'; then
             echo "have_snapshot=true" >> "$GITHUB_OUTPUT"
-            echo "Snapshot saved ($(wc -c < /tmp/rollback/phlabs-prerender.mjs) bytes)"
+            echo "Snapshot saved ($BYTES bytes)"
           else
             echo "have_snapshot=false" >> "$GITHUB_OUTPUT"
-            echo "WARN: no snapshot available — rollback will be skipped if smoke tests fail"
+            echo "WARN: no valid snapshot available — rollback will be skipped if smoke tests fail"
+            echo "--- snapshot head ---"
+            head -c 500 /tmp/rollback/phlabs-prerender.mjs || true
+            echo
+            echo "--- end ---"
           fi
 
       - name: Deploy Worker
