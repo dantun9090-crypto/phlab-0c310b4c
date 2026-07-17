@@ -758,7 +758,9 @@ export default {
       });
 
       const prerenderStart = Date.now();
-      const prerenderTarget = url.origin + url.pathname + (url.search ? url.search + "&" : "?") + "__prt=1";
+      // Render the origin host directly (see rationale above) — never
+      // forward the phlabs.co.uk URL, which would self-loop through the worker.
+      const prerenderTarget = ORIGIN + url.pathname + url.search;
       const prerenderUrl = PRERENDER_SERVICE + "/" + encodeURIComponent(prerenderTarget);
       const prerenderPromise = fetch(prerenderUrl, {
         headers: {
