@@ -94,7 +94,7 @@
     "@react-three/fiber": "^9.6.1",
     "@sentry/react": "^10.62.0",
     "@supabase/supabase-js": "^2.106.1",
-    "@tailwindcss/vite": "^4.2.1",
+    "@tailwindcss/vite": "^4.3.3",
     "@tanstack/react-query": "^5.83.0",
     "@tanstack/react-router": "1.170.17",
     "@tanstack/react-start": "1.168.26",
