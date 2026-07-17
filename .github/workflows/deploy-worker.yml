@@ -207,15 +207,19 @@ jobs:
       - name: Worker-fronted UI smoke (Playwright)
         id: uismoke
         env:
-          # Pin identical versions for the npm package and the browser
-          # download so we never see "Executable doesn't exist" from a
-          # version drift between playwright-core and the browser archive.
-          PLAYWRIGHT_VERSION: 1.47.0
+          # Match the project's @playwright/test version so playwright-core
+          # and the downloaded chromium archive stay in lock-step. Drift
+          # between the two is what produced the previous
+          # "Executable doesn't exist /.../chromium-1134/..." failure.
+          PLAYWRIGHT_VERSION: 1.61.0
         run: |
           set -uo pipefail
-          npm i --no-save --silent "playwright@${PLAYWRIGHT_VERSION}"
+          npm i --no-save --silent \
+            "playwright@${PLAYWRIGHT_VERSION}" \
+            "@playwright/test@${PLAYWRIGHT_VERSION}"
           npx --yes "playwright@${PLAYWRIGHT_VERSION}" install --with-deps chromium
           node scripts/worker-smoke-playwright.mjs
+
 
       # ── Emergency route detach if the UI smoke test failed.
       # Queries the phlabs zone for any worker route bound to the
