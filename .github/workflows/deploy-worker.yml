@@ -179,11 +179,42 @@ jobs:
       # the header-only checks miss (age-gate broken, cookie banner stuck,
       # /products blank, Add-to-cart no-op). Any failure => detach worker
       # routes via CF API in the next step so no visitor hits a broken worker.
+      # Re-attach worker routes if a prior failed run auto-detached them.
+      # Without this, the smoke test hits origin directly and proves nothing.
+      - name: Ensure worker routes attached
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID_PHLABS }}
+        run: |
+          set -uo pipefail
+          resp=$(curl -sS "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/workers/routes" \
+            -H "Authorization: Bearer $CF_API_TOKEN")
+          have_apex=$(echo "$resp" | node -e "const r=JSON.parse(require('fs').readFileSync(0,'utf8'));console.log((r.result||[]).some(x=>x.script==='phlabs-prerender'&&x.pattern==='phlabs.co.uk/*'))")
+          have_www=$(echo "$resp"  | node -e "const r=JSON.parse(require('fs').readFileSync(0,'utf8'));console.log((r.result||[]).some(x=>x.script==='phlabs-prerender'&&x.pattern==='www.phlabs.co.uk/*'))")
+          echo "routes present: apex=$have_apex www=$have_www"
+          for pat in "phlabs.co.uk/*" "www.phlabs.co.uk/*"; do
+            has=$(echo "$resp" | node -e "const r=JSON.parse(require('fs').readFileSync(0,'utf8'));console.log((r.result||[]).some(x=>x.script==='phlabs-prerender'&&x.pattern==='$pat'))")
+            if [ "$has" != "true" ]; then
+              echo "::warning::Route $pat not attached — creating"
+              curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/workers/routes" \
+                -H "Authorization: Bearer $CF_API_TOKEN" \
+                -H "Content-Type: application/json" \
+                --data "{\"pattern\":\"$pat\",\"script\":\"phlabs-prerender\"}" | head -c 500
+              echo
+            fi
+          done
+
       - name: Worker-fronted UI smoke (Playwright)
         id: uismoke
+        env:
+          # Pin identical versions for the npm package and the browser
+          # download so we never see "Executable doesn't exist" from a
+          # version drift between playwright-core and the browser archive.
+          PLAYWRIGHT_VERSION: 1.47.0
         run: |
-          npm i --silent --no-save playwright@1.47.0 || npm i --silent playwright@1.47.0
-          npx --yes playwright install --with-deps chromium
+          set -uo pipefail
+          npm i --no-save --silent "playwright@${PLAYWRIGHT_VERSION}"
+          npx --yes "playwright@${PLAYWRIGHT_VERSION}" install --with-deps chromium
           node scripts/worker-smoke-playwright.mjs
 
       # ── Emergency route detach if the UI smoke test failed.
