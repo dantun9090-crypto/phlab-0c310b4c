@@ -9,7 +9,12 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // ORIGIN & ROUTING
 // ═══════════════════════════════════════════════════════════════════════════════
-const ORIGIN = "https://phlabs-prod.web.app";
+// NOTE: Origin-host rendering was attempted (ORIGIN=phlabs-prod.web.app) but
+// no such Firebase Hosting site is deployed (verified 404 "Site Not Found").
+// We render the public phlabs.co.uk URL through prerender.io and break the
+// self-staling loop below by detecting prerender.io's renderer at the top
+// of the bot branch and passing it through to origin unchanged.
+const ORIGIN = "https://phlabs.co.uk";
 const PROXY_HOST = "phlabs.co.uk";
 const PRERENDER_SERVICE = "https://service.prerender.io";
 
