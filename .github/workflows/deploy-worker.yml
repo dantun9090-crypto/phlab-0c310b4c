@@ -131,19 +131,21 @@ jobs:
             echo "::warning::PRERENDER_TOKEN missing — skipping recache"
             exit 0
           fi
-          # Recache the __prt-marked variant: the worker forwards bot requests
-          # to prerender.io with __prt=1 appended, so prerender.io must key its
-          # snapshot by the same URL. The renderer's request comes back through
-          # the worker, hits the __prt passthrough, and renders the LIVE origin
-          # shell — breaking the self-staling loop.
+          # Recache the ORIGIN-host URL. The worker now forwards prerender.io
+          # at https://phlabs-prod.web.app/... directly (bypassing the worker),
+          # so prerender.io must key its snapshot under the same origin host.
+          # Rendering the origin escapes the self-staling loop where prerender's
+          # renderer came back through the worker and got served its own stale
+          # phlabs.co.uk cache. Fresh namespace, always live build.
           URLS=(
-            "https://phlabs.co.uk/?__prt=1"
-            "https://phlabs.co.uk/products?__prt=1"
-            "https://phlabs.co.uk/products/retatrutide?__prt=1"
-            "https://phlabs.co.uk/products/bpc-157?__prt=1"
-            "https://phlabs.co.uk/products/tirzepatide?__prt=1"
-            "https://phlabs.co.uk/quality-control?__prt=1"
+            "https://phlabs-prod.web.app/"
+            "https://phlabs-prod.web.app/products"
+            "https://phlabs-prod.web.app/products/retatrutide"
+            "https://phlabs-prod.web.app/products/bpc-157"
+            "https://phlabs-prod.web.app/products/tirzepatide"
+            "https://phlabs-prod.web.app/quality-control"
           )
+
           # Prerender.io keys snapshots per UA class (desktop vs mobile). A
           # recache without adaptiveType only refreshes ONE bucket — usually
           # whichever UA prerender's crawler defaults to — leaving the other
