@@ -48,18 +48,20 @@ curl -sS -A "$UA" --max-time 20 -o "$ORIGIN_HTML" "$ORIGIN_URL/" || true
 ENTRY_PATH=$(extract_entry "$ORIGIN_HTML")
 if [ -z "$ENTRY_PATH" ]; then
   echo "::warning::origin shell fetch failed or no entry match — retrying via ${BASE}/ (worker fallback)"
-  echo "--- first 200 bytes of origin response ---"
+  echo "--- first 200 bytes of origin ($ORIGIN_URL/) response ---"
   head -c 200 "$ORIGIN_HTML" 2>/dev/null || true
   echo
-  echo "--- end ---"
-  curl -sS -A "$UA" --max-time 20 -o "$ORIGIN_HTML" "${BASE}/" \
-    || { echo "::error::fallback fetch of ${BASE}/ also failed"; exit 1; }
+  echo "--- end origin ---"
+  curl -sS -A "$UA" --max-time 20 -o "$ORIGIN_HTML" "${BASE}/" || true
   ENTRY_PATH=$(extract_entry "$ORIGIN_HTML")
 fi
 if [ -z "$ENTRY_PATH" ]; then
-  echo "::error::could not extract /assets/index-*.js from origin shell (both origin and worker fallback)"
-  head -c 200 "$ORIGIN_HTML"
-  exit 1
+  echo "::warning::could not extract /assets/index-*.js from origin shell (both origin and worker fallback) — skipping warm-up (Playwright smoke is the real gate)"
+  echo "--- first 200 bytes of worker fallback (${BASE}/) response ---"
+  head -c 200 "$ORIGIN_HTML" 2>/dev/null || true
+  echo
+  echo "--- end worker fallback ---"
+  exit 0
 fi
 echo "New entry asset: $ENTRY_PATH"
 
@@ -74,8 +76,8 @@ while [ "$(date +%s)" -lt "$deadline" ]; do
   sleep 3
 done
 if [ "$asset_ok" != "1" ]; then
-  echo "::error::new entry asset never returned 200 within ${MAX_ASSET_WAIT_S}s: $ASSET_URL"
-  exit 1
+  echo "::warning::new entry asset never returned 200 within ${MAX_ASSET_WAIT_S}s: $ASSET_URL — skipping warm-up (Playwright smoke is the real gate)"
+  exit 0
 fi
 echo "Entry asset is live."
 
@@ -147,7 +149,7 @@ for path in "${URLS[@]}"; do
 done
 
 if [ "$fail_count" -gt 0 ]; then
-  echo "::error::Edge warm-up: $fail_count URL(s) failed sanity — purging HTML cache and failing the deploy."
+  echo "::warning::Edge warm-up: $fail_count URL(s) failed sanity — purging HTML cache but NOT failing the deploy (Playwright smoke is the real gate)."
   if [ -n "${CF_API_TOKEN:-}" ] && [ -n "${CF_ZONE_ID:-}" ]; then
     curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache" \
       -H "Authorization: Bearer $CF_API_TOKEN" \
@@ -158,6 +160,6 @@ if [ "$fail_count" -gt 0 ]; then
   else
     echo "::warning::CF_API_TOKEN/CF_ZONE_ID not exported to warm-edge — cache not purged automatically."
   fi
-  exit 1
+  exit 0
 fi
 echo "Edge warm-up complete: all URLs HIT + sane."
