@@ -212,6 +212,54 @@ function edgeHtmlCacheKeyWithBuild(url, buildId) {
   return new Request(url.origin + url.pathname + bidPart, { method: "GET" });
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTENT SANITY GUARD (post-incident 2026-07-17)
+// A >=10KB size check alone cannot detect a wrong-content snapshot cached
+// mid-deploy. Before ANY cache.put of prerender HTML require ALL:
+//   1. body >= 10KB
+//   2. <div id="root"> has non-trivial inner content (>= 200 chars markup)
+//   3. body contains the SAME /assets/index-<hash>.js filename as the origin
+//      shell fetched in the same request (build alignment)
+//   4. body does NOT contain the watchdog-only marker "Taking longer than usual"
+// Fail => serve origin passthrough, cache nothing.
+// ─────────────────────────────────────────────────────────────────────────────
+function extractIndexAssetPath(html) {
+  if (!html) return "";
+  const m = html.match(/\/assets\/index-[A-Za-z0-9_.-]+\.js/);
+  return m ? m[0] : "";
+}
+
+function rootHasNonTrivialContent(html) {
+  if (!html) return false;
+  const openRe = /<div\b[^>]*\bid=["']root["'][^>]*>/i;
+  const openMatch = html.match(openRe);
+  if (!openMatch) return false;
+  const startIdx = openMatch.index + openMatch[0].length;
+  const slice = html.slice(startIdx, startIdx + 8192);
+  const firstClose = slice.search(/<\/div>/i);
+  const inner = firstClose >= 0 ? slice.slice(0, firstClose) : slice;
+  if (inner.trim().length < 200) return false;
+  if (!/<[a-zA-Z][^>]*>/.test(inner)) return false;
+  return true;
+}
+
+function isSaneRenderedHtml(html, originEntryPath) {
+  if (!html) return { ok: false, reason: "empty" };
+  if (html.length < 10000) return { ok: false, reason: "too_small:" + html.length };
+  if (!rootHasNonTrivialContent(html)) return { ok: false, reason: "empty_root" };
+  if (html.includes("Taking longer than usual")) {
+    return { ok: false, reason: "watchdog_marker" };
+  }
+  if (originEntryPath) {
+    const bodyEntry = extractIndexAssetPath(html);
+    if (!bodyEntry) return { ok: false, reason: "no_entry_script" };
+    if (bodyEntry !== originEntryPath) {
+      return { ok: false, reason: "entry_mismatch:" + bodyEntry + "!=" + originEntryPath };
+    }
+  }
+  return { ok: true };
+}
+
 function stripHostingInjectedScriptsFromHtml(html) {
   return html
     .replace(/<script\b[^>]*\bsrc=["']https:\/\/plausible\.io\/js\/[^"']+["'][^>]*><\/script>/gi, "")
@@ -618,26 +666,68 @@ export default {
     }
 
     // ── 3. BROWSER branch: Cache API-backed HTML edge cache ──────────────────
-    // For public cache-eligible routes we serve the fully-rendered prerender
-    // snapshot to humans, but re-inject the LIVE origin shell's executable
-    // boot (entry module <script>, index+vendor-react modulepreloads, and
-    // the inline watchdog/build-killer). Prerender.io strips executable
-    // scripts; without re-injection React never boots and the site is dead.
+    // Post-incident (2026-07-17) rules:
+    //   • HIT path must NEVER await origin first. Serve the cached bytes,
+    //     then (via ctx.waitUntil) fetch origin build-id and evict if it
+    //     differs from the build-id stored on the cached entry.
+    //   • Origin fetch only runs on true MISS.
+    //   • On MISS the prerendered body must pass isSaneRenderedHtml()
+    //     (size, non-empty root, matching /assets/index-*.js, no watchdog
+    //     marker) before ANY cache.put. Fail => origin passthrough, no cache.
+    //   • x-phl-swr-refill header (future SWR PR) forces a MISS and prevents
+    //     recursive refill loops.
     //
-    // Cache key is scoped by origin's current x-build-id — a deploy issues
-    // a new build id and immediately invalidates every stale prerender
-    // entry, so we can never replay a shell pointing at deleted /assets
-    // chunks.
-    //
-    // Non-eligible browser paths (admin, auth, cart, checkout, /api/…) keep
-    // the original origin+per-request-nonce pass-through path below.
+    // Non-eligible browser paths (admin, auth, cart, checkout, /api/…) fall
+    // through to the origin+per-request-nonce pass-through path below.
     const cache = caches.default;
     let wEligible = warmCacheEligible(path);
-    if (wEligible) {
-      // Fetch a fresh origin GET up-front. We need it either way:
-      //   - build id → cache key scope + wire headers
-      //   - shell boot payload → re-inject into prerender snapshot on MISS
-      // Bypass CF cache so a stale shell can't poison the build id.
+    const swrRefill = request.headers.get("x-phl-swr-refill") === "1";
+    if (wEligible && !swrRefill) {
+      const cacheKey = edgeHtmlCacheKey(url);
+      const cached = await cache.match(cacheKey);
+      if (cached) {
+        const buf = await cached.arrayBuffer();
+        if (buf.byteLength < 10000) {
+          // Suspiciously small — evict, fall through to MISS path.
+          ctx.waitUntil(cache.delete(cacheKey));
+        } else {
+          const headers = new Headers(cached.headers);
+          applyBrowserHtmlNoCache(headers, path);
+          headers.delete("cf-cache-status");
+          const cachedBid =
+            headers.get("x-phl-build-id") || headers.get("x-build-id") || "";
+          const total = Date.now() - startTime;
+          headers.set("X-PHL-Via", "edge-html-hit;bot=0;prerender=1;total=" + total + "ms");
+          headers.set("Server-Timing", `edge-html;desc="HIT", origin;dur=0, worker;dur=${total}`);
+          if (cachedBid) {
+            headers.set("x-build-id", cachedBid);
+            headers.set("cf-cache-build-id", cachedBid);
+          }
+          // Background build-id validation: never blocks the customer.
+          ctx.waitUntil((async () => {
+            try {
+              const probe = await fetch(new Request(url.toString(), {
+                method: "GET",
+                headers: { "User-Agent": "phlabs-worker/build-id-check" },
+              }), { cf: { cacheTtl: 0, cacheEverything: false } });
+              if (!probe || !probe.ok) return;
+              const liveBid =
+                probe.headers.get("x-build-id") ||
+                probe.headers.get("x-phl-build-id") || "";
+              if (liveBid && cachedBid && liveBid !== cachedBid) {
+                await cache.delete(cacheKey);
+              }
+            } catch { /* best-effort */ }
+          })());
+          return new Response(buf, {
+            status: cached.status,
+            statusText: cached.statusText,
+            headers,
+          });
+        }
+      }
+
+      // MISS: fetch origin shell + prerender in parallel.
       const originStart = Date.now();
       const originShellPromise = fetch(new Request(url.toString(), {
         method: "GET",
@@ -649,113 +739,43 @@ export default {
         console.warn("[PHL-WARN] origin shell fetch threw: " + (e && e.message));
         return null;
       });
-      const originShellRes = await originShellPromise;
+
+      const prerenderStart = Date.now();
+      const prerenderUrl = PRERENDER_SERVICE + "/" + encodeURIComponent(url.toString());
+      const prerenderPromise = fetch(prerenderUrl, {
+        headers: {
+          "X-Prerender-Token": env.PRERENDER_TOKEN || "",
+          "User-Agent": request.headers.get("User-Agent") || "",
+        },
+      }).catch((e) => {
+        console.warn("[PHL-WARN] Prerender.io fetch threw: " + (e && e.message));
+        return null;
+      });
+
+      const [originShellRes, prerenderRes] = await Promise.all([
+        originShellPromise, prerenderPromise,
+      ]);
       const originShellMs = Date.now() - originStart;
+      const prerenderMs = Date.now() - prerenderStart;
       const buildId = (originShellRes && (
         originShellRes.headers.get("x-build-id") ||
         originShellRes.headers.get("x-phl-build-id")
       )) || "";
 
-      const cacheKey = edgeHtmlCacheKeyWithBuild(url, buildId);
-      const cached = await cache.match(cacheKey);
-      if (cached) {
-        // READ SELF-HEAL: buffer cached body and verify it is a real HTML
-        // shell. If suspiciously small (<10KB), evict and fall through.
-        const buf = await cached.arrayBuffer();
-        if (buf.byteLength < 10000) {
-          ctx.waitUntil(cache.delete(cacheKey));
-        } else {
-          // stale-while-revalidate windows:
-          //   fresh:  age <= 300s        → serve HIT
-          //   stale:  300s < age <= 86400s → serve stale + background refill
-          //   dead:   age > 86400s       → evict and fall to MISS path
-          const filledAt = parseInt(cached.headers.get("x-phl-filled-at") || "0", 10);
-          const ageMs = filledAt > 0 ? Date.now() - filledAt : 0;
-          const FRESH_MS = HTML_EDGE_TTL_S * 1000;      // 300s
-          const STALE_MAX_MS = 86400 * 1000;            // 24h SWR window
-          if (filledAt > 0 && ageMs > STALE_MAX_MS) {
-            ctx.waitUntil(cache.delete(cacheKey));
-          } else {
-            const headers = new Headers(cached.headers);
-            applyBrowserHtmlNoCache(headers, path);
-            headers.delete("cf-cache-status");
-            const isStale = filledAt > 0 && ageMs > FRESH_MS;
-            const total = Date.now() - startTime;
-            const via = isStale ? "edge-html-stale" : "edge-html-hit";
-            headers.set(
-              "X-PHL-Via",
-              via + ";bot=0;prerender=1;age=" + Math.floor(ageMs / 1000) + "s;total=" + total + "ms",
-            );
-            headers.set(
-              "Server-Timing",
-              `edge-html;desc="${isStale ? "STALE" : "HIT"}", origin;dur=0, worker;dur=${total}`,
-            );
-            // Restamp build-id headers on the wire so post-deploy health probes
-            // (which require both x-build-id and cf-cache-build-id) pass on HIT.
-            const hitBid = buildId || headers.get("x-phl-build-id") || headers.get("x-build-id") || "";
-            if (hitBid) {
-              headers.set("x-build-id", hitBid);
-              headers.set("cf-cache-build-id", hitBid);
-            }
-            if (isStale) {
-              // Background revalidate: evict the stale entry then re-fetch the
-              // same URL through this Worker so the MISS path re-populates the
-              // cache with a fresh snapshot. The customer already got instant
-              // bytes above.
-              const refillUrl = url.toString();
-              const refillHeaders = {
-                "User-Agent": request.headers.get("User-Agent") || "",
-                "Accept": "text/html,application/xhtml+xml",
-                "x-phl-swr-refill": "1",
-              };
-              ctx.waitUntil((async () => {
-                try {
-                  await cache.delete(cacheKey);
-                  await fetch(refillUrl, { headers: refillHeaders, cf: { cacheTtl: 0, cacheEverything: false } });
-                } catch (e) {
-                  console.warn("[PHL Worker] SWR refill failed: " + (e && e.message));
-                }
-              })());
-            }
-            return new Response(buf, {
-              status: cached.status,
-              statusText: cached.statusText,
-              headers,
-            });
-          }
-        }
-      }
-
-      // MISS: fetch prerender.io. Origin GET already ran (originShellRes).
-      const prerenderStart = Date.now();
-      const prerenderUrl = PRERENDER_SERVICE + "/" + encodeURIComponent(url.toString());
-      let prerenderRes;
-      try {
-        prerenderRes = await fetch(prerenderUrl, {
-          headers: {
-            "X-Prerender-Token": env.PRERENDER_TOKEN || "",
-            "User-Agent": request.headers.get("User-Agent") || "",
-          },
-        });
-      } catch (e) {
-        console.warn("[PHL-WARN] Prerender.io fetch threw for browser — falling back to origin: " + (e && e.message));
-        prerenderRes = null;
-      }
-      const prerenderMs = Date.now() - prerenderStart;
-
-      // Extract origin shell boot payload (entry <script>, modulepreloads,
-      // inline watchdog/build-killer). Required to make prerender executable.
+      // Extract origin boot payload + entry filename for the sanity guard.
       let boot = null;
+      let originEntryPath = "";
       if (originShellRes && originShellRes.ok) {
         try {
           const originHtml = await originShellRes.clone().text();
           boot = extractOriginShellBoot(originHtml);
+          originEntryPath = extractIndexAssetPath(originHtml);
         } catch (e) {
           console.warn("[PHL-WARN] origin shell parse threw: " + (e && e.message));
         }
       }
 
-      if (prerenderRes && prerenderRes.ok && boot && boot.entry) {
+      if (prerenderRes && prerenderRes.ok && boot && boot.entry && originEntryPath) {
         const raw = await prerenderRes.text();
         const withBoot = injectOriginShellBoot(raw, boot);
         const body = injectHeroImagePreload(stripHostingInjectedScriptsFromHtml(withBoot));
@@ -766,7 +786,12 @@ export default {
           const response = await buildHashCspResponseBrowserSelf(body, prerenderRes.status, prerenderRes.statusText);
           const hashMs = Date.now() - hashStart;
           const buf = await response.clone().arrayBuffer();
-          if (buf.byteLength >= 10000) {
+
+          // Sanity guard BEFORE any cache.put.
+          const sanity = isSaneRenderedHtml(body, originEntryPath);
+          if (!sanity.ok) {
+            console.warn("[PHL-CRIT] Prerender sanity guard failed (" + sanity.reason + ") — serving origin passthrough, caching nothing");
+          } else {
             const snapshotHeaders = new Headers();
             response.headers.forEach((value, name) => {
               const n = name.toLowerCase();
@@ -779,7 +804,6 @@ export default {
               snapshotHeaders.set(name, value);
             });
             snapshotHeaders.set("Cache-Control", "public, max-age=" + HTML_EDGE_TTL_S);
-            snapshotHeaders.set("x-phl-filled-at", String(Date.now()));
             if (buildId) {
               snapshotHeaders.set("x-build-id", buildId);
               snapshotHeaders.set("x-phl-build-id", buildId);
@@ -792,34 +816,37 @@ export default {
             })).catch((e) => {
               console.warn("[PHL Worker] edge HTML cache populate failed: " + (e && e.message));
             }));
+
+            const outHeaders = new Headers(response.headers);
+            applyBrowserHtmlNoCache(outHeaders, path);
+            if (buildId) {
+              outHeaders.set("x-build-id", buildId);
+              outHeaders.set("cf-cache-build-id", buildId);
+            }
+            const total = Date.now() - startTime;
+            outHeaders.set(
+              "X-PHL-Via",
+              "edge-html-miss;bot=0;prerender=OK;origin=" + originShellMs +
+                "ms;prerender=" + prerenderMs + "ms;hash=" + hashMs +
+                "ms;total=" + total + "ms",
+            );
+            outHeaders.set(
+              "Server-Timing",
+              `edge-html;desc="MISS", origin;dur=${originShellMs}, prerender;dur=${prerenderMs}, csp-hash;dur=${hashMs}, worker;dur=${total}`,
+            );
+            return new Response(buf, {
+              status: response.status,
+              statusText: response.statusText,
+              headers: outHeaders,
+            });
           }
-          const outHeaders = new Headers(response.headers);
-          applyBrowserHtmlNoCache(outHeaders, path);
-          if (buildId) {
-            outHeaders.set("x-build-id", buildId);
-            outHeaders.set("cf-cache-build-id", buildId);
-          }
-          const total = Date.now() - startTime;
-          outHeaders.set(
-            "X-PHL-Via",
-            "edge-html-miss;bot=0;prerender=OK;origin=" + originShellMs +
-              "ms;prerender=" + prerenderMs + "ms;hash=" + hashMs +
-              "ms;total=" + total + "ms",
-          );
-          outHeaders.set(
-            "Server-Timing",
-            `edge-html;desc="MISS", origin;dur=${originShellMs}, prerender;dur=${prerenderMs}, csp-hash;dur=${hashMs}, worker;dur=${total}`,
-          );
-          return new Response(buf, {
-            status: response.status,
-            statusText: response.statusText,
-            headers: outHeaders,
-          });
         }
       } else if (prerenderRes && !prerenderRes.ok) {
         console.warn("[PHL-WARN] Prerender.io returned " + prerenderRes.status + " for browser — falling back to origin");
       } else if (!boot || !boot.entry) {
         console.warn("[PHL-WARN] Origin shell missing entry <script> — falling back to origin passthrough");
+      } else if (!originEntryPath) {
+        console.warn("[PHL-WARN] Could not extract origin entry filename — falling back to origin passthrough");
       }
       // Fallback: serve the origin shell we already fetched, unchanged.
       // Never populate the prerender cache slot with a hydration-only shell.
@@ -841,6 +868,7 @@ export default {
         return out;
       }
     }
+
 
 
 
@@ -904,7 +932,12 @@ export default {
       // is absent on chunked HTML). Real shells are 50KB+; <10KB is a
       // deploy-race artifact (0-byte origin, error page) that would replay
       // a blank homepage to every visitor until manual purge.
-      if (buf.byteLength >= 10000) {
+      // Defensive sanity: this path only runs when the prerender branch was
+      // bypassed. Reject watchdog-only shells and 0-asset bodies before cache.
+      const bodyText = new TextDecoder().decode(buf);
+      const hasEntry = !!extractIndexAssetPath(bodyText);
+      const hasWatchdog = bodyText.includes("Taking longer than usual");
+      if (buf.byteLength >= 10000 && hasEntry && !hasWatchdog) {
         // Snapshot response headers so cache hits replay the exact CSP
         // (with its original per-request nonce), build id, and
         // content-type. Filter hop-by-hop / connection headers that
@@ -924,7 +957,6 @@ export default {
           snapshotHeaders.set(name, value);
         });
         snapshotHeaders.set("Cache-Control", "public, max-age=" + HTML_EDGE_TTL_S);
-        snapshotHeaders.set("x-phl-filled-at", String(Date.now()));
         const cacheKey = edgeHtmlCacheKey(url);
         const snapshot = new Response(buf, {
           status: out.status,
