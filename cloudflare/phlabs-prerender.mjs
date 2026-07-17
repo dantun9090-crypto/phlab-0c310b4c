@@ -665,64 +665,24 @@ export default {
         if (buf.byteLength < 10000) {
           ctx.waitUntil(cache.delete(cacheKey));
         } else {
-          // stale-while-revalidate windows:
-          //   fresh:  age <= 300s        → serve HIT
-          //   stale:  300s < age <= 86400s → serve stale + background refill
-          //   dead:   age > 86400s       → evict and fall to MISS path
-          const filledAt = parseInt(cached.headers.get("x-phl-filled-at") || "0", 10);
-          const ageMs = filledAt > 0 ? Date.now() - filledAt : 0;
-          const FRESH_MS = HTML_EDGE_TTL_S * 1000;      // 300s
-          const STALE_MAX_MS = 86400 * 1000;            // 24h SWR window
-          if (filledAt > 0 && ageMs > STALE_MAX_MS) {
-            ctx.waitUntil(cache.delete(cacheKey));
-          } else {
-            const headers = new Headers(cached.headers);
-            applyBrowserHtmlNoCache(headers, path);
-            headers.delete("cf-cache-status");
-            const isStale = filledAt > 0 && ageMs > FRESH_MS;
-            const total = Date.now() - startTime;
-            const via = isStale ? "edge-html-stale" : "edge-html-hit";
-            headers.set(
-              "X-PHL-Via",
-              via + ";bot=0;prerender=1;age=" + Math.floor(ageMs / 1000) + "s;total=" + total + "ms",
-            );
-            headers.set(
-              "Server-Timing",
-              `edge-html;desc="${isStale ? "STALE" : "HIT"}", origin;dur=0, worker;dur=${total}`,
-            );
-            // Restamp build-id headers on the wire so post-deploy health probes
-            // (which require both x-build-id and cf-cache-build-id) pass on HIT.
-            const hitBid = buildId || headers.get("x-phl-build-id") || headers.get("x-build-id") || "";
-            if (hitBid) {
-              headers.set("x-build-id", hitBid);
-              headers.set("cf-cache-build-id", hitBid);
-            }
-            if (isStale) {
-              // Background revalidate: evict the stale entry then re-fetch the
-              // same URL through this Worker so the MISS path re-populates the
-              // cache with a fresh snapshot. The customer already got instant
-              // bytes above.
-              const refillUrl = url.toString();
-              const refillHeaders = {
-                "User-Agent": request.headers.get("User-Agent") || "",
-                "Accept": "text/html,application/xhtml+xml",
-                "x-phl-swr-refill": "1",
-              };
-              ctx.waitUntil((async () => {
-                try {
-                  await cache.delete(cacheKey);
-                  await fetch(refillUrl, { headers: refillHeaders, cf: { cacheTtl: 0, cacheEverything: false } });
-                } catch (e) {
-                  console.warn("[PHL Worker] SWR refill failed: " + (e && e.message));
-                }
-              })());
-            }
-            return new Response(buf, {
-              status: cached.status,
-              statusText: cached.statusText,
-              headers,
-            });
+          const headers = new Headers(cached.headers);
+          applyBrowserHtmlNoCache(headers, path);
+          headers.delete("cf-cache-status");
+          const total = Date.now() - startTime;
+          headers.set("X-PHL-Via", "edge-html-hit;bot=0;prerender=1;total=" + total + "ms");
+          headers.set("Server-Timing", `edge-html;desc="HIT", origin;dur=0, worker;dur=${total}`);
+          // Restamp build-id headers on the wire so post-deploy health probes
+          // (which require both x-build-id and cf-cache-build-id) pass on HIT.
+          const hitBid = buildId || headers.get("x-phl-build-id") || headers.get("x-build-id") || "";
+          if (hitBid) {
+            headers.set("x-build-id", hitBid);
+            headers.set("cf-cache-build-id", hitBid);
           }
+          return new Response(buf, {
+            status: cached.status,
+            statusText: cached.statusText,
+            headers,
+          });
         }
       }
 
@@ -779,7 +739,6 @@ export default {
               snapshotHeaders.set(name, value);
             });
             snapshotHeaders.set("Cache-Control", "public, max-age=" + HTML_EDGE_TTL_S);
-            snapshotHeaders.set("x-phl-filled-at", String(Date.now()));
             if (buildId) {
               snapshotHeaders.set("x-build-id", buildId);
               snapshotHeaders.set("x-phl-build-id", buildId);
@@ -924,7 +883,6 @@ export default {
           snapshotHeaders.set(name, value);
         });
         snapshotHeaders.set("Cache-Control", "public, max-age=" + HTML_EDGE_TTL_S);
-        snapshotHeaders.set("x-phl-filled-at", String(Date.now()));
         const cacheKey = edgeHtmlCacheKey(url);
         const snapshot = new Response(buf, {
           status: out.status,
