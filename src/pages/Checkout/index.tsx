@@ -2112,9 +2112,12 @@ export default function CheckoutPage() {
                         <>
                           <AlertTriangle className="w-4 h-4" /> Resolve cart issues to continue
                         </>
-                      ) : preflightExhausted ? (
+                      ) : preflightExhausted || preflightRetry ? (
+                        // Preflight is flaky, but createOrder re-validates every
+                        // price/stock line server-side, so we keep the button
+                        // clickable and use non-blocking wording.
                         <>
-                          <AlertTriangle className="w-4 h-4" /> Price validation unavailable — refresh
+                          <Lock className="w-4 h-4" /> {form.paymentMethod === 'pay_by_bank' || form.paymentMethod === 'wallid' ? `Pay by Bank — £${total}` : `Place Order — £${total}`}
                         </>
                       ) : (
                         <>
@@ -2123,12 +2126,23 @@ export default function CheckoutPage() {
                       )}
                     </button>
                     {disabledReasonMessage && !isPlacing && (
-                      <p
-                        data-testid="checkout-disabled-reason"
-                        className="text-red-400 text-[14px] mt-2"
-                      >
-                        Cannot proceed: {disabledReasonMessage}
-                      </p>
+                      disabledReason === 'preflight_failed' ? (
+                        // Non-blocking notice — the button is intentionally
+                        // enabled; server re-validates prices at order create.
+                        <p
+                          data-testid="checkout-disabled-reason"
+                          className="text-yellow-300 text-[14px] mt-2"
+                        >
+                          Heads up: {disabledReasonMessage} You can still place your order — we'll re-check prices when you pay.
+                        </p>
+                      ) : (
+                        <p
+                          data-testid="checkout-disabled-reason"
+                          className="text-red-400 text-[14px] mt-2"
+                        >
+                          Cannot proceed: {disabledReasonMessage}
+                        </p>
+                      )
                     )}
                     {isPlacing && disabledReasonMessage && (
                       <p
