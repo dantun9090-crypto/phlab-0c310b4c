@@ -585,7 +585,8 @@ export default {
       if (!cached) {
         cacheStatus = "MISS";
         const prerenderStart = Date.now();
-        const prerenderUrl = PRERENDER_SERVICE + "/" + encodeURIComponent(url.toString());
+        const prerenderTarget = url.origin + url.pathname + (url.search ? url.search + "&" : "?") + "__prt=1";
+        const prerenderUrl = PRERENDER_SERVICE + "/" + encodeURIComponent(prerenderTarget);
         const prerenderRes = await fetch(prerenderUrl, {
           headers: {
             "X-Prerender-Token": env.PRERENDER_TOKEN || "",
@@ -751,7 +752,8 @@ export default {
       });
 
       const prerenderStart = Date.now();
-      const prerenderUrl = PRERENDER_SERVICE + "/" + encodeURIComponent(url.toString());
+      const prerenderTarget = url.origin + url.pathname + (url.search ? url.search + "&" : "?") + "__prt=1";
+      const prerenderUrl = PRERENDER_SERVICE + "/" + encodeURIComponent(prerenderTarget);
       const prerenderPromise = fetch(prerenderUrl, {
         headers: {
           "X-Prerender-Token": env.PRERENDER_TOKEN || "",
