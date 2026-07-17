@@ -7,7 +7,7 @@ import {
   CheckCircle2, ChevronRight, Tag, X, Package
 } from 'lucide-react';
 import {
-  auth, signInAnonymously, doc, getDoc,
+  auth, doc, getDoc,
   db, validateCoupon,
   onAuthStateChanged, FirebaseUser, registerUser
 } from '@/lib/firebase';
