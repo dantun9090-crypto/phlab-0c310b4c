@@ -118,6 +118,39 @@ jobs:
       - name: Wait for edge propagation
         run: sleep 10
 
+      # Force Prerender.io to rebuild snapshots for the top URLs BEFORE the
+      # edge warm-up runs. Otherwise every deploy parks in "fallback=origin"
+      # until prerender's cache naturally expires (~hours). Order must be:
+      # deploy -> assets live -> prerender recache -> warm edge -> smoke.
+      - name: Prerender.io recache (top URLs)
+        env:
+          PRERENDER_TOKEN: ${{ secrets.PRERENDER_TOKEN }}
+        run: |
+          set -uo pipefail
+          if [ -z "${PRERENDER_TOKEN:-}" ]; then
+            echo "::warning::PRERENDER_TOKEN missing — skipping recache"
+            exit 0
+          fi
+          URLS=(
+            "https://phlabs.co.uk/"
+            "https://phlabs.co.uk/products"
+            "https://phlabs.co.uk/products/retatrutide"
+            "https://phlabs.co.uk/products/bpc-157"
+            "https://phlabs.co.uk/products/tirzepatide"
+            "https://phlabs.co.uk/quality-control"
+          )
+          for u in "${URLS[@]}"; do
+            code=$(curl -sS -o /tmp/pr.out -w "%{http_code}" \
+              -X POST https://api.prerender.io/recache \
+              -H "Content-Type: application/json" \
+              -d "{\"prerenderToken\":\"$PRERENDER_TOKEN\",\"url\":\"$u\"}")
+            echo "recache $u -> HTTP $code"
+            [ "$code" = "200" ] || { echo "::warning::prerender recache non-200 for $u"; cat /tmp/pr.out; echo; }
+          done
+          # Give prerender ~30s to actually rebuild before the edge warm-up
+          # asks for those URLs (otherwise the warm-up caches the stale copy).
+          sleep 30
+
       - name: Warm edge cache (post-deploy)
         env:
           # Exported so warm-edge.sh can purge HTML cache on sanity failure.
