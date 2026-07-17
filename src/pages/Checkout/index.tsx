@@ -1036,6 +1036,11 @@ export default function CheckoutPage() {
           },
         });
         if (paymentAttemptRef.current !== paymentAttemptId) return;
+        // Order is written server-side — retire the watchdog so a slow
+        // gateway-link step or slow redirect cannot cancel this attempt
+        // and cause the user to retry into a duplicate order. The 8s
+        // recovery UI ("Open payment") already offers a manual fallback.
+        clearPaymentTimers();
         logCheckoutEvent({
           stage: 'create_order_success',
           cartId: orderTelemetryCartId,
