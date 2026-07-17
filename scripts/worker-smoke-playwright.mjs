@@ -44,11 +44,15 @@ async function main() {
     if (!resp || resp.status() >= 400) {
       fail(`home returned HTTP ${resp && resp.status()}`);
     }
-    // Body must not be empty.
-    const bodyText = await page.evaluate(() => document.body?.innerText || "");
-    if (bodyText.length < 100) {
-      fail(`home body suspiciously short (${bodyText.length} chars)`);
-    }
+    // Early boot assertion — the CSR shell has ~0 visible chars at
+    // domcontentloaded (React hasn't booted, watchdog overlay is
+    // display:none). Wait for real app content instead of counting
+    // innerText, which would fail on the healthy browser-branch fallback.
+    await page
+      .waitForSelector("text=/I Confirm|Peptides|Research|Add to/i", {
+        timeout: 20000,
+      })
+      .catch(() => fail("home shell never rendered visible app content"));
 
     // ── Age gate ────────────────────────────────────────────────────
     // Look for a "confirm 18" style button. Multiple selectors covered.
