@@ -229,6 +229,9 @@ jobs:
 
       - name: Warm edge cache (post-rollback)
         if: failure() && steps.snapshot.outputs.have_snapshot == 'true'
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID_PHLABS }}
         run: bash scripts/warm-edge.sh
 
 
