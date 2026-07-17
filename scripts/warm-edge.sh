@@ -41,12 +41,24 @@ URLS=(
 # ── 1. Wait for the new app's entry asset ────────────────────────────────
 echo "==> Fetching origin shell to discover new entry asset: $ORIGIN_URL/"
 ORIGIN_HTML="$TMP/origin.html"
-curl -sS -A "$UA" --max-time 20 -o "$ORIGIN_HTML" "$ORIGIN_URL/" \
-  || { echo "::error::could not fetch origin shell from $ORIGIN_URL"; exit 1; }
-ENTRY_PATH=$(grep -oE '/assets/index-[A-Za-z0-9._-]+\.js' "$ORIGIN_HTML" | head -1 || true)
+extract_entry() {
+  grep -oE '/assets/index-[A-Za-z0-9._-]+\.js' "$1" | head -1 || true
+}
+curl -sS -A "$UA" --max-time 20 -o "$ORIGIN_HTML" "$ORIGIN_URL/" || true
+ENTRY_PATH=$(extract_entry "$ORIGIN_HTML")
 if [ -z "$ENTRY_PATH" ]; then
-  echo "::error::could not extract /assets/index-*.js from origin shell"
-  head -200 "$ORIGIN_HTML"
+  echo "::warning::origin shell fetch failed or no entry match — retrying via ${BASE}/ (worker fallback)"
+  echo "--- first 200 bytes of origin response ---"
+  head -c 200 "$ORIGIN_HTML" 2>/dev/null || true
+  echo
+  echo "--- end ---"
+  curl -sS -A "$UA" --max-time 20 -o "$ORIGIN_HTML" "${BASE}/" \
+    || { echo "::error::fallback fetch of ${BASE}/ also failed"; exit 1; }
+  ENTRY_PATH=$(extract_entry "$ORIGIN_HTML")
+fi
+if [ -z "$ENTRY_PATH" ]; then
+  echo "::error::could not extract /assets/index-*.js from origin shell (both origin and worker fallback)"
+  head -c 200 "$ORIGIN_HTML"
   exit 1
 fi
 echo "New entry asset: $ENTRY_PATH"
