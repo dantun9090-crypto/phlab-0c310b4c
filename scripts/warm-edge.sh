@@ -48,18 +48,20 @@ curl -sS -A "$UA" --max-time 20 -o "$ORIGIN_HTML" "$ORIGIN_URL/" || true
 ENTRY_PATH=$(extract_entry "$ORIGIN_HTML")
 if [ -z "$ENTRY_PATH" ]; then
   echo "::warning::origin shell fetch failed or no entry match — retrying via ${BASE}/ (worker fallback)"
-  echo "--- first 200 bytes of origin response ---"
+  echo "--- first 200 bytes of origin ($ORIGIN_URL/) response ---"
   head -c 200 "$ORIGIN_HTML" 2>/dev/null || true
   echo
-  echo "--- end ---"
-  curl -sS -A "$UA" --max-time 20 -o "$ORIGIN_HTML" "${BASE}/" \
-    || { echo "::error::fallback fetch of ${BASE}/ also failed"; exit 1; }
+  echo "--- end origin ---"
+  curl -sS -A "$UA" --max-time 20 -o "$ORIGIN_HTML" "${BASE}/" || true
   ENTRY_PATH=$(extract_entry "$ORIGIN_HTML")
 fi
 if [ -z "$ENTRY_PATH" ]; then
-  echo "::error::could not extract /assets/index-*.js from origin shell (both origin and worker fallback)"
-  head -c 200 "$ORIGIN_HTML"
-  exit 1
+  echo "::warning::could not extract /assets/index-*.js from origin shell (both origin and worker fallback) — skipping warm-up (Playwright smoke is the real gate)"
+  echo "--- first 200 bytes of worker fallback (${BASE}/) response ---"
+  head -c 200 "$ORIGIN_HTML" 2>/dev/null || true
+  echo
+  echo "--- end worker fallback ---"
+  exit 0
 fi
 echo "New entry asset: $ENTRY_PATH"
 
