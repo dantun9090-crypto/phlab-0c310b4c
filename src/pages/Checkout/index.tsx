@@ -1161,10 +1161,13 @@ export default function CheckoutPage() {
         try {
           let current = auth.currentUser;
           if (!current) {
+            // Dynamic import — see note in create-order block above.
+            const { signInAnonymously } = await import('firebase/auth');
             const anon = await signInAnonymously(auth);
             if (paymentAttemptRef.current !== paymentAttemptId) return;
             current = anon.user;
           }
+          if (!current) throw new Error('Could not establish user session for payment.');
           const idTokenForFena = await current.getIdToken();
           if (paymentAttemptRef.current !== paymentAttemptId) return;
           const { hppUrl, gateway, externalPaymentId } = await createGatewayPaymentLink({
