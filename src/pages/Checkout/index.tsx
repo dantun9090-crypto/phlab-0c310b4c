@@ -965,6 +965,10 @@ export default function CheckoutPage() {
 
       if (!userId) {
         try {
+          // Dynamic import: firebase/auth's Worker/SSR build does not expose
+          // signInAnonymously as a top-level named export, so importing it
+          // at module scope throws during SSR. Client-only call site.
+          const { signInAnonymously } = await import('firebase/auth');
           const anon = await signInAnonymously(auth);
           if (paymentAttemptRef.current !== paymentAttemptId) return;
           userId = anon.user.uid;
@@ -973,6 +977,7 @@ export default function CheckoutPage() {
           userId = undefined;
         }
       }
+
 
       // SECURITY: Order creation runs entirely server-side. The server
       // re-validates the cart against Firestore `product_stock`, recomputes
