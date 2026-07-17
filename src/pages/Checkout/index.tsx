@@ -7,7 +7,7 @@ import {
   CheckCircle2, ChevronRight, Tag, X, Package
 } from 'lucide-react';
 import {
-  auth, signInAnonymously, doc, getDoc,
+  auth, doc, getDoc,
   db, validateCoupon,
   onAuthStateChanged, FirebaseUser, registerUser
 } from '@/lib/firebase';
@@ -171,6 +171,11 @@ export default function CheckoutPage() {
     paymentRecoveryTimerRef.current = window.setTimeout(() => {
       if (paymentAttemptRef.current === attemptId) setPaymentRecoveryVisible(true);
     }, 8000);
+    // Watchdog: 45s covers register/anon sign-in + createOrder + gateway
+    // link + URL parse on slow mobile networks. Once createOrder has
+    // returned (order document written), the caller MUST clear the
+    // watchdog with clearPaymentTimers() — cancelling after that point
+    // strands the order and causes duplicates on retry.
     paymentWatchdogTimerRef.current = window.setTimeout(() => {
       if (paymentAttemptRef.current !== attemptId) return;
       paymentAttemptRef.current += 1;
@@ -183,9 +188,9 @@ export default function CheckoutPage() {
       setIsPlacing(false);
       const msg = 'Payment could not be started — please try again.';
       setLoginError(msg);
-      console.warn('[PAYMENT] watchdog_timeout — attempt reset after 10s');
+      console.warn('[PAYMENT] watchdog_timeout — attempt reset after 45s');
       try { toast.error(msg); } catch { /* toast optional */ }
-    }, 10000);
+    }, 45000);
   }, [clearPaymentTimers]);
 
   const cancelPaymentAttempt = useCallback((message = 'Payment attempt cancelled. Please try again.') => {
@@ -200,10 +205,17 @@ export default function CheckoutPage() {
     setLoginError(message);
   }, [clearPaymentTimers]);
 
-  // Reset in-flight payment state when the page is restored from bfcache
-  // (browser back from Wallid/Fena) OR becomes visible again after tabbing
-  // away. Without this the Pay button stays stuck as "Payment in progress…"
-  // with a blank spinner because isPlacing / fenaStep never got cleared.
+  // Reset in-flight payment state ONLY when the page is restored from
+  // bfcache (browser back from Wallid/Fena) — that's the case where JS was
+  // frozen and any awaited fetch has already been discarded by the browser.
+  //
+  // Previously we also cleared on `focus` and `visibilitychange`, but on
+  // mobile those fire for ordinary tab/app switches (grabbing a 2FA code,
+  // checking email). If a user tapped Pay and briefly switched apps, the
+  // in-flight createOrder / /api/payments/create had ALREADY written the
+  // order server-side, and clearing the attempt would strand the order and
+  // (on retry) create a duplicate. bfcache is detected explicitly via
+  // `pageshow` with `event.persisted === true`.
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const clearInFlight = () => {
@@ -219,18 +231,12 @@ export default function CheckoutPage() {
     };
     const onPageShow = (e: PageTransitionEvent) => {
       // persisted=true means the page came from bfcache (browser back).
+      // This is the ONLY safe reset trigger — the previous JS context is gone.
       if (e.persisted) clearInFlight();
     };
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible') clearInFlight();
-    };
     window.addEventListener('pageshow', onPageShow);
-    window.addEventListener('focus', clearInFlight);
-    document.addEventListener('visibilitychange', onVisibility);
     return () => {
       window.removeEventListener('pageshow', onPageShow);
-      window.removeEventListener('focus', clearInFlight);
-      document.removeEventListener('visibilitychange', onVisibility);
       clearPaymentTimers();
     };
   }, [clearPaymentTimers]);
@@ -965,6 +971,10 @@ export default function CheckoutPage() {
 
       if (!userId) {
         try {
+          // Dynamic import: firebase/auth's Worker/SSR build does not expose
+          // signInAnonymously as a top-level named export, so importing it
+          // at module scope throws during SSR. Client-only call site.
+          const { signInAnonymously } = await import('firebase/auth');
           const anon = await signInAnonymously(auth);
           if (paymentAttemptRef.current !== paymentAttemptId) return;
           userId = anon.user.uid;
@@ -973,6 +983,7 @@ export default function CheckoutPage() {
           userId = undefined;
         }
       }
+
 
       // SECURITY: Order creation runs entirely server-side. The server
       // re-validates the cart against Firestore `product_stock`, recomputes
@@ -1025,6 +1036,11 @@ export default function CheckoutPage() {
           },
         });
         if (paymentAttemptRef.current !== paymentAttemptId) return;
+        // Order is written server-side — retire the watchdog so a slow
+        // gateway-link step or slow redirect cannot cancel this attempt
+        // and cause the user to retry into a duplicate order. The 8s
+        // recovery UI ("Open payment") already offers a manual fallback.
+        clearPaymentTimers();
         logCheckoutEvent({
           stage: 'create_order_success',
           cartId: orderTelemetryCartId,
@@ -1156,10 +1172,13 @@ export default function CheckoutPage() {
         try {
           let current = auth.currentUser;
           if (!current) {
+            // Dynamic import — see note in create-order block above.
+            const { signInAnonymously } = await import('firebase/auth');
             const anon = await signInAnonymously(auth);
             if (paymentAttemptRef.current !== paymentAttemptId) return;
             current = anon.user;
           }
+          if (!current) throw new Error('Could not establish user session for payment.');
           const idTokenForFena = await current.getIdToken();
           if (paymentAttemptRef.current !== paymentAttemptId) return;
           const { hppUrl, gateway, externalPaymentId } = await createGatewayPaymentLink({
@@ -2093,9 +2112,12 @@ export default function CheckoutPage() {
                         <>
                           <AlertTriangle className="w-4 h-4" /> Resolve cart issues to continue
                         </>
-                      ) : preflightExhausted ? (
+                      ) : preflightExhausted || preflightRetry ? (
+                        // Preflight is flaky, but createOrder re-validates every
+                        // price/stock line server-side, so we keep the button
+                        // clickable and use non-blocking wording.
                         <>
-                          <AlertTriangle className="w-4 h-4" /> Price validation unavailable — refresh
+                          <Lock className="w-4 h-4" /> {form.paymentMethod === 'pay_by_bank' || form.paymentMethod === 'wallid' ? `Pay by Bank — £${total}` : `Place Order — £${total}`}
                         </>
                       ) : (
                         <>
@@ -2104,12 +2126,23 @@ export default function CheckoutPage() {
                       )}
                     </button>
                     {disabledReasonMessage && !isPlacing && (
-                      <p
-                        data-testid="checkout-disabled-reason"
-                        className="text-red-400 text-[14px] mt-2"
-                      >
-                        Cannot proceed: {disabledReasonMessage}
-                      </p>
+                      disabledReason === 'preflight_failed' ? (
+                        // Non-blocking notice — the button is intentionally
+                        // enabled; server re-validates prices at order create.
+                        <p
+                          data-testid="checkout-disabled-reason"
+                          className="text-yellow-300 text-[14px] mt-2"
+                        >
+                          Heads up: {disabledReasonMessage} You can still place your order — we'll re-check prices when you pay.
+                        </p>
+                      ) : (
+                        <p
+                          data-testid="checkout-disabled-reason"
+                          className="text-red-400 text-[14px] mt-2"
+                        >
+                          Cannot proceed: {disabledReasonMessage}
+                        </p>
+                      )
                     )}
                     {isPlacing && disabledReasonMessage && (
                       <p
