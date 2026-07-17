@@ -178,6 +178,12 @@ jobs:
           [ "$resp" = "200" ] || { echo "::error::Rollback purge failed"; exit 1; }
           echo "Edge cache purged (scoped) after rollback"
 
+      - name: Warm edge cache (post-rollback)
+        if: failure() && steps.snapshot.outputs.have_snapshot == 'true'
+        run: bash scripts/warm-edge.sh
+
+
+
       - name: Verify rollback restored /__health
         if: failure() && steps.snapshot.outputs.have_snapshot == 'true'
         run: |
