@@ -932,7 +932,12 @@ export default {
       // is absent on chunked HTML). Real shells are 50KB+; <10KB is a
       // deploy-race artifact (0-byte origin, error page) that would replay
       // a blank homepage to every visitor until manual purge.
-      if (buf.byteLength >= 10000) {
+      // Defensive sanity: this path only runs when the prerender branch was
+      // bypassed. Reject watchdog-only shells and 0-asset bodies before cache.
+      const bodyText = new TextDecoder().decode(buf);
+      const hasEntry = !!extractIndexAssetPath(bodyText);
+      const hasWatchdog = bodyText.includes("Taking longer than usual");
+      if (buf.byteLength >= 10000 && hasEntry && !hasWatchdog) {
         // Snapshot response headers so cache hits replay the exact CSP
         // (with its original per-request nonce), build id, and
         // content-type. Filter hop-by-hop / connection headers that
