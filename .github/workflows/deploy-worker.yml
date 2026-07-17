@@ -104,7 +104,56 @@ jobs:
         run: sleep 10
 
       - name: Warm edge cache (post-deploy)
+        env:
+          # Exported so warm-edge.sh can purge HTML cache on sanity failure.
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID_PHLABS }}
         run: bash scripts/warm-edge.sh
+
+      # ── Post-deploy Playwright smoke test through the worker-fronted URL.
+      # Runs a real Chromium against https://phlabs.co.uk to catch failures
+      # the header-only checks miss (age-gate broken, cookie banner stuck,
+      # /products blank, Add-to-cart no-op). Any failure => detach worker
+      # routes via CF API in the next step so no visitor hits a broken worker.
+      - name: Worker-fronted UI smoke (Playwright)
+        id: uismoke
+        run: |
+          npm i --silent --no-save playwright@1.47.0 || npm i --silent playwright@1.47.0
+          npx --yes playwright install --with-deps chromium
+          node scripts/worker-smoke-playwright.mjs
+
+      # ── Emergency route detach if the UI smoke test failed.
+      # Queries the phlabs zone for any worker route bound to the
+      # phlabs-prerender script and deletes each. Origin then serves
+      # traffic directly (bypassing the worker) until we push a fix.
+      - name: Detach worker routes on smoke failure
+        if: failure() && steps.uismoke.conclusion == 'failure'
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID_PHLABS }}
+        run: |
+          set -uo pipefail
+          echo "::warning::UI smoke failed — detaching phlabs-prerender routes"
+          resp=$(curl -sS "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/workers/routes" \
+            -H "Authorization: Bearer $CF_API_TOKEN")
+          echo "$resp" | head -c 2000
+          echo
+          ids=$(node -e "const r=JSON.parse(require('fs').readFileSync(0,'utf8'));(r.result||[]).filter(x=>x.script==='phlabs-prerender').forEach(x=>console.log(x.id))" <<<"$resp")
+          if [ -z "$ids" ]; then
+            echo "::warning::no phlabs-prerender routes found to detach"
+          else
+            for id in $ids; do
+              echo "DELETE route $id"
+              curl -sS -X DELETE \
+                "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/workers/routes/$id" \
+                -H "Authorization: Bearer $CF_API_TOKEN" | head -c 500
+              echo
+            done
+            echo "::notice::phlabs-prerender routes detached — traffic bypasses worker"
+          fi
+          exit 1
+
+
 
 
       - name: Smoke test /__health (phlabs.co.uk)
