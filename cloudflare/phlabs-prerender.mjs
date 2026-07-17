@@ -212,6 +212,54 @@ function edgeHtmlCacheKeyWithBuild(url, buildId) {
   return new Request(url.origin + url.pathname + bidPart, { method: "GET" });
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTENT SANITY GUARD (post-incident 2026-07-17)
+// A >=10KB size check alone cannot detect a wrong-content snapshot cached
+// mid-deploy. Before ANY cache.put of prerender HTML require ALL:
+//   1. body >= 10KB
+//   2. <div id="root"> has non-trivial inner content (>= 200 chars markup)
+//   3. body contains the SAME /assets/index-<hash>.js filename as the origin
+//      shell fetched in the same request (build alignment)
+//   4. body does NOT contain the watchdog-only marker "Taking longer than usual"
+// Fail => serve origin passthrough, cache nothing.
+// ─────────────────────────────────────────────────────────────────────────────
+function extractIndexAssetPath(html) {
+  if (!html) return "";
+  const m = html.match(/\/assets\/index-[A-Za-z0-9_.-]+\.js/);
+  return m ? m[0] : "";
+}
+
+function rootHasNonTrivialContent(html) {
+  if (!html) return false;
+  const openRe = /<div\b[^>]*\bid=["']root["'][^>]*>/i;
+  const openMatch = html.match(openRe);
+  if (!openMatch) return false;
+  const startIdx = openMatch.index + openMatch[0].length;
+  const slice = html.slice(startIdx, startIdx + 8192);
+  const firstClose = slice.search(/<\/div>/i);
+  const inner = firstClose >= 0 ? slice.slice(0, firstClose) : slice;
+  if (inner.trim().length < 200) return false;
+  if (!/<[a-zA-Z][^>]*>/.test(inner)) return false;
+  return true;
+}
+
+function isSaneRenderedHtml(html, originEntryPath) {
+  if (!html) return { ok: false, reason: "empty" };
+  if (html.length < 10000) return { ok: false, reason: "too_small:" + html.length };
+  if (!rootHasNonTrivialContent(html)) return { ok: false, reason: "empty_root" };
+  if (html.includes("Taking longer than usual")) {
+    return { ok: false, reason: "watchdog_marker" };
+  }
+  if (originEntryPath) {
+    const bodyEntry = extractIndexAssetPath(html);
+    if (!bodyEntry) return { ok: false, reason: "no_entry_script" };
+    if (bodyEntry !== originEntryPath) {
+      return { ok: false, reason: "entry_mismatch:" + bodyEntry + "!=" + originEntryPath };
+    }
+  }
+  return { ok: true };
+}
+
 function stripHostingInjectedScriptsFromHtml(html) {
   return html
     .replace(/<script\b[^>]*\bsrc=["']https:\/\/plausible\.io\/js\/[^"']+["'][^>]*><\/script>/gi, "")
