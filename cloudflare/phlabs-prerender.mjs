@@ -585,7 +585,13 @@ export default {
       if (!cached) {
         cacheStatus = "MISS";
         const prerenderStart = Date.now();
-        const prerenderTarget = url.origin + url.pathname + (url.search ? url.search + "&" : "?") + "__prt=1";
+        // Point prerender.io at the ORIGIN host (Firebase Hosting) directly.
+        // If we forward the phlabs.co.uk URL, prerender's renderer comes back
+        // through this worker, gets classified as a bot, and prerender serves
+        // its own stale cache to itself — an infinite self-staling loop.
+        // Rendering the origin host bypasses the worker entirely and gives
+        // prerender.io a fresh cache namespace with the live build.
+        const prerenderTarget = ORIGIN + url.pathname + url.search;
         const prerenderUrl = PRERENDER_SERVICE + "/" + encodeURIComponent(prerenderTarget);
         const prerenderRes = await fetch(prerenderUrl, {
           headers: {
