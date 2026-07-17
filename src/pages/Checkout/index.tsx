@@ -171,6 +171,11 @@ export default function CheckoutPage() {
     paymentRecoveryTimerRef.current = window.setTimeout(() => {
       if (paymentAttemptRef.current === attemptId) setPaymentRecoveryVisible(true);
     }, 8000);
+    // Watchdog: 45s covers register/anon sign-in + createOrder + gateway
+    // link + URL parse on slow mobile networks. Once createOrder has
+    // returned (order document written), the caller MUST clear the
+    // watchdog with clearPaymentTimers() — cancelling after that point
+    // strands the order and causes duplicates on retry.
     paymentWatchdogTimerRef.current = window.setTimeout(() => {
       if (paymentAttemptRef.current !== attemptId) return;
       paymentAttemptRef.current += 1;
@@ -183,9 +188,9 @@ export default function CheckoutPage() {
       setIsPlacing(false);
       const msg = 'Payment could not be started — please try again.';
       setLoginError(msg);
-      console.warn('[PAYMENT] watchdog_timeout — attempt reset after 10s');
+      console.warn('[PAYMENT] watchdog_timeout — attempt reset after 45s');
       try { toast.error(msg); } catch { /* toast optional */ }
-    }, 10000);
+    }, 45000);
   }, [clearPaymentTimers]);
 
   const cancelPaymentAttempt = useCallback((message = 'Payment attempt cancelled. Please try again.') => {
