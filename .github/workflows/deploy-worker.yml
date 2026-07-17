@@ -218,7 +218,32 @@ jobs:
             "playwright@${PLAYWRIGHT_VERSION}" \
             "@playwright/test@${PLAYWRIGHT_VERSION}"
           npx --yes "playwright@${PLAYWRIGHT_VERSION}" install --with-deps chromium
-          node scripts/worker-smoke-playwright.mjs
+
+          # Retry up to 3 attempts, 15s apart. Deploy-window transients
+          # (0-byte-200 race, brief 5xx during asset swap) resolve within
+          # ~30s; a real regression fails all 3. Only the 3rd failure
+          # counts, which is what gates the route-detach step below.
+          attempt=1
+          max=3
+          delay=15
+          while : ; do
+            echo "::group::UI smoke attempt ${attempt}/${max}"
+            if node scripts/worker-smoke-playwright.mjs; then
+              echo "::endgroup::"
+              echo "✅ UI smoke passed on attempt ${attempt}"
+              exit 0
+            fi
+            rc=$?
+            echo "::endgroup::"
+            echo "::warning::UI smoke attempt ${attempt}/${max} failed (exit ${rc})"
+            if [ "${attempt}" -ge "${max}" ]; then
+              echo "::error::UI smoke failed all ${max} attempts — treating as real failure"
+              exit 1
+            fi
+            attempt=$((attempt+1))
+            echo "sleeping ${delay}s before retry..."
+            sleep "${delay}"
+          done
 
 
       # ── Emergency route detach if the UI smoke test failed.

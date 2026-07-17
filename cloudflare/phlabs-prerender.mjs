@@ -592,13 +592,8 @@ export default {
         if (k.toLowerCase().startsWith("x-prerender")) { hasPrerenderHeader = true; break; }
       }
       if (/prerender/i.test(inboundUA) || hasPrerenderHeader) {
-        // TEMP DEBUG: capture renderer signature for one deploy cycle. Remove
-        // once we've confirmed the detection pattern in wrangler tail.
-        try {
-          const hdrDump = {};
-          for (const [k, v] of request.headers) hdrDump[k] = v;
-          console.log("[PHL-DEBUG] renderer passthrough url=" + url.toString() + " ua=" + inboundUA + " headers=" + JSON.stringify(hdrDump));
-        } catch {}
+        // Detection signature confirmed via post-deploy bot-branch evidence
+        // (bot=1;prerender=OK with fresh build hash). Debug log removed.
         return fetch(request, { cf: { cacheTtl: 0, cacheEverything: false } });
       }
     }
