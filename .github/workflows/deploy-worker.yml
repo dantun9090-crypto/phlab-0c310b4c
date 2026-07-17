@@ -246,8 +246,16 @@ jobs:
           CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_API }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
           echo "::warning::Smoke tests failed — rolling back phlabs-prerender to previous version"
+          echo "--- snapshot file check ---"
+          ls -la /tmp/rollback/ || true
+          BYTES=$(wc -c < /tmp/rollback/phlabs-prerender.mjs 2>/dev/null || echo 0)
+          echo "snapshot bytes=$BYTES"
+          echo "snapshot head (first 200 chars):"
+          head -c 200 /tmp/rollback/phlabs-prerender.mjs || true
+          echo
+          echo "--- uploading rollback ---"
           METADATA='{"main_module":"phlabs-prerender.mjs","compatibility_date":"2025-09-24","compatibility_flags":["nodejs_compat"]}'
           HTTP=$(curl -sS -o /tmp/rollback-response.json -w "%{http_code}" -X PUT \
             "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/workers/scripts/phlabs-prerender" \
@@ -255,8 +263,14 @@ jobs:
             -F "metadata=$METADATA;type=application/json" \
             -F "phlabs-prerender.mjs=@/tmp/rollback/phlabs-prerender.mjs;type=application/javascript+module")
           echo "rollback HTTP $HTTP"
-          cat /tmp/rollback-response.json
-          [ "$HTTP" = "200" ] || { echo "::error::rollback upload failed"; exit 1; }
+          echo "--- CF API response body ---"
+          cat /tmp/rollback-response.json || true
+          echo
+          echo "--- end response body ---"
+          if [ "$HTTP" != "200" ]; then
+            echo "::error::rollback upload failed with HTTP $HTTP — inspect the CF API response body above"
+            exit 1
+          fi
 
       - name: Purge cache after rollback (scoped)
         if: failure() && steps.snapshot.outputs.have_snapshot == 'true'
