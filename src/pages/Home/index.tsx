@@ -565,12 +565,13 @@ export default function HomePage() {
           })()}
           {bannerHref ? (
             <a href={bannerHref} className="block">
-              <img {...cfImgProps(banner.imageUrl, { widths: [480, 640, 800, 1024, 1280, 1600, 1920], sizes: '(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1600px', quality: 75, fallbackWidth: 1280 })} alt={banner.altText || [banner.overlayHeading, banner.overlaySubheading].filter(Boolean).join(' — ') || 'PH Labs research peptides — homepage hero banner'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={capH}
+              <img {...cfImgProps(banner.imageUrl, { widths: [480, 640, 800, 1024, 1280, 1600, 1920], sizes: '(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1600px', quality: 78, fallbackWidth: 1280 })} alt={banner.altText || [banner.overlayHeading, banner.overlaySubheading].filter(Boolean).join(' — ') || 'PH Labs research peptides — homepage hero banner'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={desktopCap}
                 style={{ height: responsiveHeight, objectFit: banner.objectFit || 'cover', objectPosition: `${banner.objectPositionX ?? 50}% ${banner.objectPositionY ?? 50}%`, display: 'block' }} />
             </a>
           ) : (
-              <img {...cfImgProps(banner.imageUrl, { widths: [480, 640, 800, 1024, 1280, 1600, 1920], sizes: '(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1600px', quality: 75, fallbackWidth: 1280 })} alt={banner.altText || [banner.overlayHeading, banner.overlaySubheading].filter(Boolean).join(' — ') || 'PH Labs research peptides — homepage hero banner'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={capH}
+              <img {...cfImgProps(banner.imageUrl, { widths: [480, 640, 800, 1024, 1280, 1600, 1920], sizes: '(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1600px', quality: 78, fallbackWidth: 1280 })} alt={banner.altText || [banner.overlayHeading, banner.overlaySubheading].filter(Boolean).join(' — ') || 'PH Labs research peptides — homepage hero banner'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={desktopCap}
                 style={{ height: responsiveHeight, objectFit: banner.objectFit || 'cover', objectPosition: `${banner.objectPositionX ?? 50}% ${banner.objectPositionY ?? 50}%`, display: 'block' }} />
+
 
           )}
           {/* Edge fades — admin-tunable via Banner tab (edgeFadeEnabled,
