@@ -200,10 +200,17 @@ export default function CheckoutPage() {
     setLoginError(message);
   }, [clearPaymentTimers]);
 
-  // Reset in-flight payment state when the page is restored from bfcache
-  // (browser back from Wallid/Fena) OR becomes visible again after tabbing
-  // away. Without this the Pay button stays stuck as "Payment in progress…"
-  // with a blank spinner because isPlacing / fenaStep never got cleared.
+  // Reset in-flight payment state ONLY when the page is restored from
+  // bfcache (browser back from Wallid/Fena) — that's the case where JS was
+  // frozen and any awaited fetch has already been discarded by the browser.
+  //
+  // Previously we also cleared on `focus` and `visibilitychange`, but on
+  // mobile those fire for ordinary tab/app switches (grabbing a 2FA code,
+  // checking email). If a user tapped Pay and briefly switched apps, the
+  // in-flight createOrder / /api/payments/create had ALREADY written the
+  // order server-side, and clearing the attempt would strand the order and
+  // (on retry) create a duplicate. bfcache is detected explicitly via
+  // `pageshow` with `event.persisted === true`.
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const clearInFlight = () => {
@@ -219,18 +226,12 @@ export default function CheckoutPage() {
     };
     const onPageShow = (e: PageTransitionEvent) => {
       // persisted=true means the page came from bfcache (browser back).
+      // This is the ONLY safe reset trigger — the previous JS context is gone.
       if (e.persisted) clearInFlight();
     };
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible') clearInFlight();
-    };
     window.addEventListener('pageshow', onPageShow);
-    window.addEventListener('focus', clearInFlight);
-    document.addEventListener('visibilitychange', onVisibility);
     return () => {
       window.removeEventListener('pageshow', onPageShow);
-      window.removeEventListener('focus', clearInFlight);
-      document.removeEventListener('visibilitychange', onVisibility);
       clearPaymentTimers();
     };
   }, [clearPaymentTimers]);
