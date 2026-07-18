@@ -67,7 +67,7 @@ const firstInitial = (name?: string): string => {
   return /[A-Z]/.test(ch) ? `${ch}.` : 'A.';
 };
 
-export const mapRawOrderToLive = (raw: RawOrderLike): LiveOrder | null => {
+export const mapRawOrderToLive = async (raw: RawOrderLike): Promise<LiveOrder | null> => {
   const id = raw.id;
   const item = raw.items?.[0];
   const productName = (item?.name || item?.productName)?.trim();
@@ -88,10 +88,11 @@ export const mapRawOrderToLive = (raw: RawOrderLike): LiveOrder | null => {
     productName,
     productImage: item?.image || item?.imageUrl,
     createdAtMs,
-    userHash: rawUid ? shortHash(String(rawUid)) : undefined,
+    userHash: rawUid ? await shortHash(String(rawUid)) : undefined,
     status: raw.status,
   };
 };
+
 
 export const formatTimeAgo = (ms: number, now: number = Date.now()): string => {
   if (!ms) return 'just now';
