@@ -10,8 +10,9 @@
  * research use only. Internal-link booster surfaces TB-500, BPC-157,
  * Retatrutide PDPs for organic distribution.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { markPrerenderReady } from "@/lib/prerender-ready";
 
 const TITLE = "Peptide Reconstitution Calculator UK | PH Labs";
 const DESCRIPTION =
