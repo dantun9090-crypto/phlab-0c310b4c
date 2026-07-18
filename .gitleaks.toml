@@ -92,8 +92,8 @@ regexes = [
 # trip the generic-api-key rule. Allowlisted by exact commit + path so
 # any NEW leak in these files still fails the gate.
 commits = [
-  "6d41db57",  # setup-appcheck.cjs — public reCAPTCHA site key
-  "e848959e",  # ShopifyTab.tsx — public Storefront API token
+  "6d41db577bfb75ae7029c357ee458199e51f099b",  # setup-appcheck.cjs — public reCAPTCHA site key
+  "e848959e16bcf1a62f4251661401482c772de944",  # ShopifyTab.tsx — public Storefront API token
 ]
 
 stopwords = [
