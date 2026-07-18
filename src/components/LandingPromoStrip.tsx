@@ -107,7 +107,7 @@ export function LandingPromoStrip({ theme = "dark" }: Props) {
               {code}
               <span className="text-[10px] opacity-80">{copiedCode === code ? "Copied" : "Copy"}</span>
             </button>
-            <span className="opacity-70 text-[11px] sm:text-[12px]">{label}</span>
+            <span className="opacity-70 text-[11px] sm:text-[12px] text-white">{label}</span>
           </span>
         ))}
         <a
@@ -120,7 +120,7 @@ export function LandingPromoStrip({ theme = "dark" }: Props) {
           type="button"
           onClick={dismiss}
           aria-label="Dismiss promotion"
-          className="ml-1 opacity-60 hover:opacity-100 transition-opacity text-base leading-none"
+          className="ml-1 opacity-60 hover:opacity-100 transition-opacity text-base leading-none text-white"
         >
           ×
         </button>
