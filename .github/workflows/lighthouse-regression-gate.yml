@@ -53,6 +53,10 @@ permissions:
 jobs:
   gate:
     name: Lighthouse gate (${{ matrix.profile }})
+    # Dependabot PRs bump dev-deps only; this workflow audits the LIVE site
+    # and shouldn't gate those PRs (nor cancel a real main run in the
+    # process). Skip cleanly rather than fail.
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
