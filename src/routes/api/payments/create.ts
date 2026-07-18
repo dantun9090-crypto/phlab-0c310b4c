@@ -93,10 +93,13 @@ export const Route = createFileRoute("/api/payments/create")({
           ctx = await buildOrderCtxForPayment(orderId, user?.uid ?? null, user?.email ?? null, paymentToken);
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          if (/forbidden/i.test(msg)) return json({ error: "Forbidden" }, 403);
-          if (/not found/i.test(msg)) return json({ error: "Order not found" }, 404);
-          if (/already settled/i.test(msg)) return json({ error: "Order already settled" }, 409);
-          return json({ error: msg || "Invalid order" }, 400);
+          // Server-side log carries the raw reason; client only sees stable codes
+          // (CodeQL js/stack-trace-exposure).
+          console.warn(`[Wallid] order ctx build failed order=${orderId}: ${msg}`);
+          if (/forbidden/i.test(msg)) return json({ error: "Forbidden", code: "ORDER_FORBIDDEN" }, 403);
+          if (/not found/i.test(msg)) return json({ error: "Order not found", code: "ORDER_NOT_FOUND" }, 404);
+          if (/already settled/i.test(msg)) return json({ error: "Order already settled", code: "ORDER_SETTLED" }, 409);
+          return json({ error: "Invalid order", code: "ORDER_INVALID" }, 400);
         }
 
         // 3) Verify client amount matches the DB order amount (defense-in-depth)

@@ -3,10 +3,18 @@ import { createHash, timingSafeEqual } from 'crypto';
 
 const GATEWAY_URL = 'https://connector-gateway.lovable.dev/telegram';
 
+// NOTE: This is NOT password hashing — it derives Telegram's webhook secret
+// header from the shared API key so both ends agree on the value Telegram
+// sends in `X-Telegram-Bot-Api-Secret-Token`. Changing the algorithm would
+// require re-registering the webhook with Telegram, breaking the contract.
+// The comparison is constant-time via `timingSafeEqual` below.
+// codeql[js/insufficient-password-hash]
 function deriveSecret(apiKey: string) {
   return createHash('sha256').update(`telegram-webhook:${apiKey}`).digest('base64url');
 }
 
+// Constant-time equality for the webhook secret header (CodeQL: prevents
+// early-exit timing side-channel on secret comparison).
 function safeEqual(a: string, b: string) {
   const A = Buffer.from(a);
   const B = Buffer.from(b);
