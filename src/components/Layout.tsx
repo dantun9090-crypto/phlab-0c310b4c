@@ -1472,7 +1472,39 @@ export function Layout({ children }: LayoutProps) {
             ))}
           </div>
 
+          {/* ── Listed on Peptide Supermarket verification badge ── */}
+          <div className="flex justify-center mb-6">
+            <a
+              href="https://peptidesupermarket.co.uk/suppliers/ph-labs?utm_source=supplier_badge&utm_medium=referral&utm_campaign=listed_on"
+              title="PH Labs on Peptide Supermarket"
+              target="_blank"
+              rel="noopener"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '8px 16px',
+                background: '#f0fdf4',
+                border: '1px solid #bbf7d0',
+                borderRadius: '8px',
+                textDecoration: 'none',
+                fontFamily: 'system-ui, -apple-system, sans-serif',
+                fontSize: '14px',
+                color: '#166534',
+              }}
+            >
+              <img
+                src="https://peptidesupermarket.co.uk/images/badge-logo.svg"
+                alt="Peptide Supermarket"
+                width={24}
+                height={24}
+                style={{ verticalAlign: 'middle', marginRight: '8px' }}
+              />
+              <span>Listed on <strong>Peptide Supermarket</strong></span>
+            </a>
+          </div>
+
           {/* ── Bottom bar ── */}
+
           <div className="flex flex-col md:flex-row justify-between items-center gap-3">
             <p className="text-[#7a9ec2] text-xs">
               © 2026 PH Labs Ltd — All rights reserved. Registered in England &amp; Wales, United Kingdom.
