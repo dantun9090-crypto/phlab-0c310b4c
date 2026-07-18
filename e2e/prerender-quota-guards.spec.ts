@@ -97,6 +97,6 @@ describe('Prerender quota guards (BATCH 1 + 2)', () => {
   it('deploy-worker recache no longer double-posts desktop+mobile', () => {
     // Original inner loop was `for at in desktop mobile`. Must be gone.
     expect(deploy).not.toMatch(/for at in desktop mobile/);
-    expect(deploy).toMatch(/adaptiveType\\":\\"mobile\\"/);
+    expect(deploy).toMatch(/adaptiveType\\":\\"desktop\\"/);
   });
 });
