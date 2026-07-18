@@ -23,6 +23,19 @@ const RECACHE_URL = "https://api.prerender.io/recache";
 let lastRunAt = 0;
 const MIN_INTERVAL_MS = 60_000;
 
+// Quota guardrails (2026-07-18 quota-burn incident):
+//  - MAX_URLS_PER_RUN: hard cap so a bloated sitemap can't burn thousands
+//    of paid renders in one call.
+//  - Adaptive-only mobile: Googlebot-Smartphone is the primary indexer.
+//    Desktop refreshes lazily on the next desktop crawl.
+//  - lastmodByUrl: per-isolate cache of the last `<lastmod>` we saw per URL.
+//    We only POST /recache for URLs whose lastmod actually changed. This is
+//    best-effort (isolates recycle), not authoritative — the build-id
+//    dedupe in /api/public/post-publish-check is authoritative.
+const MAX_URLS_PER_RUN = 50;
+const lastmodByUrl = new Map<string, string>();
+
+
 async function recacheBatch(
   token: string,
   urls: string[],
