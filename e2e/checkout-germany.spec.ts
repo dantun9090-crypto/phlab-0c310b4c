@@ -45,8 +45,18 @@ async function fillContactStep(page: Page) {
   await page.getByLabel(/last name/i).fill('Müller');
   await page.getByLabel(/^email/i).fill('hans.mueller@example.de');
   // Phone is optional — leave blank to prove non-UK numbers are not required.
-  // Advance to the address step.
+  // Advance to the address step. On slow-hydrating browsers (webkit CI) the
+  // click can land BEFORE React attaches its handlers and is silently
+  // swallowed — so click, assert the address step actually arrived, and
+  // retry the click once if it was eaten.
+  const country = page.locator('select#country');
   await page.getByRole('button', { name: /continue|next/i }).first().click();
+  try {
+    await expect(country).toBeVisible({ timeout: 10_000 });
+  } catch {
+    await page.getByRole('button', { name: /continue|next/i }).first().click();
+    await expect(country).toBeVisible({ timeout: 20_000 });
+  }
 }
 
 // Webkit needs noticeably longer to boot + hydrate the checkout; the
