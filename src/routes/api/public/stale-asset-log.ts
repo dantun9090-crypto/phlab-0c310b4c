@@ -30,7 +30,8 @@ export const Route = createFileRoute("/api/public/stale-asset-log")({
         try {
           body = Body.parse(await request.json());
         } catch (e) {
-          return json({ error: "invalid_body", detail: String((e as Error).message) }, 400);
+          console.warn("[stale-asset-log] invalid body", e);
+          return json({ error: "invalid_body" }, 400);
         }
 
         try {
@@ -74,7 +75,8 @@ export const Route = createFileRoute("/api/public/stale-asset-log")({
 
           return json({ rows, total: rows.length, hosts, topAssets });
         } catch (e) {
-          return json({ error: "query_failed", detail: String((e as Error).message) }, 500);
+          console.error("[stale-asset-log] query failed", e);
+          return json({ error: "query_failed" }, 500);
         }
       },
     },

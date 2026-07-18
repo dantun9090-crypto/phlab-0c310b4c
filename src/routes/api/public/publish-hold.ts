@@ -61,7 +61,8 @@ export const Route = createFileRoute("/api/public/publish-hold")({
         try {
           parsed = Body.parse(JSON.parse(raw));
         } catch (err) {
-          return json({ error: "invalid_input", details: String((err as Error).message).slice(0, 300) }, 400);
+          console.warn("[publish-hold] invalid input", err);
+          return json({ error: "invalid_input" }, 400);
         }
         const now = new Date().toISOString();
         const docId = parsed.buildId.replace(/[^A-Za-z0-9_.-]/g, "_").slice(0, 120);
@@ -111,7 +112,8 @@ export const Route = createFileRoute("/api/public/publish-hold")({
           })) as PublishHoldRow[];
           return json({ ok: true, ...selectLatestActiveHold(rows) });
         } catch (err) {
-          return json({ ok: true, hold: false, current: null, active: [], recent: [], error: String((err as Error).message).slice(0, 200) });
+          console.error("[publish-hold] list failed", err);
+          return json({ ok: true, hold: false, current: null, active: [], recent: [], error: "list_failed" });
 
         }
       },
