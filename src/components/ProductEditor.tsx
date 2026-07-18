@@ -724,7 +724,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
               <div className="grid grid-cols-4 gap-3">
                 {imageSlots.map((url, i) => url ? (
                   <div key={i} className={`aspect-square rounded-xl overflow-hidden border-2 ${i === 0 ? 'border-blue-500' : 'border-white/10'}`}>
-                    <img src={url} alt={`img ${i+1}`} className="w-full h-full object-contain bg-[#04101f]" />
+                    <img src={safeImageUrl(url)} alt={`img ${i+1}`} className="w-full h-full object-contain bg-[#04101f]" />
                   </div>
                 ) : null)}
               </div>
@@ -1309,7 +1309,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                         {variant.hplcImageUrl && (
                           <>
                             <a href={variant.hplcImageUrl} target="_blank" rel="noopener noreferrer">
-                              <img src={variant.hplcImageUrl} alt="HPLC chromatogram" className="h-10 w-auto rounded border border-slate-600" />
+                              <img src={safeImageUrl(variant.hplcImageUrl)} alt="HPLC chromatogram" className="h-10 w-auto rounded border border-slate-600" />
                             </a>
                             <button
                               onClick={() => { updateVariant(idx, 'hplcImageUrl', ''); }}
