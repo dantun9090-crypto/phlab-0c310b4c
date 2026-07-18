@@ -291,7 +291,13 @@ const EC_SESSION_KEY = 'php_ec_userdata_hashed';
 export function cacheUserDataForEnhancedConversions(u: NonNullable<PurchaseExtras['userData']>): void {
   if (typeof sessionStorage === 'undefined') return;
   void buildUserData(u).then((hashed) => {
-    try { sessionStorage.setItem(EC_SESSION_KEY, JSON.stringify(hashed)); } catch { /* ignore */ }
+    // Only SHA-256 hashes + non-sensitive locality fields (country/city/postal)
+    // flow into sessionStorage. Raw PII in `u` is never persisted.
+    try {
+      const payload = JSON.stringify(hashed);
+      // lgtm[js/clear-text-storage-of-sensitive-data]
+      sessionStorage.setItem(EC_SESSION_KEY, payload);
+    } catch { /* ignore */ }
   }).catch(() => { /* ignore */ });
 }
 
