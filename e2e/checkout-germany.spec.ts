@@ -168,6 +168,40 @@ test.describe('Checkout — Germany', () => {
     const orderPayloads: string[] = [];
     // Match BOTH generations of the TanStack server-fn path (/_serverFn/<id>
     // and the newer /_server/<id>).
+    // Hermetic Firebase Auth: anonymous sign-in + token refresh are mocked
+    // so the pay flow never depends on live Firebase reachability (the SDK
+    // otherwise retries forever in offline/CI-sandbox environments and
+    // createOrder never fires). The token is fake — createOrder itself is
+    // mocked below, so nothing verifies it.
+    await page.route(/identitytoolkit\.googleapis\.com|securetoken\.googleapis\.com/, (route) => {
+      const url = route.request().url();
+      if (url.includes('accounts:signUp')) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            kind: 'identitytoolkit#SignupNewUserResponse',
+            idToken: 'e2e-anon-id-token',
+            refreshToken: 'e2e-anon-refresh-token',
+            expiresIn: '3600',
+            localId: 'e2e-anon-uid',
+          }),
+        });
+      }
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'e2e-anon-id-token',
+          id_token: 'e2e-anon-id-token',
+          refresh_token: 'e2e-anon-refresh-token',
+          expires_in: '3600',
+          token_type: 'Bearer',
+          user_id: 'e2e-anon-uid',
+        }),
+      });
+    });
+
     await page.route(/\/_server(Fn)?\//, async (route) => {
       const req = route.request();
       if (req.method() !== 'POST') return route.continue();
@@ -248,11 +282,15 @@ test.describe('Checkout — Germany', () => {
     // page's "Research use notice" banner and "Confirm research use" button,
     // causing a strict-mode locator conflict.
     await page.locator('#acceptedTerms').check();
-    await page.getByRole('button', { name: /pay|place order|continue to payment/i }).first().click();
+    // Click the REAL place-order button by its stable test id: a role+name
+    // locator matches the step-3 accordion header ("3 Payment") first, so
+    // .first() toggled the accordion instead of placing the order — the
+    // original reason createOrder was never called.
+    await page.locator('#checkout-pay-button').click();
 
     // Wait for the order-create call to be observed (the test MUST still
     // fail when the order request never fires — this poll is the guard).
-    await expect.poll(() => orderPayloads.length, { timeout: 10_000 }).toBeGreaterThan(0);
+    await expect.poll(() => orderPayloads.length, { timeout: 15_000 }).toBeGreaterThan(0);
     // seroval keeps keys + string values literal on the wire, so the German
     // address is assertable directly on the raw body. `ß` may arrive either
     // literal or as a unicode escape.
@@ -260,7 +298,7 @@ test.describe('Checkout — Germany', () => {
     expect(raw).toContain('Germany');
     expect(raw).toContain('10115');
     expect(raw).toContain('Berlin');
-    expect(raw).toMatch(/Musterstra(?:ß|\\u00[dD][fF])\s*12/);
+    expect(raw).toMatch(/Musterstra(?:ß|\\u00[dD][fF])e\s*12/);
 
     // Analytics — Enhanced Conversions payload cached at pay-button click.
     // Identifiers are SHA-256 hashed before storage (CodeQL
