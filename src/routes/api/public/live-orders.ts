@@ -105,11 +105,15 @@ export const Route = createFileRoute('/api/public/live-orders')({
         try {
           const rows = await fetchRecentOrderRows();
 
-          const orders = rows
-            .filter((row) => !EXCLUDED_STATUSES.has(String(row.status || '').toLowerCase()))
-            .map((row) => mapRawOrderToLive(row as Parameters<typeof mapRawOrderToLive>[0]))
+          const mapped = await Promise.all(
+            rows
+              .filter((row) => !EXCLUDED_STATUSES.has(String(row.status || '').toLowerCase()))
+              .map((row) => mapRawOrderToLive(row as Parameters<typeof mapRawOrderToLive>[0])),
+          );
+          const orders = mapped
             .filter((order): order is LiveOrder => Boolean(order))
             .slice(0, limit);
+
 
           const bodyStr = JSON.stringify({
             orders,
