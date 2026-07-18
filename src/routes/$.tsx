@@ -1,7 +1,10 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { LegacyMount as LegacyClientMount } from "@/lib/legacy-mount";
 import { SEO_LIMITS, SITE_URL, canonicalUrl, clamp, metaForPath } from "@/lib/seo-meta";
-import { ARTICLE_INDEX as articles } from "@/pages/Resources/data/articles-index";
+// Full dataset (not the slug/title ARTICLE_INDEX): the Article JSON-LD
+// contract (tests/jsonld-validation.test.ts) requires datePublished per
+// article, which the lightweight index does not carry.
+import { articles } from "@/pages/Resources/data/articles";
 import { KNOWN_ROOTS } from "@/lib/known-roots";
 import { DynamicImportFallback } from "@/components/DynamicImportFallback";
 
@@ -28,6 +31,16 @@ export const Route = createFileRoute("/$")({
     if (resourcesMatch) {
       const article = articles.find((a) => a.slug === resourcesMatch[1]);
       if (article) {
+        // ISO 8601 duration from the human-readable readTime (minutes).
+        const timeRequired = `PT${Math.max(0, Math.round(article.readTime || 0))}M`;
+        // Plain-text articleBody — HTML markup stripped so the schema never
+        // carries raw tags (Google ignores/penalises markup in articleBody).
+        const articleBody = article.content
+          .map((s) => `${s.heading ?? ""} ${s.body}`)
+          .join("\n\n")
+          .replace(/<[^>]*>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
         scripts.push({
           type: "application/ld+json",
           children: JSON.stringify({
@@ -40,6 +53,9 @@ export const Route = createFileRoute("/$")({
             inLanguage: "en-GB",
             url,
             isAccessibleForFree: true,
+            datePublished: article.publishDate,
+            timeRequired,
+            articleBody,
             author: {
               "@type": "Organization",
               name: "PH Labs UK",

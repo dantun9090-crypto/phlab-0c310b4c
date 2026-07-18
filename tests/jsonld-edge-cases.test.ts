@@ -32,7 +32,12 @@ function callHead(route: any, ctx: any): HeadResult {
 // Product edge-case fixtures
 // ---------------------------------------------------------------------------
 
-const PRODUCT_EDGE_CASES: Array<{ label: string; product: SeoProduct }> = [
+const PRODUCT_EDGE_CASES: Array<{
+  label: string;
+  product: SeoProduct & {
+    aggregateRating?: { ratingValue: number; reviewCount: number };
+  };
+}> = [
   {
     label: "out-of-stock, no SEO overrides, no measurement in name",
     product: {
@@ -113,6 +118,23 @@ const PRODUCT_EDGE_CASES: Array<{ label: string; product: SeoProduct }> = [
       stock: 100,
     },
   },
+  {
+    label: "verified aggregate rating is emitted",
+    product: {
+      id: "edge_rated",
+      name: "BPC-157 5mg",
+      slug: "bpc-157-rated",
+      description: "Research peptide with verified customer reviews.",
+      category: "Tissue Repair",
+      price: 24.99,
+      imageUrl: "https://phlabs.co.uk/products/bpc-157.jpg",
+      isActive: true,
+      visibility: "public",
+      displayOrder: 14,
+      stock: 20,
+      aggregateRating: { ratingValue: 4.8, reviewCount: 17 },
+    },
+  },
 ];
 
 describe("Product JSON-LD — edge cases", () => {
@@ -134,7 +156,20 @@ describe("Product JSON-LD — edge cases", () => {
       expect(productBlock!.url).toBe(`https://phlabs.co.uk/products/${product.slug}`);
       expect(productBlock!.image).toBeTruthy();
       expect(productBlock!.brand?.name).toBe("PH Labs");
-      expect(productBlock!.aggregateRating).toBeTruthy();
+      // aggregateRating is emitted ONLY from verified rating data on the
+      // product doc (compliance: stars must never be self-published), so
+      // presence is asserted per-fixture rather than unconditionally.
+      if (product.aggregateRating) {
+        expect(productBlock!.aggregateRating).toBeTruthy();
+        expect(productBlock!.aggregateRating.ratingValue).toBe(
+          product.aggregateRating.ratingValue.toFixed(1),
+        );
+        expect(productBlock!.aggregateRating.reviewCount).toBe(
+          product.aggregateRating.reviewCount,
+        );
+      } else {
+        expect(productBlock!.aggregateRating).toBeUndefined();
+      }
 
       // Offer rules: present iff price > 0
       if (product.price && product.price > 0) {
