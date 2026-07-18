@@ -160,11 +160,17 @@ export async function runSecurityRegression(): Promise<ProbeReport> {
 
   // 5) www → apex redirect (legacy host hygiene)
   const www = await safeFetch('https://www.phlabs.co.uk/');
+  const wwwLoc = www?.headers.get('location') || '';
+  let wwwLocOk = false;
+  try {
+    const u = new URL(wwwLoc);
+    wwwLocOk = u.protocol === 'https:' && u.hostname === 'phlabs.co.uk';
+  } catch { /* not a valid URL */ }
   checks.push(check(
     'www-redirect',
     'www.phlabs.co.uk 301 → apex',
-    !!www && www.status === 301 && (www.headers.get('location') || '').startsWith('https://phlabs.co.uk'),
-    www ? `status ${www.status} loc=${www.headers.get('location') || '?'}` : 'unreachable',
+    !!www && www.status === 301 && wwwLocOk,
+    www ? `status ${www.status} loc=${wwwLoc || '?'}` : 'unreachable',
   ));
 
   const failed = checks.filter((c) => c.status === 'fail').length;

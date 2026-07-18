@@ -51,8 +51,10 @@ export function feedKeyFromRequest(
   host: string,
   feedType: "paid" | "free",
 ): FeedKey {
-  const h = host.toLowerCase();
-  const isProhealth = h.includes("prohealthpeptides");
+  // Hostname-suffix match — avoids the CodeQL js/incomplete-url-substring-sanitization
+  // pattern where a plain `.includes()` also matches `prohealthpeptides.evil.example`.
+  const h = host.toLowerCase().split(':')[0]; // strip port
+  const isProhealth = h === 'prohealthpeptides.co.uk' || h.endsWith('.prohealthpeptides.co.uk');
   if (feedType === "free") return isProhealth ? "prohealth_free" : "phlabs_free";
   return isProhealth ? "prohealth_paid" : "phlabs_paid";
 }
