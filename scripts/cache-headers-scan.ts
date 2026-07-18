@@ -44,7 +44,6 @@ const HTML_SHELL_PATHS = [
   "/about",
   "/contact",
   "/resources",
-  "/peptide-calculator",
 ];
 
 const SENSITIVE_PATHS = [

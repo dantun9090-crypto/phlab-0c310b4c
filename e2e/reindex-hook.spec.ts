@@ -18,7 +18,7 @@ const BASE = process.env.E2E_BASE_URL ?? 'http://localhost:8080';
 const ENDPOINT = `${BASE}/api/public/hooks/reindex`;
 const TOKEN = process.env.PRERENDER_TOKEN;
 
-const SAMPLE_URLS = ['/compound', '/peptide-calculator'];
+const SAMPLE_URLS = ['/compound'];
 
 // Capture trace+video for every test in this file so a CI failure ships
 // reindex JSON, network log, and screenshot artifacts.

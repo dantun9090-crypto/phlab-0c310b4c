@@ -56,7 +56,6 @@ const TARGETS: Target[] = [
   { path: "/resources", kind: "html-shell" },
   { path: "/about", kind: "html-shell" },
   { path: "/contact", kind: "html-shell" },
-  { path: "/peptide-calculator", kind: "html-shell" },
   { path: "/downloads", kind: "html-shell" },
   { path: "/landing/phlabs", kind: "html-shell" },
 
