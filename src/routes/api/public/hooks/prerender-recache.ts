@@ -187,24 +187,25 @@ export const Route = createFileRoute("/api/public/hooks/prerender-recache")({
           );
         }
 
-        // Single-mode: mobile only (Googlebot-Smartphone is the primary
-        // indexer). Cuts render volume in half vs. desktop+mobile.
-        const mobile = await recacheBatch(token, urls, "mobile");
+        // Single-mode: desktop only. Prerender.io "Mobile Optimized
+        // Rendering" is DISABLED in the dashboard (desktop-only rendering),
+        // so a mobile POST would be a no-op / wasted call.
+        const desktop = await recacheBatch(token, urls, "desktop");
 
         // Persist the lastmod we just recached so the next run can dedupe.
-        if (mobile.ok) {
+        if (desktop.ok) {
           for (const e of capped) {
             if (e.lastmod) lastmodByUrl.set(e.loc, e.lastmod);
           }
         }
 
         return Response.json({
-          ok: mobile.ok,
+          ok: desktop.ok,
           count: urls.length,
           total: entries.length,
           skippedUnchanged: entries.length - changed.length,
           cappedAt: MAX_URLS_PER_RUN,
-          mobile,
+          desktop,
           ranAt: new Date(now).toISOString(),
         });
       },
