@@ -145,23 +145,20 @@ jobs:
             "https://phlabs.co.uk/quality-control"
           )
 
-          # Prerender.io keys snapshots per UA class (desktop vs mobile). A
-          # recache without adaptiveType only refreshes ONE bucket — usually
-          # whichever UA prerender's crawler defaults to — leaving the other
-          # class serving stale HTML that references the previous build's
-          # /assets/index-*.js. Result: browser branch parks in
-          # `edge-html-miss;bot=0;fallback=origin` because
-          # isSaneRenderedHtml() rejects entry_mismatch. Recache BOTH.
+          # Single-mode adaptive recache (2026-07-18): the desktop+mobile
+          # double POST doubled Prerender.io render volume for zero SEO
+          # benefit — Googlebot Smartphone (mobile) is the primary indexer
+          # so we only warm mobile. Prerender.io will lazily refresh desktop
+          # on the next desktop crawl.
           for u in "${URLS[@]}"; do
-            for at in desktop mobile; do
-              code=$(curl -sS -o /tmp/pr.out -w "%{http_code}" \
-                -X POST https://api.prerender.io/recache \
-                -H "Content-Type: application/json" \
-                -d "{\"prerenderToken\":\"$PRERENDER_TOKEN\",\"url\":\"$u\",\"adaptiveType\":\"$at\"}")
-              echo "recache $u [$at] -> HTTP $code"
-              [ "$code" = "200" ] || { echo "::warning::prerender recache non-200 for $u [$at]"; cat /tmp/pr.out; echo; }
-            done
+            code=$(curl -sS -o /tmp/pr.out -w "%{http_code}" \
+              -X POST https://api.prerender.io/recache \
+              -H "Content-Type: application/json" \
+              -d "{\"prerenderToken\":\"$PRERENDER_TOKEN\",\"url\":\"$u\",\"adaptiveType\":\"mobile\"}")
+            echo "recache $u [mobile] -> HTTP $code"
+            [ "$code" = "200" ] || { echo "::warning::prerender recache non-200 for $u"; cat /tmp/pr.out; echo; }
           done
+
           # Give prerender ~45s to actually rebuild both buckets before the
           # edge warm-up asks for those URLs (otherwise the warm-up caches
           # the stale copy).
