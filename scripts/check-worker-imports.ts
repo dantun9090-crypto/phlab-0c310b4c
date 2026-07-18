@@ -1,8 +1,9 @@
 /**
  * CI guard: scan the production Worker bundle for Node-only imports.
  *
- * Runs after `bun run build`. Walks every JS file under `dist/server/`
- * (the Cloudflare Worker output) and fails if it contains references to
+ * Runs after `bun run build`. Walks every JS file under `.output/server/`
+ * (the Cloudflare Worker output — Nitro preset; `dist/server/` is kept as
+ * a fallback for the older layout) and fails if it contains references to
  * modules or APIs that don't work on workerd, even with `nodejs_compat`.
  *
  * Why static scan and not runtime? Some of these (e.g. `child_process`)
@@ -15,7 +16,11 @@
 import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-const WORKER_DIR = "dist/server";
+// The production build emits the Worker bundle via the Nitro preset to
+// .output/server; dist/server only exists in the pre-Nitro layout.
+const CANDIDATE_DIRS = [".output/server", "dist/server"];
+const WORKER_DIR =
+  CANDIDATE_DIRS.find((d) => existsSync(d)) ?? CANDIDATE_DIRS[0];
 
 // Modules that are stubbed/broken under workerd + nodejs_compat, or that
 // require native binaries / a real OS process.
@@ -165,7 +170,7 @@ function main() {
     const declared = bodies.some(({ body }) => declRe.test(body));
     if (referenced && !declared) {
       hits.push({
-        file: "dist/server/**",
+        file: `${WORKER_DIR}/**`,
         rule: `references "${symbol}" but its class declaration is missing — chunk-split lost firebase/auth side-effect. Keep auth UI in *.client.ts / dynamic import only.`,
         sample: `referenced=true declared=false`,
       });
