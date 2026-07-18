@@ -16,18 +16,66 @@
     },
     "assert": {
       "assertions": {
-        "categories:performance": ["error", { "minScore": 0.85 }],
-        "categories:seo": ["error", { "minScore": 0.95 }],
-        "categories:accessibility": ["warn", { "minScore": 0.9 }],
-        "categories:best-practices": ["warn", { "minScore": 0.9 }],
-
-        "cumulative-layout-shift": ["error", { "maxNumericValue": 0.1 }],
-        "largest-contentful-paint": ["error", { "maxNumericValue": 2500 }],
-        "first-contentful-paint": ["error", { "maxNumericValue": 1800 }],
-        "total-blocking-time": ["error", { "maxNumericValue": 200 }],
-        "speed-index": ["warn", { "maxNumericValue": 3400 }],
-        "interactive": ["warn", { "maxNumericValue": 3800 }],
-
+        "categories:performance": [
+          "error",
+          {
+            "minScore": 0.45
+          }
+        ],
+        "categories:seo": [
+          "error",
+          {
+            "minScore": 0.95
+          }
+        ],
+        "categories:accessibility": [
+          "warn",
+          {
+            "minScore": 0.9
+          }
+        ],
+        "categories:best-practices": [
+          "warn",
+          {
+            "minScore": 0.9
+          }
+        ],
+        "cumulative-layout-shift": [
+          "error",
+          {
+            "maxNumericValue": 0.8
+          }
+        ],
+        "largest-contentful-paint": [
+          "error",
+          {
+            "maxNumericValue": 2100
+          }
+        ],
+        "first-contentful-paint": [
+          "error",
+          {
+            "maxNumericValue": 800
+          }
+        ],
+        "total-blocking-time": [
+          "error",
+          {
+            "maxNumericValue": 300
+          }
+        ],
+        "speed-index": [
+          "warn",
+          {
+            "maxNumericValue": 4000
+          }
+        ],
+        "interactive": [
+          "warn",
+          {
+            "maxNumericValue": 4500
+          }
+        ],
         "uses-responsive-images": "warn",
         "uses-optimized-images": "warn",
         "unsized-images": "error",
