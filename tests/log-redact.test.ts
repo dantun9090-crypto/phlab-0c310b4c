@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { redact, safeLog, sanitizeRequestId, isPiiKey } from '../src/lib/log-redact';
 
-const RAW_EMAIL = 'REDACTED@example.com';
+const RAW_EMAIL = 'jane.doe@example.com';
 const RAW_POSTCODE = 'SW1A 1AA';
 const RAW_PHONE = '+44 7700 900123';
-const RAW_SURNAME = 'REDACTED';
+const RAW_SURNAME = 'Kowalski';
 
 describe('logRedact.redact', () => {
   it('redacts PII by key in plain objects', () => {
