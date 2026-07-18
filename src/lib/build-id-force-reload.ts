@@ -199,6 +199,12 @@ async function checkOnce(reason: string): Promise<void> {
   if (withinCooldown()) return;
   if (alreadyReloadedThisSession()) return;
   if (isCriticalRoute()) return;
+  // Never force-reload under Lighthouse / Playwright / other synthetic
+  // audits — the reload kills the run and blows the LH gate.
+  if (isSyntheticAudit()) return;
+  // Never force-reload within the first 60s of a page's life. Real UX
+  // protection + also covers the audit window even if the UA check missed.
+  if (withinGraceWindow()) return;
 
   inFlight = true;
   stampCheck();
@@ -207,10 +213,15 @@ async function checkOnce(reason: string): Promise<void> {
     if (!serverBuildId) return;
     if (serverBuildId === CURRENT_BUILD_ID) return;
     // Re-check the guards right before the destructive action.
-    if (alreadyReloadedThisSession() || isCriticalRoute()) {
+    if (
+      alreadyReloadedThisSession() ||
+      isCriticalRoute() ||
+      isSyntheticAudit() ||
+      withinGraceWindow()
+    ) {
       // eslint-disable-next-line no-console
       console.info(
-        `[build-id-force-reload] mismatch on ${reason} but reload suppressed (critical/session-guard)`,
+        `[build-id-force-reload] mismatch on ${reason} but reload suppressed (critical/session/synthetic/grace)`,
       );
       return;
     }
