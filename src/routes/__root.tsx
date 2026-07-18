@@ -320,6 +320,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // asset handlers below own user-triggered recovery. Auto-redirecting here
       // caused CI/user-visible refresh loops across public pages.
       {
+        // __BUILD_ID__ is a compile-time constant injected by Vite;
+        // JSON.stringify safely encodes it as a JS string literal.
+        // lgtm[js/bad-code-sanitization]
         children: `(function(){'use strict';var BUILD_ID=${JSON.stringify(
           typeof __BUILD_ID__ === "string" ? __BUILD_ID__ : "dev",
         )};var K='phlabs_build_id_v3';var K4='phlabs_build_id_v4';try{window.__BUILD_ID__=BUILD_ID;window.__PHL_BUILD_ID__=BUILD_ID;localStorage.setItem(K,BUILD_ID);localStorage.setItem(K4,BUILD_ID);}catch(e){}try{console.log('[PHL] Build active:',BUILD_ID);}catch(e){}})();`,
