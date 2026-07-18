@@ -84,6 +84,11 @@ export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
     productEntries = [];
   }
 
+  // Hard exclusion — these paths were decommissioned (410 Gone) and must
+  // never appear in any sitemap, even if a future code change accidentally
+  // reintroduces them via a static/product/article list.
+  const SITEMAP_EXCLUDE = new Set<string>(["/peptide-calculator", "/calculator"]);
+
   const seen = new Set<string>();
   return [
     ...staticEntries,
@@ -92,6 +97,8 @@ export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
     ...programmaticEntries,
   ].filter((e) => {
     if (seen.has(e.path)) return false;
+    if (SITEMAP_EXCLUDE.has(e.path)) return false;
+    if (/\/(peptide-)?calculator(\/|$)/i.test(e.path)) return false;
     if (!isIndexable(e.path)) return false;
     seen.add(e.path);
     return true;
