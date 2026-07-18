@@ -20,28 +20,44 @@
  *     timeout, ~20s) rather than snapshotting the fallback overlay.
  */
 
-const MAX_WAIT_MS_DEFAULT = 8000;
+const MAX_WAIT_MS_DEFAULT = 4000;
+/** Hard cap: even a pending route must release the snapshot within this budget. */
+const PENDING_AUTO_RELEASE_MS = 4000;
 
 type PrerenderWindow = Window & {
   prerenderReady?: boolean;
   __phlPrerenderHold?: boolean;
+  __phlPrerenderPendingTimer?: ReturnType<typeof setTimeout>;
 };
 
 /**
  * Mark the current route as data-pending. Holds the prerender snapshot
  * open until the route calls `markPrerenderReady` (or a flip helper).
+ * A hard auto-release fires after PENDING_AUTO_RELEASE_MS so a stalled
+ * data effect (query-param variants, failed fetch, cold Firestore) can
+ * never leave a real user staring at the watchdog fallback.
  */
 export function markPrerenderPending(): void {
   if (typeof window === 'undefined') return;
   const w = window as PrerenderWindow;
   w.prerenderReady = false;
   w.__phlPrerenderHold = true;
+  if (w.__phlPrerenderPendingTimer) clearTimeout(w.__phlPrerenderPendingTimer);
+  w.__phlPrerenderPendingTimer = setTimeout(() => {
+    // Force-release regardless of predicate state. This is a safety net,
+    // not the primary flip path — see flipPrerenderReadyWhen* helpers.
+    markPrerenderReady();
+  }, PENDING_AUTO_RELEASE_MS);
 }
 
 /** Flip prerenderReady to true and release the pending hold. */
 export function markPrerenderReady(): void {
   if (typeof window === 'undefined') return;
   const w = window as PrerenderWindow;
+  if (w.__phlPrerenderPendingTimer) {
+    clearTimeout(w.__phlPrerenderPendingTimer);
+    w.__phlPrerenderPendingTimer = undefined;
+  }
   w.__phlPrerenderHold = false;
   w.prerenderReady = true;
 }

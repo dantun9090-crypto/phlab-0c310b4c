@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { db, doc, getDoc } from '@/lib/firebase';
+import { markPrerenderReady } from '@/lib/prerender-ready';
 
 interface SEOData {
   title?: string;
@@ -14,27 +15,55 @@ const CANONICAL_ORIGIN = 'https://phlabs.co.uk';
 const DEFAULT_OG_IMAGE = `${CANONICAL_ORIGIN}/og-image.jpg`;
 
 /**
+ * Tracking / cache-buster / probe params that must NEVER produce a distinct
+ * canonical or a distinct prerender.io cache key. Any URL carrying only these
+ * is equivalent to its bare-path counterpart for indexing purposes.
+ */
+const STRIPPED_QUERY_PARAMS = new Set([
+  'gclid', 'fbclid', 'msclkid', 'yclid', 'dclid', 'gbraid', 'wbraid',
+  'mc_cid', 'mc_eid', 'ref', 'ref_src', '_ga', '_gl',
+  '__cache_check', '_reload', '__probe', 'nocache', '__prt',
+]);
+
+function stripTrackingParams(search: string): string {
+  if (!search || search === '?') return '';
+  const params = new URLSearchParams(search);
+  const keep = new URLSearchParams();
+  for (const [k, v] of params) {
+    const kl = k.toLowerCase();
+    if (STRIPPED_QUERY_PARAMS.has(kl)) continue;
+    if (kl.startsWith('utm_')) continue;
+    keep.append(k, v);
+  }
+  const str = keep.toString();
+  return str ? `?${str}` : '';
+}
+
+/**
  * Force every canonical / og:url / twitter:url onto the canonical origin,
- * regardless of what the page or Firestore override supplied. This eliminates
- * mismatched-domain errors from preview, prerender.io, and stale data.
+ * regardless of what the page or Firestore override supplied. Tracking and
+ * cache-buster params are stripped so ?gclid= / ?utm_* / __cache_check don't
+ * create phantom URL variants that miss the prerender.io cache and force
+ * a fresh render on every landing.
  */
 function toCanonicalUrl(input: string | undefined): string {
-  // Derive path from input (absolute or relative) or current location.
   let path = '/';
+  let search = '';
   if (input && input.trim()) {
     try {
       const u = new URL(input, CANONICAL_ORIGIN);
-      path = u.pathname + u.search;
+      path = u.pathname;
+      search = u.search;
     } catch {
       path = input.startsWith('/') ? input : `/${input}`;
     }
   } else if (typeof window !== 'undefined') {
-    path = window.location.pathname + window.location.search;
+    path = window.location.pathname;
+    search = window.location.search;
   }
-  // Normalize: collapse double slashes, strip trailing slash (except root).
   path = path.replace(/\/{2,}/g, '/');
   if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
-  return `${CANONICAL_ORIGIN}${path}`;
+  return `${CANONICAL_ORIGIN}${path}${stripTrackingParams(search)}`;
 }
 
 function setMeta(selector: string, attr: string, value: string) {
@@ -127,11 +156,27 @@ export function useSEO(pageKey: string, fallback: SEOData) {
 
     // Apply fallback immediately so first paint contains correct meta.
     apply(fallback);
-    // Flip prerenderReady for routes that don't gate on data. Data-dependent
-    // routes (Home, Products, ProductDetail) call markPrerenderPending() and
-    // raise __phlPrerenderHold — respect that so we don't snapshot early.
-    if (typeof window !== 'undefined' && !(window as any).__phlPrerenderHold) {
-      (window as any).prerenderReady = true;
+    // Prerender readiness — every route unconditionally releases the snapshot.
+    // - No hold set (loader-less / static routes): flip ready on first paint.
+    // - Hold set by markPrerenderPending(): its own 4s auto-release safety net
+    //   in prerender-ready.ts will flip ready even if the data effect never
+    //   fires (query-param variants, cold Firestore, offline fetch). We ALSO
+    //   schedule a route-local safety flip here so a route that mounts useSEO
+    //   without ever calling markPrerenderPending() still resolves quickly
+    //   for real users landing with ?gclid= / ?utm_* / etc.
+    if (typeof window !== 'undefined') {
+      const w = window as unknown as { __phlPrerenderHold?: boolean };
+      if (!w.__phlPrerenderHold) {
+        markPrerenderReady();
+      }
+      // Hard route-level cap regardless of hold state.
+      const t = setTimeout(() => markPrerenderReady(), 4000);
+      // Cleanup handled by the effect's return below via `mounted` guard —
+      // clear the timer synchronously so navigation doesn't stack timers.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__phlRouteReadyTimer && clearTimeout((window as any).__phlRouteReadyTimer);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__phlRouteReadyTimer = t;
     }
 
     // Then asynchronously merge Firestore overrides if present.
