@@ -26,8 +26,8 @@ const MIN_INTERVAL_MS = 60_000;
 // Quota guardrails (2026-07-18 quota-burn incident):
 //  - MAX_URLS_PER_RUN: hard cap so a bloated sitemap can't burn thousands
 //    of paid renders in one call.
-//  - Adaptive-only mobile: Googlebot-Smartphone is the primary indexer.
-//    Desktop refreshes lazily on the next desktop crawl.
+//  - Adaptive-only desktop: Prerender.io "Mobile Optimized Rendering" is
+//    DISABLED in the dashboard (desktop-only), so mobile POSTs are wasted.
 //  - lastmodByUrl: per-isolate cache of the last `<lastmod>` we saw per URL.
 //    We only POST /recache for URLs whose lastmod actually changed. This is
 //    best-effort (isolates recycle), not authoritative — the build-id
