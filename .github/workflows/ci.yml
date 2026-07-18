@@ -218,7 +218,7 @@ jobs:
       #     sbom.cdx.json
       - name: Install cosign
         if: hashFiles('dist/sbom.cdx.json') != ''
-        uses: sigstore/cosign-installer@v4.1.2
+        uses: sigstore/cosign-installer@v5.1.0
         with:
           cosign-release: v3.0.6
 
@@ -383,7 +383,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@v4.1.2
+        uses: sigstore/cosign-installer@v5.1.0
         with:
           cosign-release: v3.0.6
 
