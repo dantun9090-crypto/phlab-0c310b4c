@@ -49,6 +49,10 @@ async function fillContactStep(page: Page) {
   await page.getByRole('button', { name: /continue|next/i }).first().click();
 }
 
+// Webkit needs noticeably longer to boot + hydrate the checkout; the
+// default 30s test cap was eaten before select#country ever appeared.
+test.describe.configure({ timeout: 60_000 });
+
 test.describe('Checkout — Germany', () => {
   test.beforeEach(async ({ page }) => {
     await seedCart(page);

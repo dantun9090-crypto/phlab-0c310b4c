@@ -47,17 +47,23 @@ test.describe("/compound a11y smoke", () => {
 
     // Legal Disclaimer heading reachable + visible
     const legal = page.getByRole("heading", { name: /Legal Disclaimer/i });
-    // Assert visibility BEFORE scrolling: toBeVisible() auto-retries and
-    // re-resolves the locator, so it survives the CSR remount wiping the
-    // SSR DOM. scrollIntoViewIfNeeded on the SSR node raced the React
-    // takeover and died with "Element is not attached to the DOM".
-    await expect(legal).toBeVisible();
-    await legal.scrollIntoViewIfNeeded();
+    // Assert visibility+scroll inside ONE retrying closure: a bare
+    // toBeVisible() → scrollIntoViewIfNeeded() sequence can still race the
+    // CSR remount (visibility resolves on the SSR node, the React takeover
+    // detaches it, and the scroll then dies with "Element is not attached
+    // to the DOM"). toPass() re-runs the whole block with freshly-resolved
+    // locators until the page is stable.
+    await expect(async () => {
+      await expect(legal).toBeVisible({ timeout: 2_000 });
+      await legal.scrollIntoViewIfNeeded();
+    }).toPass({ timeout: 15_000 });
 
     // Back to homepage CTA reachable + visible + correct href
     const cta = page.getByRole("link", { name: /Back to homepage/i });
-    await expect(cta).toBeVisible();
-    await cta.scrollIntoViewIfNeeded();
+    await expect(async () => {
+      await expect(cta).toBeVisible({ timeout: 2_000 });
+      await cta.scrollIntoViewIfNeeded();
+    }).toPass({ timeout: 15_000 });
     await expect(cta).toHaveAttribute("href", "/");
 
     // CTA must be keyboard-focusable
