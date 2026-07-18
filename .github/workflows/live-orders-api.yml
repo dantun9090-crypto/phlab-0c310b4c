@@ -1,0 +1,63 @@
+name: Live orders API smoke (phlabs.co.uk)
+
+# Hits /api/public/live-orders on the deployed Cloudflare Worker and
+# asserts a non-empty, PII-safe example structure. Runs hourly + on push
+# to relevant source paths + on manual dispatch.
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "e2e/live-orders-api.spec.ts"
+      - "src/routes/api/public/live-orders.ts"
+      - "src/lib/orderFormatter.ts"
+      - ".github/workflows/live-orders-api.yml"
+
+jobs:
+  live-orders-api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+      - run: bash scripts/ci-bun-install.sh
+      - run: bunx playwright install --with-deps chromium
+
+      - name: Exercise /api/public/live-orders on the live Worker
+        env:
+          SMOKE_BASE_URL: https://phlabs.co.uk
+        run: bunx playwright test e2e/live-orders-api.spec.ts --project=chromium --reporter=line
+
+      - name: Capture failing response
+        if: failure()
+        env:
+          SMOKE_BASE_URL: https://phlabs.co.uk
+        run: |
+          set +e
+          {
+            echo "## /api/public/live-orders FAILED"
+            echo ""
+            echo '### Headers'
+            echo '```'
+            curl -sSI -A "GitHubActions-LiveOrdersSmoke/1.0" --max-time 15 \
+              "$SMOKE_BASE_URL/api/public/live-orders?limit=5&debug=1" | head -n 40
+            echo '```'
+            echo ""
+            echo '### Body (truncated)'
+            echo '```json'
+            curl -sS -A "GitHubActions-LiveOrdersSmoke/1.0" --max-time 15 \
+              "$SMOKE_BASE_URL/api/public/live-orders?limit=5&debug=1" | head -c 4000
+            echo ''
+            echo '```'
+          } > live-orders-report.md
+
+      - name: Upload report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: live-orders-report
+          path: live-orders-report.md
+          if-no-files-found: ignore
