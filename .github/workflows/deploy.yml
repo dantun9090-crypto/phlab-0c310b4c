@@ -9,6 +9,9 @@ concurrency:
   group: deploy-cloudflare-pages
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest

@@ -11,6 +11,9 @@ on:
       - '.github/workflows/reindex-hook.yml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   reindex-hook:
     runs-on: ubuntu-latest

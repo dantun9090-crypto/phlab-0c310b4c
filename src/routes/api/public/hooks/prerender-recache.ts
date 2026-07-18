@@ -132,12 +132,23 @@ export const Route = createFileRoute("/api/public/hooks/prerender-recache")({
               loc: m[1].trim(),
               lastmod: m[2] ? m[2].trim() : null,
             }))
-            .filter((e) => e.loc.startsWith("https://phlabs.co.uk"));
+            .filter((e) => {
+              // Proper URL parse — avoids CodeQL js/incomplete-url-substring-sanitization
+              // (a substring match on "https://phlabs.co.uk" also matches
+              // https://phlabs.co.uk.evil.example). Behaviour identical for
+              // well-formed sitemap entries.
+              try {
+                const u = new URL(e.loc);
+                return u.protocol === 'https:' && u.hostname === 'phlabs.co.uk';
+              } catch { return false; }
+            });
         } catch (err) {
+          console.warn('[prerender-recache] sitemap fetch failed:', err instanceof Error ? err.message : String(err));
           return Response.json(
             {
               ok: false,
-              error: `sitemap fetch failed: ${err instanceof Error ? err.message : String(err)}`,
+              error: 'sitemap_fetch_failed',
+              code: 'SITEMAP_FETCH_FAILED',
             },
             { status: 502 },
           );

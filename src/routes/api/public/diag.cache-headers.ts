@@ -58,7 +58,8 @@ export const Route = createFileRoute('/api/public/diag/cache-headers')({
             signal: AbortSignal.timeout(10_000),
           });
         } catch (err) {
-          return json({ error: 'fetch_failed', message: err instanceof Error ? err.message : String(err) });
+          console.warn('[diag.cache-headers] fetch failed:', err instanceof Error ? err.message : String(err));
+          return json({ error: 'fetch_failed', code: 'UPSTREAM_FETCH_FAILED' });
         }
 
         const headers: Record<string, string> = {};

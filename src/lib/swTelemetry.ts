@@ -32,7 +32,15 @@ function getSessionId(): string {
   try {
     let sid = sessionStorage.getItem(SESSION_KEY);
     if (!sid) {
-      sid = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      // Cryptographically-strong session id — replaces prior Math.random fallback
+      // (CodeQL js/insecure-randomness).
+      if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        sid = crypto.randomUUID().replace(/-/g, '');
+      } else {
+        const buf = new Uint8Array(16);
+        crypto.getRandomValues(buf);
+        sid = Array.from(buf, (b) => b.toString(16).padStart(2, '0')).join('');
+      }
       sessionStorage.setItem(SESSION_KEY, sid);
     }
     return sid;

@@ -35,6 +35,7 @@ const validateSlug = (slug: string) => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
 // keeps Lighthouse mobile page weight under control (the 15 MB blow-up was
 // uncompressed PNGs sitting in Firebase Storage).
 import { compressToWebp } from '@/lib/imageCompress';
+import { safeImageUrl } from '@/lib/safe-image-url';
 
 async function compressImage(file: File, maxPx = 1600, quality = 0.82): Promise<File> {
   return compressToWebp(file, { maxPx, quality, targetBytes: 200_000 });
@@ -248,7 +249,7 @@ function ImageSlot({ url, index, isPrimary, uploading, uploadProgress, uploadErr
                 <>
                   <CheckCircle2 className="w-3 h-3 text-green-400 shrink-0" />
                   <span className="text-green-400 text-[10px]">Image found</span>
-                  <img src={urlDraft.trim()} alt="preview" className="w-8 h-8 rounded object-cover border border-white/10 ml-auto" />
+                  <img src={safeImageUrl(urlDraft.trim())} alt="preview" className="w-8 h-8 rounded object-cover border border-white/10 ml-auto" />
                 </>
               )}
               {urlPreviewOk === false && (
@@ -715,7 +716,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
             <div className="space-y-4">
               {bannerUrl && (
                 <div className="rounded-xl overflow-hidden border border-white/10">
-                  <img src={bannerUrl} alt="Banner" className="w-full object-cover max-h-[160px]" />
+                  <img src={safeImageUrl(bannerUrl)} alt="Banner" className="w-full object-cover max-h-[160px]" />
                 </div>
               )}
               <div className="grid grid-cols-4 gap-3">
@@ -1132,7 +1133,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                 )}
                 {bannerUrl ? (
                   <div className="relative rounded-xl overflow-hidden border border-white/10 group">
-                    <img src={bannerUrl} alt="Banner preview" className="w-full object-cover h-[120px]" />
+                    <img src={safeImageUrl(bannerUrl)} alt="Banner preview" className="w-full object-cover h-[120px]" />
                     <button onClick={() => setBannerUrl('')}
                       className="absolute top-2 right-2 p-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all">
                       <Trash2 className="w-3 h-3" />

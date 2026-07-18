@@ -88,6 +88,7 @@ async function fetchPage(path: string): Promise<FetchedPage> {
     res.headers.forEach((v, k) => { headers[k] = v; });
     return { path, url, status: res.status, ms: Date.now() - started, html, headers };
   } catch (err) {
+    console.warn('[audit-report] fetch failed:', path, err instanceof Error ? err.message : String(err));
     return {
       path,
       url,
@@ -95,7 +96,7 @@ async function fetchPage(path: string): Promise<FetchedPage> {
       ms: Date.now() - started,
       html: '',
       headers: {},
-      error: err instanceof Error ? err.message : String(err),
+      error: 'fetch_failed',
     };
   }
 }
@@ -133,8 +134,15 @@ function analyzeMeta(page: FetchedPage): CategoryReport {
 
   const canonical = attr(html, /<link[^>]*rel\s*=\s*"canonical"[^>]*>/i, 'href');
   if (!canonical) issues.push('missing canonical link');
-  else if (!canonical.startsWith('https://phlabs.co.uk')) issues.push(`canonical not on phlabs.co.uk: ${canonical}`);
-  else passed.push('canonical present');
+  else {
+    let canonicalOk = false;
+    try {
+      const u = new URL(canonical);
+      canonicalOk = u.protocol === 'https:' && u.hostname === 'phlabs.co.uk';
+    } catch { /* invalid URL */ }
+    if (!canonicalOk) issues.push(`canonical not on phlabs.co.uk: ${canonical}`);
+    else passed.push('canonical present');
+  }
 
   for (const p of ['og:title', 'og:description', 'og:url', 'og:type']) {
     if (!metaContent(html, p, 'property')) issues.push(`missing ${p}`);

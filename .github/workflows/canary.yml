@@ -19,6 +19,9 @@ concurrency:
   group: canary-${{ github.workflow }}
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   canary:
     runs-on: ubuntu-latest

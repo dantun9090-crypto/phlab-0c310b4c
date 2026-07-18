@@ -21,6 +21,9 @@ on:
         required: false
         default: "https://phlabs.co.uk"
 
+permissions:
+  contents: read
+
 jobs:
   regression:
     name: Cache + layout regression
