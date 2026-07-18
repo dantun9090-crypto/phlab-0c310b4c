@@ -143,11 +143,18 @@ describe('invalidateProductCacheFromServer — concurrent stress + retry', () =>
 
   test('transient 503 is retried with exponential backoff up to 3 attempts', async () => {
     let callCount = 0;
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+    // State per URL — NOT Math.ceil(callCount/3): with exponential backoff
+    // the endpoints' retries interleave non-deterministically, so a global
+    // call counter cannot be mapped back to "attempt N of endpoint X".
+    // That misassignment made this test flaky under CI load.
+    const attemptsByUrl = new Map<string, number>();
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       callCount += 1;
-      // CF + both prerender posts each fail twice then succeed.
-      const perEndpointCall = Math.ceil(callCount / 3);
-      if (perEndpointCall <= 2) {
+      const url = typeof input === 'string' ? input : (input as Request).url;
+      const attempt = (attemptsByUrl.get(url) ?? 0) + 1;
+      attemptsByUrl.set(url, attempt);
+      // Each endpoint fails its first two attempts, then succeeds.
+      if (attempt <= 2) {
         return new Response('upstream busy', { status: 503 });
       }
       return new Response('{}', { status: 200 });
