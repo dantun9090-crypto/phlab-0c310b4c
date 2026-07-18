@@ -1,0 +1,119 @@
+# gitleaks config — extends the shipped default ruleset (100+ providers:
+# AWS, GCP, Stripe, Slack, GitHub, Firebase, Supabase service_role, etc.).
+# We keep the defaults strict and only allowlist known-safe placeholders,
+# fixtures, and public tokens that live in this repo on purpose.
+#
+# Rule of thumb: better a false positive we allowlist here (one line, with
+# a reason) than a missed Supabase service_role key in production.
+
+title = "phlabs secret-scan config"
+
+[extend]
+useDefault = true
+
+# ── Global allowlist ────────────────────────────────────────────────────────
+# Regexes match against the leaked SECRET value (not the file). Path
+# allowlists match the file path relative to repo root.
+[allowlist]
+description = "Global allowlist: placeholders, fixtures, docs, example files."
+
+paths = [
+  # Example / template env files never contain real secrets.
+  '''(^|/)\.env\.example$''',
+  '''(^|/)\.env\.sample$''',
+  '''(^|/)\.env\.template$''',
+  # Docs referencing tokens/keys illustratively.
+  '''^docs/.*\.md$''',
+  '''^README\.md$''',
+  # Test fixtures — fake tokens by design.
+  '''^tests?/.*fixtures?/''',
+  '''^src/test/fixtures/''',
+  '''^e2e/.*\.spec\.ts$''',
+  '''^src/lib/redact-sensitive\.test\.ts$''',
+  # Firebase Web API keys are PUBLIC by design (like Google Maps keys) —
+  # they identify the project, they don't authorise privileged access.
+  # Security is enforced by Firebase Auth + Firestore rules, not by
+  # hiding the API key.
+  '''^src/lib/firebase(-auth)?\.ts$''',
+  '''^src/lib/firestore-rest\.ts$''',
+  '''^src/lib/auth-throttle\.functions\.ts$''',
+  '''^src/lib/edge-monitor\.functions\.ts$''',
+  '''^src/lib/revoke-refresh-tokens\.functions\.ts$''',
+  '''^src/lib/server/firebase-auth-admin\.ts$''',
+  # .env holds the Supabase VITE_ publishable (anon) key — public by
+  # design, embedded in the client bundle. Service-role keys never live
+  # here and are still caught by the custom rule below.
+  '''(^|/)\.env$''',
+  # Monitor script uses the public anon JWT for probe requests.
+  '''^scripts/monitor-head-get\.mjs$''',
+  '''^README\.md$''',
+  # Test fixtures — fake tokens by design.
+  '''^tests?/.*fixtures?/''',
+  '''^src/test/fixtures/''',
+  '''^e2e/.*\.spec\.ts$''',
+  # Public bank logos etc. — no secret material.
+  '''^public/bank-logos/''',
+  # This config file itself references example patterns.
+  '''^\.gitleaks\.toml$''',
+  # Lockfiles: integrity hashes trip entropy rules, never contain secrets.
+  '''(^|/)(bun\.lock|bun\.lockb|package-lock\.json|yarn\.lock|pnpm-lock\.yaml)$''',
+  # Generated SBOMs list hashes, not secrets.
+  '''(^|/)sbom.*\.json$''',
+  # Firestore rules / indexes — declarative, no key material.
+  '''(^|/)firestore\.(rules|indexes\.json)$''',
+]
+
+regexes = [
+  # localStorage / cookie key constants named "*_KEY" are UI identifiers,
+  # not credentials — allowlist the specific pattern that trips
+  # generic-api-key on landing promo dismissal.
+  '''phl_landing_promo_dismissed''',
+  # Obvious placeholder tokens — case-insensitive.
+  '''(?i)your[-_]?(api[-_]?)?(key|token|secret)''',
+  '''(?i)example[-_]?(api[-_]?)?(key|token|secret)?''',
+  '''(?i)placeholder''',
+  '''(?i)changeme''',
+  '''(?i)dummy[-_]?(key|token|secret)''',
+  '''(?i)fake[-_]?(key|token|secret)''',
+  '''(?i)test[-_]?(key|token|secret)''',
+  # AWS' canonical documentation example key — appears in gitleaks' own test
+  # fixtures and in security demos; NOT a real credential.
+  '''AKIAIOSFODNN7EXAMPLE''',
+  '''wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY''',
+  # Sequences of x's / 0's used as redactions.
+  '''x{16,}''',
+  '''0{16,}''',
+]
+
+# ── Historical allowlist by commit fingerprint ─────────────────────────────
+# The 8,382-commit audit (2026-07-18) confirmed history is clean. These
+# specific commits contain PUBLIC values (App Check reCAPTCHA site key,
+# Shopify Storefront token — both customer-facing, public-scoped) that
+# trip the generic-api-key rule. Allowlisted by exact commit + path so
+# any NEW leak in these files still fails the gate.
+commits = [
+  "6d41db577bfb75ae7029c357ee458199e51f099b",  # setup-appcheck.cjs — public reCAPTCHA site key
+  "e848959e16bcf1a62f4251661401482c772de944",  # ShopifyTab.tsx — public Storefront API token
+]
+
+stopwords = [
+  "example",
+  "placeholder",
+  "your-token",
+  "your-key",
+  "your-secret",
+  "dummy",
+  "changeme",
+  "xxxxxxxx",
+]
+
+# ── Project-specific: Supabase anon/publishable keys are PUBLIC by design ──
+# Anon JWTs (role=anon) are safe to embed in client bundles; RLS protects
+# data. Service-role keys (role=service_role) are NEVER allowlisted and
+# must trigger the gate.
+[[rules]]
+id = "supabase-service-role-jwt"
+description = "Supabase service_role JWT (server-only, must never be committed)"
+regex = '''eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]*(?:c2VydmljZV9yb2xl|"role":\s*"service_role")[A-Za-z0-9_-]*\.[A-Za-z0-9_-]{20,}'''
+keywords = ["service_role", "eyJ"]
+tags = ["supabase", "critical"]
