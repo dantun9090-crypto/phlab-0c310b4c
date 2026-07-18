@@ -392,3 +392,36 @@ reached, remediation stops and a red Slack alert is sent.
 - 🟢 green `#2e7d32` — verify PASS
 - 🟡 amber `#ffb300` — mismatch detected / remediation applied
 - 🔴 red `#d32f2f` — cap reached / remediation failed / verify failed
+
+---
+
+## Secret scanning
+
+This is a **public repository**. A leaked secret is scraped by bots within
+minutes of landing on `main`. Three defence layers protect the repo:
+
+1. **GitHub Push Protection** (native, strongest — blocks the push before
+   the commit lands). One-time repo setup:
+   `Settings → Code security and analysis` → enable:
+   - Secret scanning
+   - Push protection
+   - Secret scanning alerts for partners
+   - Validity checks
+2. **CI gate** — `.github/workflows/secret-scan.yml` runs
+   [gitleaks](https://github.com/gitleaks/gitleaks) against the **full git
+   history** on every push, every PR, and weekly (Monday 06:00 UTC).
+   Config: `.gitleaks.toml`. Fails the build on any finding.
+3. **Local pre-commit check (recommended, optional)** — before pushing,
+   contributors can run:
+   ```bash
+   # macOS: brew install gitleaks     Linux: see gitleaks releases
+   gitleaks detect --config .gitleaks.toml --redact --verbose
+   ```
+   Catches a leak before it ever reaches GitHub. **No husky / no
+   auto-installed hooks** — this is documentation-only so Lovable's own
+   commit flow is not disturbed.
+
+If gitleaks flags a false positive, add a narrow allowlist entry to
+`.gitleaks.toml` with a comment explaining *why* it is safe. Never widen
+the ruleset to make a real secret pass — rotate the credential instead.
+
