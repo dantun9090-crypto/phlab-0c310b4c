@@ -32,22 +32,25 @@ interface Props {
   theme?: Theme;
 }
 
+function readDismissed(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const raw = window.localStorage.getItem(DISMISS_KEY);
+    if (!raw) return false;
+    const until = Number.parseInt(raw, 10);
+    return Number.isFinite(until) && until > Date.now();
+  } catch {
+    return false;
+  }
+}
+
 export function LandingPromoStrip({ theme = "dark" }: Props) {
-  const [hidden, setHidden] = useState(true);
+  // Init synchronously from localStorage so a returning visitor never sees
+  // the strip flash in-then-out (that flash was measured as ~0.2 CLS on
+  // landing pages).
+  const [hidden, setHidden] = useState<boolean>(readDismissed);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(DISMISS_KEY);
-      if (raw) {
-        const until = Number.parseInt(raw, 10);
-        if (Number.isFinite(until) && until > Date.now()) return;
-      }
-    } catch {
-      /* ignore */
-    }
-    setHidden(false);
-  }, []);
 
   function dismiss() {
     setHidden(true);

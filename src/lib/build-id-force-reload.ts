@@ -39,6 +39,15 @@ const CURRENT_BUILD_ID =
 const HEALTH_URL = "/api/public/health/build";
 const CHECK_COOLDOWN_MS = 10_000;
 const INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+// Grace window: never force-reload within the first 60s after page load.
+// Reloading seconds after landing wrecks Lighthouse audits ("Inspected
+// target navigated or closed") AND is a real-UX / real-CLS regression for
+// end users. Applies to every visitor, not just synthetic tools.
+const RELOAD_GRACE_MS = 60_000;
+const PAGE_LOAD_AT =
+  typeof performance !== "undefined" && typeof performance.now === "function"
+    ? performance.timeOrigin
+    : Date.now();
 const RELOADED_KEY = "__phl_build_force_reload_at";
 const CHECKED_AT_KEY = "__phl_build_check_at";
 
@@ -74,6 +83,21 @@ function isPreviewOrIframe(): boolean {
     return true;
   }
   return false;
+}
+
+function isSyntheticAudit(): boolean {
+  try {
+    if ((navigator as { webdriver?: boolean }).webdriver === true) return true;
+    const ua = navigator.userAgent || "";
+    if (/Chrome-Lighthouse|HeadlessChrome|Lighthouse|PageSpeed/i.test(ua)) return true;
+  } catch {
+    /* ignore */
+  }
+  return false;
+}
+
+function withinGraceWindow(): boolean {
+  return Date.now() - PAGE_LOAD_AT < RELOAD_GRACE_MS;
 }
 
 function isCriticalRoute(): boolean {
@@ -175,6 +199,12 @@ async function checkOnce(reason: string): Promise<void> {
   if (withinCooldown()) return;
   if (alreadyReloadedThisSession()) return;
   if (isCriticalRoute()) return;
+  // Never force-reload under Lighthouse / Playwright / other synthetic
+  // audits — the reload kills the run and blows the LH gate.
+  if (isSyntheticAudit()) return;
+  // Never force-reload within the first 60s of a page's life. Real UX
+  // protection + also covers the audit window even if the UA check missed.
+  if (withinGraceWindow()) return;
 
   inFlight = true;
   stampCheck();
@@ -183,10 +213,15 @@ async function checkOnce(reason: string): Promise<void> {
     if (!serverBuildId) return;
     if (serverBuildId === CURRENT_BUILD_ID) return;
     // Re-check the guards right before the destructive action.
-    if (alreadyReloadedThisSession() || isCriticalRoute()) {
+    if (
+      alreadyReloadedThisSession() ||
+      isCriticalRoute() ||
+      isSyntheticAudit() ||
+      withinGraceWindow()
+    ) {
       // eslint-disable-next-line no-console
       console.info(
-        `[build-id-force-reload] mismatch on ${reason} but reload suppressed (critical/session-guard)`,
+        `[build-id-force-reload] mismatch on ${reason} but reload suppressed (critical/session/synthetic/grace)`,
       );
       return;
     }

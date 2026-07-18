@@ -1,14 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
 
+// Read persisted dismissal synchronously so the initial render already
+// reflects the user's choice. Without this, every returning visitor got
+// a first-paint flash of the banner followed by an unmount → CLS.
+function readDismissed(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.localStorage.getItem('disclaimer_dismissed') === 'true';
+  } catch {
+    return false;
+  }
+}
+
 export function DisclaimerBanner() {
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState<boolean>(readDismissed);
   const bannerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    try {
-      if (localStorage.getItem('disclaimer_dismissed') === 'true') setDismissed(true);
-    } catch { /* ignore */ }
-  }, []);
 
   useEffect(() => {
     if (dismissed) {
