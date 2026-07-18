@@ -64,6 +64,10 @@ paths = [
 ]
 
 regexes = [
+  # localStorage / cookie key constants named "*_KEY" are UI identifiers,
+  # not credentials — allowlist the specific pattern that trips
+  # generic-api-key on landing promo dismissal.
+  '''phl_landing_promo_dismissed''',
   # Obvious placeholder tokens — case-insensitive.
   '''(?i)your[-_]?(api[-_]?)?(key|token|secret)''',
   '''(?i)example[-_]?(api[-_]?)?(key|token|secret)?''',
