@@ -192,10 +192,10 @@ export default function HomePage() {
   const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
   const [showHeroEffects, setShowHeroEffects] = useState(false);
   const [reserveHeroAdvert, setReserveHeroAdvert] = useState<boolean>(false);
-  // CLS: whether to reserve 320px placeholder before Firestore banner resolves.
-  // Seeded post-mount from localStorage (see effect below) so SSR/CSR match
-  // and empty pages don't reserve wasted height that collapses on resolve.
-  const [expectBanner, setExpectBanner] = useState<boolean>(!!ssrBanner);
+  // CLS: adverts start unresolved — the hero slot reserves its final height
+  // until the first live fetch settles (success or failure), so a cold
+  // first visit never inserts the slot above the fold post-paint.
+  const [advertsResolved, setAdvertsResolved] = useState<boolean>(false);
   // IMPORTANT: do NOT seed from localStorage in the lazy initializer — SSR
   // returns [] and the client's first render must match, otherwise React
   // throws hydration error #419 (recoverable hydration mismatch) and
@@ -261,7 +261,6 @@ export default function HomePage() {
     // Runs AFTER the first commit, so it never causes a hydration mismatch.
     try {
       setReserveHeroAdvert(localStorage.getItem('php_adverts_hero_count') === '1');
-      if (localStorage.getItem('php_banner_active') === '1') setExpectBanner(true);
       const raw = localStorage.getItem('php_adverts_cache');
       if (raw) {
         const { ts, data } = JSON.parse(raw);
@@ -321,7 +320,8 @@ export default function HomePage() {
         localStorage.setItem('php_adverts_hero_count', heroCount > 0 ? '1' : '0');
         localStorage.setItem('php_adverts_cache', JSON.stringify({ ts: Date.now(), data: allAdverts }));
       } catch { /* ignore */ }
-    }).catch(() => {});
+      setAdvertsResolved(true);
+    }).catch(() => setAdvertsResolved(true));
   }, []);
 
   const refetchBannerAndSettings = useCallback(() => {
@@ -331,10 +331,6 @@ export default function HomePage() {
           const data = snap.exists() ? snap.data() : null;
           if (data) setBanner(data);
           setBannerResolved(true);
-          try {
-            const active = !!(data && (data as any).imageUrl && (data as any).active !== false && (data as any).isActive !== false);
-            localStorage.setItem('php_banner_active', active ? '1' : '0');
-          } catch { /* ignore */ }
         }).catch(() => setBannerResolved(true));
 
         getDocFromServer(doc(db, 'siteSettings', 'featured-products')).then(snap => {
@@ -636,8 +632,17 @@ export default function HomePage() {
         );
       })() : (
         // Reserve banner height BEFORE resolve to prevent CLS shift on hero when
-        // banner arrives async (matches Lighthouse-flagged 0.27+0.24 shifts).
-        !bannerResolved && expectBanner ? <div aria-hidden="true" style={{ minHeight: 320 }} /> : null
+        // banner arrives async. Unconditional (not localStorage-gated): the
+        // previous expectBanner gate only covered repeat visits, so every cold
+        // first visit — exactly what Lighthouse measures — inserted the banner
+        // above the fold and shifted the whole page (~0.7 CLS in CI).
+        // Height matches the banner formula with the default heightPx=320:
+        // clamp(round(320*0.7), 22vw, max(320,560)/2). If the admin disables
+        // the banner the reserve collapses once on resolve (one shift, bounded
+        // by 280px), which is strictly better than an unbounded insert.
+        !bannerResolved ? (
+          <div aria-hidden="true" style={{ minHeight: 'clamp(224px, 22vw, 280px)' }} />
+        ) : null
       )}
 
       {/* ════════════════════════════════
@@ -645,9 +650,9 @@ export default function HomePage() {
           Wrapper always reserves banner height to prevent CLS shift
           when async Firestore adverts arrive (banner is h-48/h-72 + py-6).
       ════════════════════════════════ */}
-      {(reserveHeroAdvert || heroAdverts.length > 0) && <div
+      {(!advertsResolved || reserveHeroAdvert || heroAdverts.length > 0) && <div
         className="container mx-auto px-6 py-6"
-        style={{ minHeight: heroAdverts.length > 0 ? 'clamp(240px, 26vw, 336px)' : 0 }}
+        style={{ minHeight: (!advertsResolved || heroAdverts.length > 0) ? 'clamp(240px, 26vw, 336px)' : 0 }}
         data-advert-reserve="homepage_hero"
       >
         {heroAdverts.length > 0 && (
