@@ -439,7 +439,7 @@ export default function CacheRecacheTab() {
             <p className="text-xs text-[#9cb8d9] mt-1">
               Reads <code className="text-emerald-400">/sitemap.xml</code>, then POSTs the URL list to{' '}
               <code className="text-emerald-400">https://api.prerender.io/recache</code>. Used after a Publish so
-              Googlebot sees the new build immediately instead of waiting for the next 15-min cron.
+              Googlebot sees the new build immediately instead of waiting for the next publish-triggered recache.
             </p>
           </div>
         </div>
