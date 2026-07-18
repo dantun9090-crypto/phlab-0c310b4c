@@ -154,6 +154,7 @@ export const KNOWN_PUBLIC_ROUTES: readonly string[] = [
   "/research/tirzepatide-vs-retatrutide",
   "/research/cjc-1295-ipamorelin-synergy",
   "/research/ghk-cu-guide",
+  "/research/pt-141-uk",
   "/quality-control",
   "/lab-reports",
   "/resources",
