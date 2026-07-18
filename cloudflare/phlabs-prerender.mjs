@@ -488,7 +488,42 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
     const startTime = Date.now();
-    const isBot = isCrawler(request);
+    const ua = request.headers.get("User-Agent") || "";
+
+    // ── PRERENDER QUOTA GUARDS (2026-07-18) ─────────────────────────────
+    // These run BEFORE isCrawler() so they short-circuit the paid render
+    // path even when the UA regex would otherwise match.
+
+    // (a) Vulnerability scanners — never touch origin or prerender.
+    if (isScannerPath(path)) {
+      return new Response("Not Found", {
+        status: 404,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "public, max-age=3600",
+          "X-Robots-Tag": "noindex, nofollow",
+          "Server-Timing": `scanner-block;dur=${Date.now() - startTime}`,
+        },
+      });
+    }
+
+    // (b) Our own monitoring probes: bypass any prerender consideration.
+    // Stripping cache-buster params is done inside the request URL for the
+    // origin fetch so CF still HITs a warm HTML entry.
+    const monitoring = isMonitoringUA(ua);
+
+    // (c) Cache-bust probe params — same treatment as monitoring: origin
+    // direct, no prerender proxy.
+    const probeParam = hasProbeParam(url);
+
+    // (d) Non-HTML paths — prerender can't render them, times out as 504.
+    const nonHtml = isNonHtmlPath(path);
+
+    // Only allowlisted crawlers reach the prerender branch, and only for
+    // HTML paths, and only when they aren't one of our probes.
+    const isBot =
+      !monitoring && !probeParam && !nonHtml && isCrawler(request);
+
 
     // ── 0. Legacy /cache-reset URL — the in-page popup now clears caches
     //    inline via window.__phlHardReloadClean, so /cache-reset is only
