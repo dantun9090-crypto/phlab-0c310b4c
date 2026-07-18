@@ -1,3 +1,4 @@
+import type React from "react";
 import { createFileRoute } from "@tanstack/react-router";
 
 // Plain <a> — this page is rendered under BOTH the TanStack route tree and
