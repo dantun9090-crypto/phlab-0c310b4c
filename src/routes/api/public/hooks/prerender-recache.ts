@@ -134,10 +134,12 @@ export const Route = createFileRoute("/api/public/hooks/prerender-recache")({
             }))
             .filter((e) => e.loc.startsWith("https://phlabs.co.uk"));
         } catch (err) {
+          console.warn('[prerender-recache] sitemap fetch failed:', err instanceof Error ? err.message : String(err));
           return Response.json(
             {
               ok: false,
-              error: `sitemap fetch failed: ${err instanceof Error ? err.message : String(err)}`,
+              error: 'sitemap_fetch_failed',
+              code: 'SITEMAP_FETCH_FAILED',
             },
             { status: 502 },
           );

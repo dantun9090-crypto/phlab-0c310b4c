@@ -54,9 +54,10 @@ export const Route = createFileRoute('/api/public/diag/build-state')({
         try {
           buildState = await getDocAdmin('_meta', 'build_state');
         } catch (err) {
+          console.error('[diag.build-state] firestore read failed:', err instanceof Error ? err.message : String(err));
           return json({
             error: 'firestore_read_failed',
-            message: err instanceof Error ? err.message : String(err),
+            code: 'FIRESTORE_READ_FAILED',
             currentBuildId,
           }, 500);
         }

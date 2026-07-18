@@ -88,6 +88,7 @@ async function fetchPage(path: string): Promise<FetchedPage> {
     res.headers.forEach((v, k) => { headers[k] = v; });
     return { path, url, status: res.status, ms: Date.now() - started, html, headers };
   } catch (err) {
+    console.warn('[audit-report] fetch failed:', path, err instanceof Error ? err.message : String(err));
     return {
       path,
       url,
@@ -95,7 +96,7 @@ async function fetchPage(path: string): Promise<FetchedPage> {
       ms: Date.now() - started,
       html: '',
       headers: {},
-      error: err instanceof Error ? err.message : String(err),
+      error: 'fetch_failed',
     };
   }
 }
