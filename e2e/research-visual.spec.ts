@@ -59,6 +59,25 @@ test.describe("/research visual regression (article page)", () => {
       );
     });
 
+
+    // Pre-warm lazy content before the capture: a fullPage screenshot
+    // temporarily resizes the viewport to the document height, firing every
+    // below-fold IntersectionObserver at once. Without a slow scroll pass
+    // first, lazy sections expand DURING the capture and consecutive
+    // screenshots oscillate in height ("Failed to take two consecutive
+    // stable screenshots", observed as a 10235 <-> 11164px flip-flop).
+    await page.evaluate(async () => {
+      const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+      const step = Math.max(400, Math.floor(window.innerHeight / 2));
+      for (let y = 0; y <= document.documentElement.scrollHeight; y += step) {
+        window.scrollTo(0, y);
+        await sleep(60);
+      }
+      window.scrollTo(0, 0);
+      await sleep(300);
+    });
+    await page.waitForTimeout(500);
+
     await page.addStyleTag({ content: KILL_MOTION_CSS });
 
     await expect(page).toHaveScreenshot("research-articles.png", {
