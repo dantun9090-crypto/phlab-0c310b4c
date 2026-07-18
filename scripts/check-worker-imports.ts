@@ -114,6 +114,18 @@ function snippet(body: string, idx: number, len = 80): string {
   return body.slice(start, end).replace(/\s+/g, " ");
 }
 
+// Known-safe vendored shims bundled by Nitro into _libs/. Each entry
+// needs a justification; keep this list as short as possible.
+const ALLOWED_FILES: Array<{ match: RegExp; reason: string }> = [
+  {
+    match: /_libs[\\/]safer-buffer\.mjs$/,
+    // Vendored `safer-buffer` (pulled in via iconv-lite). Its only
+    // process.binding("buffer") call is wrapped in try/catch and degrades
+    // to a pure-JS fallback, so it never throws on workerd.
+    reason: "process.binding guarded by try/catch with JS fallback",
+  },
+];
+
 function main() {
   if (!existsSync(WORKER_DIR)) {
     console.error(
@@ -131,6 +143,7 @@ function main() {
   const hits: Hit[] = [];
 
   for (const file of files) {
+    if (ALLOWED_FILES.some((a) => a.match.test(file))) continue;
     const body = readFileSync(file, "utf8");
 
     for (const mod of FORBIDDEN_MODULES) {
