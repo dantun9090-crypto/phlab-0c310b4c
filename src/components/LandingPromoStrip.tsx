@@ -90,9 +90,12 @@ export function LandingPromoStrip({ theme = "dark" }: Props) {
       aria-label="Launch promotion"
       className={`relative z-40 ${wrap}`}
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[12px] sm:text-[13px]">
-        <span className="font-medium tracking-wide">{PROMO_HEADLINE}</span>
-        <span className="opacity-70 hidden sm:inline">·</span>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[12px] sm:text-[13px] text-white">
+        {/* Explicit white on every text child — light-mode global body color
+            (#0f172a) was winning over the inherited text-white on the wrapper,
+            producing 1.03:1 contrast against the navy background (axe: serious). */}
+        <span className="font-medium tracking-wide text-white">{PROMO_HEADLINE}</span>
+        <span className="opacity-70 hidden sm:inline text-white">·</span>
         {PROMO_CODES.map(({ code, label }) => (
           <span key={code} className="inline-flex items-center gap-2">
             <button
@@ -104,7 +107,7 @@ export function LandingPromoStrip({ theme = "dark" }: Props) {
               {code}
               <span className="text-[10px] opacity-80">{copiedCode === code ? "Copied" : "Copy"}</span>
             </button>
-            <span className="opacity-70 text-[11px] sm:text-[12px]">{label}</span>
+            <span className="opacity-70 text-[11px] sm:text-[12px] text-white">{label}</span>
           </span>
         ))}
         <a
@@ -117,7 +120,7 @@ export function LandingPromoStrip({ theme = "dark" }: Props) {
           type="button"
           onClick={dismiss}
           aria-label="Dismiss promotion"
-          className="ml-1 opacity-60 hover:opacity-100 transition-opacity text-base leading-none"
+          className="ml-1 opacity-60 hover:opacity-100 transition-opacity text-base leading-none text-white"
         >
           ×
         </button>

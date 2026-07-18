@@ -24,8 +24,11 @@ test.describe("/compound axe-core a11y audit", () => {
   test.setTimeout(90_000);
 
   test("has no critical or serious WCAG violations", async ({ page }) => {
+    // `networkidle` never resolves against the live domain because GTM +
+    // Firestore long-polling keep at least one connection open. Wait for
+    // DOM ready, then for the H1 the audit relies on.
     await page.goto(`${BASE}/compound`, {
-      waitUntil: "networkidle",
+      waitUntil: "domcontentloaded",
       timeout: 60_000,
     });
     await expect(page.locator("h1")).toBeVisible({ timeout: 30_000 });

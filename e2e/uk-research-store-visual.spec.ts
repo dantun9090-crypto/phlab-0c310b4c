@@ -107,7 +107,14 @@ test.describe("/uk-research-store visual + spacing", () => {
       await loadPage(page);
 
       // Primary CTA buttons — previous py-3.5 (14px) offender lived here.
+      // Use an auto-retrying assertion: the page hydrates in two phases on
+      // live (prerendered HTML → React reclaim), which can transiently
+      // detach `a.inline-flex` between our `waitFor("attached")` in
+      // loadPage() and the `count()` here. `toHaveCount` polls up to
+      // `expect.timeout`, so the second render is caught deterministically
+      // and a genuinely empty page still fails the test.
       const buttons = page.locator("a.inline-flex");
+      await expect(buttons.first()).toBeVisible({ timeout: 15_000 });
       const count = await buttons.count();
       expect(count).toBeGreaterThan(0);
       for (let i = 0; i < count; i++) {

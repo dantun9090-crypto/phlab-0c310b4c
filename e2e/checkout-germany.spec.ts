@@ -153,31 +153,45 @@ test.describe('Checkout — Germany', () => {
     // Intercept the TanStack server-function calls so the test does not hit
     // Firestore or real payment providers.
     //
-    // NOTE: TanStack Start emits URLs shaped `/_serverFn/<hash>` — the
-    // function name is NOT in the URL. We must identify calls by inspecting
-    // the POST body, not the path. Discriminators:
-    //   • createOrder payload → contains `ageVerified` + `customer`
-    //   • validateCartPrices payload → contains `items` array (no `customer`)
+    // TanStack Start emits URLs shaped `/_serverFn/<hash>` — the function
+    // name is NOT in the URL, and args are serialized with seroval (which
+    // does NOT emit plain `"ageVerified":true` JSON — it emits references,
+    // escaped strings, and constructor calls). A literal JSON regex against
+    // `postData()` therefore misses every real call.
+    //
+    // Discriminator: check the raw body text for identifier/key tokens that
+    // survive BOTH plain JSON and seroval encodings.
+    //   • createOrder  → body mentions `ageVerified` AND `addressLine1`
+    //   • validateCartPrices → mentions `items` + the productId, and does
+    //                    NOT mention `addressLine1`
     const orderPayloads: Array<Record<string, unknown>> = [];
     await page.route('**/_serverFn/**', async (route) => {
       const req = route.request();
       if (req.method() !== 'POST') return route.continue();
 
-      let body: any = null;
-      try { body = req.postDataJSON(); } catch { /* not JSON */ }
+      const rawBody = req.postData() ?? '';
+      const looksLikeCreateOrder =
+        rawBody.includes('ageVerified') && rawBody.includes('addressLine1');
+      const looksLikeValidateCart =
+        !looksLikeCreateOrder &&
+        rawBody.includes('items') &&
+        rawBody.includes(DE_CART_ITEM.id);
 
-      // TanStack wraps args as an array or `{ data }`; unwrap both shapes.
-      const unwrap = (b: any): any => {
-        if (Array.isArray(b)) return b[0];
-        if (b && typeof b === 'object' && 'data' in b) return b.data;
-        return b;
-      };
-      const payload = unwrap(body);
-      const payloadStr = JSON.stringify(payload ?? {});
+      // Best-effort decode for downstream assertions only.
+      let decoded: any = null;
+      try {
+        const parsed = req.postDataJSON();
+        decoded = Array.isArray(parsed)
+          ? parsed[0]
+          : parsed && typeof parsed === 'object' && 'data' in parsed
+            ? (parsed as any).data
+            : parsed;
+      } catch {
+        /* seroval / non-JSON — leave decoded null */
+      }
 
-      // createOrder — has the age-gate literal and a customer block.
-      if (/"ageVerified"\s*:\s*true/.test(payloadStr) && /"customer"\s*:/.test(payloadStr)) {
-        orderPayloads.push(payload);
+      if (looksLikeCreateOrder) {
+        orderPayloads.push(decoded ?? ({ __raw: rawBody } as Record<string, unknown>));
         return route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -197,10 +211,7 @@ test.describe('Checkout — Germany', () => {
         });
       }
 
-      // validateCartPrices — items array, no customer block. The real fn
-      // rejects the seeded fake `productId` ("Product … no longer exists"),
-      // which blocks step 3 and hides the pay button. Stub a happy result.
-      if (/"items"\s*:\s*\[/.test(payloadStr) && !/"customer"\s*:/.test(payloadStr)) {
+      if (looksLikeValidateCart) {
         return route.fulfill({
           status: 200,
           contentType: 'application/json',
