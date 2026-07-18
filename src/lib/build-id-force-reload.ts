@@ -45,7 +45,9 @@ const INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
 // end users. Applies to every visitor, not just synthetic tools.
 const RELOAD_GRACE_MS = 60_000;
 const PAGE_LOAD_AT =
-  typeof performance !== "undefined" && performance.now ? performance.timeOrigin : Date.now();
+  typeof performance !== "undefined" && typeof performance.now === "function"
+    ? performance.timeOrigin
+    : Date.now();
 const RELOADED_KEY = "__phl_build_force_reload_at";
 const CHECKED_AT_KEY = "__phl_build_check_at";
 
