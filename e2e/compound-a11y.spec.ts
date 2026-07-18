@@ -39,13 +39,17 @@ test.describe("/compound a11y smoke", () => {
 
     // Legal Disclaimer heading reachable + visible
     const legal = page.getByRole("heading", { name: /Legal Disclaimer/i });
-    await legal.scrollIntoViewIfNeeded();
+    // Assert visibility BEFORE scrolling: toBeVisible() auto-retries and
+    // re-resolves the locator, so it survives the CSR remount wiping the
+    // SSR DOM. scrollIntoViewIfNeeded on the SSR node raced the React
+    // takeover and died with "Element is not attached to the DOM".
     await expect(legal).toBeVisible();
+    await legal.scrollIntoViewIfNeeded();
 
     // Back to homepage CTA reachable + visible + correct href
     const cta = page.getByRole("link", { name: /Back to homepage/i });
-    await cta.scrollIntoViewIfNeeded();
     await expect(cta).toBeVisible();
+    await cta.scrollIntoViewIfNeeded();
     await expect(cta).toHaveAttribute("href", "/");
 
     // CTA must be keyboard-focusable
