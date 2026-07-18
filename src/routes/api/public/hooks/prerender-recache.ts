@@ -73,6 +73,24 @@ export const Route = createFileRoute("/api/public/hooks/prerender-recache")({
           );
         }
 
+        // Kill switch — set PRERENDER_RECACHE_ENABLED=false in Cloudflare
+        // Worker vars to hard-stop all recache traffic during a quota
+        // incident. Default (unset) = enabled.
+        const enabled = (process.env.PRERENDER_RECACHE_ENABLED ?? "true")
+          .toLowerCase();
+        if (enabled === "false" || enabled === "0") {
+          return Response.json(
+            { ok: true, skipped: true, reason: "kill_switch" },
+            { status: 200 },
+          );
+        }
+
+          return Response.json(
+            { ok: false, error: "PRERENDER_TOKEN not configured" },
+            { status: 500 },
+          );
+        }
+
         const provided = request.headers.get("x-recache-secret");
         const url = new URL(request.url);
         if (!provided || !timingSafeEqualStr(provided, token)) {
