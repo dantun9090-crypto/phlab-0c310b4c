@@ -5,8 +5,7 @@ import { createFileRoute } from "@tanstack/react-router";
 // TanStack's <Link> here crashes under the legacy router with
 // "Cannot read properties of null (reading 'stores')" because TanStack's
 // useStore hook has no router context. Full-page nav is fine for a landing.
-function Link(props: React.AnchorHTMLAttributes<HTMLAnchorElement> & { to: string }) {
-  const { to, ...rest } = props;
+function Link({ to, ...rest }: { to: string } & JSX.IntrinsicElements["a"]) {
   return <a href={to} {...rest} />;
 }
 
