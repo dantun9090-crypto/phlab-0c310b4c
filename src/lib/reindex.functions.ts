@@ -9,7 +9,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const DEFAULT_PATHS = ["/compound", "/peptide-calculator"];
+const DEFAULT_PATHS = ["/compound"];
 
 export type ReindexHookResponse = {
   ok: boolean;

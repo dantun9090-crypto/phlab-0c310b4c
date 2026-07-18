@@ -160,7 +160,6 @@ export const KNOWN_PUBLIC_ROUTES: readonly string[] = [
   "/storage-guide",
   "/downloads",
   "/compound",
-  "/peptide-calculator",
   "/landing/phlabs",
   "/uk-research-store",
   "/about",

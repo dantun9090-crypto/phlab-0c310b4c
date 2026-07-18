@@ -35,7 +35,6 @@ function buildStaticEntries(today: string): SitemapEntry[] {
     { path: "/research/cjc-1295-ipamorelin-synergy", lastmod: today, changefreq: "weekly", priority: "0.9" },
     { path: "/resources/peptide-categories-uk-research", lastmod: today, changefreq: "monthly", priority: "0.6" },
     { path: "/compound", lastmod: today, changefreq: "weekly", priority: "0.7" },
-    { path: "/peptide-calculator", lastmod: today, changefreq: "monthly", priority: "0.7" },
     { path: "/landing/phlabs", lastmod: today, changefreq: "weekly", priority: "0.7" },
     { path: "/uk-research-store", lastmod: today, changefreq: "weekly", priority: "0.8" },
     { path: "/lab-reports", lastmod: today, changefreq: "monthly", priority: "0.6" },
