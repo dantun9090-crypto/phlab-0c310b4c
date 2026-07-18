@@ -50,7 +50,11 @@ jobs:
         run: |
           set +e
           bun run scripts/probe-sitemap-robots.ts
-          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          rc1=$?
+          bun run scripts/check-decommissioned-routes.ts
+          rc2=$?
+          rc=$(( rc1 > rc2 ? rc1 : rc2 ))
+          echo "exit_code=$rc" >> "$GITHUB_OUTPUT"
         continue-on-error: true
 
       - name: Upload report
