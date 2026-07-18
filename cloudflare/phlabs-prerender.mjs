@@ -77,56 +77,90 @@ function edgeHtmlCacheKey(url) {
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// BOT DETECTION
+// BOT DETECTION — EXPLICIT ALLOWLIST (2026-07-18 quota-burn incident)
+// ─────────────────────────────────────────────────────────────────────────────
+// Only these UAs get proxied to Prerender.io (paid render). Every other
+// bot-like UA — Ahrefs/Semrush/MJ12/DataForSEO/generic /bot/ /crawler/ —
+// gets the ORIGIN response direct. Catch-all /bot/i /crawler/i regexes were
+// the exact reason random scraper traffic turned into paid renders.
+// Keep this list narrow: real search-engine indexers + rich-link previewers.
 // ═══════════════════════════════════════════════════════════════════════════════
-const CRAWLER_UAS = [
+const PRERENDER_ALLOWLIST_UAS = [
   /googlebot/i,
+  /adsbot-google/i,
+  /storebot-google/i,
+  /google-inspectiontool/i,
   /bingbot/i,
-  /slurp/i,
-  /duckduckbot/i,
-  /baiduspider/i,
-  /yandexbot/i,
-  /facebot/i,
+  /applebot/i,
   /facebookexternalhit/i,
   /twitterbot/i,
   /linkedinbot/i,
-  /embedly/i,
-  /quora link preview/i,
-  /showyoubot/i,
-  /outbrain/i,
-  /pinterest/i,
   /slackbot/i,
-  /vkshare/i,
-  /w3c_validator/i,
-  /redditbot/i,
-  /applebot/i,
-  /whatsapp/i,
-  /flipboard/i,
-  /tumblr/i,
-  /bitlybot/i,
-  /skypeuripreview/i,
-  /nuzzel/i,
   /discordbot/i,
-  /google page speed/i,
-  /qwantify/i,
+  /whatsapp/i,
   /pinterestbot/i,
-  /msnbot/i,
-  /adidxbot/i,
-  /blekkobot/i,
-  /ahrefsbot/i,
-  /semrushbot/i,
-  /rogerbot/i,
-  /screaming frog/i,
-  /sitebulb/i,
-  /deepcrawl/i,
-  /bot/i,
-  /crawler/i,
 ];
+
+// Our own monitoring probes — they must NEVER be proxied to Prerender.io.
+// Every match here served from origin directly, regardless of UA "bot" hints.
+const MONITORING_UA_RX =
+  /phlabs-|PHLabs|SentryUptimeBot|Chrome-Lighthouse|HeadlessChrome|headless|Playwright|puppeteer|integration-test/i;
+
+// Query params that mark a request as a monitoring probe. These change per
+// call (cache-busters) — treating them as regular bot traffic guarantees a
+// paid MISS on every hit. Origin-direct, never prerender.
+const PROBE_QUERY_PARAMS = ["__cache_check", "_reload", "__probe", "nocache"];
+
+// Non-HTML paths — Prerender.io can't render JSON/XML/manifest/etc. and
+// times out (billed as 504). Serve origin directly.
+const NON_HTML_EXT_RX =
+  /\.(webmanifest|json|xml|txt|ico|map|css|js|mjs|png|jpe?g|gif|webp|avif|svg|woff2?|ttf|otf|pdf|mp4|webm|zip)$/i;
+const NON_HTML_PREFIXES = ["/downloads/", "/.well-known/", "/api/", "/_api/"];
+
+// Vulnerability-scanner path prefixes — return 404 at the edge before any
+// origin/prerender hop. Not just to save renders: these attempts pollute
+// origin logs and (worse) can trigger prerender attempts that all 504.
+const SCANNER_PATH_PREFIXES = [
+  "/.env",
+  "/.git",
+  "/.aws",
+  "/wp-",          // /wp-admin, /wp-login.php, /wp-content, /wp-includes
+  "/phpmyadmin",
+  "/phpMyAdmin",
+  "/xmlrpc.php",
+];
+
+function isMonitoringUA(ua) {
+  return MONITORING_UA_RX.test(ua || "");
+}
+
+function isAllowlistedCrawler(ua) {
+  if (!ua) return false;
+  if (isMonitoringUA(ua)) return false;
+  return PRERENDER_ALLOWLIST_UAS.some((rx) => rx.test(ua));
+}
+
+function isNonHtmlPath(path) {
+  if (NON_HTML_EXT_RX.test(path)) return true;
+  return NON_HTML_PREFIXES.some((p) => path.startsWith(p));
+}
+
+function isScannerPath(path) {
+  return SCANNER_PATH_PREFIXES.some((p) => path.startsWith(p));
+}
+
+function hasProbeParam(url) {
+  for (const p of PROBE_QUERY_PARAMS) {
+    if (url.searchParams.has(p)) return true;
+  }
+  return false;
+}
 
 function isCrawler(request) {
   const ua = request.headers.get("User-Agent") || "";
-  return CRAWLER_UAS.some((regex) => regex.test(ua));
+  return isAllowlistedCrawler(ua);
 }
+
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CSP DIRECTIVES — Mirrors production src/server.ts strict CSP.
