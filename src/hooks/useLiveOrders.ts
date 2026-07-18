@@ -45,8 +45,18 @@ const startSharedListener = () => {
     sharedListeners.forEach((fn) => fn(orders, newest));
   };
 
+  const newReqId = (): string => {
+    try {
+      if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+      }
+    } catch { /* ignore */ }
+    return `req-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  };
+
   const poll = async () => {
     if (stopped) return;
+    const reqId = newReqId();
     try {
       inFlight?.abort();
       inFlight = new AbortController();
@@ -55,7 +65,9 @@ const startSharedListener = () => {
         cache: 'no-store',
         credentials: 'omit',
         signal: inFlight.signal,
+        headers: { 'x-request-id': reqId },
       });
+      const echoedId = res.headers.get('x-request-id') || reqId;
       const data = (await res.json().catch(() => ({ orders: [] }))) as { orders?: LiveOrder[]; count?: number; debug?: unknown };
       const orders = Array.isArray(data.orders) ? data.orders : [];
       nextDelayMs = POLL_MS;
@@ -67,14 +79,14 @@ const startSharedListener = () => {
       }
       seenIds = new Set([...Array.from(previous).slice(-100), ...orders.map((order) => order.id)]);
       firstSnapshot = false;
-      dlog('poll result:', { count: orders.length, newest: newest?.id || null, debug: data.debug, orders });
+      dlog('poll result:', { requestId: echoedId, count: orders.length, newest: newest?.id || null, debug: data.debug });
       notify(orders, newest);
     } catch (error) {
       if ((error as { name?: string })?.name !== 'AbortError') {
         failureCount += 1;
         nextDelayMs = Math.min(MAX_POLL_MS, POLL_MS * 2 ** Math.min(failureCount, 3));
         if (failureCount === 1 || failureCount % 5 === 0) {
-          console.warn('[useLiveOrders] poll error', error);
+          console.warn('[useLiveOrders] poll error', { requestId: reqId, error });
         }
       }
     } finally {
