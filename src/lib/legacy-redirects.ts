@@ -278,6 +278,11 @@ const GONE_PREFIXES = [
   "/event-1/",
   "/testimonial-1-item/",
   "/case-study-1-item/",
+  // Decommissioned peptide calculator — feature fully removed 2026-07-18.
+  // Google must be able to crawl these to see the 410 + noindex; do NOT
+  // add them to robots.txt Disallow.
+  "/peptide-calculator/",
+  "/calculator/",
 ];
 
 const GONE_EXACT = new Set<string>([
@@ -294,6 +299,9 @@ const GONE_EXACT = new Set<string>([
   // Discontinued products with no replacement — hard 410 (avoid soft-404
   // signal from redirecting to /products which has unrelated content).
   "/products/epithalon",
+  // Decommissioned peptide calculator — feature fully removed 2026-07-18.
+  "/peptide-calculator",
+  "/calculator",
 ]);
 
 /**
