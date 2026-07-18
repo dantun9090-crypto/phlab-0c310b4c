@@ -1707,7 +1707,7 @@ export default {
       if (isGoneLegacyPath(url.pathname)) {
         log.info({ event: "worker.gone", status: 410, ...baseFields });
         return new Response(
-          "<!doctype html><html><head><meta name=\"robots\" content=\"noindex\"><meta name=\"prerender-status-code\" content=\"410\"><title>410 Gone</title></head><body><h1>410 Gone</h1><p>This page no longer exists.</p></body></html>",
+          "<!doctype html><html lang=\"en-GB\"><head><meta charset=\"utf-8\"><title>410 Gone — PH Labs</title><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex,nofollow\"><meta name=\"prerender-status-code\" content=\"410\"><style>html,body{margin:0;padding:0;background:#020617;color:#f1f5f9;font:16px/1.6 -apple-system,system-ui,sans-serif;min-height:100vh;display:grid;place-items:center;padding:1.5rem}main{max-width:32rem;background:#0f172a;border:1px solid #1e293b;border-radius:.75rem;padding:2.5rem 2rem;text-align:center}h1{margin:0 0 .75rem;font-size:1.5rem;color:#fff}p{margin:0 0 1rem;color:#cbd5e1}a{color:#10b981;text-decoration:none}a:hover{text-decoration:underline}</style></head><body><main><h1>410 — This page no longer exists</h1><p>The resource you requested has been permanently removed.</p><p><a href=\"/\">Return to PH Labs home</a> · <a href=\"/products\">Browse research peptides</a> · <a href=\"/resources\">Resources</a></p></main></body></html>",
           {
             status: 410,
             headers: {
