@@ -17,18 +17,19 @@ export interface LiveOrder {
   status?: string;
 }
 
-// Tiny sync SHA-256 for short strings; matches SubtleCrypto output.
-// Cached require so we don't pay lookup cost per row.
-let _cryptoHash: ((s: string) => string) | null = null;
-function shortHash(input: string): string {
-  if (!_cryptoHash) {
-    // Node/Worker crypto module is available in the server runtime.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const nodeCrypto = require('crypto') as typeof import('crypto');
-    _cryptoHash = (s: string) => nodeCrypto.createHash('sha256').update(s).digest('hex').slice(0, 16);
-  }
-  return _cryptoHash(input);
+// Short SHA-256 (first 16 hex chars) using Web Crypto — works in both the
+// Cloudflare Workers runtime and modern browsers. Async by necessity;
+// callers await it. Previous `require('crypto')` failed on Workers ESM
+// with "require is not defined".
+async function shortHash(input: string): Promise<string> {
+  const data = new TextEncoder().encode(input);
+  const buf = await globalThis.crypto.subtle.digest('SHA-256', data);
+  let hex = '';
+  const bytes = new Uint8Array(buf);
+  for (let i = 0; i < bytes.length; i++) hex += bytes[i].toString(16).padStart(2, '0');
+  return hex.slice(0, 16);
 }
+
 
 interface RawOrderLike {
   id?: string;
