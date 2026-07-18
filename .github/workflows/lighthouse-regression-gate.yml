@@ -37,9 +37,15 @@ on:
     # that ships out-of-band still trips the alarm within the hour.
     - cron: "27 * * * *"
 
+# Per-event-type concurrency. Previously grouped only by ref, so push +
+# schedule + workflow_dispatch runs on main all shared one group and killed
+# each other (0 completed runs ever). Split by event_name so a scheduled
+# canary never cancels a push/main gate, and disable cancel-in-progress on
+# scheduled runs so consecutive crons queue instead of killing the prior
+# run mid-audit.
 concurrency:
-  group: lighthouse-gate-${{ github.ref }}
-  cancel-in-progress: true
+  group: lighthouse-gate-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'schedule' }}
 
 permissions:
   contents: read
