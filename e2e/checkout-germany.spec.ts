@@ -161,9 +161,13 @@ test.describe('Checkout — Germany', () => {
     //
     // Discriminator: check the raw body text for identifier/key tokens that
     // survive BOTH plain JSON and seroval encodings.
-    //   • createOrder  → body mentions `ageVerified` AND `addressLine1`
+    //   • createOrder  → body mentions `ageVerified` AND `termsAccepted`
+    //     (the two z.literal(true) keys unique to the order input; the
+    //     customer address field is `address`, NOT `addressLine1` — the
+    //     previous discriminator key never appears on the wire, so the
+    //     createOrder call was never recognised)
     //   • validateCartPrices → mentions `items` + the productId, and does
-    //                    NOT mention `addressLine1`
+    //                    NOT mention `ageVerified`
     const orderPayloads: Array<Record<string, unknown>> = [];
     await page.route('**/_serverFn/**', async (route) => {
       const req = route.request();
@@ -171,21 +175,29 @@ test.describe('Checkout — Germany', () => {
 
       const rawBody = req.postData() ?? '';
       const looksLikeCreateOrder =
-        rawBody.includes('ageVerified') && rawBody.includes('addressLine1');
+        rawBody.includes('ageVerified') && rawBody.includes('termsAccepted');
       const looksLikeValidateCart =
         !looksLikeCreateOrder &&
         rawBody.includes('items') &&
         rawBody.includes(DE_CART_ITEM.id);
 
-      // Best-effort decode for downstream assertions only.
+      // Best-effort decode for downstream assertions only. The wire body
+      // may be an args array, a {data} wrapper, or a seroval reference
+      // structure — search recursively for the object that actually owns
+      // `ageVerified` + `customer` instead of assuming a fixed shape.
+      const extractOrderInput = (v: any): any => {
+        if (!v || typeof v !== 'object') return null;
+        if (v.ageVerified === true && v.customer) return v;
+        const children = Array.isArray(v) ? v : Object.values(v);
+        for (const child of children) {
+          const hit = extractOrderInput(child);
+          if (hit) return hit;
+        }
+        return null;
+      };
       let decoded: any = null;
       try {
-        const parsed = req.postDataJSON();
-        decoded = Array.isArray(parsed)
-          ? parsed[0]
-          : parsed && typeof parsed === 'object' && 'data' in parsed
-            ? (parsed as any).data
-            : parsed;
+        decoded = extractOrderInput(req.postDataJSON());
       } catch {
         /* seroval / non-JSON — leave decoded null */
       }
@@ -254,14 +266,22 @@ test.describe('Checkout — Germany', () => {
 
     // Wait for the order-create call to be observed.
     await expect.poll(() => orderPayloads.length, { timeout: 10_000 }).toBeGreaterThan(0);
-    // `orderPayloads[0]` is already the unwrapped createOrder input (see the
-    // route handler above), so `customer` lives at the top level.
-    const customer = (orderPayloads[0] as { customer?: Record<string, string> })?.customer;
-
-    expect(customer?.country).toBe('Germany');
-    expect(customer?.postcode).toBe('10115');
-    expect(customer?.city).toBe('Berlin');
-    expect(customer?.address).toMatch(/Musterstraße\s*12/);
+    // `orderPayloads[0]` is the createOrder input when it could be decoded,
+    // otherwise { __raw } — assert structurally when possible, and fall back
+    // to raw-body tokens when seroval reference encoding blocked decoding.
+    const payload0 = orderPayloads[0] as { customer?: Record<string, string>; __raw?: string };
+    if (payload0.customer) {
+      expect(payload0.customer.country).toBe('Germany');
+      expect(payload0.customer.postcode).toBe('10115');
+      expect(payload0.customer.city).toBe('Berlin');
+      expect(payload0.customer.address).toMatch(/Musterstraße\s*12/);
+    } else {
+      const raw = String(payload0.__raw ?? '');
+      expect(raw).toContain('Germany');
+      expect(raw).toContain('10115');
+      expect(raw).toContain('Berlin');
+      expect(raw).toMatch(/Musterstra(?:ß|\u00[dD][fF])\s*12/);
+    }
 
     // Analytics — Enhanced Conversions payload cached at pay-button click.
     // Assert the ISO-3166 alpha-2 country ("DE"), the German PLZ ("10115"),
