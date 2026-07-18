@@ -1313,7 +1313,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
           suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{window.prerenderReady=false;window.__phlPrerenderHold=false;setTimeout(function(){try{if(window.prerenderReady!==true)window.prerenderReady=true;}catch(e){}},15000);}catch(e){}})();",
+              "(function(){try{window.prerenderReady=false;window.__phlPrerenderHold=false;setTimeout(function(){try{window.__phlPrerenderHold=false;if(window.prerenderReady!==true)window.prerenderReady=true;}catch(e){}},4000);}catch(e){}})();",
           }}
         />
         <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: FRESH_HTML_RECOVERY }} />
