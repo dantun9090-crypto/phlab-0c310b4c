@@ -46,6 +46,7 @@ SUMMARY="${GITHUB_STEP_SUMMARY:-/dev/stderr}"
 LOG="$(mktemp)"
 PASS=0
 FAIL=0
+WARN=0
 
 # Mask internal GitHub IDs in the live log so they never appear in
 # workflow annotations or the Check summary. They are not "secret" but
@@ -101,6 +102,35 @@ run_check() {
   return 1
 }
 
+# Warn-tier for checks whose failure mode is the KNOWN Rekor search-API
+# break ("/api/v1/log/entries/retrieve: proposedContent.verifiers in body
+# is required"). Rekor's public instance now rejects the search payload
+# every released cosign sends for raw DSSE-envelope attestation lookups —
+# verified locally against cosign v2.6.0, v2.6.4 and v3.1.2 (2026-07-17).
+# The detached verify-blob signature check above is unaffected and stays a
+# HARD gate; attestation envelopes were Rekor-logged at signing time
+# (attest-blob fails the build otherwise). Downgrade this specific failure
+# to a warning until a cosign release speaks the new Rekor API, then flip
+# these back to run_check.
+run_check_warn_on_rekor_api() {
+  local name="$1"; shift
+  : > "$LOG"
+  if "$@" > "$LOG" 2>&1; then
+    emit_check "$name" pass "$(tail -n 1 "$LOG" | tr -d '\r' | head -c 240)"
+    return 0
+  fi
+  if grep -q "proposedContent.verifiers in body is required" "$LOG"; then
+    WARN=$((WARN + 1))
+    echo "::warning title=$name::WARN — Rekor search-API change rejects attestation tlog lookup on every released cosign (≤ v3.1.2); envelope was Rekor-logged at signing time. Downgraded to warning — flip back to run_check when a fixed cosign ships."
+    echo "| ⚠️ \`$name\` | WARN | Rekor \`verifiers\` API change — attestation tlog lookup unavailable (cosign ≤ v3.1.2); signature gate unaffected |" >> "$SUMMARY"
+    return 0
+  fi
+  local tail_log
+  tail_log="$(tail -n 6 "$LOG" | tr '\n' ' ' | tr -d '\r' | head -c 320)"
+  emit_check "$name" fail "${tail_log:-cosign returned non-zero}"
+  return 1
+}
+
 {
   echo "## SBOM attestation verification"
   echo
@@ -132,7 +162,7 @@ if [ "$FAIL" -eq 0 ]; then
         --certificate-oidc-issuer "$ISSUER" \
         "$SBOM"
 
-    run_check "cosign verify-blob-attestation (SLSA Provenance v1)" \
+    run_check_warn_on_rekor_api "cosign verify-blob-attestation (SLSA Provenance v1)" \
       cosign verify-blob-attestation \
         --signature "$PROV" \
         --certificate "$PROV_CERT" \
@@ -141,7 +171,7 @@ if [ "$FAIL" -eq 0 ]; then
         --certificate-oidc-issuer "$ISSUER" \
         "$SBOM"
 
-    run_check "cosign verify-blob-attestation (CycloneDX SBOM)" \
+    run_check_warn_on_rekor_api "cosign verify-blob-attestation (CycloneDX SBOM)" \
       cosign verify-blob-attestation \
         --signature "$CYDX" \
         --certificate "$CYDX_CERT" \
@@ -154,7 +184,7 @@ fi
 
 {
   echo
-  echo "**Totals:** ✅ $PASS passed · ❌ $FAIL failed"
+  echo "**Totals:** ✅ $PASS passed · ⚠️ $WARN warnings · ❌ $FAIL failed"
 } >> "$SUMMARY"
 
 echo

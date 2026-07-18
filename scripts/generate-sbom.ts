@@ -112,13 +112,30 @@ const componentList = [...components.values()].sort((a, b) =>
   String(a.name).localeCompare(String(b.name)),
 );
 
-const sbom = {
+// Deterministic serial number: derived from the BOM content itself (a
+// UUID-shaped SHA-256 truncation, version/variant bits set per RFC 4122).
+// A randomUUID() here made every run produce a different artifact, which
+// the cached-vs-fresh determinism gate (scripts/check-determinism.ts) is
+// designed to reject.
+function deterministicSerialNumber(payload: string): string {
+  const h = createHash("sha256").update(payload).digest("hex");
+  const variantByte = ((parseInt(h.slice(16, 18), 16) & 0x3f) | 0x80)
+    .toString(16)
+    .padStart(2, "0");
+  return (
+    `urn:uuid:${h.slice(0, 8)}-${h.slice(8, 12)}-5${h.slice(13, 16)}-` +
+    `${variantByte}${h.slice(18, 20)}-${h.slice(20, 32)}`
+  );
+}
+
+const sbomBody = {
   bomFormat: "CycloneDX",
   specVersion: "1.5",
-  serialNumber: `urn:uuid:${randomUUID()}`,
   version: 1,
   metadata: {
-    timestamp: new Date().toISOString(),
+    // No `timestamp`: wall-clock time makes the artifact non-reproducible
+    // (the field is optional in CycloneDX 1.5). The commit-bound buildId
+    // below is the stable anchor for "which build produced this".
     tools: [{ vendor: "phlabs", name: "generate-sbom", version: "1.0.0" }],
     component: {
       type: "application",
@@ -133,6 +150,11 @@ const sbom = {
     ],
   },
   components: componentList,
+};
+
+const sbom = {
+  ...sbomBody,
+  serialNumber: deterministicSerialNumber(JSON.stringify(sbomBody)),
 };
 
 mkdirSync(OUT_DIR, { recursive: true });

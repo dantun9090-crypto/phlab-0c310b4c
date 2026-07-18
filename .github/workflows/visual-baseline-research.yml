@@ -2,17 +2,25 @@ name: Visual baseline · /research
 
 # Scheduled visual baseline check for /research (and /compound for parity).
 #
-# Runs every Monday at 06:00 UTC against the live production URL plus on
-# manual dispatch. On any visual diff, the workflow uploads the Playwright
-# report + actual/expected/diff PNGs as artifacts and opens (or comments
-# on) an issue so we can review changes without digging through CI logs.
+# Runs every Monday at 06:00 UTC plus on manual dispatch. On any visual diff,
+# the workflow uploads the Playwright report + actual/expected/diff PNGs as
+# artifacts and opens (or comments on) an issue so we can review changes
+# without digging through CI logs.
+#
+# ENVIRONMENT PARITY: baselines are generated against a LOCAL dev server —
+# never against production — because the CI gate (ci.yml "visual regression"
+# step) compares screenshots rendered by the same local dev server. Prod and
+# dev render different page heights (prerendered vs live SSR), so baselines
+# captured from prod can never match in CI (observed: 9104px prod baseline
+# vs 10235px dev actual). The base_url input now only affects the route
+# policy smoke step.
 on:
   schedule:
     - cron: "0 6 * * 1"
   workflow_dispatch:
     inputs:
       base_url:
-        description: "Override base URL (defaults to https://phlabs.co.uk)"
+        description: "Override base URL for the route policy step (defaults to https://phlabs.co.uk)"
         required: false
         default: "https://phlabs.co.uk"
       update_snapshots:
@@ -31,8 +39,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      RESEARCH_BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
-      COMPOUND_BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
+      RESEARCH_BASE_URL: http://127.0.0.1:8080
+      COMPOUND_BASE_URL: http://127.0.0.1:8080
       ROUTE_POLICY_BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
     steps:
       - uses: actions/checkout@v5
@@ -46,6 +54,19 @@ jobs:
 
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps chromium
+
+      # Same boot sequence as ci.yml so the visual environment matches the
+      # CI gate byte-for-byte (see header comment).
+      - name: Start local dev server for Playwright
+        run: |
+          (bun run dev --host 127.0.0.1 --port 8080 > server.log 2>&1 &)
+          for i in $(seq 1 120); do
+            if curl -fsS -o /dev/null "http://127.0.0.1:8080/compound"; then
+              echo "server up after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "server failed to start"; tail -n 200 server.log; exit 1
 
       - name: Run route policy (fast fail)
         run: bunx playwright test e2e/route-policy.spec.ts --project=chromium --reporter=line
@@ -76,6 +97,7 @@ jobs:
           path: |
             playwright-report
             test-results
+            server.log
           if-no-files-found: ignore
           retention-days: 14
 

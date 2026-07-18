@@ -207,7 +207,11 @@ async function main() {
   // Always write a machine-readable report so CI can upload it as an
   // artifact and surface a PR comment summary from the same source.
   const report = {
-    generatedAt: new Date().toISOString(),
+    // No wall-clock timestamp: the determinism gate
+    // (scripts/check-determinism.ts) requires this artifact to be
+    // byte-identical across runs of the same commit. The CI run URL is the
+    // temporal anchor; advisory freshness is encoded in the data itself.
+    generatedAt: null as string | null,
     minSeverity: MIN_BLOCKING,
     totals: {
       blocking: blocking.length,

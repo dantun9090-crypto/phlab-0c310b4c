@@ -29,7 +29,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      COMPOUND_BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
+      # Local dev server — CI gate parity (see visual-baseline-research.yml
+      # header). Baselines captured from production can never match the
+      # dev-server renders CI compares against.
+      COMPOUND_BASE_URL: http://127.0.0.1:8080
       ROUTE_POLICY_BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
     steps:
       - uses: actions/checkout@v5
@@ -43,6 +46,19 @@ jobs:
 
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps chromium
+
+      # Same boot sequence as ci.yml so the visual environment matches the
+      # CI gate byte-for-byte.
+      - name: Start local dev server for Playwright
+        run: |
+          (bun run dev --host 127.0.0.1 --port 8080 > server.log 2>&1 &)
+          for i in $(seq 1 120); do
+            if curl -fsS -o /dev/null "http://127.0.0.1:8080/compound"; then
+              echo "server up after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "server failed to start"; tail -n 200 server.log; exit 1
 
       - name: Route policy (fast fail)
         run: bunx playwright test e2e/route-policy.spec.ts --project=chromium --reporter=line
