@@ -85,6 +85,21 @@ function isPreviewOrIframe(): boolean {
   return false;
 }
 
+function isSyntheticAudit(): boolean {
+  try {
+    if ((navigator as { webdriver?: boolean }).webdriver === true) return true;
+    const ua = navigator.userAgent || "";
+    if (/Chrome-Lighthouse|HeadlessChrome|Lighthouse|PageSpeed/i.test(ua)) return true;
+  } catch {
+    /* ignore */
+  }
+  return false;
+}
+
+function withinGraceWindow(): boolean {
+  return Date.now() - PAGE_LOAD_AT < RELOAD_GRACE_MS;
+}
+
 function isCriticalRoute(): boolean {
   try {
     const path = window.location.pathname.toLowerCase();
