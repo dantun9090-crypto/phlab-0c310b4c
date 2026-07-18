@@ -156,11 +156,27 @@ export function useSEO(pageKey: string, fallback: SEOData) {
 
     // Apply fallback immediately so first paint contains correct meta.
     apply(fallback);
-    // Flip prerenderReady for routes that don't gate on data. Data-dependent
-    // routes (Home, Products, ProductDetail) call markPrerenderPending() and
-    // raise __phlPrerenderHold — respect that so we don't snapshot early.
-    if (typeof window !== 'undefined' && !(window as any).__phlPrerenderHold) {
-      (window as any).prerenderReady = true;
+    // Prerender readiness — every route unconditionally releases the snapshot.
+    // - No hold set (loader-less / static routes): flip ready on first paint.
+    // - Hold set by markPrerenderPending(): its own 4s auto-release safety net
+    //   in prerender-ready.ts will flip ready even if the data effect never
+    //   fires (query-param variants, cold Firestore, offline fetch). We ALSO
+    //   schedule a route-local safety flip here so a route that mounts useSEO
+    //   without ever calling markPrerenderPending() still resolves quickly
+    //   for real users landing with ?gclid= / ?utm_* / etc.
+    if (typeof window !== 'undefined') {
+      const w = window as unknown as { __phlPrerenderHold?: boolean };
+      if (!w.__phlPrerenderHold) {
+        markPrerenderReady();
+      }
+      // Hard route-level cap regardless of hold state.
+      const t = setTimeout(() => markPrerenderReady(), 4000);
+      // Cleanup handled by the effect's return below via `mounted` guard —
+      // clear the timer synchronously so navigation doesn't stack timers.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__phlRouteReadyTimer && clearTimeout((window as any).__phlRouteReadyTimer);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__phlRouteReadyTimer = t;
     }
 
     // Then asynchronously merge Firestore overrides if present.
