@@ -153,96 +153,76 @@ test.describe('Checkout — Germany', () => {
     // Intercept the TanStack server-function calls so the test does not hit
     // Firestore or real payment providers.
     //
-    // TanStack Start emits URLs shaped `/_serverFn/<hash>` — the function
-    // name is NOT in the URL, and args are serialized with seroval (which
-    // does NOT emit plain `"ageVerified":true` JSON — it emits references,
-    // escaped strings, and constructor calls). A literal JSON regex against
-    // `postData()` therefore misses every real call.
+    // TanStack Start encodes the server-fn id in the URL path segment as
+    // base64 JSON ({"file": "...functions.ts?tss-serverfn-split", "export":
+    // "<fnName>_createServerFn_handler"}) — verified from a CI wire dump —
+    // so the exact function is recovered by decoding the URL instead of
+    // guessing tokens inside the seroval reference-encoded body.
     //
-    // Discriminator: check the raw body text for identifier/key tokens that
-    // survive BOTH plain JSON and seroval encodings.
-    //   • createOrder  → body mentions `ageVerified` AND `termsAccepted`
-    //     (the two z.literal(true) keys unique to the order input; the
-    //     customer address field is `address`, NOT `addressLine1` — the
-    //     previous discriminator key never appears on the wire, so the
-    //     createOrder call was never recognised)
-    //   • validateCartPrices → mentions `items` + the productId, and does
-    //                    NOT mention `ageVerified`
-    const orderPayloads: Array<Record<string, unknown>> = [];
+    // Response contract (start-client-core serverFnFetcher): a JSON response
+    // WITHOUT the `x-tss-serialized` header is handed to the caller AS-IS —
+    // there is no `{ result: … }` wrapper on the plain-JSON path. Mock
+    // bodies must therefore be the bare return value; an earlier revision
+    // wrapped everything in {result:…}, so the preflight read
+    // `result.items` off the wrapper, crashed, and createOrder never fired.
+    const orderPayloads: string[] = [];
     // Match BOTH generations of the TanStack server-fn path (/_serverFn/<id>
-    // and the newer /_server/<id>) — the glob only caught the first, and if
-    // the app emits the second the interception silently never fires.
+    // and the newer /_server/<id>).
     await page.route(/\/_server(Fn)?\//, async (route) => {
       const req = route.request();
       if (req.method() !== 'POST') return route.continue();
 
-      const rawBody = req.postData() ?? '';
-      // DIAG: dump every server-fn POST (truncated) so the wire format stops
-      // being a guessing game — remove once the discriminator is settled.
-      console.log('[de-e2e]', req.url().replace(/^https?:\/\/[^/]+/, ''), '::', rawBody.slice(0, 500).replace(/\s+/g, ' '));
-      const looksLikeCreateOrder =
-        rawBody.includes('ageVerified') && rawBody.includes('termsAccepted');
-      const looksLikeValidateCart =
-        !looksLikeCreateOrder &&
-        rawBody.includes('items') &&
-        rawBody.includes(DE_CART_ITEM.id);
-
-      // Best-effort decode for downstream assertions only. The wire body
-      // may be an args array, a {data} wrapper, or a seroval reference
-      // structure — search recursively for the object that actually owns
-      // `ageVerified` + `customer` instead of assuming a fixed shape.
-      const extractOrderInput = (v: any): any => {
-        if (!v || typeof v !== 'object') return null;
-        if (v.ageVerified === true && v.customer) return v;
-        const children = Array.isArray(v) ? v : Object.values(v);
-        for (const child of children) {
-          const hit = extractOrderInput(child);
-          if (hit) return hit;
-        }
-        return null;
-      };
-      let decoded: any = null;
+      const seg =
+        req.url().split(/\/_server(?:Fn)?\//)[1]?.split(/[?/]/)[0] ?? '';
+      let fnExport = '';
       try {
-        decoded = extractOrderInput(req.postDataJSON());
+        fnExport = String(
+          JSON.parse(Buffer.from(seg, 'base64').toString('utf8')).export ?? '',
+        );
       } catch {
-        /* seroval / non-JSON — leave decoded null */
+        /* leave empty — fall through to route.continue() */
       }
+      const rawBody = req.postData() ?? '';
 
-      if (looksLikeCreateOrder) {
-        orderPayloads.push(decoded ?? ({ __raw: rawBody } as Record<string, unknown>));
+      if (fnExport.startsWith('validateCartPrices')) {
         return route.fulfill({
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify({
-            result: {
-              ok: true,
-              orderId: 'PHP-E2E-DE-1',
-              bankTransferReference: 'PHP-E2E-DE-1-BT',
-              subtotal: 19.99,
-              discount: 0,
-              shippingCost: 4.99,
-              totalAmount: 24.98,
-              couponCode: null,
-              paymentToken: null,
-            },
+            ok: true,
+            items: [{
+              productId: DE_CART_ITEM.id,
+              variantId: null,
+              unitPrice: DE_CART_ITEM.priceNum,
+              inStock: true,
+            }],
+            subtotal: DE_CART_ITEM.priceNum,
+            discount: 0,
+            shippingDiscount: 0,
+            coupon: null,
+            errors: [],
           }),
         });
       }
 
-      if (looksLikeValidateCart) {
+      if (fnExport.startsWith('createOrder')) {
+        // seroval cross-JSON keeps object keys and string values as literal
+        // text, so the raw body still carries the German address tokens the
+        // assertions below look for.
+        orderPayloads.push(rawBody);
         return route.fulfill({
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify({
-            result: {
-              ok: true,
-              items: [{ productId: DE_CART_ITEM.id, variantId: null, unitPrice: DE_CART_ITEM.priceNum }],
-              subtotal: DE_CART_ITEM.priceNum,
-              discount: 0,
-              shippingDiscount: 0,
-              coupon: null,
-              errors: [],
-            },
+            ok: true,
+            orderId: 'PHP-E2E-DE-1',
+            bankTransferReference: 'PHP-E2E-DE-1-BT',
+            subtotal: 19.99,
+            discount: 0,
+            shippingCost: 4.99,
+            totalAmount: 24.98,
+            couponCode: null,
+            paymentToken: null,
           }),
         });
       }
@@ -270,37 +250,32 @@ test.describe('Checkout — Germany', () => {
     await page.locator('#acceptedTerms').check();
     await page.getByRole('button', { name: /pay|place order|continue to payment/i }).first().click();
 
-    // Wait for the order-create call to be observed.
+    // Wait for the order-create call to be observed (the test MUST still
+    // fail when the order request never fires — this poll is the guard).
     await expect.poll(() => orderPayloads.length, { timeout: 10_000 }).toBeGreaterThan(0);
-    // `orderPayloads[0]` is the createOrder input when it could be decoded,
-    // otherwise { __raw } — assert structurally when possible, and fall back
-    // to raw-body tokens when seroval reference encoding blocked decoding.
-    const payload0 = orderPayloads[0] as { customer?: Record<string, string>; __raw?: string };
-    if (payload0.customer) {
-      expect(payload0.customer.country).toBe('Germany');
-      expect(payload0.customer.postcode).toBe('10115');
-      expect(payload0.customer.city).toBe('Berlin');
-      expect(payload0.customer.address).toMatch(/Musterstraße\s*12/);
-    } else {
-      const raw = String(payload0.__raw ?? '');
-      expect(raw).toContain('Germany');
-      expect(raw).toContain('10115');
-      expect(raw).toContain('Berlin');
-      expect(raw).toMatch(/Musterstra(?:ß|\u00[dD][fF])\s*12/);
-    }
+    // seroval keeps keys + string values literal on the wire, so the German
+    // address is assertable directly on the raw body. `ß` may arrive either
+    // literal or as a unicode escape.
+    const raw = orderPayloads[0];
+    expect(raw).toContain('Germany');
+    expect(raw).toContain('10115');
+    expect(raw).toContain('Berlin');
+    expect(raw).toMatch(/Musterstra(?:ß|\\u00[dD][fF])\s*12/);
 
     // Analytics — Enhanced Conversions payload cached at pay-button click.
-    // Assert the ISO-3166 alpha-2 country ("DE"), the German PLZ ("10115"),
-    // and the city ("Berlin") reach the analytics layer alongside the order.
+    // Identifiers are SHA-256 hashed before storage (CodeQL
+    // js/clear-text-storage-of-sensitive-data); only the non-sensitive
+    // locality fields stay readable: `country` (ISO alpha-2), `postal_code`,
+    // `city` — see buildUserData in src/lib/analytics.ts.
     await expect.poll(async () => {
-      return await page.evaluate(() => sessionStorage.getItem('php_ec_userdata'));
+      return await page.evaluate(() => sessionStorage.getItem('php_ec_userdata_hashed'));
     }, { timeout: 5_000 }).not.toBeNull();
     const ec = await page.evaluate(() => {
-      const raw = sessionStorage.getItem('php_ec_userdata');
+      const raw = sessionStorage.getItem('php_ec_userdata_hashed');
       return raw ? JSON.parse(raw) as Record<string, string> : null;
     });
     expect(ec?.country).toBe('DE');
-    expect(ec?.postalCode).toBe('10115');
+    expect(ec?.postal_code).toBe('10115');
     expect(ec?.city).toBe('Berlin');
   });
 
@@ -310,9 +285,14 @@ test.describe('Checkout — Germany', () => {
     // it BEFORE any /_serverFn call fires.
     let orderCallHit = false;
     await page.route('**/_serverFn/**', async (route) => {
-      if (/create-?[Oo]rder|createOrder/.test(route.request().url())) {
-        orderCallHit = true;
-      }
+      // The fn name is NOT in the URL path — decode the base64 server-fn id
+      // (same scheme as the payload test above) so this guard actually fires.
+      const seg =
+        route.request().url().split(/\/_server(?:Fn)?\//)[1]?.split(/[?/]/)[0] ?? '';
+      try {
+        const id = JSON.parse(Buffer.from(seg, 'base64').toString('utf8'));
+        if (String(id.export ?? '').startsWith('createOrder')) orderCallHit = true;
+      } catch { /* not a decodable server-fn id */ }
       return route.fallback();
     });
 
