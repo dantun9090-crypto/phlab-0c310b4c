@@ -70,7 +70,10 @@
 
 :root {
   --radius: 0.625rem;
-  --phl-disclaimer-h: 0px;
+  /* Reserve disclaimer height from first paint so the DisclaimerBanner
+     mount (which measures offsetHeight and writes it back) doesn't push
+     <main> down ~28px after hydration → CLS>0.1 on / and /products. */
+  --phl-disclaimer-h: 28px;
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);
