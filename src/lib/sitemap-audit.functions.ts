@@ -153,6 +153,7 @@ export const KNOWN_PUBLIC_ROUTES: readonly string[] = [
   "/research/bpc-157-tb-500-synergy",
   "/research/tirzepatide-vs-retatrutide",
   "/research/cjc-1295-ipamorelin-synergy",
+  "/research/ghk-cu-guide",
   "/quality-control",
   "/lab-reports",
   "/resources",
