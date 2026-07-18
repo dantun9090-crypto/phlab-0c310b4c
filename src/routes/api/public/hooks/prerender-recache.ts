@@ -23,6 +23,19 @@ const RECACHE_URL = "https://api.prerender.io/recache";
 let lastRunAt = 0;
 const MIN_INTERVAL_MS = 60_000;
 
+// Quota guardrails (2026-07-18 quota-burn incident):
+//  - MAX_URLS_PER_RUN: hard cap so a bloated sitemap can't burn thousands
+//    of paid renders in one call.
+//  - Adaptive-only mobile: Googlebot-Smartphone is the primary indexer.
+//    Desktop refreshes lazily on the next desktop crawl.
+//  - lastmodByUrl: per-isolate cache of the last `<lastmod>` we saw per URL.
+//    We only POST /recache for URLs whose lastmod actually changed. This is
+//    best-effort (isolates recycle), not authoritative — the build-id
+//    dedupe in /api/public/post-publish-check is authoritative.
+const MAX_URLS_PER_RUN = 50;
+const lastmodByUrl = new Map<string, string>();
+
+
 async function recacheBatch(
   token: string,
   urls: string[],
@@ -60,6 +73,18 @@ export const Route = createFileRoute("/api/public/hooks/prerender-recache")({
           );
         }
 
+        // Kill switch — set PRERENDER_RECACHE_ENABLED=false in Cloudflare
+        // Worker vars to hard-stop all recache traffic during a quota
+        // incident. Default (unset) = enabled.
+        const enabled = (process.env.PRERENDER_RECACHE_ENABLED ?? "true")
+          .toLowerCase();
+        if (enabled === "false" || enabled === "0") {
+          return Response.json(
+            { ok: true, skipped: true, reason: "kill_switch" },
+            { status: 200 },
+          );
+        }
+
         const provided = request.headers.get("x-recache-secret");
         const url = new URL(request.url);
         if (!provided || !timingSafeEqualStr(provided, token)) {
@@ -75,7 +100,6 @@ export const Route = createFileRoute("/api/public/hooks/prerender-recache")({
           return new Response("Unauthorized", { status: 401 });
         }
 
-
         const force = url.searchParams.get("force") === "1";
         const now = Date.now();
         if (!force && now - lastRunAt < MIN_INTERVAL_MS) {
@@ -86,8 +110,9 @@ export const Route = createFileRoute("/api/public/hooks/prerender-recache")({
         }
         lastRunAt = now;
 
-        // Fetch sitemap
-        let urls: string[] = [];
+        // Fetch sitemap and extract loc + lastmod pairs so we can skip
+        // URLs that haven't actually changed since the last run.
+        let entries: Array<{ loc: string; lastmod: string | null }> = [];
         try {
           const smRes = await fetch(SITEMAP_URL, {
             headers: { "User-Agent": "phlabs-recache-hook/1.0" },
@@ -100,9 +125,14 @@ export const Route = createFileRoute("/api/public/hooks/prerender-recache")({
             );
           }
           const xml = await smRes.text();
-          urls = Array.from(xml.matchAll(/<loc>([^<]+)<\/loc>/g))
-            .map((m) => m[1].trim())
-            .filter((u) => u.startsWith("https://phlabs.co.uk"));
+          entries = Array.from(
+            xml.matchAll(/<url>\s*<loc>([^<]+)<\/loc>(?:[\s\S]*?<lastmod>([^<]+)<\/lastmod>)?[\s\S]*?<\/url>/g),
+          )
+            .map((m) => ({
+              loc: m[1].trim(),
+              lastmod: m[2] ? m[2].trim() : null,
+            }))
+            .filter((e) => e.loc.startsWith("https://phlabs.co.uk"));
         } catch (err) {
           return Response.json(
             {
@@ -113,24 +143,61 @@ export const Route = createFileRoute("/api/public/hooks/prerender-recache")({
           );
         }
 
-        if (urls.length === 0) {
+        if (entries.length === 0) {
           return Response.json(
             { ok: false, error: "No URLs found in sitemap" },
             { status: 500 },
           );
         }
 
-        const desktop = await recacheBatch(token, urls, "desktop");
+        // Skip entries whose lastmod matches the previously-seen value.
+        // On first-ever run (empty map), everything is treated as changed.
+        const changed = force
+          ? entries
+          : entries.filter((e) => {
+              const prev = lastmodByUrl.get(e.loc);
+              return !prev || !e.lastmod || prev !== e.lastmod;
+            });
+
+        // Hard cap — protect quota even if every URL claims to have changed.
+        const capped = changed.slice(0, MAX_URLS_PER_RUN);
+        const urls = capped.map((e) => e.loc);
+
+        if (urls.length === 0) {
+          return Response.json(
+            {
+              ok: true,
+              skipped: true,
+              reason: "no_lastmod_change",
+              total: entries.length,
+              ranAt: new Date(now).toISOString(),
+            },
+            { status: 200 },
+          );
+        }
+
+        // Single-mode: mobile only (Googlebot-Smartphone is the primary
+        // indexer). Cuts render volume in half vs. desktop+mobile.
         const mobile = await recacheBatch(token, urls, "mobile");
 
+        // Persist the lastmod we just recached so the next run can dedupe.
+        if (mobile.ok) {
+          for (const e of capped) {
+            if (e.lastmod) lastmodByUrl.set(e.loc, e.lastmod);
+          }
+        }
+
         return Response.json({
-          ok: desktop.ok && mobile.ok,
+          ok: mobile.ok,
           count: urls.length,
-          desktop,
+          total: entries.length,
+          skippedUnchanged: entries.length - changed.length,
+          cappedAt: MAX_URLS_PER_RUN,
           mobile,
           ranAt: new Date(now).toISOString(),
         });
       },
     },
+
   },
 });

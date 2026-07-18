@@ -18,8 +18,7 @@ on:
     workflows: ["Release", "Deploy Cloudflare Worker"]
     types: [completed]
   schedule:
-    - cron: "17 6 * * *"   # 06:17 UTC daily — Googlebot probe
-    - cron: "0 3 * * *"    # 03:00 UTC daily — Prerender.io recache warm
+    - cron: "17 6 * * *"   # 06:17 UTC daily — Googlebot probe (recache is NOT on a timer)
 
   workflow_dispatch:
     inputs:
@@ -31,10 +30,9 @@ on:
 jobs:
   probe:
     name: Googlebot HTML full-render probe
-    # Skip on the 03:00 recache-only cron.
-    if: github.event.schedule != '0 3 * * *'
     runs-on: ubuntu-latest
     timeout-minutes: 5
+
 
     permissions:
       contents: read
@@ -109,48 +107,10 @@ jobs:
               ].join('\n'),
             });
 
-  recache:
-    # Daily Prerender.io cache warm — keeps x-prerender-cache: HIT on the
-    # critical routes even when no deploy happened. Also runnable on-demand.
-    name: Prerender.io recache warm (daily 03:00 UTC)
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'schedule' && github.event.schedule == '0 3 * * *')
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    env:
-      PRERENDER_TOKEN: ${{ secrets.PRERENDER_TOKEN }}
-    steps:
-      - name: POST /recache for each key URL (desktop + mobile)
-        shell: bash
-        run: |
-          set +e
-          if [ -z "$PRERENDER_TOKEN" ]; then
-            echo "::error::PRERENDER_TOKEN not set"
-            exit 1
-          fi
-          urls=(
-            "https://phlabs.co.uk/"
-            "https://phlabs.co.uk/products"
-            "https://phlabs.co.uk/products/bpc-157"
-            "https://phlabs.co.uk/compound"
-            "https://phlabs.co.uk/about"
-            "https://phlabs.co.uk/contact"
-          )
-          fail=0
-          for u in "${urls[@]}"; do
-            for device in desktop mobile; do
-              code=$(curl -sS -o /tmp/recache-body -w "%{http_code}" --max-time 20 \
-                -X POST https://api.prerender.io/recache \
-                -H "Content-Type: application/json" \
-                --data "$(jq -n --arg t "$PRERENDER_TOKEN" --arg u "$u" --arg d "$device" \
-                  '{prerenderToken:$t, url:$u, adaptiveType:$d}')")
-              echo "recache $device $u → HTTP $code"
-              if [ "$code" != "200" ] && [ "$code" != "201" ]; then
-                echo "::warning::recache $device $u returned $code: $(head -c 200 /tmp/recache-body)"
-                fail=1
-              fi
-            done
-          done
-          exit $fail
+  # DECOMMISSIONED 2026-07-18 — daily/scheduled Prerender.io recache removed
+  # to stop quota burn. Recache now runs ONLY from
+  # /api/public/post-publish-check on a real build-id change (exactly once
+  # per publish, dedupe stored in Firestore _meta/build_state). Manual
+  # invocation available via Admin → Cache & Recache.
+
 

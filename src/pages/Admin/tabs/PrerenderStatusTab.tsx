@@ -315,13 +315,16 @@ function AutoRecacheCard() {
             Automatic recache after Publish
           </h3>
           <p className="text-xs text-[#9cb8d9] mt-1">
-            A scheduled job runs every <span className="text-white">15 minutes</span> and POSTs every sitemap URL
-            to Prerender.io (desktop + mobile). After clicking <span className="text-white">Publish → Update</span>,
-            the new build is reflected in the bot cache within ~15 min — no manual action needed.
+            Recache runs <span className="text-white">only on a real build-id change</span>
+            {" "}(exactly once per Publish, deduped in Firestore). The old 15-minute cron
+            was retired 2026-07-18 after it burned ~85k paid Prerender.io renders/month.
+            Recache is capped at <span className="text-white">50 URLs</span>, mobile-only,
+            and skips URLs whose <code className="text-emerald-400">&lt;lastmod&gt;</code> hasn't changed.
           </p>
           <p className="text-xs text-[#3a5a82] mt-1 font-mono">
-            POST /api/public/hooks/prerender-recache (cron <code className="text-emerald-400">*/15 * * * *</code>)
+            POST /api/public/post-publish-check (on first request after each publish)
           </p>
+
         </div>
         <button
           onClick={run}
