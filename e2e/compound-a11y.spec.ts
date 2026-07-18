@@ -22,12 +22,20 @@ test.describe("/compound a11y smoke", () => {
     // Exactly one H1
     await expect(page.locator("h1")).toHaveCount(1);
 
-    // Outline order: no level skips greater than +1 from previous heading
-    const levels = await page.$$eval(
-      "h1, h2, h3, h4, h5, h6",
-      (els) => els.map((el) => Number(el.tagName.substring(1))),
-    );
-    expect(levels.length).toBeGreaterThan(1);
+    // Outline order: no level skips greater than +1 from previous heading.
+    // $$eval executes exactly once — on the dev server it can land inside
+    // the CSR-remount window (SSR DOM already wiped, React tree not yet
+    // committed) and see ZERO headings even though the h1 count assertion
+    // above already passed. toPass() retries the read until the outline
+    // actually exists.
+    let levels: number[] = [];
+    await expect(async () => {
+      levels = await page.$$eval(
+        "h1, h2, h3, h4, h5, h6",
+        (els) => els.map((el) => Number(el.tagName.substring(1))),
+      );
+      expect(levels.length).toBeGreaterThan(1);
+    }).toPass({ timeout: 15_000 });
     expect(levels[0]).toBe(1);
     for (let i = 1; i < levels.length; i++) {
       const jump = levels[i] - levels[i - 1];
