@@ -10,6 +10,7 @@ import {
 import { auth } from '@/lib/firebase';
 
 import { getAdminIdToken } from '@/lib/auth-ready';
+import { safeImageUrl } from '@/lib/safe-image-url';
 async function getIdToken() {
   const t = await getAdminIdToken();
   if (!t) throw new Error('Not signed in');
@@ -461,7 +462,7 @@ function ProductEditor({
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-2">
                 {images.map((src, i) => (
                   <div key={i} className="relative group aspect-square rounded-lg overflow-hidden bg-slate-950 border border-slate-700">
-                    <img src={src} alt="" className="w-full h-full object-cover" />
+                    <img src={safeImageUrl(src)} alt="" className="w-full h-full object-cover" />
                     <button
                       type="button"
                       onClick={() => setImages(images.filter((_, idx) => idx !== i))}

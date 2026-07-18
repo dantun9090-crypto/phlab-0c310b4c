@@ -43,7 +43,11 @@ let lastActivityAt = 0;
 
 function makeId(): string {
   try { return crypto.randomUUID(); }
-  catch { return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`; }
+  catch {
+    const buf = new Uint8Array(12);
+    crypto.getRandomValues(buf);
+    return `${Date.now().toString(36)}-${Array.from(buf, (b) => b.toString(16).padStart(2, '0')).join('')}`;
+  }
 }
 
 function getSessionId(): string {

@@ -5,6 +5,7 @@
 import { useRef, useState } from 'react';
 import { Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { safeImageUrl } from '@/lib/safe-image-url';
 import {
   storage,
   storageRef,
@@ -119,7 +120,7 @@ export default function ImageUploader({
       <div className="relative w-40 h-40 rounded-lg overflow-hidden border-2 border-slate-600 bg-slate-800 flex items-center justify-center">
         {preview ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+          <img src={safeImageUrl(preview)} alt="Preview" className="w-full h-full object-cover" />
         ) : (
           <ImageIcon className="w-10 h-10 text-slate-500" />
         )}
