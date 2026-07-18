@@ -254,6 +254,8 @@ export const Route = createFileRoute('/api/public/live-orders')({
                   'response.send',
                 ],
                 counts: { scanned: rows.length, mapped: mapped.length, returned: orders.length },
+                // Back-compat: flat `scanned` used by existing e2e/live-orders-api.spec.ts.
+                scanned: rows.length,
                 durationMs: Date.now() - startedAt,
                 code: orders.length === 0 ? LogCode.EMPTY_RESULT : LogCode.OK,
               }
