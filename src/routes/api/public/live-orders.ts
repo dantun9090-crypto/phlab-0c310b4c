@@ -3,100 +3,22 @@ import { createFileRoute } from '@tanstack/react-router';
 import { mapRawOrderToLive, type LiveOrder } from '@/lib/orderFormatter';
 import { enforceRateLimit } from '@/lib/rate-limit';
 import { listDocsAdmin } from '@/lib/server/firestore-admin';
+import {
+  CodedError,
+  LogCode,
+  safeLog,
+  sanitizeRequestId,
+  withTimeout,
+} from '@/server/logRedact';
 
 type OrderRow = Record<string, unknown> & { id: string };
 const EXCLUDED_STATUSES = new Set(['cancelled', 'canceled', 'refunded', 'failed', 'expired']);
+const ROUTE = '/api/public/live-orders';
+const FIRESTORE_TIMEOUT_MS = 5_000;
+const DEBUG_BODY_ENV = typeof process !== 'undefined' ? process.env?.LIVE_ORDERS_DEBUG === '1' : false;
 
-// In-memory cache to shield Firestore from repeat polls (survives within a
-// single Worker isolate). TTL matches the response Cache-Control so CF edge
-// + browser cache line up.
 const LIVE_ORDERS_CACHE_TTL_MS = 30_000;
 const liveOrdersCache = new Map<string, { body: string; timestamp: number }>();
-
-// ---------------------------------------------------------------------------
-// Structured logging
-// ---------------------------------------------------------------------------
-// Every request gets a short request ID and every log line is a single JSON
-// object with a consistent shape. Errors are serialised with name/message/
-// stack + cause so Worker/ESM runtime failures show the exact failure point
-// in Cloudflare tail logs and downstream aggregation.
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
-
-function newRequestId(): string {
-  try {
-    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-      return crypto.randomUUID().slice(0, 8);
-    }
-  } catch {
-    /* fall through */
-  }
-  return Math.random().toString(36).slice(2, 10);
-}
-
-function serializeError(err: unknown): Record<string, unknown> {
-  if (err instanceof Error) {
-    const out: Record<string, unknown> = {
-      name: err.name,
-      message: err.message,
-      stack: err.stack,
-    };
-    // Preserve cause chain (ESM runtime often wraps native failures).
-    const cause = (err as { cause?: unknown }).cause;
-    if (cause !== undefined) out.cause = serializeError(cause);
-    // Preserve Firestore/gRPC style codes when present.
-    for (const k of ['code', 'status', 'details'] as const) {
-      const v = (err as unknown as Record<string, unknown>)[k];
-      if (v !== undefined) out[k] = v;
-    }
-    return out;
-  }
-  if (typeof err === 'object' && err !== null) {
-    try {
-      return { message: JSON.stringify(err) };
-    } catch {
-      return { message: String(err) };
-    }
-  }
-  return { message: String(err) };
-}
-
-interface LogContext {
-  requestId: string;
-  route: string;
-}
-
-function createLogger(ctx: LogContext) {
-  const emit = (level: LogLevel, msg: string, fields?: Record<string, unknown>) => {
-    const line = {
-      ts: new Date().toISOString(),
-      level,
-      route: ctx.route,
-      requestId: ctx.requestId,
-      msg,
-      ...(fields ?? {}),
-    };
-    const serialized = (() => {
-      try {
-        return JSON.stringify(line);
-      } catch {
-        return JSON.stringify({ ...line, unserializable: true });
-      }
-    })();
-    const sink =
-      level === 'error' ? console.error :
-      level === 'warn' ? console.warn :
-      level === 'debug' ? console.debug :
-      console.log;
-    sink(serialized);
-  };
-  return {
-    info: (msg: string, fields?: Record<string, unknown>) => emit('info', msg, fields),
-    warn: (msg: string, fields?: Record<string, unknown>) => emit('warn', msg, fields),
-    error: (msg: string, err: unknown, fields?: Record<string, unknown>) =>
-      emit('error', msg, { ...(fields ?? {}), error: serializeError(err) }),
-    debug: (msg: string, fields?: Record<string, unknown>) => emit('debug', msg, fields),
-  };
-}
 
 function json(body: unknown, status = 200, extraHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
@@ -110,11 +32,7 @@ function json(body: unknown, status = 200, extraHeaders: Record<string, string> 
   });
 }
 
-function cacheableJson(
-  bodyStr: string,
-  cacheStatus: 'HIT' | 'MISS',
-  requestId: string,
-): Response {
+function cacheableJson(bodyStr: string, cacheStatus: 'HIT' | 'MISS', requestId: string): Response {
   return new Response(bodyStr, {
     status: 200,
     headers: {
@@ -145,49 +63,70 @@ function rowTime(row: OrderRow): number {
   return timeValue(row.orderDate) || timeValue(row.createdAt) || timeValue(row.updatedAt);
 }
 
-async function fetchRecentOrderRows(
-  log: ReturnType<typeof createLogger>,
-): Promise<OrderRow[]> {
+async function fetchRecentOrderRows(requestId: string): Promise<OrderRow[]> {
   const tPrimary = Date.now();
   let byOrderDate: OrderRow[] = [];
   try {
-    byOrderDate = await listDocsAdmin('orders', {
-      orderBy: 'orderDate',
-      direction: 'DESCENDING',
-      limit: 60,
-    });
-    log.debug('firestore.query.ok', {
+    byOrderDate = await withTimeout(
+      listDocsAdmin('orders', { orderBy: 'orderDate', direction: 'DESCENDING', limit: 60 }),
+      FIRESTORE_TIMEOUT_MS,
+      () => new CodedError(LogCode.FIRESTORE_TIMEOUT, 'firestore primary query timed out'),
+    );
+    safeLog({
+      stage: 'firestore.query.ok',
+      code: LogCode.OK,
+      requestId,
+      route: ROUTE,
+      level: 'debug',
       step: 'orderBy=orderDate',
       count: byOrderDate.length,
       durationMs: Date.now() - tPrimary,
     });
   } catch (error) {
-    log.error('firestore.query.failed', error, {
+    const code = error instanceof CodedError ? error.code : LogCode.FIRESTORE_QUERY_FAILED;
+    safeLog({
+      stage: 'firestore.query.failed',
+      code,
+      requestId,
+      route: ROUTE,
+      level: 'error',
       step: 'orderBy=orderDate',
       durationMs: Date.now() - tPrimary,
+      error,
     });
-    throw error;
+    throw error instanceof CodedError
+      ? error
+      : new CodedError(LogCode.FIRESTORE_QUERY_FAILED, 'firestore primary query failed', { cause: error });
   }
 
   const tFallback = Date.now();
   let byCreatedAt: OrderRow[] = [];
   try {
-    byCreatedAt = await listDocsAdmin('orders', {
-      orderBy: 'createdAt',
-      direction: 'DESCENDING',
-      limit: 60,
-    });
-    log.debug('firestore.query.ok', {
+    byCreatedAt = await withTimeout(
+      listDocsAdmin('orders', { orderBy: 'createdAt', direction: 'DESCENDING', limit: 60 }),
+      FIRESTORE_TIMEOUT_MS,
+      () => new CodedError(LogCode.FIRESTORE_TIMEOUT, 'firestore fallback query timed out'),
+    );
+    safeLog({
+      stage: 'firestore.query.ok',
+      code: LogCode.OK,
+      requestId,
+      route: ROUTE,
+      level: 'debug',
       step: 'orderBy=createdAt',
       count: byCreatedAt.length,
       durationMs: Date.now() - tFallback,
     });
   } catch (error) {
-    // Non-fatal: some deployments lack the createdAt index.
-    log.warn('firestore.query.fallback_failed', {
+    safeLog({
+      stage: 'firestore.query.fallback_failed',
+      code: LogCode.FIRESTORE_QUERY_FALLBACK_FAILED,
+      requestId,
+      route: ROUTE,
+      level: 'warn',
       step: 'orderBy=createdAt',
       durationMs: Date.now() - tFallback,
-      error: serializeError(error),
+      error,
     });
   }
 
@@ -200,8 +139,7 @@ export const Route = createFileRoute('/api/public/live-orders')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const requestId = newRequestId();
-        const log = createLogger({ requestId, route: '/api/public/live-orders' });
+        const requestId = sanitizeRequestId(request.headers.get('x-request-id'));
         const startedAt = Date.now();
 
         try {
@@ -209,15 +147,16 @@ export const Route = createFileRoute('/api/public/live-orders')({
           const limit = Math.min(Math.max(Number(url.searchParams.get('limit') || 20), 1), 20);
           const debug = url.searchParams.get('debug') === '1';
 
-          log.info('request.start', {
+          safeLog({
+            stage: 'request.start',
+            requestId,
+            route: ROUTE,
             method: 'GET',
             limit,
             debug,
-            ua: request.headers.get('user-agent') || null,
-            cf: {
-              country: request.headers.get('cf-ipcountry') || null,
-              ray: request.headers.get('cf-ray') || null,
-            },
+            ua: request.headers.get('user-agent'),
+            cfCountry: request.headers.get('cf-ipcountry'),
+            cfRay: request.headers.get('cf-ray'),
           });
 
           const limited = await enforceRateLimit(request, 'live-orders', {
@@ -226,8 +165,17 @@ export const Route = createFileRoute('/api/public/live-orders')({
             retryAfterSec: 60,
           });
           if (limited) {
-            log.warn('request.rate_limited', { durationMs: Date.now() - startedAt });
-            return json({ orders: [] }, 429, { 'x-request-id': requestId });
+            safeLog({
+              stage: 'request.rate_limited',
+              code: LogCode.RATE_LIMITED,
+              requestId,
+              route: ROUTE,
+              level: 'warn',
+              durationMs: Date.now() - startedAt,
+            });
+            return json({ orders: [], code: LogCode.RATE_LIMITED, requestId }, 429, {
+              'x-request-id': requestId,
+            });
           }
 
           const cacheKey = `limit=${limit}`;
@@ -235,7 +183,11 @@ export const Route = createFileRoute('/api/public/live-orders')({
           if (!debug) {
             const cached = liveOrdersCache.get(cacheKey);
             if (cached && now - cached.timestamp < LIVE_ORDERS_CACHE_TTL_MS) {
-              log.info('cache.hit', {
+              safeLog({
+                stage: 'cache.hit',
+                code: LogCode.CACHE_HIT,
+                requestId,
+                route: ROUTE,
                 cacheKey,
                 ageMs: now - cached.timestamp,
                 durationMs: Date.now() - startedAt,
@@ -244,7 +196,16 @@ export const Route = createFileRoute('/api/public/live-orders')({
             }
           }
 
-          const rows = await fetchRecentOrderRows(log);
+          safeLog({ stage: 'firestore.query.start', requestId, route: ROUTE, level: 'debug' });
+          const rows = await fetchRecentOrderRows(requestId);
+
+          safeLog({
+            stage: 'mapping.start',
+            requestId,
+            route: ROUTE,
+            level: 'debug',
+            scanned: rows.length,
+          });
 
           let mapped: Array<LiveOrder | null | undefined>;
           try {
@@ -253,23 +214,63 @@ export const Route = createFileRoute('/api/public/live-orders')({
                 .filter((row) => !EXCLUDED_STATUSES.has(String(row.status || '').toLowerCase()))
                 .map((row) => mapRawOrderToLive(row as Parameters<typeof mapRawOrderToLive>[0])),
             );
+            safeLog({
+              stage: 'mapping.ok',
+              code: LogCode.OK,
+              requestId,
+              route: ROUTE,
+              level: 'debug',
+              scanned: rows.length,
+              mapped: mapped.length,
+            });
           } catch (error) {
-            log.error('mapping.failed', error, { scanned: rows.length });
-            throw error;
+            safeLog({
+              stage: 'mapping.failed',
+              code: LogCode.MAPPING_FAILED,
+              requestId,
+              route: ROUTE,
+              level: 'error',
+              scanned: rows.length,
+              error,
+            });
+            throw new CodedError(LogCode.MAPPING_FAILED, 'failed to map order rows', { cause: error });
           }
 
           const orders = mapped
             .filter((order): order is LiveOrder => Boolean(order))
             .slice(0, limit);
 
+          // Debug body — safe by default. Only stage/code/counts/durations/requestId.
+          // No raw Firestore data, no field values.
+          const debugBody = debug
+            ? {
+                requestId,
+                stages: [
+                  'request.start',
+                  'firestore.query.start',
+                  'firestore.query.ok',
+                  'mapping.start',
+                  'mapping.ok',
+                  'response.send',
+                ],
+                counts: { scanned: rows.length, mapped: mapped.length, returned: orders.length },
+                durationMs: Date.now() - startedAt,
+                code: orders.length === 0 ? LogCode.EMPTY_RESULT : LogCode.OK,
+              }
+            : undefined;
+
           const bodyStr = JSON.stringify({
             orders,
             count: orders.length,
-            debug: debug ? { scanned: rows.length, requestId } : undefined,
+            ...(debugBody ? { debug: debugBody } : {}),
           });
           if (!debug) liveOrdersCache.set(cacheKey, { body: bodyStr, timestamp: now });
 
-          log.info('request.ok', {
+          safeLog({
+            stage: 'response.send',
+            code: orders.length === 0 ? LogCode.EMPTY_RESULT : LogCode.OK,
+            requestId,
+            route: ROUTE,
             scanned: rows.length,
             returned: orders.length,
             cache: 'MISS',
@@ -277,12 +278,22 @@ export const Route = createFileRoute('/api/public/live-orders')({
           });
           return cacheableJson(bodyStr, 'MISS', requestId);
         } catch (error) {
-          log.error('request.failed', error, { durationMs: Date.now() - startedAt });
-          return json(
-            { orders: [], count: 0, requestId },
-            200,
-            { 'x-request-id': requestId },
-          );
+          const code =
+            error instanceof CodedError ? error.code : LogCode.INTERNAL_ERROR;
+          safeLog({
+            stage: 'request.failed',
+            code,
+            requestId,
+            route: ROUTE,
+            level: 'error',
+            durationMs: Date.now() - startedAt,
+            error,
+          });
+          // Production default: minimal body. Full debug only behind explicit flag.
+          const body = DEBUG_BODY_ENV
+            ? { orders: [], count: 0, requestId, code, durationMs: Date.now() - startedAt }
+            : { orders: [], count: 0, requestId, code };
+          return json(body, 200, { 'x-request-id': requestId });
         }
       },
       HEAD: async () =>
