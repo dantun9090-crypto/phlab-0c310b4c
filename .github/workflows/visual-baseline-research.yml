@@ -48,24 +48,24 @@ jobs:
         run: bunx playwright install --with-deps chromium
 
       - name: Run route policy (fast fail)
-        run: bunx playwright test e2e/route-policy.spec.ts --reporter=line
+        run: bunx playwright test e2e/route-policy.spec.ts --project=chromium --reporter=line
 
       - name: Run /research visual baseline
         id: research
         run: |
           if [ "${{ github.event.inputs.update_snapshots }}" = "true" ]; then
-            bunx playwright test e2e/research-visual.spec.ts --update-snapshots --reporter=line
+            bunx playwright test e2e/research-visual.spec.ts --project=chromium --update-snapshots --reporter=line
           else
-            bunx playwright test e2e/research-visual.spec.ts --reporter=line,html
+            bunx playwright test e2e/research-visual.spec.ts --project=chromium --reporter=line,html
           fi
 
       - name: Run /compound overlay + visual
         if: always()
         run: |
           if [ "${{ github.event.inputs.update_snapshots }}" = "true" ]; then
-            bunx playwright test e2e/compound-overlay.spec.ts e2e/compound-visual.spec.ts --update-snapshots --reporter=line
+            bunx playwright test e2e/compound-overlay.spec.ts e2e/compound-visual.spec.ts --project=chromium --update-snapshots --reporter=line
           else
-            bunx playwright test e2e/compound-overlay.spec.ts e2e/compound-visual.spec.ts --reporter=line,html
+            bunx playwright test e2e/compound-overlay.spec.ts e2e/compound-visual.spec.ts --project=chromium --reporter=line,html
           fi
 
       - name: Upload Playwright report
