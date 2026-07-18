@@ -253,6 +253,7 @@ const SKIP_CSR_ROUTES: readonly string[] = [
   "/research/bpc-157-uk",
   "/research/bpc-157-vs-tb-500",
   "/research/cjc-1295-ipamorelin-synergy",
+  "/research/ghk-cu-guide",
   "/research/retatrutide-comprehensive-guide",
   "/research/retatrutide-uk",
   "/research/tirzepatide-vs-retatrutide",
