@@ -38,8 +38,12 @@ export function initSentry(): void {
       integrations: [
         Sentry.browserTracingIntegration(),
         Sentry.replayIntegration({
-          maskAllText: false,
-          blockAllMedia: false,
+          // maskAllText/blockAllMedia: full text+media serialization on every
+          // DOM mutation was the single biggest main-thread cost on mobile
+          // (vendor-sentry ~29s bootup in Lighthouse). Masking is both cheaper
+          // and privacy-safer (no page text ever leaves the browser).
+          maskAllText: true,
+          blockAllMedia: true,
           // Never capture inputs/PII in checkout, auth, account flows.
           mask: ['input', 'textarea', '[data-sentry-mask]'],
         }),
