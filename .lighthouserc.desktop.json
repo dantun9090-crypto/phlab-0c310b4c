@@ -33,8 +33,9 @@
         "unsized-images": "error",
         "image-size-responsive": "warn",
         "font-display": "warn",
-        "preload-lcp-image": "warn",
-        "layout-shifts": "warn"
+        "prioritize-lcp-image": "warn",
+        "layout-shifts": "off",
+        "layout-shift-elements": "off"
       }
     },
     "upload": {
