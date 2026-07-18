@@ -7,6 +7,7 @@ import { ProductCard } from '@/components/ProductCard';
 import { dispatchAddToCart } from '@/components/Layout';
 import { useSEO } from '@/hooks/useSEO';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
+import { safeJsonLd } from '@/lib/safe-json-ld';
 
 // Route-level page components must remain eagerly imported; no empty Suspense
 // fallbacks around routed content after publish.
@@ -459,7 +460,7 @@ export default function CategoryPage() {
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
+              __html: safeJsonLd({
                 '@context': 'https://schema.org',
                 '@type': 'BreadcrumbList',
                 itemListElement: [
@@ -476,7 +477,7 @@ export default function CategoryPage() {
             <script
               type="application/ld+json"
               dangerouslySetInnerHTML={{
-                __html: JSON.stringify({
+                __html: safeJsonLd({
                   '@context': 'https://schema.org',
                   '@type': 'ItemList',
                   name: `${config?.label} Research Peptides`,
