@@ -104,7 +104,9 @@ function ImageSlot({ url, index, isPrimary, uploading, uploadProgress, uploadErr
     if (!trimmed || !isValidUrl(trimmed)) { setUrlPreviewOk(null); return; }
     setUrlPreviewOk(null);
     const img = new Image();
-    const timer = setTimeout(() => { img.src = trimmed; }, 400); // debounce
+    const safeTrimmed = safeImageUrl(trimmed);
+    if (!safeTrimmed) { setUrlPreviewOk(false); return; }
+    const timer = setTimeout(() => { img.src = safeTrimmed; }, 400); // debounce
     img.onload = () => setUrlPreviewOk(true);
     img.onerror = () => setUrlPreviewOk(false);
     return () => { clearTimeout(timer); img.onload = null; img.onerror = null; };
@@ -135,7 +137,7 @@ function ImageSlot({ url, index, isPrimary, uploading, uploadProgress, uploadErr
           </div>
         ) : url ? (
           <>
-            <img src={url} alt={`Image ${index + 1}`} className="w-full h-full object-contain bg-[#04101f]" />
+            <img src={safeImageUrl(url)} alt={`Image ${index + 1}`} className="w-full h-full object-contain bg-[#04101f]" />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-200 flex flex-col items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100">
               {/* Move row */}
               <div className="flex items-center gap-1">
@@ -722,7 +724,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
               <div className="grid grid-cols-4 gap-3">
                 {imageSlots.map((url, i) => url ? (
                   <div key={i} className={`aspect-square rounded-xl overflow-hidden border-2 ${i === 0 ? 'border-blue-500' : 'border-white/10'}`}>
-                    <img src={url} alt={`img ${i+1}`} className="w-full h-full object-contain bg-[#04101f]" />
+                    <img src={safeImageUrl(url)} alt={`img ${i+1}`} className="w-full h-full object-contain bg-[#04101f]" />
                   </div>
                 ) : null)}
               </div>
@@ -1307,7 +1309,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                         {variant.hplcImageUrl && (
                           <>
                             <a href={variant.hplcImageUrl} target="_blank" rel="noopener noreferrer">
-                              <img src={variant.hplcImageUrl} alt="HPLC chromatogram" className="h-10 w-auto rounded border border-slate-600" />
+                              <img src={safeImageUrl(variant.hplcImageUrl)} alt="HPLC chromatogram" className="h-10 w-auto rounded border border-slate-600" />
                             </a>
                             <button
                               onClick={() => { updateVariant(idx, 'hplcImageUrl', ''); }}

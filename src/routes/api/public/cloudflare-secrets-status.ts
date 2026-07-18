@@ -68,7 +68,8 @@ export const Route = createFileRoute('/api/public/cloudflare-secrets-status')({
         try {
           body = Body.parse(await request.json());
         } catch (e) {
-          return json({ error: 'invalid_body', detail: String((e as Error).message) }, 400);
+          console.warn("[cloudflare-secrets-status] invalid body", e);
+          return json({ error: 'invalid_body' }, 400);
         }
 
         try {

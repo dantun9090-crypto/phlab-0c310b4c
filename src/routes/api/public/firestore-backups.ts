@@ -55,7 +55,8 @@ export const Route = createFileRoute("/api/public/firestore-backups")({
         try {
           body = Body.parse(await request.json());
         } catch (e) {
-          return json({ error: "invalid_body", detail: String((e as Error).message) }, 400);
+          console.warn("[firestore-backups] invalid body", e);
+          return json({ error: "invalid_body" }, 400);
         }
 
         let adminUid = "";
@@ -80,7 +81,7 @@ export const Route = createFileRoute("/api/public/firestore-backups")({
             .select("*", { count: "exact" })
             .order("started_at", { ascending: false })
             .range(body.offset, body.offset + body.limit - 1);
-          if (error) return json({ error: "query_failed", detail: error.message }, 500);
+          if (error) { console.error("[firestore-backups] query failed", error); return json({ error: "query_failed" }, 500); }
           return json({
             rows: data ?? [],
             total: count ?? 0,
@@ -111,7 +112,7 @@ export const Route = createFileRoute("/api/public/firestore-backups")({
               triggered_by: `admin:${adminUid}`,
               error: msg,
             });
-            return json({ error: "trigger_failed", detail: msg }, 502);
+            return json({ error: "trigger_failed" }, 502);
           }
         }
 
@@ -133,7 +134,8 @@ export const Route = createFileRoute("/api/public/firestore-backups")({
             }
             return json({ ok: true, operation: op });
           } catch (e) {
-            return json({ error: "status_failed", detail: (e as Error).message }, 502);
+            console.error("[firestore-backups] status failed", e);
+            return json({ error: "status_failed" }, 502);
           }
         }
 

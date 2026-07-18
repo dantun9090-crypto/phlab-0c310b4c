@@ -36,7 +36,8 @@ export const Route = createFileRoute("/api/public/monitor-log")({
         try {
           body = Body.parse(await request.json());
         } catch (e) {
-          return json({ error: "invalid_body", detail: String((e as Error).message) }, 400);
+          console.warn("[monitor-log] invalid body", e);
+          return json({ error: "invalid_body" }, 400);
         }
 
         try {
@@ -63,7 +64,7 @@ export const Route = createFileRoute("/api/public/monitor-log")({
         else if (body.hadAlert === "false") q = q.eq("had_alert", false);
 
         const { data, error, count } = await q;
-        if (error) return json({ error: "query_failed", detail: error.message }, 500);
+        if (error) { console.error("[monitor-log] query failed", error); return json({ error: "query_failed" }, 500); }
 
         // Distinct hosts (last 30 days) — cheap dropdown data.
         const { data: hostsData } = await supabaseAdmin
