@@ -169,11 +169,17 @@ test.describe('Checkout — Germany', () => {
     //   • validateCartPrices → mentions `items` + the productId, and does
     //                    NOT mention `ageVerified`
     const orderPayloads: Array<Record<string, unknown>> = [];
-    await page.route('**/_serverFn/**', async (route) => {
+    // Match BOTH generations of the TanStack server-fn path (/_serverFn/<id>
+    // and the newer /_server/<id>) — the glob only caught the first, and if
+    // the app emits the second the interception silently never fires.
+    await page.route(/\/_server(Fn)?\//, async (route) => {
       const req = route.request();
       if (req.method() !== 'POST') return route.continue();
 
       const rawBody = req.postData() ?? '';
+      // DIAG: dump every server-fn POST (truncated) so the wire format stops
+      // being a guessing game — remove once the discriminator is settled.
+      console.log('[de-e2e]', req.url().replace(/^https?:\/\/[^/]+/, ''), '::', rawBody.slice(0, 500).replace(/\s+/g, ' '));
       const looksLikeCreateOrder =
         rawBody.includes('ageVerified') && rawBody.includes('termsAccepted');
       const looksLikeValidateCart =
