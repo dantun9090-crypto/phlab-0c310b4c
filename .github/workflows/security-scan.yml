@@ -16,6 +16,9 @@ on:
         default: ""
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   security-scan:
     name: Dependency vulnerability scan

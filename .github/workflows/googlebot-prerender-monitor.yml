@@ -27,6 +27,9 @@ on:
         required: false
         default: "https://phlabs.co.uk"
 
+permissions:
+  contents: read
+
 jobs:
   probe:
     name: Googlebot HTML full-render probe

@@ -22,6 +22,9 @@ on:
         required: false
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   release-sbom:
     name: Build, sign, attest, publish SBOM to release

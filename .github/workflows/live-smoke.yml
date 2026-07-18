@@ -16,6 +16,9 @@ on:
       - ".github/workflows/live-smoke.yml"
       - "src/routes/api/public/health.ts"
 
+permissions:
+  contents: read
+
 jobs:
   smoke:
     runs-on: ubuntu-latest

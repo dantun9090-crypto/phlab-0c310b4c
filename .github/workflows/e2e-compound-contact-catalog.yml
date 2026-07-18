@@ -38,6 +38,9 @@ concurrency:
   group: e2e-compound-contact-catalog-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   pdf-contents:
     runs-on: ubuntu-latest

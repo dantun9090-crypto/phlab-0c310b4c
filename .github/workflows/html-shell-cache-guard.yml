@@ -25,6 +25,9 @@ on:
         required: false
         default: "https://phlabs.co.uk"
 
+permissions:
+  contents: read
+
 jobs:
   html-shell-guard:
     name: HTML shell must not be edge-cached

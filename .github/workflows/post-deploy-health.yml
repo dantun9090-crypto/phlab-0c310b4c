@@ -24,6 +24,9 @@ on:
         required: false
         default: "https://phlabs.co.uk"
 
+permissions:
+  contents: read
+
 jobs:
   health:
     name: /__health + cf-cache-build-id

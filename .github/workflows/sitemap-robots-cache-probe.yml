@@ -22,6 +22,9 @@ on:
         required: false
         default: "https://phlabs.co.uk"
 
+permissions:
+  contents: read
+
 jobs:
   sitemap-robots-cache-probe:
     name: /robots.txt & sitemap*.xml must be CDN no-store

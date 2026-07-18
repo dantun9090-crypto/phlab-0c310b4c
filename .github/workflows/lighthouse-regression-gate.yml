@@ -41,6 +41,9 @@ concurrency:
   group: lighthouse-gate-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   gate:
     name: Lighthouse gate (${{ matrix.profile }})

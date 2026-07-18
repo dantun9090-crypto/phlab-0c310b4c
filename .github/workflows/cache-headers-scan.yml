@@ -16,6 +16,9 @@ on:
         required: false
         default: "https://phlabs.co.uk"
 
+permissions:
+  contents: read
+
 jobs:
   scan:
     name: Probe cache headers

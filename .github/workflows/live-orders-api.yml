@@ -16,6 +16,9 @@ on:
       - "src/lib/orderFormatter.ts"
       - ".github/workflows/live-orders-api.yml"
 
+permissions:
+  contents: read
+
 jobs:
   live-orders-api:
     runs-on: ubuntu-latest

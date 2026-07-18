@@ -22,6 +22,9 @@ on:
       - "scripts/check-prod-routes.mjs"
       - "scripts/check-canonicals.mjs"
 
+permissions:
+  contents: read
+
 jobs:
   staging-routes:
     name: Staging route + canonical check

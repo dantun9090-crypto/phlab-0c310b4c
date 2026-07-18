@@ -29,6 +29,9 @@ on:
         required: false
         default: "https://phlabs.co.uk"
 
+permissions:
+  contents: read
+
 jobs:
   cache-headers-regression:
     name: Cache headers must match per-category contract
