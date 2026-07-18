@@ -10,16 +10,16 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   auth, db, storage, getUserOrders, logoutUser, Order, redeemReferralBalance,
   doc, getDoc, updateDoc, deleteDoc, onAuthStateChanged, FirebaseUser,
-  updatePassword,
   sendEmailVerification, collection, addDoc, getDocs, query, where, orderBy,
   storageRef, uploadBytes, getDownloadURL, deleteObject,
 } from '@/lib/firebase';
-// deleteUser + EmailAuthProvider + reauthenticateWithCredential imported
-// directly from 'firebase/auth' — firebase/auth's Worker/SSR export shape
-// does not expose them, so importing via @/lib/firebase triggers
+// updatePassword + deleteUser + EmailAuthProvider + reauthenticateWithCredential
+// imported directly from 'firebase/auth' — firebase/auth's Worker/SSR export
+// shape does not expose them, so importing via @/lib/firebase triggers
 // ReferenceErrors during SSR. This file is a client-only page, so importing
 // here is safe.
-import { EmailAuthProvider, deleteUser, reauthenticateWithCredential } from 'firebase/auth';
+import { EmailAuthProvider, deleteUser, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
+
 import { serverTimestamp } from 'firebase/firestore';
 
 import { revokeMyRefreshTokens } from '@/lib/revoke-refresh-tokens.functions';
