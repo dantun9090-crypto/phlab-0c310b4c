@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { redact, safeLog, sanitizeRequestId, isPiiKey } from '@/server/logRedact';
+import { redact, safeLog, sanitizeRequestId, isPiiKey } from '@/lib/log-redact';
 
 const RAW_EMAIL = 'REDACTED@example.com';
 const RAW_POSTCODE = 'SW1A 1AA';

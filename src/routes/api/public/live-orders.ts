@@ -9,7 +9,7 @@ import {
   safeLog,
   sanitizeRequestId,
   withTimeout,
-} from '@/server/logRedact';
+} from '@/lib/log-redact';
 
 type OrderRow = Record<string, unknown> & { id: string };
 const EXCLUDED_STATUSES = new Set(['cancelled', 'canceled', 'refunded', 'failed', 'expired']);
