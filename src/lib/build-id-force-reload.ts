@@ -39,6 +39,13 @@ const CURRENT_BUILD_ID =
 const HEALTH_URL = "/api/public/health/build";
 const CHECK_COOLDOWN_MS = 10_000;
 const INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+// Grace window: never force-reload within the first 60s after page load.
+// Reloading seconds after landing wrecks Lighthouse audits ("Inspected
+// target navigated or closed") AND is a real-UX / real-CLS regression for
+// end users. Applies to every visitor, not just synthetic tools.
+const RELOAD_GRACE_MS = 60_000;
+const PAGE_LOAD_AT =
+  typeof performance !== "undefined" && performance.now ? performance.timeOrigin : Date.now();
 const RELOADED_KEY = "__phl_build_force_reload_at";
 const CHECKED_AT_KEY = "__phl_build_check_at";
 
