@@ -29,6 +29,28 @@ paths = [
   '''^tests?/.*fixtures?/''',
   '''^src/test/fixtures/''',
   '''^e2e/.*\.spec\.ts$''',
+  '''^src/lib/redact-sensitive\.test\.ts$''',
+  # Firebase Web API keys are PUBLIC by design (like Google Maps keys) —
+  # they identify the project, they don't authorise privileged access.
+  # Security is enforced by Firebase Auth + Firestore rules, not by
+  # hiding the API key.
+  '''^src/lib/firebase(-auth)?\.ts$''',
+  '''^src/lib/firestore-rest\.ts$''',
+  '''^src/lib/auth-throttle\.functions\.ts$''',
+  '''^src/lib/edge-monitor\.functions\.ts$''',
+  '''^src/lib/revoke-refresh-tokens\.functions\.ts$''',
+  '''^src/lib/server/firebase-auth-admin\.ts$''',
+  # .env holds the Supabase VITE_ publishable (anon) key — public by
+  # design, embedded in the client bundle. Service-role keys never live
+  # here and are still caught by the custom rule below.
+  '''(^|/)\.env$''',
+  # Monitor script uses the public anon JWT for probe requests.
+  '''^scripts/monitor-head-get\.mjs$''',
+  '''^README\.md$''',
+  # Test fixtures — fake tokens by design.
+  '''^tests?/.*fixtures?/''',
+  '''^src/test/fixtures/''',
+  '''^e2e/.*\.spec\.ts$''',
   # Public bank logos etc. — no secret material.
   '''^public/bank-logos/''',
   # This config file itself references example patterns.
