@@ -14,6 +14,7 @@
 import { readdirSync, readFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createHash, randomUUID } from "node:crypto";
+import { execSync } from "node:child_process";
 
 const ROOT = process.cwd();
 const NM = join(ROOT, "node_modules");
@@ -128,14 +129,33 @@ function deterministicSerialNumber(payload: string): string {
   );
 }
 
+// Deterministic per-commit timestamp: the CycloneDX self-validator REQUIRES
+// metadata.timestamp as ISO-8601, but wall-clock time breaks the
+// determinism gate. Resolve from SOURCE_DATE_EPOCH, else the git commit
+// date, else (non-git tarball) the Unix epoch — never from the clock.
+function resolveBuildTimestamp(): string {
+  if (process.env.SOURCE_DATE_EPOCH) {
+    return new Date(Number(process.env.SOURCE_DATE_EPOCH) * 1000).toISOString();
+  }
+  try {
+    const out = execSync("git log -1 --format=%cI", {
+      stdio: ["ignore", "pipe", "ignore"],
+    })
+      .toString()
+      .trim();
+    if (out) return new Date(out).toISOString();
+  } catch {
+    /* not a git checkout */
+  }
+  return new Date(0).toISOString();
+}
+
 const sbomBody = {
   bomFormat: "CycloneDX",
   specVersion: "1.5",
   version: 1,
   metadata: {
-    // No `timestamp`: wall-clock time makes the artifact non-reproducible
-    // (the field is optional in CycloneDX 1.5). The commit-bound buildId
-    // below is the stable anchor for "which build produced this".
+    timestamp: resolveBuildTimestamp(),
     tools: [{ vendor: "phlabs", name: "generate-sbom", version: "1.0.0" }],
     component: {
       type: "application",

@@ -153,6 +153,10 @@ describe("Checkout source – customer note field is wired", () => {
     expect(src).toMatch(/customerNote:\s*['"]['"]/);
     expect(src).toMatch(/id="customerNote"/);
     expect(src).toMatch(/maxLength=\{500\}/);
-    expect(src).toMatch(/customerNote:\s*form\.customerNote/);
+    // The note reaches the createOrder payload through an IIFE that trims
+    // form.customerNote and may prepend a "[FREE GIFT] …" line — assert the
+    // wiring (trim + payload key), not the exact expression shape.
+    expect(src).toMatch(/customerNote:\s*\(\(\)\s*=>\s*\{/);
+    expect(src).toMatch(/form\.customerNote\.trim\(\)/);
   });
 });
