@@ -55,6 +55,16 @@ function PeptideCalculatorPage() {
   const [desiredUnit, setDesiredUnit] = useState<"mcg" | "mg">("mcg");
   const [syringeUnits, setSyringeUnits] = useState<number>(100); // U-100 insulin syringe
 
+  // Static route — no async data. Release the prerender snapshot on the
+  // next frame so prerender.io (and the phlabs-prerender Worker's browser
+  // cache) doesn't wait on the 15s __root safety timeout. Was the sole
+  // cause of the 15-17s TTFB on this route.
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => markPrerenderReady());
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+
   const { mgPerMl, mcgPerMl, mlForDose, unitsForDose } = useMemo(() => {
     const safeVialMg = Number.isFinite(vialMg) && vialMg > 0 ? vialMg : 0;
     const safeBacMl = Number.isFinite(bacMl) && bacMl > 0 ? bacMl : 0;
