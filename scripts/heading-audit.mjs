@@ -27,7 +27,7 @@ const ROUTES = [
   '/contact',
   '/about',
   '/landing/phlabs',
-  '/peptide-calculator',
+  
   '/resources',
   '/lab-reports',
   '/request-catalog',
