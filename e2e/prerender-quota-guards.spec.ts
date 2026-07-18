@@ -75,11 +75,11 @@ describe('Prerender quota guards (BATCH 1 + 2)', () => {
     expect(hook).toMatch(/kill_switch/);
   });
 
-  it('recache hook is capped at 50 URLs and mobile-only', () => {
+  it('recache hook is capped at 50 URLs and desktop-only', () => {
     expect(hook).toMatch(/MAX_URLS_PER_RUN\s*=\s*50/);
-    // No desktop-adaptive POST anymore.
-    expect(hook).not.toMatch(/recacheBatch\([^)]*,\s*"desktop"\s*\)/);
-    expect(hook).toMatch(/recacheBatch\([^)]*,\s*"mobile"\s*\)/);
+    // No mobile-adaptive POST anymore (Mobile Optimized Rendering disabled).
+    expect(hook).not.toMatch(/recacheBatch\([^)]*,\s*"mobile"\s*\)/);
+    expect(hook).toMatch(/recacheBatch\([^)]*,\s*"desktop"\s*\)/);
   });
 
   it('recache hook skips URLs whose <lastmod> is unchanged', () => {
@@ -97,6 +97,6 @@ describe('Prerender quota guards (BATCH 1 + 2)', () => {
   it('deploy-worker recache no longer double-posts desktop+mobile', () => {
     // Original inner loop was `for at in desktop mobile`. Must be gone.
     expect(deploy).not.toMatch(/for at in desktop mobile/);
-    expect(deploy).toMatch(/adaptiveType\\":\\"mobile\\"/);
+    expect(deploy).toMatch(/adaptiveType\\":\\"desktop\\"/);
   });
 });

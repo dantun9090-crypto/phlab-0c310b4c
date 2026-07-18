@@ -115,7 +115,7 @@ const PROBE_QUERY_PARAMS = ["__cache_check", "_reload", "__probe", "nocache"];
 // times out (billed as 504). Serve origin directly.
 const NON_HTML_EXT_RX =
   /\.(webmanifest|json|xml|txt|ico|map|css|js|mjs|png|jpe?g|gif|webp|avif|svg|woff2?|ttf|otf|pdf|mp4|webm|zip)$/i;
-const NON_HTML_PREFIXES = ["/downloads/", "/.well-known/", "/api/", "/_api/"];
+const NON_HTML_PREFIXES = ["/downloads/", "/.well-known/", "/api/", "/_api/", "/__/"];
 
 // Vulnerability-scanner path prefixes — return 404 at the edge before any
 // origin/prerender hop. Not just to save renders: these attempts pollute

@@ -148,17 +148,15 @@ jobs:
             "https://phlabs.co.uk/quality-control"
           )
 
-          # Single-mode adaptive recache (2026-07-18): the desktop+mobile
-          # double POST doubled Prerender.io render volume for zero SEO
-          # benefit — Googlebot Smartphone (mobile) is the primary indexer
-          # so we only warm mobile. Prerender.io will lazily refresh desktop
-          # on the next desktop crawl.
+          # Single-mode adaptive recache (2026-07-18, updated): Prerender.io
+          # "Mobile Optimized Rendering" is DISABLED in the dashboard, so
+          # only desktop renders are produced. Posting mobile is wasted.
           for u in "${URLS[@]}"; do
             code=$(curl -sS -o /tmp/pr.out -w "%{http_code}" \
               -X POST https://api.prerender.io/recache \
               -H "Content-Type: application/json" \
-              -d "{\"prerenderToken\":\"$PRERENDER_TOKEN\",\"url\":\"$u\",\"adaptiveType\":\"mobile\"}")
-            echo "recache $u [mobile] -> HTTP $code"
+              -d "{\"prerenderToken\":\"$PRERENDER_TOKEN\",\"url\":\"$u\",\"adaptiveType\":\"desktop\"}")
+            echo "recache $u [desktop] -> HTTP $code"
             [ "$code" = "200" ] || { echo "::warning::prerender recache non-200 for $u"; cat /tmp/pr.out; echo; }
           done
 

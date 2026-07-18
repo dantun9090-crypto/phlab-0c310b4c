@@ -26,8 +26,8 @@ const MIN_INTERVAL_MS = 60_000;
 // Quota guardrails (2026-07-18 quota-burn incident):
 //  - MAX_URLS_PER_RUN: hard cap so a bloated sitemap can't burn thousands
 //    of paid renders in one call.
-//  - Adaptive-only mobile: Googlebot-Smartphone is the primary indexer.
-//    Desktop refreshes lazily on the next desktop crawl.
+//  - Adaptive-only desktop: Prerender.io "Mobile Optimized Rendering" is
+//    DISABLED in the dashboard (desktop-only), so mobile POSTs are wasted.
 //  - lastmodByUrl: per-isolate cache of the last `<lastmod>` we saw per URL.
 //    We only POST /recache for URLs whose lastmod actually changed. This is
 //    best-effort (isolates recycle), not authoritative — the build-id
@@ -187,24 +187,25 @@ export const Route = createFileRoute("/api/public/hooks/prerender-recache")({
           );
         }
 
-        // Single-mode: mobile only (Googlebot-Smartphone is the primary
-        // indexer). Cuts render volume in half vs. desktop+mobile.
-        const mobile = await recacheBatch(token, urls, "mobile");
+        // Single-mode: desktop only. Prerender.io "Mobile Optimized
+        // Rendering" is DISABLED in the dashboard (desktop-only rendering),
+        // so a mobile POST would be a no-op / wasted call.
+        const desktop = await recacheBatch(token, urls, "desktop");
 
         // Persist the lastmod we just recached so the next run can dedupe.
-        if (mobile.ok) {
+        if (desktop.ok) {
           for (const e of capped) {
             if (e.lastmod) lastmodByUrl.set(e.loc, e.lastmod);
           }
         }
 
         return Response.json({
-          ok: mobile.ok,
+          ok: desktop.ok,
           count: urls.length,
           total: entries.length,
           skippedUnchanged: entries.length - changed.length,
           cappedAt: MAX_URLS_PER_RUN,
-          mobile,
+          desktop,
           ranAt: new Date(now).toISOString(),
         });
       },
