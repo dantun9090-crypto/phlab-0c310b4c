@@ -280,36 +280,46 @@ export type GaItem = {
  * Returns an empty object when nothing is available — call sites never
  * need to pass userData explicitly.
  */
-const EC_SESSION_KEY = 'php_ec_userdata';
+const EC_SESSION_KEY = 'php_ec_userdata_hashed';
 
+/**
+ * Cache Enhanced-Conversions user data in sessionStorage. To avoid storing
+ * clear-text PII (CodeQL js/clear-text-storage-of-sensitive-data) we hash
+ * every identifier field via `buildUserData` BEFORE persisting; only the
+ * SHA-256 hashes (and non-sensitive country/city/postal) ever hit storage.
+ */
 export function cacheUserDataForEnhancedConversions(u: NonNullable<PurchaseExtras['userData']>): void {
   if (typeof sessionStorage === 'undefined') return;
-  try { sessionStorage.setItem(EC_SESSION_KEY, JSON.stringify(u)); } catch { /* ignore */ }
+  void buildUserData(u).then((hashed) => {
+    try { sessionStorage.setItem(EC_SESSION_KEY, JSON.stringify(hashed)); } catch { /* ignore */ }
+  }).catch(() => { /* ignore */ });
 }
 
 async function inferUpperFunnelUserData(): Promise<Record<string, string>> {
   if (typeof window === 'undefined') return {};
-  let raw: NonNullable<PurchaseExtras['userData']> | null = null;
+  // First try the pre-hashed session cache written at checkout.
   try {
     const cached = sessionStorage.getItem(EC_SESSION_KEY);
-    if (cached) raw = JSON.parse(cached);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed && typeof parsed === 'object') return parsed as Record<string, string>;
+    }
   } catch { /* ignore */ }
-  if (!raw) {
-    try {
-      // Lazy import to avoid pulling firebase into early analytics bundle.
-      const mod = await import('@/lib/firebase');
-      const u = mod.auth?.currentUser;
-      if (u && (u.email || u.phoneNumber)) {
-        const [firstName, ...rest] = (u.displayName || '').split(' ');
-        raw = {
-          email: u.email || undefined,
-          phone: u.phoneNumber || undefined,
-          firstName: firstName || undefined,
-          lastName: rest.join(' ') || undefined,
-        };
-      }
-    } catch { /* firebase not ready — skip */ }
-  }
+  // Fall back to the currently-signed-in Firebase user (hashed on the fly).
+  let raw: NonNullable<PurchaseExtras['userData']> | null = null;
+  try {
+    const mod = await import('@/lib/firebase');
+    const u = mod.auth?.currentUser;
+    if (u && (u.email || u.phoneNumber)) {
+      const [firstName, ...rest] = (u.displayName || '').split(' ');
+      raw = {
+        email: u.email || undefined,
+        phone: u.phoneNumber || undefined,
+        firstName: firstName || undefined,
+        lastName: rest.join(' ') || undefined,
+      };
+    }
+  } catch { /* firebase not ready — skip */ }
   if (!raw) return {};
   try { return await buildUserData(raw); } catch { return {}; }
 }
