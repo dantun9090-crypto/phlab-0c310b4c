@@ -5,9 +5,8 @@ import { Rocket, Loader2, ExternalLink, CheckCircle2, XCircle } from "lucide-rea
 import { triggerReindex, type ReindexHookResponse } from "@/lib/reindex.functions";
 
 const PRESETS: Record<string, string[]> = {
-  "Landing pages (/compound + /peptide-calculator)": [
+  "Landing pages (/compound)": [
     "/compound",
-    "/peptide-calculator",
   ],
   "Retatrutide cluster": [
     "/products/retatrutide-research-peptide",
@@ -18,7 +17,7 @@ const PRESETS: Record<string, string[]> = {
 
 export default function ReindexHookTab() {
   const run = useServerFn(triggerReindex);
-  const [urlsText, setUrlsText] = useState(PRESETS["Landing pages (/compound + /peptide-calculator)"].join("\n"));
+  const [urlsText, setUrlsText] = useState(PRESETS["Landing pages (/compound)"].join("\n"));
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<ReindexHookResponse | null>(null);
   const [error, setError] = useState<string | null>(null);

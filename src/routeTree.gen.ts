@@ -25,7 +25,6 @@ import { Route as QualityControlRouteImport } from './routes/quality-control'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as PrivacyRequestsRouteImport } from './routes/privacy-requests'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
-import { Route as PeptideCalculatorRouteImport } from './routes/peptide-calculator'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LabReportsRouteImport } from './routes/lab-reports'
@@ -216,11 +215,6 @@ const PrivacyRequestsRoute = PrivacyRequestsRouteImport.update({
 const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
   id: '/privacy-policy',
   path: '/privacy-policy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PeptideCalculatorRoute = PeptideCalculatorRouteImport.update({
-  id: '/peptide-calculator',
-  path: '/peptide-calculator',
   getParentRoute: () => rootRouteImport,
 } as any)
 const McpRoute = McpRouteImport.update({
@@ -822,7 +816,6 @@ export interface FileRoutesByFullPath {
   '/lab-reports': typeof LabReportsRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
-  '/peptide-calculator': typeof PeptideCalculatorRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/privacy-requests': typeof PrivacyRequestsRoute
   '/products': typeof ProductsRouteWithChildren
@@ -950,7 +943,6 @@ export interface FileRoutesByTo {
   '/lab-reports': typeof LabReportsRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
-  '/peptide-calculator': typeof PeptideCalculatorRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/privacy-requests': typeof PrivacyRequestsRoute
   '/products': typeof ProductsRouteWithChildren
@@ -1079,7 +1071,6 @@ export interface FileRoutesById {
   '/lab-reports': typeof LabReportsRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
-  '/peptide-calculator': typeof PeptideCalculatorRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/privacy-requests': typeof PrivacyRequestsRoute
   '/products': typeof ProductsRouteWithChildren
@@ -1209,7 +1200,6 @@ export interface FileRouteTypes {
     | '/lab-reports'
     | '/login'
     | '/mcp'
-    | '/peptide-calculator'
     | '/privacy-policy'
     | '/privacy-requests'
     | '/products'
@@ -1337,7 +1327,6 @@ export interface FileRouteTypes {
     | '/lab-reports'
     | '/login'
     | '/mcp'
-    | '/peptide-calculator'
     | '/privacy-policy'
     | '/privacy-requests'
     | '/products'
@@ -1465,7 +1454,6 @@ export interface FileRouteTypes {
     | '/lab-reports'
     | '/login'
     | '/mcp'
-    | '/peptide-calculator'
     | '/privacy-policy'
     | '/privacy-requests'
     | '/products'
@@ -1595,7 +1583,6 @@ export interface RootRouteChildren {
   LabReportsRoute: typeof LabReportsRoute
   LoginRoute: typeof LoginRoute
   McpRoute: typeof McpRoute
-  PeptideCalculatorRoute: typeof PeptideCalculatorRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   PrivacyRequestsRoute: typeof PrivacyRequestsRoute
   ProductsRoute: typeof ProductsRouteWithChildren
@@ -1802,13 +1789,6 @@ declare module '@tanstack/react-router' {
       path: '/privacy-policy'
       fullPath: '/privacy-policy'
       preLoaderRoute: typeof PrivacyPolicyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/peptide-calculator': {
-      id: '/peptide-calculator'
-      path: '/peptide-calculator'
-      fullPath: '/peptide-calculator'
-      preLoaderRoute: typeof PeptideCalculatorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mcp': {
@@ -2686,7 +2666,6 @@ const rootRouteChildren: RootRouteChildren = {
   LabReportsRoute: LabReportsRoute,
   LoginRoute: LoginRoute,
   McpRoute: McpRoute,
-  PeptideCalculatorRoute: PeptideCalculatorRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   PrivacyRequestsRoute: PrivacyRequestsRoute,
   ProductsRoute: ProductsRouteWithChildren,

@@ -25,7 +25,6 @@ const HTML_ROUTES = [
   "/resources",
   "/about",
   "/contact",
-  "/peptide-calculator",
   "/downloads",
   "/landing/phlabs",
 ];

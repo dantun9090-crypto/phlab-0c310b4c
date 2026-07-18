@@ -1,9 +1,9 @@
 /**
  * Fast-reindex hook — IndexNow + Prerender.io recache + GSC Inspector deep-links.
  *
- * Default URL list: /compound and /peptide-calculator (the two newly-launched
- * landing pages we want crawled ASAP after publish). Callers may POST a
- * custom `{ urls: string[] }` body to reindex a different set.
+ * Default URL list: /compound (the newly-launched landing page we want
+ * crawled ASAP after publish). Callers may POST a custom
+ * `{ urls: string[] }` body to reindex a different set.
  *
  * Pipelines triggered:
  *   1. IndexNow → Bing / Yandex / Seznam / Naver (instant push, real API).
@@ -22,7 +22,7 @@ import { timingSafeEqualStr } from "@/lib/timing-safe-equal";
 import { enforceRateLimit } from "@/lib/rate-limit";
 
 const HOST = "phlabs.co.uk";
-const DEFAULT_PATHS = ["/compound", "/peptide-calculator"];
+const DEFAULT_PATHS = ["/compound"];
 const INDEXNOW_ENDPOINT = "https://api.indexnow.org/IndexNow";
 const PRERENDER_ENDPOINT = "https://api.prerender.io/recache";
 
