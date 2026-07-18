@@ -45,7 +45,7 @@ function serializeError(err: unknown): Record<string, unknown> {
     if (cause !== undefined) out.cause = serializeError(cause);
     // Preserve Firestore/gRPC style codes when present.
     for (const k of ['code', 'status', 'details'] as const) {
-      const v = (err as Record<string, unknown>)[k];
+      const v = (err as unknown as Record<string, unknown>)[k];
       if (v !== undefined) out[k] = v;
     }
     return out;
