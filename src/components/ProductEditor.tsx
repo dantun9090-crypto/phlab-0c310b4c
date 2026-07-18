@@ -104,7 +104,9 @@ function ImageSlot({ url, index, isPrimary, uploading, uploadProgress, uploadErr
     if (!trimmed || !isValidUrl(trimmed)) { setUrlPreviewOk(null); return; }
     setUrlPreviewOk(null);
     const img = new Image();
-    const timer = setTimeout(() => { img.src = trimmed; }, 400); // debounce
+    const safeTrimmed = safeImageUrl(trimmed);
+    if (!safeTrimmed) { setUrlPreviewOk(false); return; }
+    const timer = setTimeout(() => { img.src = safeTrimmed; }, 400); // debounce
     img.onload = () => setUrlPreviewOk(true);
     img.onerror = () => setUrlPreviewOk(false);
     return () => { clearTimeout(timer); img.onload = null; img.onerror = null; };
@@ -135,7 +137,7 @@ function ImageSlot({ url, index, isPrimary, uploading, uploadProgress, uploadErr
           </div>
         ) : url ? (
           <>
-            <img src={url} alt={`Image ${index + 1}`} className="w-full h-full object-contain bg-[#04101f]" />
+            <img src={safeImageUrl(url)} alt={`Image ${index + 1}`} className="w-full h-full object-contain bg-[#04101f]" />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-200 flex flex-col items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100">
               {/* Move row */}
               <div className="flex items-center gap-1">
