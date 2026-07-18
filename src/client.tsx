@@ -191,10 +191,20 @@ const kickSentry = () => {
     .catch(() => { /* ignore */ });
 };
 if (shouldStartPhlClient) {
-  if (typeof requestIdleCallback !== 'undefined') {
-    requestIdleCallback(kickSentry, { timeout: 4000 });
+  // Defer Sentry until after window 'load' + idle: the replay/tracing init
+  // must never compete with LCP for the main thread (mobile LCP was 8.6-9.7s
+  // partly because the Sentry chunk executed during first paint).
+  const scheduleSentry = () => {
+    if (typeof requestIdleCallback !== 'undefined') {
+      requestIdleCallback(kickSentry, { timeout: 6000 });
+    } else {
+      setTimeout(kickSentry, 4000);
+    }
+  };
+  if (document.readyState === 'complete') {
+    scheduleSentry();
   } else {
-    setTimeout(kickSentry, 2500);
+    window.addEventListener('load', scheduleSentry, { once: true });
   }
   installClientErrorReporter();
   initSwTelemetry();
@@ -779,4 +789,3 @@ if (shouldStartPhlClient) window.setTimeout(() => {
     }
   } catch { /* never let telemetry throw */ }
 }, 5000);
-
