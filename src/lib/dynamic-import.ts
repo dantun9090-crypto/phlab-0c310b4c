@@ -16,7 +16,10 @@
  * Never re-throws — callers get `null` on terminal failure and can
  * render a fallback UI. Never leaves an unhandled rejection.
  */
-import * as Sentry from "@sentry/react";
+// Lazy bridge — a static @sentry/react import here put the ~1.2MB
+// vendor-sentry chunk in the initial bundle (this helper runs on the
+// router boot path). The SDK now loads on demand.
+import { addBreadcrumbLazy, captureExceptionLazy } from "@/lib/sentry-lazy";
 import { hardReload, isStaleChunkError } from "@/lib/recovery";
 
 export interface DynamicImportOptions {
@@ -66,7 +69,7 @@ export async function safeDynamicImport<T>(
       // If we retried at least once, note it as a breadcrumb — success
       // after backoff is useful signal for flaky-network diagnosis.
       if (attempt > 0) {
-        Sentry.addBreadcrumb({
+        addBreadcrumbLazy({
           category: "dynamic-import",
           level: "info",
           message: `Recovered ${label} after ${attempt} retry`,
@@ -79,7 +82,7 @@ export async function safeDynamicImport<T>(
 
       // Stale deploy: hard-reload instead of retrying — the chunk is gone.
       if (isStaleChunkError(err)) {
-        Sentry.addBreadcrumb({
+        addBreadcrumbLazy({
           category: "dynamic-import",
           level: "warning",
           message: `Stale chunk for ${label} — hard reloading`,
@@ -102,27 +105,19 @@ export async function safeDynamicImport<T>(
   }
 
   // Terminal failure. Report to Sentry with a stable fingerprint per module.
-  try {
-    Sentry.withScope((scope) => {
-      scope.setTag("dynamic_import_module", label);
-      scope.setContext("dynamic_import", {
-        label,
-        attempts: maxRetries + 1,
-      });
-      scope.setFingerprint(["dynamic-import-failed", label]);
-      const wrapped =
-        lastError instanceof Error
-          ? lastError
-          : new Error(`Dynamic import failed: ${label}`);
-      if (!(lastError instanceof Error)) {
-        (wrapped as Error & { cause?: unknown }).cause = lastError;
-      }
-      wrapped.name = "DynamicImportError";
-      Sentry.captureException(wrapped);
-    });
-  } catch {
-    /* never let monitoring crash the app */
+  const wrapped =
+    lastError instanceof Error
+      ? lastError
+      : new Error(`Dynamic import failed: ${label}`);
+  if (!(lastError instanceof Error)) {
+    (wrapped as Error & { cause?: unknown }).cause = lastError;
   }
+  wrapped.name = "DynamicImportError";
+  captureExceptionLazy(wrapped, {
+    tags: { dynamic_import_module: label },
+    contexts: { dynamic_import: { label, attempts: maxRetries + 1 } },
+    fingerprint: ["dynamic-import-failed", label],
+  });
   console.error(`[dynamic-import] ${label} failed`, lastError);
   return { ok: false, reason: "failed", error: lastError, attempts: maxRetries + 1 };
 }

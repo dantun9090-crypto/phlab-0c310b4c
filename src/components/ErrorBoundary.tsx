@@ -1,7 +1,10 @@
 import { Component, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import * as Sentry from '@sentry/react';
+// Lazy bridge — a static `import * as Sentry` here pulled the ~1.2MB
+// vendor-sentry chunk into the initial bundle (boot path: client.tsx →
+// ErrorBoundary), blocking mobile LCP. The SDK now loads on demand.
+import { captureExceptionLazy } from '@/lib/sentry-lazy';
 import { logSecurityEvent } from '@/lib/security-events';
 import { isHydrationMismatchError, isStaleChunkError, hardReload, markHydrationError } from '@/lib/recovery';
 
@@ -38,13 +41,12 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error('[ERROR BOUNDARY] component:', componentName);
     console.error('[ERROR BOUNDARY] component stack:\n' + (info?.componentStack || '(no component stack)'));
     // Ship to Sentry with the React component stack for release-context alerts.
-    try {
-      Sentry.withScope((scope) => {
-        scope.setTag('boundary', 'root');
-        if (info?.componentStack) scope.setContext('react', { componentStack: info.componentStack });
-        Sentry.captureException(error);
-      });
-    } catch { /* never break */ }
+    captureExceptionLazy(error, {
+      tags: { boundary: 'root' },
+      contexts: info?.componentStack
+        ? { react: { componentStack: info.componentStack } }
+        : undefined,
+    });
     // Detailed logging to Firestore securityEvents (fire-and-forget).
     try {
       logSecurityEvent({
