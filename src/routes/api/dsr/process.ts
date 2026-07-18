@@ -118,7 +118,8 @@ export const Route = createFileRoute("/api/dsr/process")({
         try {
           body = BodySchema.parse(await request.json());
         } catch (e) {
-          return json({ error: "invalid_body", detail: String((e as Error).message) }, 400);
+          console.warn("[dsr/process] invalid body", e);
+          return json({ error: "invalid_body" }, 400);
         }
 
         // Admin gate
@@ -192,7 +193,7 @@ export const Route = createFileRoute("/api/dsr/process")({
           return json({ ok: true, action: "note", status: body.status ?? "in_progress" });
         } catch (err) {
           console.error("[dsr/process] failed", { requestId: body.requestId, err });
-          return json({ error: "processing_failed", detail: String((err as Error).message) }, 500);
+          return json({ error: "processing_failed" }, 500);
         }
       },
     },
