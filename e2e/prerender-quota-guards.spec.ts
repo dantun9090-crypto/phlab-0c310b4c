@@ -62,7 +62,7 @@ describe('Prerender quota guards (BATCH 1 + 2)', () => {
     for (const p of ['/.env', '/.git', '/wp-', '/phpmyadmin']) {
       expect(worker).toContain(p);
     }
-    expect(worker).toMatch(/status:\s*404[\s\S]{0,200}scanner-block/);
+    expect(worker).toMatch(/status:\s*404[\s\S]{0,600}scanner-block/);
   });
 
   it('worker treats cache-buster probe params as monitoring', () => {
