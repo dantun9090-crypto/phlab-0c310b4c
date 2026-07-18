@@ -32,7 +32,9 @@ import {
   // reason: Worker/SSR export shape does not expose it, causing
   // "reauthenticateWithCredential is not defined" during SSR of Account /
   // checkout.success. Account page imports it directly from 'firebase/auth'.
-  updatePassword,
+  // updatePassword intentionally NOT imported here — same Worker/SSR reason;
+  // Account page imports it directly from 'firebase/auth'.
+
   setPersistence,
   browserLocalPersistence,
   browserSessionPersistence,
