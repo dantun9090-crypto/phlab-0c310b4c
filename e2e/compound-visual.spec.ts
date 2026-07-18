@@ -89,6 +89,27 @@ test.describe("/compound visual regression", () => {
     // app's CSS loaded after init.
     await page.addStyleTag({ content: KILL_MOTION_CSS });
 
+    // Fixed-point viewport sizing before the capture: fullPage screenshots
+    // temporarily resize the viewport to the document height, which changes
+    // any vh-sized layout, which changes the document height — the exact
+    // 9104 <-> 10235px flip-flop that made this suite non-deterministic.
+    // Iterating to a fixed point FIRST means the capture itself never
+    // triggers a resize, so baseline generation and CI runs converge to the
+    // same height deterministically.
+    {
+      let lastHeight = 0;
+      for (let i = 0; i < 4; i++) {
+        const h = await page.evaluate(
+          () => document.documentElement.scrollHeight,
+        );
+        if (h === lastHeight) break;
+        lastHeight = h;
+        await page.setViewportSize({ width: 1280, height: Math.min(h, 16384) });
+        await page.waitForTimeout(400);
+      }
+      await page.waitForTimeout(300);
+    }
+
     await expect(page).toHaveScreenshot("compound.png", { fullPage: true });
   });
 });
