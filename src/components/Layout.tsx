@@ -891,6 +891,11 @@ export function Layout({ children }: LayoutProps) {
 
       </header>}
 
+      {/* Day/night palette toggle (floating pill, self-positioned).
+          Render was dropped in a0f44d2 when the import was added — the
+          day-theme audit's toggle contract depends on it. */}
+      {!isCleanPage && <DayNightToggle />}
+
       {/* Professional disclaimer banner — full-width amber strip below header */}
       {disclaimerVisible && <DisclaimerBanner />}
 

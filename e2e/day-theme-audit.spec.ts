@@ -37,8 +37,11 @@ const EXTENDED_PAGES = [
   "/admin/settings",
 ] as const;
 const STORAGE_KEY = "phlabs-theme-mode";
-const SLATE_900 = "rgb(15,23,42)";
-const SLATE_800 = "rgb(30,41,59)";
+// Tailwind v4 serializes colors in oklab space — exact "rgb(...)" strings
+// never match, and canvas fillStyle returns lab() unchanged. Compare
+// pixel-normalized rgb() instead (1px draw + getImageData).
+const SLATE_900 = "rgb(15,23,43)";
+const SLATE_800 = "rgb(29,41,61)";
 const WHITE = "rgb(255,255,255)";
 
 // Deterministic viewport for visual regression — avoids host-default drift.
@@ -53,6 +56,17 @@ async function forceTheme(page: Page, mode: "light" | "dark") {
     ([k, v]) => {
       try {
         localStorage.setItem(k, v);
+        // Skip the research-gate modal AND the cookie banner — both are
+        // fixed overlays that intercept pointer events and break
+        // hover/click assertions in the toggle contract tests.
+        localStorage.setItem(
+          "php_research_confirmed",
+          JSON.stringify({ ts: Date.now() }),
+        );
+        localStorage.setItem(
+          "php_cookie_consent",
+          JSON.stringify({ necessary: true, analytics: false, marketing: false }),
+        );
       } catch {
         /* ignore */
       }
@@ -135,7 +149,17 @@ async function stabilise(page: Page) {
 
 function rgbOf(el: Locator, prop: "color" | "backgroundColor") {
   return el.evaluate(
-    (node, p) => getComputedStyle(node as Element)[p as any] as string,
+    (node, p) => {
+      const raw = getComputedStyle(node as Element)[p as any] as string;
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 1;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return raw;
+      ctx.fillStyle = raw;
+      ctx.fillRect(0, 0, 1, 1);
+      const d = ctx.getImageData(0, 0, 1, 1).data;
+      return `rgb(${d[0]},${d[1]},${d[2]})`;
+    },
     prop,
   );
 }
