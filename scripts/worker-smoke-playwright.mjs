@@ -28,8 +28,22 @@ async function main() {
     if (msg.type() === "error") log(`page console error: ${msg.text()}`);
   });
 
-  const fail = (why) => {
+  const fail = async (why) => {
     console.error(`::error::[smoke] FAIL — ${why}`);
+    // The runner's log collector keeps losing this step's stdout, so dump
+    // diagnostics to disk — the workflow uploads smoke-diag/ as an
+    // artifact on every run.
+    try {
+      const fs = await import("node:fs");
+      fs.mkdirSync("smoke-diag", { recursive: true });
+      fs.writeFileSync("smoke-diag/failure.txt", `${why}\n`);
+      fs.writeFileSync("smoke-diag/page.html", await page.content());
+      fs.writeFileSync(
+        "smoke-diag/visible-text.txt",
+        (await page.evaluate(() => document.body?.innerText || "")).slice(0, 4000),
+      );
+      await page.screenshot({ path: "smoke-diag/failure.png", fullPage: false });
+    } catch { /* diagnostics are best-effort */ }
     process.exitCode = 1;
     throw new Error(why);
   };

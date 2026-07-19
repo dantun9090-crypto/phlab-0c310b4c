@@ -245,6 +245,17 @@ jobs:
             sleep "${delay}"
           done
 
+      # Smoke diagnostics are the only reliable channel (step stdout is
+      # lost by the runner log collector on this workflow).
+      - name: Upload smoke diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-diag-${{ github.run_id }}-${{ github.run_attempt }}
+          path: smoke-diag/
+          if-no-files-found: ignore
+          retention-days: 14
+
 
       # ── Emergency route detach if the UI smoke test failed.
       # Queries the phlabs zone for any worker route bound to the
