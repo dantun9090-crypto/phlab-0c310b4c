@@ -109,7 +109,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
   }
 
   return (
-    <main data-source="premium-landing" data-route="/compound" className="min-h-screen bg-[#060b18] text-white antialiased selection:bg-[#c9a44c] selection:text-[#060b18] scroll-smooth">
+    <main data-source="premium-landing" data-route="/compound" data-keep-dark className="min-h-screen bg-[#060b18] text-white antialiased selection:bg-[#c9a44c] selection:text-[#060b18] scroll-smooth">
       <PremiumLandingGuard />
       <LandingPromoStrip theme="dark" />
       <LandingTrustStrip theme="dark" />

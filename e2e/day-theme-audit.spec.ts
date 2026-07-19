@@ -278,11 +278,14 @@ test.describe("Day theme — unified audit", () => {
 
     // Mouse hover: bg → slate-800, icon STAYS white.
     await btn.hover({ force: true });
-    // Allow the 280ms theme transition to settle before asserting.
-    await page.waitForTimeout(650);
-    expect((await rgbOf(btn, "backgroundColor")).replace(/\s+/g, "")).toBe(
-      SLATE_800,
-    );
+    // Poll until the 280ms theme transition completes (fixed waits flaked
+    // on slow CI runners).
+    await expect
+      .poll(
+        async () => (await rgbOf(btn, "backgroundColor")).replace(/\s+/g, ""),
+        { timeout: 5_000 },
+      )
+      .toBe(SLATE_800);
     expect((await svgColor(btn)).replace(/\s+/g, "")).toBe(WHITE);
 
     // Keyboard focus path: ring visible AND icon still white.
