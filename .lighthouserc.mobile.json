@@ -59,7 +59,7 @@
         "cumulative-layout-shift": [
           "error",
           {
-            "maxNumericValue": 0.55
+            "maxNumericValue": 0.32
           }
         ],
         "largest-contentful-paint": [
