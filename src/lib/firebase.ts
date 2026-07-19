@@ -43,14 +43,15 @@ import {
   User as FirebaseUser,
 } from 'firebase/auth';
 import { checkLockout, recordFailure, clearFailures, formatRemaining } from '@/lib/login-lockout';
-import { getStorage, ref as storageRef, uploadBytesResumable, uploadBytes, getDownloadURL, deleteObject, listAll as _listAll, getMetadata as _getMetadata } from 'firebase/storage';
+import { getStorage, ref as storageRef, uploadBytesResumable as _uploadBytesResumable, uploadBytes as _uploadBytes, getDownloadURL, deleteObject, listAll as _listAll, getMetadata as _getMetadata } from 'firebase/storage';
 
-// firebase/storage's SSR/Worker export shape may not expose getMetadata or
-// listAll — importing them can yield `undefined` at runtime, so any
-// SSR-reachable route that transitively imports this module throws
-// "ReferenceError: <name> is not defined" during renderToReadableStream
-// (observed on /products and /compound in production). Fall back to a no-op
-// stub on the server; the client keeps the native impl.
+// firebase/storage's SSR/Worker export shape may not expose getMetadata,
+// listAll, uploadBytes, or uploadBytesResumable — importing them can yield
+// `undefined` at runtime, so any SSR-reachable route that transitively
+// imports this module throws "ReferenceError: <name> is not defined" during
+// renderToReadableStream (observed on /products, /compound, /downloads in
+// production). Fall back to a no-op stub on the server; the client keeps
+// the native impl.
 const getMetadata: typeof _getMetadata =
   typeof _getMetadata === 'function'
     ? _getMetadata
@@ -59,6 +60,18 @@ const listAll: typeof _listAll =
   typeof _listAll === 'function'
     ? _listAll
     : ((async () => ({ items: [], prefixes: [] } as never)) as unknown as typeof _listAll);
+const uploadBytes: typeof _uploadBytes =
+  typeof _uploadBytes === 'function'
+    ? _uploadBytes
+    : ((async () => {
+        throw new Error('uploadBytes is not available in this runtime');
+      }) as unknown as typeof _uploadBytes);
+const uploadBytesResumable: typeof _uploadBytesResumable =
+  typeof _uploadBytesResumable === 'function'
+    ? _uploadBytesResumable
+    : ((() => {
+        throw new Error('uploadBytesResumable is not available in this runtime');
+      }) as unknown as typeof _uploadBytesResumable);
 import { logAuthEvent, logAuthFailure } from '@/lib/auth-events';
 import { clearStoreCachesForNewBuild } from '@/lib/build-cache';
 // Email template builders are dynamically imported inside their send-helpers
