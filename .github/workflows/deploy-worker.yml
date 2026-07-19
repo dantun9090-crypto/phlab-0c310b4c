@@ -224,7 +224,9 @@ jobs:
           npx --yes "playwright@${PLAYWRIGHT_VERSION}" install chromium > "$GITHUB_WORKSPACE/smoke-diag/browser-install.log" 2>&1
           echo "browser-install rc=$?" >> "$GITHUB_WORKSPACE/smoke-diag/install.rc"
           cd "$GITHUB_WORKSPACE"
-          export NODE_PATH=/tmp/smoke-deps/node_modules
+          # ESM imports ignore NODE_PATH — link the throwaway install into
+          # the repo so `import { chromium } from "playwright"` resolves.
+          ln -sfn /tmp/smoke-deps/node_modules ./node_modules
 
           # Retry up to 3 attempts, 15s apart. Deploy-window transients
           # (0-byte-200 race, brief 5xx during asset swap) resolve within
