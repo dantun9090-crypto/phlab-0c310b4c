@@ -251,7 +251,7 @@ test.describe("Day theme — unified audit", () => {
     // in CI — the contract is the style, not z-order.
     await btn.hover({ force: true });
     // Allow the 280ms theme transition to settle before asserting.
-    await page.waitForTimeout(350);
+    await page.waitForTimeout(650);
     const hoverColor = (await rgbOf(btn, "color")).replace(/\s+/g, "");
     expect(hoverColor).toBe(WHITE);
   });
@@ -279,7 +279,7 @@ test.describe("Day theme — unified audit", () => {
     // Mouse hover: bg → slate-800, icon STAYS white.
     await btn.hover({ force: true });
     // Allow the 280ms theme transition to settle before asserting.
-    await page.waitForTimeout(350);
+    await page.waitForTimeout(650);
     expect((await rgbOf(btn, "backgroundColor")).replace(/\s+/g, "")).toBe(
       SLATE_800,
     );
