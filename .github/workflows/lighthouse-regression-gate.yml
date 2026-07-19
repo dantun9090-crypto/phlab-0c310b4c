@@ -113,4 +113,21 @@ jobs:
               });
             }
             console.table(rows);
+            // Layout-shift forensics: print the elements behind each run's
+            // CLS so a regression names its culprit without downloading
+            // artifacts. Full LHRs in .lighthouseci carry node selectors;
+            // the uploaded median report has them stripped.
+            for (const f of files) {
+              const r = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
+              const a = r.audits || {};
+              const cls = a["cumulative-layout-shift"]?.numericValue ?? 0;
+              if (cls < 0.05) continue;
+              console.log(`\nShift sources for ${r.finalUrl || r.requestedUrl} (CLS ${cls.toFixed(3)}, ${f}):`);
+              const items = a["layout-shifts"]?.details?.items ?? [];
+              if (items.length === 0) { console.log("  (no layout-shifts detail)"); continue; }
+              for (const it of items.slice(0, 6)) {
+                const n = it.node || {};
+                console.log(`  ${(it.score ?? 0).toFixed(4)}  ${(n.selector || n.snippet || "?").slice(0, 140)}`);
+              }
+            }
           '
