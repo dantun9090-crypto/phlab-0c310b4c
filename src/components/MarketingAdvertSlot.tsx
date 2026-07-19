@@ -72,6 +72,11 @@ export default function MarketingAdvertSlot({ adverts, placement, variant = 'ban
           const body = (
             <div
               className={`relative overflow-hidden border border-white/[0.08] shadow-[0_10px_35px_rgba(0,0,0,0.32)] ${isCompact ? 'rounded-2xl' : 'rounded-3xl'}`}
+              // Marketing card with admin-controlled colors — a deliberate
+              // dark island in day mode (the admin palette is tuned for dark
+              // cards, and day-mode recolors can't respect arbitrary
+              // admin-chosen text/bg pairs).
+              data-keep-dark
               style={{ background: ad.bgColor || '#0b1a30', minHeight: hasImage ? undefined : minH }}
             >
               {hasImage && (

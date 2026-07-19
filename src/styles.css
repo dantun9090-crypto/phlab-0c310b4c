@@ -497,6 +497,8 @@ html.light [data-keep-dark] * {
    restorations below put the original palette back inside dark islands
    (LandingPromoStrip, NewsletterPopup dialog, ResearchGate modal). */
 html.light [data-keep-dark] .text-white { color: #ffffff !important; }
+html.light [data-keep-dark] .text-white\/70 { color: rgba(255, 255, 255, 0.7) !important; }
+html.light [data-keep-dark] .text-white\/80 { color: rgba(255, 255, 255, 0.8) !important; }
 html.light [data-keep-dark] .text-slate-50 { color: #f8fafc !important; }
 html.light [data-keep-dark] .text-slate-100 { color: #f1f5f9 !important; }
 html.light [data-keep-dark] .text-slate-200 { color: #e2e8f0 !important; }
@@ -553,21 +555,21 @@ html.light #disclaimer {
    Home gradient sections — gradients sit in background-image, killed here).
    IMPORTANT: browsers serialize React inline styles to rgb() in the style
    attribute, so every hex below is matched in BOTH notations. */
-html.light [style*="#060f1e"], html.light [style*="rgb(6, 15, 30)"],
-html.light [style*="#030812"], html.light [style*="rgb(3, 8, 18)"],
-html.light [style*="#04101f"], html.light [style*="rgb(4, 16, 31)"],
-html.light [style*="#0b1a30"], html.light [style*="rgb(11, 26, 48)"],
-html.light [style*="#100b1a"], html.light [style*="rgb(16, 11, 26)"],
-html.light [style*="#020812"], html.light [style*="rgb(2, 8, 18)"],
-html.light [style*="#030a14" i], html.light [style*="rgb(3, 10, 20)"],
-html.light [style*="#040d1a" i], html.light [style*="rgb(4, 13, 26)"],
-html.light [style*="#061428" i], html.light [style*="rgb(6, 20, 40)"],
-html.light [style*="#060b18" i], html.light [style*="rgb(6, 11, 24)"],
-html.light [style*="#070d1c" i], html.light [style*="rgb(7, 13, 28)"],
-html.light [style*="#080e1f" i], html.light [style*="rgb(8, 14, 31)"],
-html.light [style*="#0b111b" i], html.light [style*="rgb(11, 17, 27)"],
-html.light [style*="rgba(3, 10, 20,"] {
-  background-color: #ffffff !important;
+html.light [style*="#060f1e"]:not([data-keep-dark]), html.light [style*="rgb(6, 15, 30)"]:not([data-keep-dark]),
+html.light [style*="#030812"]:not([data-keep-dark]), html.light [style*="rgb(3, 8, 18)"]:not([data-keep-dark]),
+html.light [style*="#04101f"]:not([data-keep-dark]), html.light [style*="rgb(4, 16, 31)"]:not([data-keep-dark]),
+html.light [style*="#0b1a30"]:not([data-keep-dark]), html.light [style*="rgb(11, 26, 48)"]:not([data-keep-dark]),
+html.light [style*="#100b1a"]:not([data-keep-dark]), html.light [style*="rgb(16, 11, 26)"]:not([data-keep-dark]),
+html.light [style*="#020812"]:not([data-keep-dark]), html.light [style*="rgb(2, 8, 18)"]:not([data-keep-dark]),
+html.light [style*="#030a14" i]:not([data-keep-dark]), html.light [style*="rgb(3, 10, 20)"]:not([data-keep-dark]),
+html.light [style*="#040d1a" i]:not([data-keep-dark]), html.light [style*="rgb(4, 13, 26)"]:not([data-keep-dark]),
+html.light [style*="#061428" i]:not([data-keep-dark]), html.light [style*="rgb(6, 20, 40)"]:not([data-keep-dark]),
+html.light [style*="#060b18" i]:not([data-keep-dark]), html.light [style*="rgb(6, 11, 24)"]:not([data-keep-dark]),
+html.light [style*="#070d1c" i]:not([data-keep-dark]), html.light [style*="rgb(7, 13, 28)"]:not([data-keep-dark]),
+html.light [style*="#080e1f" i]:not([data-keep-dark]), html.light [style*="rgb(8, 14, 31)"]:not([data-keep-dark]),
+html.light [style*="#0b111b" i]:not([data-keep-dark]), html.light [style*="rgb(11, 17, 27)"]:not([data-keep-dark]),
+html.light [style*="rgba(3, 10, 20,"]:not([data-keep-dark]) {
+background-color: #ffffff !important;
   background-image: none !important;
   border-color: #e5e7eb !important;
 }
@@ -630,13 +632,13 @@ html.light [style*="#8aa8c8" i], html.light [style*="rgb(138, 168, 200)"] { colo
 html.light [style*="#7a98b8" i], html.light [style*="rgb(122, 152, 184)"] { color: #3f6184 !important; }
 html.light [style*="#ad976d" i], html.light [style*="rgb(173, 151, 109)"] { color: #7a6534 !important; }
 html.light [style*="#51a2ff" i], html.light [style*="rgb(81, 162, 255)"] { color: #1d6fd1 !important; }
-html.light [style*="#10b981" i], html.light [style*="rgb(16, 185, 129)"] { color: #047857 !important; }
+html.light [style*="#10b981" i], html.light [style*="rgb(16, 185, 129)"] { color: #065f46 !important; }
 html.light [style*="#ffd84d" i], html.light [style*="rgb(255, 216, 77)"] { color: #8a6a2e !important; }
 html.light [style*="#f0f8ff" i], html.light [style*="rgb(240, 248, 255)"] { color: #0f172a !important; }
 html.light [style*="#c9d8f0" i], html.light [style*="rgb(201, 216, 240)"] { color: #334155 !important; }
 html.light [style*="#e4f0ff" i], html.light [style*="rgb(228, 240, 255)"] { color: #0f172a !important; }
-html.light [style*="#4ade80" i], html.light [style*="rgb(74, 222, 128)"] { color: #047857 !important; }
-html.light [style*="#34d399" i], html.light [style*="rgb(52, 211, 153)"] { color: #047857 !important; }
+html.light [style*="#4ade80" i], html.light [style*="rgb(74, 222, 128)"] { color: #065f46 !important; }
+html.light [style*="#34d399" i], html.light [style*="rgb(52, 211, 153)"] { color: #065f46 !important; }
 html.light [style*="#f0fdfa" i], html.light [style*="rgb(240, 253, 250)"] { color: #0f172a !important; }
 html.light .placeholder-\[\#5a80a6\]::placeholder { color: #3f6184 !important; }
 
