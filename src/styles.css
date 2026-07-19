@@ -508,6 +508,61 @@ html.light [data-keep-dark] .text-slate-500 { color: #64748b !important; }
 html.light [data-keep-dark] .text-\[\#9cb8d9\] { color: #9cb8d9 !important; }
 html.light [data-keep-dark] .text-\[\#f0f6ff\] { color: #f0f6ff !important; }
 
+
+/* Dark islands: undo every inline-style text remap inside them
+   (remaps are for lightened surfaces only). */
+html.light [data-keep-dark] [style*="#8db4d8" i] { color: #8db4d8 !important; }
+html.light [data-keep-dark] [style*="rgb(141, 180, 216)"] { color: #8db4d8 !important; }
+html.light [data-keep-dark] [style*="#5a80a6" i] { color: #5a80a6 !important; }
+html.light [data-keep-dark] [style*="rgb(90, 128, 166)"] { color: #5a80a6 !important; }
+html.light [data-keep-dark] [style*="#8ec5ff" i] { color: #8ec5ff !important; }
+html.light [data-keep-dark] [style*="rgb(142, 197, 255)"] { color: #8ec5ff !important; }
+html.light [data-keep-dark] [style*="#8caad4" i] { color: #8caad4 !important; }
+html.light [data-keep-dark] [style*="rgb(140, 170, 212)"] { color: #8caad4 !important; }
+html.light [data-keep-dark] [style*="#9cb8d9" i] { color: #9cb8d9 !important; }
+html.light [data-keep-dark] [style*="rgb(156, 184, 217)"] { color: #9cb8d9 !important; }
+html.light [data-keep-dark] [style*="#7a9ec2" i] { color: #7a9ec2 !important; }
+html.light [data-keep-dark] [style*="rgb(122, 158, 194)"] { color: #7a9ec2 !important; }
+html.light [data-keep-dark] [style*="#c8daf0" i] { color: #c8daf0 !important; }
+html.light [data-keep-dark] [style*="rgb(200, 218, 240)"] { color: #c8daf0 !important; }
+html.light [data-keep-dark] [style*="#c8dff5" i] { color: #c8dff5 !important; }
+html.light [data-keep-dark] [style*="rgb(200, 223, 245)"] { color: #c8dff5 !important; }
+html.light [data-keep-dark] [style*="#8aa8c8" i] { color: #8aa8c8 !important; }
+html.light [data-keep-dark] [style*="rgb(138, 168, 200)"] { color: #8aa8c8 !important; }
+html.light [data-keep-dark] [style*="#7a98b8" i] { color: #7a98b8 !important; }
+html.light [data-keep-dark] [style*="rgb(122, 152, 184)"] { color: #7a98b8 !important; }
+html.light [data-keep-dark] [style*="#ad976d" i] { color: #ad976d !important; }
+html.light [data-keep-dark] [style*="rgb(173, 151, 109)"] { color: #ad976d !important; }
+html.light [data-keep-dark] [style*="#51a2ff" i] { color: #51a2ff !important; }
+html.light [data-keep-dark] [style*="rgb(81, 162, 255)"] { color: #51a2ff !important; }
+html.light [data-keep-dark] [style*="#10b981" i] { color: #10b981 !important; }
+html.light [data-keep-dark] [style*="rgb(16, 185, 129)"] { color: #10b981 !important; }
+html.light [data-keep-dark] [style*="#34d399" i] { color: #34d399 !important; }
+html.light [data-keep-dark] [style*="rgb(52, 211, 153)"] { color: #34d399 !important; }
+html.light [data-keep-dark] [style*="#4ade80" i] { color: #4ade80 !important; }
+html.light [data-keep-dark] [style*="rgb(74, 222, 128)"] { color: #4ade80 !important; }
+html.light [data-keep-dark] [style*="#ffd84d" i] { color: #ffd84d !important; }
+html.light [data-keep-dark] [style*="rgb(255, 216, 77)"] { color: #ffd84d !important; }
+html.light [data-keep-dark] [style*="#d0e8f5" i] { color: #d0e8f5 !important; }
+html.light [data-keep-dark] [style*="rgb(208, 232, 245)"] { color: #d0e8f5 !important; }
+html.light [data-keep-dark] [style*="#f0f6ff" i] { color: #f0f6ff !important; }
+html.light [data-keep-dark] [style*="rgb(240, 246, 255)"] { color: #f0f6ff !important; }
+html.light [data-keep-dark] [style*="#f0f8ff" i] { color: #f0f8ff !important; }
+html.light [data-keep-dark] [style*="rgb(240, 248, 255)"] { color: #f0f8ff !important; }
+html.light [data-keep-dark] [style*="#c9d8f0" i] { color: #c9d8f0 !important; }
+html.light [data-keep-dark] [style*="rgb(201, 216, 240)"] { color: #c9d8f0 !important; }
+html.light [data-keep-dark] [style*="#e4f0ff" i] { color: #e4f0ff !important; }
+html.light [data-keep-dark] [style*="rgb(228, 240, 255)"] { color: #e4f0ff !important; }
+html.light [data-keep-dark] [style*="#f0fdfa" i] { color: #f0fdfa !important; }
+html.light [data-keep-dark] [style*="rgb(240, 253, 250)"] { color: #f0fdfa !important; }
+
+/* Marketing advert cards: admin text colors are tuned for dark cards —
+   force the dark surface in day mode so the palette stays AA. */
+html.light [data-advert-placement] [data-keep-dark] {
+  background-color: #0b1a30 !important;
+  background-image: none !important;
+}
+
 /* ----------------------------------------------------------------------------
  * Day-mode surface repairs (day-theme axe audit)
  * Components with hardcoded dark backgrounds that the blanket palette above
