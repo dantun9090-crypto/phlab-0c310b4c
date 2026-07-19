@@ -730,6 +730,14 @@ html.light .text-blue-400\/60 { color: #1447e6 !important; opacity: 1 !important
 html.light .text-green-400\/80 { color: #047857 !important; opacity: 1 !important; }
 html.light .text-amber-300\/85 { color: #8a6a2e !important; opacity: 1 !important; }
 
+/* OrderTrackingBar white text on a blue→violet gradient (4.2:1 midpoints) —
+   flatten to solid AA blue in day mode. */
+html.light [class*="to-violet-600"],
+html.light [class*="to-violet-500"] {
+  background-image: none !important;
+  background-color: #1447e6 !important;
+}
+
 /* Blue buttons keep white label text in day mode */
 html.light .bg-blue-600.text-white,
 html.light .bg-blue-600 .text-white,
