@@ -485,11 +485,14 @@ html.light footer {
 
 
 
-/* Keep the admin panel and any opt-out element dark regardless. */
+/* Keep the admin panel and any opt-out element dark regardless.
+   NOTE: `revert` is only safe for .admin-dark (inline-styled). Applied to
+   [data-keep-dark] children it also strips Tailwind class colors (e.g. the
+   advert CTA's bg-emerald-500 + text-[#03131f]) and they fall back to
+   inherited day-link colors on the dark card — exact opposite of the
+   intent. Dark islands instead rely on the explicit restorations below. */
 html.light .admin-dark,
-html.light .admin-dark *,
-html.light [data-keep-dark],
-html.light [data-keep-dark] * {
+html.light .admin-dark * {
   background-color: revert;
   color: revert;
   border-color: revert;
