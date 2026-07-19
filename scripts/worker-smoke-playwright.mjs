@@ -176,7 +176,17 @@ async function main() {
   }
 }
 
-main().catch((e) => {
+main().catch(async (e) => {
   console.error(`::error::[smoke] unexpected error: ${e && e.message}`);
+  // Crashes before fail() (e.g. browser launch) land here — still leave
+  // diagnostics for the artifact upload, including the raw error.
+  try {
+    const fs = await import("node:fs");
+    fs.mkdirSync("smoke-diag", { recursive: true });
+    fs.writeFileSync(
+      "smoke-diag/failure.txt",
+      `unexpected error: ${e && (e.stack || e.message || String(e))}\n`,
+    );
+  } catch { /* best-effort */ }
   process.exitCode = 1;
 });
