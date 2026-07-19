@@ -212,14 +212,19 @@ jobs:
           PLAYWRIGHT_VERSION: 1.61.0
         run: |
           set -uo pipefail
-          mkdir -p smoke-diag
-          npm i --no-save --silent \
-            "playwright@${PLAYWRIGHT_VERSION}" \
-            "@playwright/test@${PLAYWRIGHT_VERSION}" > smoke-diag/npm.log 2>&1
-          echo "npm rc=$?" > smoke-diag/install.rc
-          npx --yes "playwright@${PLAYWRIGHT_VERSION}" install --with-deps chromium > smoke-diag/browser-install.log 2>&1
-          echo "browser-install rc=$?" >> smoke-diag/install.rc
-          ls -la ~/.cache/ms-playwright/ > smoke-diag/browser-cache.txt 2>&1 || true
+          mkdir -p smoke-diag /tmp/smoke-deps
+          # Install into a THROWAWAY dir, not the repo: `npm i <pkg>` inside
+          # the repo also resolves the whole package.json tree (bun-locked,
+          # scripts included) and was dying silently before the smoke ran.
+          cd /tmp/smoke-deps
+          npm init -y > /dev/null 2>&1
+          npm i --silent --ignore-scripts \
+            "playwright@${PLAYWRIGHT_VERSION}" > "$GITHUB_WORKSPACE/smoke-diag/npm.log" 2>&1
+          echo "npm rc=$?" > "$GITHUB_WORKSPACE/smoke-diag/install.rc"
+          npx --yes "playwright@${PLAYWRIGHT_VERSION}" install chromium > "$GITHUB_WORKSPACE/smoke-diag/browser-install.log" 2>&1
+          echo "browser-install rc=$?" >> "$GITHUB_WORKSPACE/smoke-diag/install.rc"
+          cd "$GITHUB_WORKSPACE"
+          export NODE_PATH=/tmp/smoke-deps/node_modules
 
           # Retry up to 3 attempts, 15s apart. Deploy-window transients
           # (0-byte-200 race, brief 5xx during asset swap) resolve within
