@@ -468,6 +468,9 @@ html.light select:focus {
 
 /* Links — quiet emerald, underline on hover */
 html.light a:not([class*="bg-"]):not([class*="text-"]) { color: #047857; }
+/* ...but not inside dark islands: axe also tests the <a> wrapping the
+   advert CTA, which would inherit the day-link green onto the dark card. */
+html.light [data-keep-dark] a:not([class*="bg-"]):not([class*="text-"]) { color: inherit !important; }
 html.light a:not([class*="bg-"]):not([class*="text-"]):hover { color: #065f46; text-decoration: underline; }
 
 /* Dividers */
