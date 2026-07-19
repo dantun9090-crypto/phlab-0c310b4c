@@ -18,9 +18,29 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
+const PATCH_ATTR = "data-theme-surface-patched";
+
+// Remove every inline background this module painted earlier. Called before
+// each re-apply and whenever day mode takes over the palette.
+function clearThemeSurfacePatches() {
+  document.querySelectorAll<HTMLElement>(`[${PATCH_ATTR}]`).forEach((el) => {
+    el.style.backgroundColor = "";
+    el.style.background = "";
+    el.removeAttribute(PATCH_ATTR);
+  });
+}
+
 function applyThemeCSSVars(template: ThemeTemplate) {
   const root = document.documentElement;
   const c = template.colors;
+  // Day mode (html.light) owns the palette via CSS overrides in
+  // styles.css. Painting dark template colors inline here fights those
+  // overrides — inline styles lose to !important only sometimes, which is
+  // exactly how light-mode contrast violations (dark text on repainted
+  // dark surfaces) were produced. In light mode: clean up previous
+  // patches and set CSS vars only.
+  const isLightMode = root.classList.contains("light");
+  clearThemeSurfacePatches();
 
   // Core palette — these map to CSS overrides in index.css
   root.style.setProperty('--theme-primary',     c.primary);
@@ -63,6 +83,13 @@ function applyThemeCSSVars(template: ThemeTemplate) {
   root.style.setProperty('--color-text-secondary', c.text.secondary);
   root.style.setProperty('--color-text-muted',     c.text.muted);
 
+  if (isLightMode) {
+    // CSS vars above are still useful for theme-aware components; surface
+    // painting is owned by the day-mode CSS. Done.
+    root.setAttribute('data-theme', template.id);
+    return;
+  }
+
   // Direct body override for instant visual change
   document.body.style.backgroundColor = c.background;
   document.body.style.color = c.text.primary;
@@ -72,16 +99,19 @@ function applyThemeCSSVars(template: ThemeTemplate) {
   // Force all min-h-screen wrappers (page roots) to use theme background
   document.querySelectorAll<HTMLElement>('.min-h-screen').forEach(el => {
     el.style.backgroundColor = c.background;
+    el.setAttribute(PATCH_ATTR, "1");
   });
 
   // Force nav/header background
   document.querySelectorAll<HTMLElement>('nav, header').forEach(el => {
     el.style.backgroundColor = c.background;
+    el.setAttribute(PATCH_ATTR, "1");
   });
 
   // Force footer background
   document.querySelectorAll<HTMLElement>('footer').forEach(el => {
     el.style.backgroundColor = c.background;
+    el.setAttribute(PATCH_ATTR, "1");
   });
 
   // Patch inline-style section/div backgrounds — catches hardcoded #hex in style props
@@ -108,11 +138,13 @@ function applyThemeCSSVars(template: ThemeTemplate) {
       if (SURFACE_HEX_SET.has(hex)) {
         el.style.backgroundColor = c.surface;
         el.style.background = c.surface;
+        el.setAttribute(PATCH_ATTR, "1");
       } else if (DARK_HEX_SET.has(hex) || BG_RE.test(hex)) {
         // Only replace known dark navy bg shades
         if (DARK_HEX_SET.has(hex)) {
           el.style.backgroundColor = c.background;
           el.style.background = c.background;
+          el.setAttribute(PATCH_ATTR, "1");
         }
       }
     });
@@ -156,6 +188,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       }
     })();
   }, []);
+
+  // Day/night toggle re-applies: in light mode the painter above only
+  // cleans up and sets CSS vars; back in dark mode it repaints surfaces.
+  useEffect(() => {
+    const handler = () => {
+      const t = getTemplateById(activeThemeId) ?? getTemplateById(DEFAULT_TEMPLATE_ID)!;
+      applyThemeCSSVars(t);
+    };
+    window.addEventListener('phlabs:theme-mode-changed', handler);
+    return () => window.removeEventListener('phlabs:theme-mode-changed', handler);
+  }, [activeThemeId]);
 
   const applyTheme = useCallback(async (themeId: string, persist = true) => {
     const newTheme = getTemplateById(themeId);

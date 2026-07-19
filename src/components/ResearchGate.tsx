@@ -392,6 +392,8 @@ export default function ResearchGate() {
           className="rg-modal-overlay"
           role="dialog"
           aria-modal="true"
+          // Compliance gate overlay — stays dark in day mode by design.
+          data-keep-dark
           aria-label="Research use confirmation"
           onClick={(e) => {
             if (e.target === e.currentTarget) {

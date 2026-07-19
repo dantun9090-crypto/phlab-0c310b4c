@@ -91,6 +91,9 @@ export function LandingPromoStrip({ theme = "dark" }: Props) {
     <div
       role="region"
       aria-label="Launch promotion"
+      // Deliberate dark accent bar in both modes — opt out of the day-mode
+      // palette remap so its white-on-navy contrast stays intact.
+      data-keep-dark
       className={`relative z-40 ${wrap}`}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[12px] sm:text-[13px] text-white">

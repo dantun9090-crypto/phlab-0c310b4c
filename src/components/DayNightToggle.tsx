@@ -30,6 +30,11 @@ function applyMode(mode: 'dark' | 'light') {
     root.style.backgroundColor = '#060f1e';
     if (document.body) document.body.style.backgroundColor = '#060f1e';
   }
+  // Let ThemeContext re-apply (clean up its inline surface patches in day
+  // mode, repaint them in night mode).
+  try {
+    window.dispatchEvent(new CustomEvent('phlabs:theme-mode-changed', { detail: mode }));
+  } catch { /* SSR / very old browsers */ }
 }
 
 function initialMode(): 'dark' | 'light' {

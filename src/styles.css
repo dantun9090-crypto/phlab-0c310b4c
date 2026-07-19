@@ -410,8 +410,8 @@ html.light .bg-emerald-600.text-white,
 html.light [class*="bg-emerald-"].text-white { color: #ffffff !important; }
 
 /* Emerald accents — slightly darker for AA on white */
-html.light .text-emerald-400 { color: #059669 !important; }
-html.light .text-emerald-300 { color: #10b981 !important; }
+html.light .text-emerald-400 { color: #047857 !important; }
+html.light .text-emerald-300 { color: #047857 !important; }
 
 /* Borders — single neutral hairline */
 html.light .border-white\/5,
@@ -491,6 +491,191 @@ html.light [data-keep-dark] * {
   color: revert;
   border-color: revert;
 }
+
+/* NOTE on `revert` above: it rolls back to UA styles, which also drops
+   the Tailwind utility colors on class-styled children. The explicit
+   restorations below put the original palette back inside dark islands
+   (LandingPromoStrip, NewsletterPopup dialog, ResearchGate modal). */
+html.light [data-keep-dark] .text-white { color: #ffffff !important; }
+html.light [data-keep-dark] .text-slate-50 { color: #f8fafc !important; }
+html.light [data-keep-dark] .text-slate-100 { color: #f1f5f9 !important; }
+html.light [data-keep-dark] .text-slate-200 { color: #e2e8f0 !important; }
+html.light [data-keep-dark] .text-slate-300 { color: #cbd5e1 !important; }
+html.light [data-keep-dark] .text-slate-400 { color: #94a3b8 !important; }
+html.light [data-keep-dark] .text-slate-500 { color: #64748b !important; }
+html.light [data-keep-dark] .text-\[\#9cb8d9\] { color: #9cb8d9 !important; }
+html.light [data-keep-dark] .text-\[\#f0f6ff\] { color: #f0f6ff !important; }
+
+/* ----------------------------------------------------------------------------
+ * Day-mode surface repairs (day-theme axe audit)
+ * Components with hardcoded dark backgrounds that the blanket palette above
+ * misses: the global text-white → slate-900 remap then produces dark text on
+ * a dark surface (measured 1.03–1.12:1). Repaint the surfaces light.
+ * ------------------------------------------------------------------------- */
+html.light header,
+html.light footer {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border-color: #e5e7eb !important;
+}
+
+/* legacy-styles.css forces --theme-bg (dark) onto .min-h-screen / nav /
+   footer with !important at equal specificity — outrank it in day mode. */
+html.light body .min-h-screen,
+html.light body nav,
+html.light body footer {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border-color: #e5e7eb !important;
+}
+
+/* PremiumLanding arbitrary-value dark surfaces (incl. /90 /95 opacity
+   variants — those generate separate Tailwind classes) */
+html.light .bg-\[\#060b18\],
+html.light .bg-\[\#060b18\]\/90,
+html.light .bg-\[\#060b18\]\/95,
+html.light .bg-\[\#070d1c\],
+html.light .bg-\[\#070d1c\]\/90,
+html.light .bg-\[\#070d1c\]\/95,
+html.light .bg-\[\#080e1f\],
+html.light .bg-\[\#080e1f\]\/90,
+html.light .bg-\[\#080e1f\]\/95 { background-color: #ffffff !important; }
+
+/* HomeSeoIndex band + Products trust/disclaimer bands */
+html.light section[aria-label="Site index"],
+html.light #trust,
+html.light #disclaimer {
+  background-color: #ffffff !important;
+  border-color: #e5e7eb !important;
+}
+
+/* Inline-styled dark surfaces (Products cards/sections, page roots,
+   Home gradient sections — gradients sit in background-image, killed here).
+   IMPORTANT: browsers serialize React inline styles to rgb() in the style
+   attribute, so every hex below is matched in BOTH notations. */
+html.light [style*="#060f1e"], html.light [style*="rgb(6, 15, 30)"],
+html.light [style*="#030812"], html.light [style*="rgb(3, 8, 18)"],
+html.light [style*="#04101f"], html.light [style*="rgb(4, 16, 31)"],
+html.light [style*="#0b1a30"], html.light [style*="rgb(11, 26, 48)"],
+html.light [style*="#100b1a"], html.light [style*="rgb(16, 11, 26)"],
+html.light [style*="#020812"], html.light [style*="rgb(2, 8, 18)"],
+html.light [style*="#030a14" i], html.light [style*="rgb(3, 10, 20)"],
+html.light [style*="#040d1a" i], html.light [style*="rgb(4, 13, 26)"],
+html.light [style*="#061428" i], html.light [style*="rgb(6, 20, 40)"],
+html.light [style*="#060b18" i], html.light [style*="rgb(6, 11, 24)"],
+html.light [style*="#070d1c" i], html.light [style*="rgb(7, 13, 28)"],
+html.light [style*="#080e1f" i], html.light [style*="rgb(8, 14, 31)"],
+html.light [style*="#0b111b" i], html.light [style*="rgb(11, 17, 27)"],
+html.light [style*="rgba(3, 10, 20,"] {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border-color: #e5e7eb !important;
+}
+
+/* Cookie banner + consent borders go light with everything else */
+html.light .bg-\[\#0b1a30\] { background-color: #ffffff !important; }
+html.light .border-white\/[0.06],
+html.light .border-white\/[0.08] { border-color: #e5e7eb !important; }
+
+/* TopStripe announcement bar: inline dark gradient + near-white text */
+html.light [style*="#030914" i], html.light [style*="rgb(3, 9, 20)"],
+html.light [style*="#061426" i], html.light [style*="rgb(6, 20, 38)"] {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border-bottom-color: #e5e7eb !important;
+}
+
+/* Inline-styled near-white texts that turn invisible on the lightened
+   surfaces above (style-attribute selectors — inline styles win the
+   cascade, so these need !important). */
+html.light [style*="#d0e8f5" i], html.light [style*="rgb(208, 232, 245)"],
+html.light .text-\[\#d0e8f5\] { color: #0f172a !important; }
+html.light [style*="#f0f6ff" i], html.light [style*="rgb(240, 246, 255)"],
+html.light .text-\[\#f0f6ff\] { color: #0f172a !important; }
+html.light strong[style*="#10b981"] { color: #047857 !important; }
+
+/* text-white opacity variants (PremiumLanding body copy on lightened cards) */
+html.light .text-white\/50,
+html.light .text-white\/55,
+html.light .text-white\/60 { color: #64748b !important; }
+html.light .text-white\/65,
+html.light .text-white\/70 { color: #475569 !important; }
+html.light .text-white\/75,
+html.light .text-white\/80 { color: #334155 !important; }
+html.light .text-white\/85,
+html.light .text-white\/90 { color: #1e293b !important; }
+
+/* PremiumLanding gold accent — #c9a44c is 2.9:1 on white; darken to ~5:1.
+   opacity-70 variants blend to 2.8:1 — force full opacity in day mode. */
+html.light .gold-text { color: #8a6a2e !important; opacity: 1 !important; }
+
+/* Light-blue inline text palette → AA-on-white shades. The originals were
+   designed for dark surfaces (1.4–2.8:1 on white); replacements keep the
+   same hue family at ≥4.5:1. Style attributes are matched in hex AND rgb()
+   notation (React inline styles serialize to rgb()); class forms use the
+   escaped Tailwind arbitrary-value selector. */
+html.light [style*="#8db4d8" i], html.light [style*="rgb(141, 180, 216)"],
+html.light .text-\[\#8db4d8\] { color: #3a648f !important; }
+html.light [style*="#5a80a6" i], html.light [style*="rgb(90, 128, 166)"],
+html.light .text-\[\#5a80a6\] { color: #3f6184 !important; }
+html.light [style*="#8ec5ff" i], html.light [style*="rgb(142, 197, 255)"] { color: #2f6fb0 !important; }
+html.light [style*="#8caad4" i], html.light [style*="rgb(140, 170, 212)"],
+html.light .text-\[\#8caad4\], html.light .hover\:text-\[\#8caad4\]:hover { color: #4a6f9a !important; }
+html.light [style*="#9cb8d9" i], html.light [style*="rgb(156, 184, 217)"],
+html.light .text-\[\#9cb8d9\] { color: #3a648f !important; }
+html.light [style*="#7a9ec2" i], html.light [style*="rgb(122, 158, 194)"] { color: #46709a !important; }
+html.light [style*="#c8daf0" i], html.light [style*="rgb(200, 218, 240)"] { color: #3a648f !important; }
+html.light [style*="#c8dff5" i], html.light [style*="rgb(200, 223, 245)"] { color: #3a648f !important; }
+html.light [style*="#8aa8c8" i], html.light [style*="rgb(138, 168, 200)"] { color: #4a7196 !important; }
+html.light [style*="#7a98b8" i], html.light [style*="rgb(122, 152, 184)"] { color: #3f6184 !important; }
+html.light [style*="#ad976d" i], html.light [style*="rgb(173, 151, 109)"] { color: #7a6534 !important; }
+html.light [style*="#51a2ff" i], html.light [style*="rgb(81, 162, 255)"] { color: #1d6fd1 !important; }
+html.light [style*="#10b981" i], html.light [style*="rgb(16, 185, 129)"] { color: #047857 !important; }
+html.light [style*="#ffd84d" i], html.light [style*="rgb(255, 216, 77)"] { color: #8a6a2e !important; }
+html.light [style*="#f0f8ff" i], html.light [style*="rgb(240, 248, 255)"] { color: #0f172a !important; }
+html.light [style*="#c9d8f0" i], html.light [style*="rgb(201, 216, 240)"] { color: #334155 !important; }
+html.light [style*="#e4f0ff" i], html.light [style*="rgb(228, 240, 255)"] { color: #0f172a !important; }
+html.light [style*="#4ade80" i], html.light [style*="rgb(74, 222, 128)"] { color: #047857 !important; }
+html.light [style*="#f0fdfa" i], html.light [style*="rgb(240, 253, 250)"] { color: #0f172a !important; }
+html.light .placeholder-\[\#5a80a6\]::placeholder { color: #3f6184 !important; }
+
+/* Class-form custom-hex texts (footer columns, trust badges, consent) */
+html.light .text-\[\#7a9ec2\] { color: #46709a !important; }
+html.light .text-\[\#7a9ec8\] { color: #46709a !important; }
+html.light .text-\[\#c8daf0\] { color: #3a648f !important; }
+html.light .text-\[\#8aa8c8\] { color: #4a7196 !important; }
+html.light .hover\:text-\[\#f0f6ff\]:hover { color: #0f172a !important; }
+
+/* Tailwind accent utilities used on dark-by-default surfaces — darker
+   shades required once those surfaces go white (measured via axe: v4
+   blue-300 #8ec5ff / blue-400 #51a2ff fail AA on white). */
+html.light .text-blue-300 { color: #1d6fd1 !important; }
+html.light .text-blue-400 { color: #1447e6 !important; }
+html.light .text-indigo-400 { color: #4f39f6 !important; }
+html.light .text-green-400 { color: #047857 !important; }
+html.light .text-yellow-300 { color: #8a6a2e !important; }
+html.light .text-amber-300,
+html.light .text-amber-400 { color: #8a6a2e !important; }
+html.light .text-sky-400,
+html.light .text-cyan-400 { color: #1d6fd1 !important; }
+
+/* Opacity-variant accent classes (separate Tailwind classes; blended over
+   white they fall below AA, so force full opacity at the darker shade) */
+html.light .text-emerald-400\/90 { color: #047857 !important; opacity: 1 !important; }
+html.light .text-blue-300\/90 { color: #1d6fd1 !important; opacity: 1 !important; }
+html.light .text-blue-400\/60 { color: #1447e6 !important; opacity: 1 !important; }
+html.light .text-green-400\/80 { color: #047857 !important; opacity: 1 !important; }
+html.light .text-amber-300\/85 { color: #8a6a2e !important; opacity: 1 !important; }
+
+/* Blue buttons keep white label text in day mode */
+html.light .bg-blue-600.text-white,
+html.light .bg-blue-600 .text-white,
+html.light .bg-blue-700.text-white,
+html.light .bg-blue-700 .text-white { color: #ffffff !important; }
+
+/* HomeSeoIndex inline accent colors (rgb() inline notation) */
+html.light [style*="rgb(96, 165, 250)"] { color: #1447e6 !important; }
+html.light [style*="rgb(192, 132, 252)"] { color: #7c3aed !important; }
 
 
 

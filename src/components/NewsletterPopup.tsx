@@ -318,6 +318,8 @@ export default function NewsletterPopup() {
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
+        // Modal overlay — stays dark in day mode (white-on-slate is AA).
+        data-keep-dark
         aria-labelledby="newsletter-popup-title"
         onClick={(e) => e.stopPropagation()}
         className={`relative w-full max-w-[520px] rounded-2xl border border-slate-700/50 shadow-2xl overflow-hidden transition-all duration-300 ${
