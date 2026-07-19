@@ -63,10 +63,16 @@ const CategoryPage = lazyWithRetry(() => import('@/pages/CategoryPage'));
 const PrivacyRequests = lazyWithRetry(() => import('@/pages/PrivacyRequests'));
 
 
-// Minimal spinner shown while lazy chunks load
+// Minimal spinner shown while lazy chunks load.
+// Full-viewport height (not 60vh): with a shorter placeholder the footer
+// rendered inside the first viewport, then got pushed down thousands of
+// px when the real chunk arrived — a guaranteed layout shift on every
+// cold load (~0.2 CLS on /, /products, /research). At 100vh the footer
+// starts below the fold, so its later movement is outside the viewport
+// and does not count toward CLS.
 function PageLoader() {
   return (
-    <div className="min-h-[60vh] flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center">
       <div className="w-5 h-5 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
     </div>
   );
