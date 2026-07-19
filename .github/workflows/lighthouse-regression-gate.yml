@@ -113,10 +113,12 @@ jobs:
               });
             }
             console.table(rows);
-            // Layout-shift forensics: print the elements behind each run's
-            // CLS so a regression names its culprit without downloading
+            // Layout-shift forensics: print the elements behind each run
+            // so a regression names its culprit without downloading
             // artifacts. Full LHRs in .lighthouseci carry node selectors;
             // the uploaded median report has them stripped.
+            // NOTE: no apostrophes anywhere in this script — the whole
+            // node -e payload is wrapped in single quotes by bash.
             for (const f of files) {
               const r = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
               const a = r.audits || {};
