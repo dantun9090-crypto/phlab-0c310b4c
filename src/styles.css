@@ -603,10 +603,11 @@ html.light footer {
 }
 
 /* legacy-styles.css forces --theme-bg (dark) onto .min-h-screen / nav /
-   footer with !important at equal specificity — outrank it in day mode. */
-html.light body .min-h-screen,
-html.light body nav,
-html.light body footer {
+   footer with !important at equal specificity — outrank it in day mode.
+   :not() guard — dark islands (e.g. /compound landing) stay dark. */
+html.light body .min-h-screen:not([data-keep-dark]),
+html.light body nav:not([data-keep-dark]),
+html.light body footer:not([data-keep-dark]) {
   background-color: #ffffff !important;
   background-image: none !important;
   border-color: #e5e7eb !important;

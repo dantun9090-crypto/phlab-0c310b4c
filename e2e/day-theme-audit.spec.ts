@@ -247,9 +247,14 @@ test.describe("Day theme — unified audit", () => {
     expect(icon.replace(/\s+/g, "")).not.toBe("");
 
     // Mouse hover path — text colour must lighten to white.
-    // force: popups (newsletter/live-sales) can overlay the floating pill
-    // in CI — the contract is the style, not z-order.
-    await btn.hover({ force: true });
+    // Hover via explicit pointer position — force:true skips actionability
+    // but does not reliably trigger :hover on every CI browser.
+    const btnBox = await btn.boundingBox();
+    if (btnBox) {
+      await page.mouse.move(btnBox.x + btnBox.width / 2, btnBox.y + btnBox.height / 2);
+    } else {
+      await btn.hover({ force: true });
+    }
     // Allow the 280ms theme transition to settle before asserting.
     await page.waitForTimeout(650);
     const hoverColor = (await rgbOf(btn, "color")).replace(/\s+/g, "");
@@ -277,7 +282,12 @@ test.describe("Day theme — unified audit", () => {
     expect((await svgColor(btn)).replace(/\s+/g, "")).toBe(WHITE);
 
     // Mouse hover: bg → slate-800, icon STAYS white.
-    await btn.hover({ force: true });
+    const hoverBox = await btn.boundingBox();
+    if (hoverBox) {
+      await page.mouse.move(hoverBox.x + hoverBox.width / 2, hoverBox.y + hoverBox.height / 2);
+    } else {
+      await btn.hover({ force: true });
+    }
     // Poll until the 280ms theme transition completes (fixed waits flaked
     // on slow CI runners).
     await expect
