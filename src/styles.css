@@ -636,6 +636,7 @@ html.light [style*="#f0f8ff" i], html.light [style*="rgb(240, 248, 255)"] { colo
 html.light [style*="#c9d8f0" i], html.light [style*="rgb(201, 216, 240)"] { color: #334155 !important; }
 html.light [style*="#e4f0ff" i], html.light [style*="rgb(228, 240, 255)"] { color: #0f172a !important; }
 html.light [style*="#4ade80" i], html.light [style*="rgb(74, 222, 128)"] { color: #047857 !important; }
+html.light [style*="#34d399" i], html.light [style*="rgb(52, 211, 153)"] { color: #047857 !important; }
 html.light [style*="#f0fdfa" i], html.light [style*="rgb(240, 253, 250)"] { color: #0f172a !important; }
 html.light .placeholder-\[\#5a80a6\]::placeholder { color: #3f6184 !important; }
 
