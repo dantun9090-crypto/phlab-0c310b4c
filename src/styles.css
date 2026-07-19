@@ -613,6 +613,24 @@ html.light body footer:not([data-keep-dark]) {
   border-color: #e5e7eb !important;
 }
 
+/* Dark-island children with dark bg classes: the flatten rules above fire
+   on descendants too (they are not themselves marked), so restore their
+   surfaces inside islands. */
+html.light [data-keep-dark] .bg-\[\#060b18\],
+html.light [data-keep-dark] .bg-\[\#060b18\]\/90,
+html.light [data-keep-dark] .bg-\[\#060b18\]\/95 { background-color: #060b18 !important; }
+html.light [data-keep-dark] .bg-\[\#070d1c\],
+html.light [data-keep-dark] .bg-\[\#070d1c\]\/90,
+html.light [data-keep-dark] .bg-\[\#070d1c\]\/95 { background-color: #070d1c !important; }
+html.light [data-keep-dark] .bg-\[\#080e1f\],
+html.light [data-keep-dark] .bg-\[\#080e1f\]\/90,
+html.light [data-keep-dark] .bg-\[\#080e1f\]\/95 { background-color: #080e1f !important; }
+html.light [data-keep-dark] .bg-slate-950 { background-color: #020618 !important; }
+html.light [data-keep-dark] .bg-slate-900 { background-color: #0f172b !important; }
+html.light [data-keep-dark] .bg-slate-800 { background-color: #1d293d !important; }
+html.light [data-keep-dark] .bg-slate-700 { background-color: #314158 !important; }
+html.light [data-keep-dark] .bg-black { background-color: #000000 !important; }
+
 /* PremiumLanding arbitrary-value dark surfaces (incl. /90 /95 opacity
    variants — those generate separate Tailwind classes). :not() guard —
    the landing page itself is a dark island in day mode. */
