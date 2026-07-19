@@ -225,14 +225,16 @@ jobs:
           max=3
           delay=15
           while : ; do
-            echo "::group::UI smoke attempt ${attempt}/${max}"
-            if node scripts/worker-smoke-playwright.mjs; then
-              echo "::endgroup::"
+            echo "=== UI smoke attempt ${attempt}/${max} ==="
+            # Output captured ungrouped: grouped sections collapse in the
+            # raw-logs API, which hid the actual smoke failure twice.
+            if node scripts/worker-smoke-playwright.mjs 2>&1 | tee /tmp/smoke-out.txt; then
               echo "✅ UI smoke passed on attempt ${attempt}"
               exit 0
             fi
             rc=$?
-            echo "::endgroup::"
+            echo "--- smoke output (attempt ${attempt}) ---"
+            cat /tmp/smoke-out.txt
             echo "::warning::UI smoke attempt ${attempt}/${max} failed (exit ${rc})"
             if [ "${attempt}" -ge "${max}" ]; then
               echo "::error::UI smoke failed all ${max} attempts — treating as real failure"
