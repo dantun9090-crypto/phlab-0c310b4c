@@ -574,8 +574,8 @@ html.light [style*="rgba(3, 10, 20,"] {
 
 /* Cookie banner + consent borders go light with everything else */
 html.light .bg-\[\#0b1a30\] { background-color: #ffffff !important; }
-html.light .border-white\/[0.06],
-html.light .border-white\/[0.08] { border-color: #e5e7eb !important; }
+html.light .border-white\/\[0\.06\],
+html.light .border-white\/\[0\.08\] { border-color: #e5e7eb !important; }
 
 /* TopStripe announcement bar: inline dark gradient + near-white text */
 html.light [style*="#030914" i], html.light [style*="rgb(3, 9, 20)"],
