@@ -286,7 +286,13 @@ async function fetchSitemapUrls(): Promise<string[]> {
 async function recachePrerender(): Promise<{ desktop: number; mobile: number; urls: number; ok: boolean }> {
   const token = process.env.PRERENDER_TOKEN;
   if (!token) return { desktop: 0, mobile: 0, urls: 0, ok: false };
-  const urls = await fetchSitemapUrls();
+  // QUOTA GUARD (2026-07-20): cap the per-publish recache to the top 30
+  // sitemap URLs. Full-sitemap desktop+mobile recache was the single
+  // largest quota burner (~48k "manual" renders / 6 days — every Lovable
+  // publish re-rendered 500+ URLs twice). Bots recache the long tail
+  // organically on their next crawl.
+  const MAX_RECACHE_URLS = 30;
+  const urls = (await fetchSitemapUrls()).slice(0, MAX_RECACHE_URLS);
   if (urls.length === 0) return { desktop: 0, mobile: 0, urls: 0, ok: false };
   const post = async (adaptiveType: 'desktop' | 'mobile') => {
     try {

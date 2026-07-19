@@ -124,6 +124,10 @@ const SCANNER_PATH_PREFIXES = [
   "/.env",
   "/.git",
   "/.aws",
+  "/.vscode",
+  "/secrets",
+  "/client_secret",
+  "/user_secrets",
   "/wp-",          // /wp-admin, /wp-login.php, /wp-content, /wp-includes
   "/phpmyadmin",
   "/phpMyAdmin",
@@ -507,9 +511,22 @@ export default {
       });
     }
 
-    // (b) Our own monitoring probes: bypass any prerender consideration.
-    // Stripping cache-buster params is done inside the request URL for the
-    // origin fetch so CF still HITs a warm HTML entry.
+    // (a2) WordPress pingback/trackback spam — UAs shaped like
+    // "WordPress/6.x; https://random-blog.tld". They only crawl legacy
+    // random product IDs and each hit used to become a paid render via
+    // the browser path. Cheap 403 at the edge, before origin AND prerender.
+    if (/^WordPress\//i.test(ua)) {
+      return new Response("Forbidden", {
+        status: 403,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "public, max-age=3600",
+          "X-Robots-Tag": "noindex, nofollow",
+          "Server-Timing": `wp-pingback-block;dur=${Date.now() - startTime}`,
+        },
+      });
+    }
+
     const monitoring = isMonitoringUA(ua);
 
     // (c) Cache-bust probe params — same treatment as monitoring: origin
@@ -855,15 +872,23 @@ export default {
       // forward the phlabs.co.uk URL, which would self-loop through the worker.
       const prerenderTarget = ORIGIN + url.pathname + url.search;
       const prerenderUrl = PRERENDER_SERVICE + "/" + encodeURIComponent(prerenderTarget);
-      const prerenderPromise = fetch(prerenderUrl, {
-        headers: {
-          "X-Prerender-Token": env.PRERENDER_TOKEN || "",
-          "User-Agent": request.headers.get("User-Agent") || "",
-        },
-      }).catch((e) => {
-        console.warn("[PHL-WARN] Prerender.io fetch threw: " + (e && e.message));
-        return null;
-      });
+      // QUOTA GUARD (2026-07-20): monitoring probes (our own CI checkers,
+      // Sentry, Lighthouse) and cache-buster probe params must NEVER trigger
+      // a paid prerender render on the browser path either. The bot-branch
+      // bypass alone was not enough — they still fell through to this
+      // browser MISS path and fired a render anyway (69% of quota burn).
+      const skipPaidRender = monitoring || probeParam;
+      const prerenderPromise = skipPaidRender
+        ? Promise.resolve(null)
+        : fetch(prerenderUrl, {
+            headers: {
+              "X-Prerender-Token": env.PRERENDER_TOKEN || "",
+              "User-Agent": request.headers.get("User-Agent") || "",
+            },
+          }).catch((e) => {
+            console.warn("[PHL-WARN] Prerender.io fetch threw: " + (e && e.message));
+            return null;
+          });
 
       const [originShellRes, prerenderRes] = await Promise.all([
         originShellPromise, prerenderPromise,
