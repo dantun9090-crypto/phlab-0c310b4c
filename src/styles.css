@@ -499,6 +499,16 @@ html.light [data-keep-dark] * {
 html.light [data-keep-dark] .text-white { color: #ffffff !important; }
 html.light [data-keep-dark] .text-white\/70 { color: rgba(255, 255, 255, 0.7) !important; }
 html.light [data-keep-dark] .text-white\/80 { color: rgba(255, 255, 255, 0.8) !important; }
+html.light [data-keep-dark] .text-emerald-300,
+html.light [data-keep-dark] .text-emerald-400 { color: #34d399 !important; }
+html.light [data-keep-dark] .text-green-400 { color: #4ade80 !important; }
+html.light [data-keep-dark] .text-blue-300 { color: #8ec5ff !important; }
+html.light [data-keep-dark] .text-blue-400 { color: #51a2ff !important; }
+html.light [data-keep-dark] .text-indigo-400 { color: #7d87ff !important; }
+html.light [data-keep-dark] .text-sky-400,
+html.light [data-keep-dark] .text-cyan-400 { color: #22d3ee !important; }
+html.light [data-keep-dark] .text-yellow-300 { color: #ffd84d !important; }
+html.light [data-keep-dark] .gold-text { color: #c9a44c !important; opacity: 1 !important; }
 html.light [data-keep-dark] .text-slate-50 { color: #f8fafc !important; }
 html.light [data-keep-dark] .text-slate-100 { color: #f1f5f9 !important; }
 html.light [data-keep-dark] .text-slate-200 { color: #e2e8f0 !important; }
@@ -561,6 +571,9 @@ html.light [data-keep-dark] [style*="rgb(240, 253, 250)"] { color: #f0fdfa !impo
 html.light [data-advert-placement] [data-keep-dark] {
   background-color: #0b1a30 !important;
   background-image: none !important;
+}
+html.light [data-advert-placement] [data-keep-dark] p {
+  color: #f0f6ff !important;
 }
 
 /* ----------------------------------------------------------------------------
@@ -715,6 +728,8 @@ html.light .hover\:text-\[\#f0f6ff\]:hover { color: #0f172a !important; }
 html.light .text-blue-300 { color: #1d6fd1 !important; }
 html.light .text-blue-400 { color: #1447e6 !important; }
 html.light .text-indigo-400 { color: #4f39f6 !important; }
+html.light .text-violet-300 { color: #6d28d9 !important; }
+html.light .text-violet-400 { color: #6d28d9 !important; }
 html.light .text-green-400 { color: #047857 !important; }
 html.light .text-yellow-300 { color: #8a6a2e !important; }
 html.light .text-amber-300,
