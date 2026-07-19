@@ -1338,7 +1338,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
           suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var s=localStorage.getItem('phlabs-theme-mode');var m=(s==='light')?'light':'dark';var d=document.documentElement;if(m==='light'){d.classList.add('light');d.setAttribute('data-theme-mode','light');d.style.backgroundColor='#ffffff';}else{d.classList.remove('light');d.setAttribute('data-theme-mode','dark');}}catch(e){}})();",
+              "(function(){try{var s=localStorage.getItem('phlabs-theme-mode');var m=(s==='light')?'light':'dark';var d=document.documentElement;if(m==='light'){d.classList.add('light');d.classList.remove('dark');d.setAttribute('data-theme-mode','light');d.style.backgroundColor='#ffffff';}else{d.classList.remove('light');d.classList.add('dark');d.setAttribute('data-theme-mode','dark');}}catch(e){}})();",
 
           }}
         />

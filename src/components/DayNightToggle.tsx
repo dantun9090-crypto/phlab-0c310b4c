@@ -21,11 +21,15 @@ function applyMode(mode: 'dark' | 'light') {
   const root = document.documentElement;
   if (mode === 'light') {
     root.classList.add('light');
+    root.classList.remove('dark');
     root.setAttribute('data-theme-mode', 'light');
     root.style.backgroundColor = '#ffffff';
     if (document.body) document.body.style.backgroundColor = '#ffffff';
   } else {
     root.classList.remove('light');
+    // The shadcn dark token map lives under `.dark` (styles.css) — without
+    // this class the light :root defaults leak into night mode.
+    root.classList.add('dark');
     root.setAttribute('data-theme-mode', 'dark');
     root.style.backgroundColor = '#060f1e';
     if (document.body) document.body.style.backgroundColor = '#060f1e';

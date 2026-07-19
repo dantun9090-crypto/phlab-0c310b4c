@@ -247,9 +247,11 @@ test.describe("Day theme — unified audit", () => {
     expect(icon.replace(/\s+/g, "")).not.toBe("");
 
     // Mouse hover path — text colour must lighten to white.
-    await btn.hover();
-    // Allow style update to apply.
-    await page.waitForTimeout(50);
+    // force: popups (newsletter/live-sales) can overlay the floating pill
+    // in CI — the contract is the style, not z-order.
+    await btn.hover({ force: true });
+    // Allow the 280ms theme transition to settle before asserting.
+    await page.waitForTimeout(350);
     const hoverColor = (await rgbOf(btn, "color")).replace(/\s+/g, "");
     expect(hoverColor).toBe(WHITE);
   });
@@ -275,8 +277,9 @@ test.describe("Day theme — unified audit", () => {
     expect((await svgColor(btn)).replace(/\s+/g, "")).toBe(WHITE);
 
     // Mouse hover: bg → slate-800, icon STAYS white.
-    await btn.hover();
-    await page.waitForTimeout(50);
+    await btn.hover({ force: true });
+    // Allow the 280ms theme transition to settle before asserting.
+    await page.waitForTimeout(350);
     expect((await rgbOf(btn, "backgroundColor")).replace(/\s+/g, "")).toBe(
       SLATE_800,
     );
@@ -481,39 +484,66 @@ test.describe("Day theme — unified audit", () => {
     await waitForTheme(page, "dark");
     await stabilise(page);
 
-    const vars = await page.evaluate(() => {
+    // Any CSS color (incl. oklab/oklch, which Tailwind v4 emits) → pixel
+    // luma (0–100) + hue (0–360), computed in-page.
+    const parsed = await page.evaluate(() => {
       const cs = getComputedStyle(document.documentElement);
       const get = (n: string) => cs.getPropertyValue(n).trim();
+      const analyze = (raw: string) => {
+        const canvas = document.createElement("canvas");
+        canvas.width = canvas.height = 1;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) return { l: NaN, h: NaN };
+        // Composite over the page background so alpha-token colors
+        // (e.g. dark-mode --border = white at 10%) read as intended.
+        ctx.fillStyle = cs.getPropertyValue("--background").trim() || "#000";
+        ctx.fillRect(0, 0, 1, 1);
+        ctx.fillStyle = raw;
+        ctx.fillRect(0, 0, 1, 1);
+        const d = ctx.getImageData(0, 0, 1, 1).data;
+        const l = (0.2126 * d[0] + 0.7152 * d[1] + 0.0722 * d[2]) / 2.55;
+        const [r, g, b] = [d[0] / 255, d[1] / 255, d[2] / 255];
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let h = 0;
+        if (max !== min) {
+          const dd = max - min;
+          h =
+            (max === r
+              ? ((g - b) / dd) % 6
+              : max === g
+                ? (b - r) / dd + 2
+                : (r - g) / dd + 4) * 60;
+          if (h < 0) h += 360;
+        }
+        return { l, h };
+      };
       return {
-        background: get("--background"),
-        foreground: get("--foreground"),
-        card: get("--card"),
-        border: get("--border"),
-        primary: get("--primary"),
-        ring: get("--ring"),
+        background: { raw: get("--background"), ...analyze(get("--background")) },
+        foreground: { raw: get("--foreground"), ...analyze(get("--foreground")) },
+        card: { raw: get("--card"), ...analyze(get("--card")) },
+        border: { raw: get("--border"), ...analyze(get("--border")) },
+        primary: { raw: get("--primary") },
+        ring: { raw: get("--ring"), ...analyze(get("--ring")) },
       };
     });
+    const vars = Object.fromEntries(
+      Object.entries(parsed).map(([k, v]) => [k, (v as { raw: string }).raw]),
+    );
 
     // All tokens must be set in dark mode.
     for (const [k, v] of Object.entries(vars)) {
-      expect(v.length, `--${k} missing in html.dark`).toBeGreaterThan(0);
+      expect((v as string).length, `--${k} missing in html.dark`).toBeGreaterThan(0);
     }
 
-    // Helper: HSL "H S% L%" → lightness as number.
-    const lightness = (hsl: string) => {
-      const m = hsl.match(/(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)%\s+(-?\d+(?:\.\d+)?)%/);
-      return m ? Number(m[3]) : NaN;
-    };
-
-    // Background + card must be DARK surfaces (lightness < 20%).
-    expect(lightness(vars.background)).toBeLessThan(20);
-    expect(lightness(vars.card)).toBeLessThan(25);
-    // Foreground must be LIGHT (lightness > 80%) for contrast.
-    expect(lightness(vars.foreground)).toBeGreaterThan(80);
-    // Border must stay subtle on dark (lightness < 35%).
-    expect(lightness(vars.border)).toBeLessThan(35);
+    // Background + card must be DARK surfaces (luma < 20%).
+    expect(parsed.background.l).toBeLessThan(20);
+    expect(parsed.card.l).toBeLessThan(25);
+    // Foreground must be LIGHT (luma > 80%) for contrast.
+    expect(parsed.foreground.l).toBeGreaterThan(80);
+    // Border must stay subtle on dark (luma < 35%).
+    expect(parsed.border.l).toBeLessThan(35);
     // Ring must remain the emerald accent (hue near 160).
-    const ringHue = Number(vars.ring.split(/\s+/)[0]);
+    const ringHue = parsed.ring.h;
     expect(ringHue).toBeGreaterThan(140);
     expect(ringHue).toBeLessThan(180);
 
