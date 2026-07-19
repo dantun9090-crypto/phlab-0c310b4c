@@ -84,8 +84,19 @@ function applyThemeCSSVars(template: ThemeTemplate) {
   root.style.setProperty('--color-text-muted',     c.text.muted);
 
   if (isLightMode) {
-    // CSS vars above are still useful for theme-aware components; surface
-    // painting is owned by the day-mode CSS. Done.
+    // Day mode owns the palette. CRITICAL: legacy-styles.css binds
+    // .min-h-screen / nav / footer to var(--theme-bg) with !important at
+    // high specificity — leaving the DARK template values in these vars
+    // would keep those surfaces dark under html.light (and the day-mode
+    // text remaps would land dark-on-dark). Point the vars at the day
+    // palette instead; the day-mode CSS overrides handle the rest.
+    root.style.setProperty('--theme-bg', '#ffffff');
+    root.style.setProperty('--theme-surface', '#ffffff');
+    root.style.setProperty('--theme-surface2', '#f8fafc');
+    root.style.setProperty('--theme-text', '#0f172a');
+    root.style.setProperty('--theme-text-sub', '#475569');
+    root.style.setProperty('--theme-text-muted', '#64748b');
+    root.style.setProperty('--theme-border', '#e5e7eb');
     root.setAttribute('data-theme', template.id);
     return;
   }
