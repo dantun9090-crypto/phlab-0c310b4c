@@ -3,7 +3,8 @@ import { useLocation } from 'react-router-dom';
 import { X, Package } from 'lucide-react';
 import { useLiveOrders } from '@/hooks/useLiveOrders';
 import { formatLivePopupText, type LiveOrder } from '@/lib/orderFormatter';
-import { auth } from '@/lib/firebase';
+// Firebase SDK loaded lazily — see auth usage below.
+
 
 interface PopupState {
   order: LiveOrder | null;
@@ -51,7 +52,14 @@ export default function LiveSalesPopup() {
   const reduced = useMemo(() => prefersReducedMotion(), []);
 
   const isHomePage = pathname === '/' || pathname === '/index';
-  const currentUid = auth.currentUser?.uid;
+  // Lazy: auth may not be initialised yet during early paint — treat as
+  // signed out until the SDK chunk has loaded.
+  const [currentUid, setCurrentUid] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    let live = true;
+    import('@/lib/firebase').then(({ auth }) => { if (live) setCurrentUid(auth.currentUser?.uid); }).catch(() => {});
+    return () => { live = false; };
+  }, []);
   const [currentUidHash, setCurrentUidHash] = useState<string | null>(null);
 
   // Compute the same short sha256 hash the server exposes, so we can hide

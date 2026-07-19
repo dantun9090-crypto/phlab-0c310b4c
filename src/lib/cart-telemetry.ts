@@ -15,8 +15,9 @@
  * Mirrors `src/lib/auth-events.ts` patterns — locked schema in firestore.rules.
  */
 
-import { db } from '@/lib/firebase';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+// Firebase SDK loads on demand — telemetry writes are fire-and-forget and
+// must never pull the SDK into the initial bundle. Runtime symbols come
+// from the dynamic import at the write site below.
 
 export type CartEventType =
   | 'storage_write_failure'      // localStorage.setItem threw (quota / disabled)
@@ -106,7 +107,9 @@ export function logCartEvent(input: CartEventInput): void {
       extra: input.extra
         ? safe(JSON.stringify(input.extra).slice(0, 500), 500)
         : null,
-      createdAt: serverTimestamp(),
+      // ISO string instead of serverTimestamp(): keeps the module
+      // firebase-free at import time; precision is irrelevant for telemetry.
+      createdAt: new Date().toISOString(),
     };
 
     const isFailure =
@@ -134,10 +137,12 @@ export function logCartEvent(input: CartEventInput): void {
     if (input.consoleOnly) return;
     if (!shouldSend(input.type, input.key)) return;
 
-    addDoc(collection(db, 'cart_events'), payload).catch((e) => {
-      // eslint-disable-next-line no-console
-      console.warn('[cart-event] Firestore write failed', (e as { code?: string; message?: string })?.code || (e as { message?: string })?.message || e);
-    });
+    void Promise.all([import('@/lib/firebase'), import('firebase/firestore')])
+      .then(([{ db }, { addDoc, collection }]) => addDoc(collection(db, 'cart_events'), payload))
+      .catch((e) => {
+        // eslint-disable-next-line no-console
+        console.warn('[cart-event] Firestore write failed', (e as { code?: string; message?: string })?.code || (e as { message?: string })?.message || e);
+      });
   } catch (e) {
     // Telemetry must NEVER break the cart flow
     // eslint-disable-next-line no-console

@@ -5,7 +5,9 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 
-import { db, doc, getDoc, setDoc } from '@/lib/firebase';
+// Type-only/zero-runtime: SDK loads on demand via dynamic import so the
+// initial bundle stays Firebase-free.
+
 import { getTemplateById, DEFAULT_TEMPLATE_ID, type ThemeTemplate } from '@/themes/templates';
 
 interface ThemeContextValue {
@@ -137,6 +139,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     // Background sync from Firestore
     (async () => {
       try {
+        const { getDoc, doc, db } = await import('@/lib/firebase');
         const snap = await getDoc(doc(db, 'settings', 'activeTheme'));
         if (snap.exists()) {
           const id = snap.data()?.templateId as string;
@@ -165,6 +168,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
     if (persist) {
       try {
+        const { setDoc, doc, db } = await import('@/lib/firebase');
         await setDoc(doc(db, 'settings', 'activeTheme'), {
           templateId: newTheme.id,
           appliedAt: new Date().toISOString(),

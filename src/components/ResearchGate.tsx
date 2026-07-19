@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
-import { db, collection, query, where, getDocsFromServer, limit } from '@/lib/firebase';
+// Type-only/zero-runtime: Firestore access is deep inside an async helper
+// (fetchProductRequiresGate) that only runs on product pages after user
+// interaction context — the SDK chunk loads there, not at boot.
+
 
 const STORAGE_KEY = 'php_research_confirmed';
 const EXPIRY_DAYS = 30;
@@ -35,6 +38,7 @@ function notifyGateCleared() {
 // Fetch whether a product requires the research gate by slug
 async function fetchProductRequiresGate(slug: string): Promise<boolean | null> {
   try {
+    const { db, collection, query, where, getDocsFromServer, limit } = await import('@/lib/firebase');
     const snap = await getDocsFromServer(query(collection(db, 'product_stock'), where('slug', '==', slug), limit(1)));
     if (!snap.empty) return snap.docs[0].data().requiresResearchGate === true;
     // Fallback: try matching by name-derived slug

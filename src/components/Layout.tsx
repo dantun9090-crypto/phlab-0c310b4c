@@ -8,8 +8,10 @@ import {
   ArrowRight, Microscope, TestTube, Dna, Settings as SettingsIcon,
   Lock, Landmark, BadgeCheck, Search, Truck, Menu
 } from 'lucide-react';
-import { auth, db, doc, getDoc, onAuthStateChanged, FirebaseUser, getAllProducts } from '@/lib/firebase';
-import type { Product } from '@/lib/firebase';
+// Type-only import: erased at build time, so the Firebase SDK stays out of
+// the initial bundle. All runtime access goes through dynamic import()
+// inside effects (the SDK chunk loads once, on demand, after first paint).
+import type { FirebaseUser, Product } from '@/lib/firebase';
 
 // Articles bundle (~196KB) is loaded lazily — only when the search panel opens —
 // to keep it off the critical path of every page render.
@@ -330,6 +332,7 @@ export function Layout({ children }: LayoutProps) {
   useEffect(() => {
     const load = () => {
       // Fetch fresh from Firestore (localStorage already loaded synchronously above)
+      import('@/lib/firebase').then(({ getDoc, doc, db }) =>
       getDoc(doc(db, 'settings', 'siteSettings')).then(snap => {
         if (snap.exists()) {
           const data = snap.data();
@@ -338,7 +341,7 @@ export function Layout({ children }: LayoutProps) {
           setSiteSettings(prev => ({ ...prev, ...data, trueLayerEnabled: trueLayerOn, bankTransferEnabled: bankOn }));
           try { localStorage.setItem('php_site_settings', JSON.stringify(data)); } catch { /* ignore */ }
         }
-      }).catch(() => {});
+      }).catch(() => {}));
     };
     if (typeof requestIdleCallback !== 'undefined') {
       requestIdleCallback(load, { timeout: 5000 });
@@ -403,29 +406,34 @@ export function Layout({ children }: LayoutProps) {
       m.completeGoogleRedirect?.().catch(() => { /* ignore */ });
     }).catch(() => { /* ignore */ });
 
-    const unsub = onAuthStateChanged(auth, (user) => {
-      setFirebaseUser(user);
-      if (user) {
-        // Defer Firestore profile read — not needed for above-fold rendering
-        const loadProfile = () => {
-          getDoc(doc(db, 'customers', user.uid)).then(snap => {
-            if (snap.exists()) {
-              setIsAdmin(snap.data()?.isAdmin === true);
-              setIsVip(snap.data()?.isVip === true);
-            }
-          }).catch(() => { /* ignore */ });
-        };
-        if (typeof requestIdleCallback !== 'undefined') {
-          requestIdleCallback(loadProfile, { timeout: 2000 });
+    let unsub: (() => void) | undefined;
+    let cancelled = false;
+    import('@/lib/firebase').then(({ onAuthStateChanged, auth, getDoc, doc, db }) => {
+      if (cancelled) return;
+      unsub = onAuthStateChanged(auth, (user) => {
+        setFirebaseUser(user);
+        if (user) {
+          // Defer Firestore profile read — not needed for above-fold rendering
+          const loadProfile = () => {
+            getDoc(doc(db, 'customers', user.uid)).then(snap => {
+              if (snap.exists()) {
+                setIsAdmin(snap.data()?.isAdmin === true);
+                setIsVip(snap.data()?.isVip === true);
+              }
+            }).catch(() => { /* ignore */ });
+          };
+          if (typeof requestIdleCallback !== 'undefined') {
+            requestIdleCallback(loadProfile, { timeout: 2000 });
+          } else {
+            setTimeout(loadProfile, 300);
+          }
         } else {
-          setTimeout(loadProfile, 300);
+          setIsAdmin(false);
+          setIsVip(false);
         }
-      } else {
-        setIsAdmin(false);
-        setIsVip(false);
-      }
-    });
-    return () => unsub();
+      });
+    }).catch(() => { /* ignore */ });
+    return () => { cancelled = true; unsub?.(); };
   }, []);
 
   // Idle auto-logout — sign user out after 30 minutes of inactivity.
@@ -492,7 +500,7 @@ export function Layout({ children }: LayoutProps) {
   useEffect(() => {
     let cancelled = false;
     const load = () => {
-      getAllProducts().then((prods) => {
+      import('@/lib/firebase').then(({ getAllProducts }) => getAllProducts()).then((prods) => {
         if (!cancelled) setSearchProducts(prods);
       }).catch(() => {
         if (!cancelled) setSearchProducts([]);

@@ -9,7 +9,8 @@
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { X, Loader2, CheckCircle2, Mail, ImageOff } from 'lucide-react';
-import { auth } from '@/lib/firebase';
+// Firebase SDK loaded lazily — auth is only read deep in an async effect.
+
 import {
   getPopupConfig,
   type PopupConfig,
@@ -201,7 +202,11 @@ export default function NewsletterPopup() {
       if (!cfg.isEnabled) return;
       if (withinCooldown(cfg.cooldownDays)) return;
 
-      const currentEmail = auth.currentUser?.email;
+      let currentEmail: string | undefined;
+      try {
+        const { auth } = await import('@/lib/firebase');
+        currentEmail = auth.currentUser?.email ?? undefined;
+      } catch { /* SDK chunk unavailable — treat as anonymous */ }
       if (currentEmail) {
         const already = await isEmailSubscribed(currentEmail);
         if (cancelled || already) return;
