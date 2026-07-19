@@ -97,6 +97,22 @@ function applyThemeCSSVars(template: ThemeTemplate) {
     root.style.setProperty('--theme-text-sub', '#475569');
     root.style.setProperty('--theme-text-muted', '#64748b');
     root.style.setProperty('--theme-border', '#e5e7eb');
+    // legacy-styles.css also maps .text-blue-400/.text-blue-500 and
+    // .bg-blue-600/.bg-blue-700 to var(--theme-accent)/var(--theme-primary)
+    // at (0,3,1) — outranking the day-mode remaps. Point those vars at
+    // AA-on-white values too (and the navy tokens they alias).
+    root.style.setProperty('--theme-primary', '#1447e6');
+    root.style.setProperty('--theme-secondary', '#1d6fd1');
+    root.style.setProperty('--theme-accent', '#047857');
+    root.style.setProperty('--color-navy-950', '#ffffff');
+    root.style.setProperty('--color-navy-900', '#ffffff');
+    root.style.setProperty('--color-navy-800', '#f8fafc');
+    root.style.setProperty('--color-blue-vivid', '#1447e6');
+    root.style.setProperty('--color-blue-bright', '#1d6fd1');
+    root.style.setProperty('--color-blue-light', '#38bdf8');
+    root.style.setProperty('--color-text-primary', '#0f172a');
+    root.style.setProperty('--color-text-secondary', '#475569');
+    root.style.setProperty('--color-text-muted', '#64748b');
     root.setAttribute('data-theme', template.id);
     return;
   }
