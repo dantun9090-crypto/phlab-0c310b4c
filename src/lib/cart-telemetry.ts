@@ -94,7 +94,7 @@ export function logCartEvent(input: CartEventInput): void {
   try {
     if (!ALLOWED_TYPES.has(input.type)) return;
 
-    const payload = {
+    const payload: Record<string, unknown> = {
       type: input.type,
       memoryCount: typeof input.memoryCount === 'number' ? input.memoryCount : null,
       storedCount: typeof input.storedCount === 'number' ? input.storedCount : null,
@@ -107,9 +107,6 @@ export function logCartEvent(input: CartEventInput): void {
       extra: input.extra
         ? safe(JSON.stringify(input.extra).slice(0, 500), 500)
         : null,
-      // ISO string instead of serverTimestamp(): keeps the module
-      // firebase-free at import time; precision is irrelevant for telemetry.
-      createdAt: new Date().toISOString(),
     };
 
     const isFailure =
@@ -137,12 +134,17 @@ export function logCartEvent(input: CartEventInput): void {
     if (input.consoleOnly) return;
     if (!shouldSend(input.type, input.key)) return;
 
+    // createdAt MUST be serverTimestamp() — firestore.rules enforces
+    // `request.resource.data.createdAt == request.time` on /cart_events.
     void Promise.all([import('@/lib/firebase'), import('firebase/firestore')])
-      .then(([{ db }, { addDoc, collection }]) => addDoc(collection(db, 'cart_events'), payload))
+      .then(([{ db }, { addDoc, collection, serverTimestamp }]) =>
+        addDoc(collection(db, 'cart_events'), { ...payload, createdAt: serverTimestamp() }),
+      )
       .catch((e) => {
         // eslint-disable-next-line no-console
         console.warn('[cart-event] Firestore write failed', (e as { code?: string; message?: string })?.code || (e as { message?: string })?.message || e);
       });
+
   } catch (e) {
     // Telemetry must NEVER break the cart flow
     // eslint-disable-next-line no-console
