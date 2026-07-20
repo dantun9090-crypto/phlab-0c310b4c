@@ -510,8 +510,15 @@ html.light [data-keep-dark].text-white,
 html.light [data-keep-dark] .text-white { color: #ffffff !important; }
 html.light [data-keep-dark].hover\:text-white:hover,
 html.light [data-keep-dark] .hover\:text-white:hover { color: #ffffff !important; }
+html.light [data-keep-dark] .text-white\/50 { color: rgba(255, 255, 255, 0.5) !important; }
+html.light [data-keep-dark] .text-white\/55 { color: rgba(255, 255, 255, 0.55) !important; }
+html.light [data-keep-dark] .text-white\/60 { color: rgba(255, 255, 255, 0.6) !important; }
+html.light [data-keep-dark] .text-white\/65 { color: rgba(255, 255, 255, 0.65) !important; }
 html.light [data-keep-dark] .text-white\/70 { color: rgba(255, 255, 255, 0.7) !important; }
+html.light [data-keep-dark] .text-white\/75 { color: rgba(255, 255, 255, 0.75) !important; }
 html.light [data-keep-dark] .text-white\/80 { color: rgba(255, 255, 255, 0.8) !important; }
+html.light [data-keep-dark] .text-white\/85 { color: rgba(255, 255, 255, 0.85) !important; }
+html.light [data-keep-dark] .text-white\/90 { color: rgba(255, 255, 255, 0.9) !important; }
 html.light [data-keep-dark] .text-emerald-300,
 html.light [data-keep-dark] .text-emerald-400 { color: #34d399 !important; }
 html.light [data-keep-dark] .text-green-400 { color: #4ade80 !important; }
@@ -611,6 +618,13 @@ html.light body footer:not([data-keep-dark]) {
   background-color: #ffffff !important;
   background-image: none !important;
   border-color: #e5e7eb !important;
+}
+
+/* ...but legacy's own rule paints var(--theme-bg) (WHITE in day mode) onto
+   EVERY .min-h-screen at (0,3,1), including marked islands. Restore the
+   island surface with higher specificity. */
+html.light body .min-h-screen[data-keep-dark] {
+  background-color: #060b18 !important;
 }
 
 
