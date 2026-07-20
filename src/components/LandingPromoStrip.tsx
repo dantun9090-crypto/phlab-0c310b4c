@@ -94,6 +94,16 @@ export function LandingPromoStrip({ theme = "dark" }: Props) {
       // Deliberate dark accent bar in both modes — opt out of the day-mode
       // palette remap so its white-on-navy contrast stays intact.
       data-keep-dark
+      // System font stack ONLY for this strip: the web font (Inter Tight)
+      // loads post-hydration with display=swap, and its wider advance widths
+      // re-wrap this flex row (110px → 195px on mobile), pushing the trust
+      // strip down ~70px — measured as CLS 0.16–0.20 in Lighthouse. Pinning
+      // a system stack means the first-paint layout IS the final layout.
+      // The strip is functional UI (codes + CTA), not brand typography.
+      style={{
+        fontFamily:
+          "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif",
+      }}
       className={`relative z-40 ${wrap}`}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[12px] sm:text-[13px] text-white">
