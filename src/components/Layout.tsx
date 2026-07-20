@@ -891,6 +891,11 @@ export function Layout({ children }: LayoutProps) {
 
       </header>}
 
+      {/* Day/night palette toggle (floating pill, self-positioned).
+          Legacy routes bypass __root.tsx (separate react-router tree under
+          LegacyApp), so the toggle must live here as well as in __root. */}
+      {!isCleanPage && <DayNightToggle />}
+
       {/* Professional disclaimer banner — full-width amber strip below header */}
       {disclaimerVisible && <DisclaimerBanner />}
 
