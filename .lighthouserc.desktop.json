@@ -7,7 +7,7 @@
         "https://phlabs.co.uk/compound",
         "https://phlabs.co.uk/research"
       ],
-      "numberOfRuns": 5,
+      "numberOfRuns": 4,
       "settings": {
         "preset": "desktop",
         "chromeFlags": "--no-sandbox --headless=new",

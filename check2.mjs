@@ -1,0 +1,11 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch();
+const ctx = await b.newContext({ userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36' });
+const page = await ctx.newPage();
+page.on('console', m => console.log('CON', m.type(), m.text().slice(0,200)));
+page.on('pageerror', e => console.log('ERR', String(e).slice(0,400)));
+page.on('requestfailed', r => console.log('REQFAIL', r.url().slice(0,120), r.failure()?.errorText));
+await page.goto('http://127.0.0.1:8081/compound', { waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(15000);
+console.log(await page.evaluate(() => document.body.innerText.slice(0,150)));
+await b.close();
