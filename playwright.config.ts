@@ -19,6 +19,9 @@ import { defineConfig, devices } from "@playwright/test";
  */
 export default defineConfig({
   testDir: "./e2e",
+  // Warms the vite transform cache so first-hit tests don't scan the CSR
+  // boot fallback (see e2e/global-setup.ts).
+  globalSetup: "./e2e/global-setup.ts",
   timeout: 30_000,
   expect: {
     timeout: 10_000,

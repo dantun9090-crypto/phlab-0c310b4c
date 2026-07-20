@@ -231,6 +231,10 @@ async function svgColor(btn: Locator) {
 }
 
 test.describe("Day theme — unified audit", () => {
+  // stabilise() waits out slow CSR boots on cold CI dev-servers; the default
+  // 30s project timeout is too tight for the shell-detach + landmark +
+  // networkidle + settle chain.
+  test.setTimeout(120_000);
   // ---------- 1. axe ----------
   for (const path of PAGES) {
     test(`axe: no critical/serious violations in light mode @ ${path}`, async ({
