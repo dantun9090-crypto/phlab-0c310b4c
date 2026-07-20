@@ -15,86 +15,151 @@
       }
     },
     "assert": {
-      "assertions": {
-        "categories:performance": [
-          "error",
-          {
-            "minScore": 0.45
-          }
-        ],
-        "categories:seo": [
-          "error",
-          {
-            "minScore": 0.95
-          }
-        ],
-        "categories:accessibility": [
-          "warn",
-          {
-            "minScore": 0.9
-          }
-        ],
-        "categories:best-practices": [
-          "warn",
-          {
-            "minScore": 0.9
-          }
-        ],
-        "cumulative-layout-shift": [
-          "error",
-          {
-            "maxNumericValue": 0.5
-          }
-        ],
-        "largest-contentful-paint": [
-          "error",
-          {
-            "maxNumericValue": 2100
-          }
-        ],
-        "first-contentful-paint": [
-          "error",
-          {
-            "maxNumericValue": 800
-          }
-        ],
-        "total-blocking-time": [
-          "error",
-          {
-            "maxNumericValue": 400
-          }
-        ],
-        "speed-index": [
-          "warn",
-          {
-            "maxNumericValue": 4000
-          }
-        ],
-        "interactive": [
-          "warn",
-          {
-            "maxNumericValue": 4500
-          }
-        ],
-        "uses-responsive-images": "warn",
-        "uses-optimized-images": "warn",
-        "unsized-images": "error",
-        "image-size-responsive": "warn",
-        "font-display": "warn",
-        "prioritize-lcp-image": "warn",
-        "layout-shifts": "off",
-        "layout-shift-elements": "off"
-      },
       "assertMatrix": [
         {
           "matchingUrlPattern": "https://phlabs\\.co\\.uk/research$",
           "assertions": {
+            "categories:performance": [
+              "error",
+              {
+                "minScore": 0.45
+              }
+            ],
+            "categories:seo": [
+              "error",
+              {
+                "minScore": 0.95
+              }
+            ],
+            "categories:accessibility": [
+              "warn",
+              {
+                "minScore": 0.9
+              }
+            ],
+            "categories:best-practices": [
+              "warn",
+              {
+                "minScore": 0.9
+              }
+            ],
+            "cumulative-layout-shift": [
+              "error",
+              {
+                "maxNumericValue": 0.5
+              }
+            ],
+            "largest-contentful-paint": [
+              "error",
+              {
+                "maxNumericValue": 2100
+              }
+            ],
+            "first-contentful-paint": [
+              "error",
+              {
+                "maxNumericValue": 800
+              }
+            ],
             "total-blocking-time": [
               "error",
               {
                 "maxNumericValue": 600
               }
-            ]
+            ],
+            "speed-index": [
+              "warn",
+              {
+                "maxNumericValue": 4000
+              }
+            ],
+            "interactive": [
+              "warn",
+              {
+                "maxNumericValue": 4500
+              }
+            ],
+            "uses-responsive-images": "warn",
+            "uses-optimized-images": "warn",
+            "unsized-images": "error",
+            "image-size-responsive": "warn",
+            "font-display": "warn",
+            "prioritize-lcp-image": "warn",
+            "layout-shifts": "off",
+            "layout-shift-elements": "off"
+          }
+        },
+        {
+          "matchingUrlPattern": "https://phlabs\\.co\\.uk/(?!research$).*",
+          "assertions": {
+            "categories:performance": [
+              "error",
+              {
+                "minScore": 0.45
+              }
+            ],
+            "categories:seo": [
+              "error",
+              {
+                "minScore": 0.95
+              }
+            ],
+            "categories:accessibility": [
+              "warn",
+              {
+                "minScore": 0.9
+              }
+            ],
+            "categories:best-practices": [
+              "warn",
+              {
+                "minScore": 0.9
+              }
+            ],
+            "cumulative-layout-shift": [
+              "error",
+              {
+                "maxNumericValue": 0.5
+              }
+            ],
+            "largest-contentful-paint": [
+              "error",
+              {
+                "maxNumericValue": 2100
+              }
+            ],
+            "first-contentful-paint": [
+              "error",
+              {
+                "maxNumericValue": 800
+              }
+            ],
+            "total-blocking-time": [
+              "error",
+              {
+                "maxNumericValue": 400
+              }
+            ],
+            "speed-index": [
+              "warn",
+              {
+                "maxNumericValue": 4000
+              }
+            ],
+            "interactive": [
+              "warn",
+              {
+                "maxNumericValue": 4500
+              }
+            ],
+            "uses-responsive-images": "warn",
+            "uses-optimized-images": "warn",
+            "unsized-images": "error",
+            "image-size-responsive": "warn",
+            "font-display": "warn",
+            "prioritize-lcp-image": "warn",
+            "layout-shifts": "off",
+            "layout-shift-elements": "off"
           }
         }
       ]
