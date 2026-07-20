@@ -264,8 +264,14 @@ const HYDRATION_ERROR_FLAG = "__phl_hydration_error_seen";
 // Force full CSR boot for every route until the underlying legacy-router
 // hydration mismatch is fixed — matches the "emergency CSR mode" documented
 // in Admin › Tools.
-const ENABLE_SSR_HYDRATION = false;
-const SSR_HYDRATION_ROUTES: string[] = [];
+// 2026-07-21: hydration re-enabled SELECTIVELY for pure TanStack routes
+// (never legacy-mounted routes — the crash above was the "/" react-router
+// removeChild mismatch, a different code path). Any hydration failure
+// falls back to renderCsr().
+const ENABLE_SSR_HYDRATION = true;
+const SSR_HYDRATION_ROUTES: string[] = [
+  "/compound", // pure TanStack route (PremiumLanding) — no legacy router involved
+];
 
 // ============================================================
 // DEDICATED TANSTACK ROUTES — SKIP CSR ENTIRELY
@@ -708,12 +714,53 @@ if (shouldStartPhlClient) {
     console.info(
       `[HYDRATION] Skip CSR on ${location.pathname} — dedicated TanStack SSR route`,
     );
+  } else if (shouldHydrateForCurrentPath()) {
+    console.info(`[HYDRATION] Hydrating TanStack SSR on ${location.pathname}`);
+    hydrateSsr();
   } else {
     console.info(
       `[HYDRATION] CSR mode on ${location.pathname} (ENABLE_SSR_HYDRATION=${ENABLE_SSR_HYDRATION}, allowed=${JSON.stringify(SSR_HYDRATION_ROUTES)})`,
     );
     renderCsr(new Error("SSR hydration disabled by flag"));
   }
+}
+
+function shouldHydrateForCurrentPath(): boolean {
+  if (!ENABLE_SSR_HYDRATION) return false;
+  try {
+    if (typeof location === "undefined") return false;
+    const path = location.pathname.replace(/\/+$/, "") || "/";
+    return SSR_HYDRATION_ROUTES.includes(path);
+  } catch {
+    return false;
+  }
+}
+
+// Hydrate the TanStack SSR tree in place — keeps the SSR-painted content
+// (LCP) instead of the wipe-and-repaint cycle of renderCsr. Any failure
+// falls back to the CSR boot, which is the battle-tested path.
+function hydrateSsr() {
+  void (async () => {
+    try {
+      const [{ hydrateRoot }, { StartClient }] = await Promise.all([
+        import("react-dom/client"),
+        import("@tanstack/react-start/client"),
+      ]);
+      // StartClient handles the streaming-SSR hydration protocol — a bare
+      // RouterProvider double-renders the suspense boundaries. NB: in dev
+      // this import chain eagerly evaluates @tanstack/start-storage-context
+      // (node:async_hooks) and throws; the catch below falls back to CSR,
+      // which is dev's existing behavior anyway. Production builds
+      // tree-shake the server module (sideEffects:false).
+      // React 19: hydration mismatches surface as recoverable errors and
+      // React falls back to a client re-render automatically; uncaught
+      // errors land in the window listeners above → renderCsr.
+      hydrateRoot(document, <StartClient />);
+    } catch (err) {
+      console.warn("[HYDRATION] hydrateSsr failed — falling back to CSR:", err);
+      renderCsr(err);
+    }
+  })();
 }
 
 if (shouldStartPhlClient) window.setTimeout(() => {
