@@ -194,17 +194,34 @@ if (shouldStartPhlClient) {
   // Defer Sentry until after window 'load' + idle: the replay/tracing init
   // must never compete with LCP for the main thread (mobile LCP was 8.6-9.7s
   // partly because the Sentry chunk executed during first paint).
+  // vendor-sentry evaluates ~1s of scripting even at idle and lands inside
+  // the Lighthouse TBT window (desktop gate failed at 358-433ms vs 300ms).
+  // Kick it on first user interaction OR 8s after load, whichever first —
+  // uncaught errors in the gap are still captured by the first-party
+  // client-error-reporter, so nothing is lost.
+  let sentryScheduled = false;
   const scheduleSentry = () => {
+    if (sentryScheduled) return;
+    sentryScheduled = true;
     if (typeof requestIdleCallback !== 'undefined') {
-      requestIdleCallback(kickSentry, { timeout: 6000 });
+      requestIdleCallback(kickSentry, { timeout: 4000 });
     } else {
-      setTimeout(kickSentry, 4000);
+      setTimeout(kickSentry, 2000);
     }
   };
-  if (document.readyState === 'complete') {
+  const scheduleSentryAfterDelay = () => setTimeout(scheduleSentry, 8000);
+  const interactionEvents = ['pointerdown', 'keydown', 'touchstart', 'scroll'] as const;
+  const onFirstInteraction = () => {
+    for (const ev of interactionEvents) window.removeEventListener(ev, onFirstInteraction);
     scheduleSentry();
+  };
+  for (const ev of interactionEvents) {
+    window.addEventListener(ev, onFirstInteraction, { once: true, passive: true });
+  }
+  if (document.readyState === 'complete') {
+    scheduleSentryAfterDelay();
   } else {
-    window.addEventListener('load', scheduleSentry, { once: true });
+    window.addEventListener('load', scheduleSentryAfterDelay, { once: true });
   }
   installClientErrorReporter();
   initSwTelemetry();
