@@ -83,6 +83,9 @@ export default function LegacyApp({
       <div
         className="phl-ssr-shell"
         aria-hidden="false"
+        // Transient dark pre-hydration paint — keep its native dark colors
+        // in day mode too (it unmounts as soon as React takes over).
+        data-keep-dark
         style={{ minHeight: '100vh', background: '#020617', color: '#f0f8ff' }}
       >
         {/* Static hero shell — paints LCP text from SSR HTML without waiting for JS hydration.

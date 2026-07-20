@@ -67,6 +67,12 @@ async function forceTheme(page: Page, mode: "light" | "dark") {
           "php_cookie_consent",
           JSON.stringify({ necessary: true, analytics: false, marketing: false }),
         );
+        // Live-sales popup overlays the floating toggle pill on webkit CI —
+        // hide it for the whole suite (it is not under test here).
+        const style = document.createElement("style");
+        style.id = "e2e-popup-block";
+        style.textContent = "#phl-live-sales-popup { display: none !important; }";
+        document.documentElement.appendChild(style);
       } catch {
         /* ignore */
       }
