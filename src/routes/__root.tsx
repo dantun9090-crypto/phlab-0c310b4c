@@ -4,9 +4,11 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { isStaticContentPath } from "@/lib/static-content-routes";
 import { Component, useEffect, useState, type ReactNode } from "react";
 
 import { PageTransition } from "@/components/PageTransition";
@@ -1297,6 +1299,12 @@ function installCanonicalEnforcer() {
 import { CRITICAL_CSS } from "@/lib/critical-css";
 
 function RootShell({ children }: { children: React.ReactNode }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // Static content routes ship no client entry at all — the React/vendor
+  // graph would evaluate ~670ms desktop / ~1.3s mobile for zero
+  // interactivity (see static-content-routes.ts). CSR is skipped on these
+  // paths anyway, so omitting <Scripts /> cannot break hydration.
+  const omitClientEntry = isStaticContentPath(pathname);
   return (
     <html lang="en-GB" suppressHydrationWarning style={{ backgroundColor: "#060f1e" }}>
       <head suppressHydrationWarning>
@@ -1355,7 +1363,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
       <body suppressHydrationWarning style={{ backgroundColor: "#060f1e", color: "#f0f6ff", margin: 0 }}>
         {children}
-        <Scripts />
+        {!omitClientEntry && <Scripts />}
       </body>
 
     </html>
