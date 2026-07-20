@@ -30,7 +30,6 @@ import {
 import { schedulePrecacheCurrentPage } from "@/lib/lkg-cache";
 import { clearStoreCachesForNewBuild } from "@/lib/build-cache";
 import { PageviewBeacon } from "@/components/PageviewBeacon";
-import DayNightToggle from "@/components/DayNightToggle";
 import { initWebVitals } from "@/lib/web-vitals";
 import { initCachePolicyVerifier } from "@/lib/cache-policy-verifier";
 import { installErrorMonitor } from "@/lib/error-monitor";
@@ -1563,7 +1562,8 @@ function RootComponent() {
         <PageviewBeacon />
         <PageTransition />
         <ViewTransitions />
-        <DayNightToggle />
+        {/* DayNightToggle: legacy routes get it via Layout; /compound via
+            PremiumLanding (CSR boots LegacyApp, never this tree). */}
       </QueryClientProvider>
     </RootHydrationBoundary>
   );

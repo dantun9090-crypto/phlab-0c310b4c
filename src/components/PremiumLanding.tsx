@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { LandingPromoStrip } from "@/components/LandingPromoStrip";
 import { LandingTrustStrip } from "@/components/LandingTrustStrip";
+import DayNightToggle from "@/components/DayNightToggle";
 import { trackCtaClick, trackEvent } from "@/lib/analytics";
 
 /* ───── Luxury background assets (responsive AVIF/WebP with JPG fallback) ───── */
@@ -111,6 +112,10 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
   return (
     <main data-source="premium-landing" data-route="/compound" data-keep-dark className="min-h-screen bg-[#060b18] text-white antialiased selection:bg-[#c9a44c] selection:text-[#060b18] scroll-smooth">
       <PremiumLandingGuard />
+      {/* /compound deliberately renders outside the legacy shop Layout
+          (AppRouter) and CSR boots LegacyApp rather than the TanStack
+          __root tree, so the toggle must be rendered here directly. */}
+      <DayNightToggle />
       <LandingPromoStrip theme="dark" />
       <LandingTrustStrip theme="dark" />
 
