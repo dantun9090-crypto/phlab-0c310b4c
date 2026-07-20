@@ -186,8 +186,11 @@ if (shouldStartPhlClient) {
 // then are still captured by the ErrorBoundary + client-error-reporter
 // path — they're just buffered until Sentry is ready.
 const kickSentry = () => {
-  import("./lib/sentry")
-    .then((m) => { try { m.initSentry(); } catch { /* ignore */ } })
+  Promise.all([import("./lib/sentry"), import("./lib/sentry-lazy"), import("@sentry/react")])
+    .then(([m, lazy, Sentry]) => {
+      try { m.initSentry(); } catch { /* ignore */ }
+      try { lazy.flushSentryQueue(Sentry); } catch { /* ignore */ }
+    })
     .catch(() => { /* ignore */ });
 };
 if (shouldStartPhlClient) {

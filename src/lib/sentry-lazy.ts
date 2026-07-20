@@ -15,34 +15,42 @@ import type * as SentryTypes from "@sentry/react";
 
 type SentryModule = typeof SentryTypes;
 
-let pending: Promise<SentryModule> | null = null;
+// Boot-time events are QUEUED, not loaded: importing the SDK on the first
+// breadcrumb/exception pulls the ~1.2MB vendor-sentry chunk into the
+// post-FCP main-thread window (~500ms scripting — the desktop TBT gate
+// fails at >300ms). The deferred init in client.tsx (first interaction or
+// load+8s) calls flushSentryQueue() to replay everything. Uncaught errors
+// in the gap are still captured by the first-party client-error-reporter,
+// so a closed tab before flush loses nothing operationally.
+let sdk: SentryModule | null = null;
+const queue: Array<(Sentry: SentryModule) => void> = [];
+const QUEUE_MAX = 100;
 
-function loadSentry(): Promise<SentryModule> {
-  if (!pending) {
-    pending = import("@/lib/sentry").then((mod) => {
-      // Idempotent — if the deferred boot init already ran this is a no-op,
-      // and if an early crash beat the scheduler we still capture the event.
-      mod.initSentry();
-      return import("@sentry/react");
-    });
+/**
+ * Called once by the deferred boot init (client.tsx) after the SDK chunk
+ * loads. Replays every queued event in order. Idempotent.
+ */
+export function flushSentryQueue(Sentry: SentryModule): void {
+  if (sdk) return;
+  sdk = Sentry;
+  while (queue.length) {
+    const fn = queue.shift()!;
+    try {
+      fn(Sentry);
+    } catch {
+      /* never break the app for monitoring */
+    }
   }
-  return pending;
 }
 
-/** Run `fn` with the SDK once loaded. Never throws, never blocks. */
+/** Run `fn` with the SDK once the boot init flushes. Never throws. */
 export function withSentryLazy(fn: (Sentry: SentryModule) => void): void {
   try {
-    void loadSentry()
-      .then((Sentry) => {
-        try {
-          fn(Sentry);
-        } catch {
-          /* never break the app for monitoring */
-        }
-      })
-      .catch(() => {
-        /* SDK chunk unavailable — drop the event */
-      });
+    if (sdk) {
+      fn(sdk);
+      return;
+    }
+    if (queue.length < QUEUE_MAX) queue.push(fn);
   } catch {
     /* never break */
   }
