@@ -141,6 +141,11 @@ async function stabilise(page: Page) {
     .locator("main, form, header")
     .first()
     .waitFor({ state: "visible", timeout: 30_000 });
+  // The boot fallback can REAPPEAR transiently (chunk-recovery remounts)
+  // after the app first mounts — re-check before proceeding.
+  await page
+    .waitForSelector(".phl-boot", { state: "detached", timeout: 30_000 })
+    .catch(() => {});
   // `document.fonts.ready` can hang if a webfont 404s in CI — bound it.
   await Promise.race([
     page.evaluate(() => (document as any).fonts?.ready),
@@ -249,6 +254,8 @@ test.describe("Day theme — unified audit", () => {
           await stabilise(page);
           results = await new AxeBuilder({ page })
             .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+            // Transient CSR boot fallback — not page content.
+            .exclude(".phl-boot")
             .disableRules(["region"])
             .analyze();
         } catch (err) {
