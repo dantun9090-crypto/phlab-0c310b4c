@@ -153,13 +153,13 @@
     min-width: 0;
   }
 
-  html,
   body,
   #root {
     max-width: 100%;
-    /* clip, not hidden: overflow:hidden makes <html> a scroll container,
-       which axe flags as scrollable-region-focusable (no keyboard access).
-       clip clips without creating a scroll container. */
+    /* clip on BODY only. Any explicit overflow on <html> turns it into a
+       scroll container, which axe flags as scrollable-region-focusable;
+       the default viewport scroller is exempt and the page still can't
+       overflow horizontally. */
     overflow-x: clip;
   }
 
