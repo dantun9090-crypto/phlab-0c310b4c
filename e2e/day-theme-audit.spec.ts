@@ -70,6 +70,9 @@ async function forceTheme(page: Page, mode: "light" | "dark") {
         // Newsletter modal uses a cooldown timestamp — set it to now so it
         // never opens mid-test and overlays the toggle pill.
         localStorage.setItem("phlabs_newsletter_seen", String(Date.now()));
+        // SmartBanner (center promo) renders a full-screen veil behind the
+        // banner — dismiss it so screenshots capture the page itself.
+        localStorage.setItem("phl_banner_dismissed", String(Date.now()));
         // Live-sales popup overlays the floating toggle pill on webkit CI —
         // hide it for the whole suite (it is not under test here).
         const style = document.createElement("style");
@@ -115,11 +118,20 @@ async function waitForTheme(page: Page, mode: "light" | "dark") {
 }
 
 async function stabilise(page: Page) {
-  // Wait for hydration + fonts + network so screenshots are deterministic.
+  // Home now SSRs a static hero shell (LCP fix) that unmounts once the
+  // LegacyApp chunk boots. Tests must measure the REAL app, not the shell —
+  // wait for it to detach (no-op on routes/tests where it never appears).
   await page
-    .locator("main, h1, header")
+    .waitForSelector(".phl-ssr-shell", { state: "detached", timeout: 25_000 })
+    .catch(() => {});
+  // The shell carries an h1 and the CSR boot fallback can satisfy loose
+  // landmark selectors — wait for main/form/header, which only the real
+  // mounted app renders. Generous timeout: the LegacyApp/Home chunk
+  // waterfall on CI dev-server can take 10-20s.
+  await page
+    .locator("main, form, header")
     .first()
-    .waitFor({ state: "visible", timeout: 10_000 });
+    .waitFor({ state: "visible", timeout: 30_000 });
   // `document.fonts.ready` can hang if a webfont 404s in CI — bound it.
   await Promise.race([
     page.evaluate(() => (document as any).fonts?.ready),
@@ -131,6 +143,11 @@ async function stabilise(page: Page) {
   await page
     .waitForLoadState("networkidle", { timeout: 3_000 })
     .catch(() => {});
+  // Let entrance animations (Framer Motion hero reveals etc.) FINISH before
+  // we kill rAF — stubbing requestAnimationFrame mid-flight freezes those
+  // elements at opacity:0 (blank home screenshots after the SSR shell
+  // started satisfying the landmark wait ~2s earlier in the boot).
+  await page.waitForTimeout(1_500);
   // Kill every motion source: CSS animations/transitions, smooth scroll,
   // caret blink, AND requestAnimationFrame loops (Framer Motion, GSAP,
   // canvas/3D tickers). The rAF stub keeps callbacks idempotent — they

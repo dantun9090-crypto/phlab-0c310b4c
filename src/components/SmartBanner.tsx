@@ -130,6 +130,12 @@ export function SmartBanner({ config, previewMode = false }: SmartBannerProps = 
   return (
     <div
       aria-live="polite"
+      // keep-dark: the center veil is bg-black/40 by design. Without this the
+      // day-mode blanket inversion (html.light [class*="bg-black"] → #fff)
+      // rewrites it to an OPAQUE WHITE full-screen overlay that blanks the
+      // entire page behind the banner — white screen for every light-mode
+      // visitor while a center banner is active.
+      data-keep-dark
       className={`${wrapperPositionClass} z-[60] ${previewMode ? "" : "pointer-events-none"} ${isCenter && !previewMode ? "bg-black/40 backdrop-blur-sm" : ""}`}
       style={
         previewMode

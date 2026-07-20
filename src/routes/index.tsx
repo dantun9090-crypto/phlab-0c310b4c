@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import LegacyClientApp from "@/legacy/LegacyClientApp";
+import { LegacySsrShell } from "@/legacy/LegacySsrShell";
 import { fetchPromoBanner } from "@/lib/firestore-rest";
 
 
@@ -163,13 +164,21 @@ function LegacyMount() {
  * fonts loaded, and its fixed header overlapped the real Navigation
  * during hydration, producing the broken mobile menu users were reporting).
  */
+/**
+ * SSR fallback for the chunk-load window. Rendered into the served HTML,
+ * so it IS the first paint — the previous empty dark div meant home had
+ * literally nothing to paint until the full CSR boot (mobile LCP ~7-10s,
+ * and the LCP element ended up being a 10px disclaimer paragraph).
+ *
+ * LegacySsrShell carries the static hero (no fixed header, explicit
+ * system-sans fontFamily) — addressing both bugs that killed the earlier
+ * shell attempt (serif H1 flash; fixed-header overlapping Navigation).
+ */
 function HomeSsrFallback() {
   return (
-    <div
-      data-phl-app-ready="ssr-home"
-      aria-busy="true"
-      style={{ minHeight: "100vh", background: "#020617" }}
-    />
+    <div data-phl-app-ready="ssr-home" aria-busy="true">
+      <LegacySsrShell />
+    </div>
   );
 }
 

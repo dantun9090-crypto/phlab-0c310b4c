@@ -1,6 +1,7 @@
 import { useEffect, useState, type ComponentType, type ReactNode } from "react";
 import { safeDynamicImport } from "@/lib/dynamic-import";
 import { DynamicImportFallback } from "@/components/DynamicImportFallback";
+import { LegacySsrShell } from "./LegacySsrShell";
 import type { SSRBanner } from "./SSRDataContext";
 
 type LegacyAppComponent = ComponentType<{
@@ -48,5 +49,11 @@ export default function LegacyClientApp({
 
   if (LegacyApp) return <LegacyApp initialPath={initialPath} initialBanner={initialBanner} />;
   if (failed) return <DynamicImportFallback label="LegacyApp" />;
+  // Home pre-mount: paint the static hero shell so something meaningful is
+  // on screen during the LegacyApp/Home chunk waterfall instead of a blank
+  // dark page. Scoped to "/" — the shell's hero copy is home-specific.
+  if (!fallback && (initialPath === "/" || initialPath === "")) {
+    return <LegacySsrShell />;
+  }
   return <>{fallback}</>;
 }
