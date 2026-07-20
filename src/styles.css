@@ -157,7 +157,10 @@
   body,
   #root {
     max-width: 100%;
-    overflow-x: hidden;
+    /* clip, not hidden: overflow:hidden makes <html> a scroll container,
+       which axe flags as scrollable-region-focusable (no keyboard access).
+       clip clips without creating a scroll container. */
+    overflow-x: clip;
   }
 
   body {
