@@ -212,7 +212,13 @@ if (shouldStartPhlClient) {
       setTimeout(kickSentry, 2000);
     }
   };
-  const scheduleSentryAfterDelay = () => setTimeout(scheduleSentry, 8000);
+  // Mobile Lighthouse traces run ~20s+ (TBT window), so an 8s timer still
+  // lands inside it (vendor-sentry ~360ms scripting on /research). Give
+  // mobile a 30s fallback; desktop keeps 8s. First interaction always wins.
+  const isMobileUA =
+    typeof navigator !== "undefined" && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  const scheduleSentryAfterDelay = () =>
+    setTimeout(scheduleSentry, isMobileUA ? 30000 : 8000);
   const interactionEvents = ['pointerdown', 'keydown', 'touchstart', 'scroll'] as const;
   const onFirstInteraction = () => {
     for (const ev of interactionEvents) window.removeEventListener(ev, onFirstInteraction);
