@@ -644,21 +644,22 @@ html.light .bg-\[\#080e1f\]\/95:not([data-keep-dark]) { background-color: #fffff
 
 /* Dark-island children with dark bg classes: the flatten rules above fire
    on descendants too (they are not themselves marked), so restore their
-   surfaces inside islands. */
-html.light [data-keep-dark] .bg-\[\#060b18\],
-html.light [data-keep-dark] .bg-\[\#060b18\]\/90,
-html.light [data-keep-dark] .bg-\[\#060b18\]\/95 { background-color: #060b18 !important; }
-html.light [data-keep-dark] .bg-\[\#070d1c\],
-html.light [data-keep-dark] .bg-\[\#070d1c\]\/90,
-html.light [data-keep-dark] .bg-\[\#070d1c\]\/95 { background-color: #070d1c !important; }
-html.light [data-keep-dark] .bg-\[\#080e1f\],
-html.light [data-keep-dark] .bg-\[\#080e1f\]\/90,
-html.light [data-keep-dark] .bg-\[\#080e1f\]\/95 { background-color: #080e1f !important; }
-html.light [data-keep-dark] .bg-slate-950 { background-color: #020618 !important; }
-html.light [data-keep-dark] .bg-slate-900 { background-color: #0f172b !important; }
-html.light [data-keep-dark] .bg-slate-800 { background-color: #1d293d !important; }
-html.light [data-keep-dark] .bg-slate-700 { background-color: #314158 !important; }
-html.light [data-keep-dark] .bg-black { background-color: #000000 !important; }
+   surfaces inside islands. The trailing [class] bump makes these strictly
+   more specific than the flatten rules, so order can never matter. */
+html.light [data-keep-dark] .bg-\[\#060b18\][class],
+html.light [data-keep-dark] .bg-\[\#060b18\]\/90[class],
+html.light [data-keep-dark] .bg-\[\#060b18\]\/95[class] { background-color: #060b18 !important; }
+html.light [data-keep-dark] .bg-\[\#070d1c\][class],
+html.light [data-keep-dark] .bg-\[\#070d1c\]\/90[class],
+html.light [data-keep-dark] .bg-\[\#070d1c\]\/95[class] { background-color: #070d1c !important; }
+html.light [data-keep-dark] .bg-\[\#080e1f\][class],
+html.light [data-keep-dark] .bg-\[\#080e1f\]\/90[class],
+html.light [data-keep-dark] .bg-\[\#080e1f\]\/95[class] { background-color: #080e1f !important; }
+html.light [data-keep-dark] .bg-slate-950[class] { background-color: #020618 !important; }
+html.light [data-keep-dark] .bg-slate-900[class] { background-color: #0f172b !important; }
+html.light [data-keep-dark] .bg-slate-800[class] { background-color: #1d293d !important; }
+html.light [data-keep-dark] .bg-slate-700[class] { background-color: #314158 !important; }
+html.light [data-keep-dark] .bg-black[class] { background-color: #000000 !important; }
 
 /* HomeSeoIndex band + Products trust/disclaimer bands */
 html.light section[aria-label="Site index"],
