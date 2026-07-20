@@ -663,8 +663,10 @@ html.light [data-keep-dark] .bg-black[class] { background-color: #000000 !import
 
 /* HomeSeoIndex band + Products trust/disclaimer bands */
 html.light section[aria-label="Site index"],
-html.light #trust,
-html.light #disclaimer {
+/* NOTE: no #disclaimer here — PremiumLanding has its own id="disclaimer"
+   section inside the dark island (the Products band is covered by the
+   inline-style rules below via its #04101f background). */
+html.light #trust {
   background-color: #ffffff !important;
   border-color: #e5e7eb !important;
 }
