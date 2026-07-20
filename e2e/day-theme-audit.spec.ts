@@ -67,6 +67,9 @@ async function forceTheme(page: Page, mode: "light" | "dark") {
           "php_cookie_consent",
           JSON.stringify({ necessary: true, analytics: false, marketing: false }),
         );
+        // Newsletter modal uses a cooldown timestamp — set it to now so it
+        // never opens mid-test and overlays the toggle pill.
+        localStorage.setItem("phlabs_newsletter_seen", String(Date.now()));
         // Live-sales popup overlays the floating toggle pill on webkit CI —
         // hide it for the whole suite (it is not under test here).
         const style = document.createElement("style");
