@@ -77,7 +77,11 @@ async function forceTheme(page: Page, mode: "light" | "dark") {
         // hide it for the whole suite (it is not under test here).
         const style = document.createElement("style");
         style.id = "e2e-popup-block";
-        style.textContent = "#phl-live-sales-popup { display: none !important; }";
+        // The consent banner is not under test here; the localStorage seed
+        // above SHOULD suppress it but webkit CI has baked it into a
+        // baseline before — hide deterministically via CSS as well.
+        style.textContent =
+          "#phl-live-sales-popup, [data-cookie-consent] { display: none !important; }";
         document.documentElement.appendChild(style);
       } catch {
         /* ignore */
@@ -123,6 +127,11 @@ async function stabilise(page: Page) {
   // wait for it to detach (no-op on routes/tests where it never appears).
   await page
     .waitForSelector(".phl-ssr-shell", { state: "detached", timeout: 25_000 })
+    .catch(() => {});
+  // Cold vite transform on a fresh CI dev server can hold the CSR boot
+  // fallback ("Loading PH Labs…") for 30s+ — never scan/snapshot it.
+  await page
+    .waitForSelector(".phl-boot", { state: "detached", timeout: 30_000 })
     .catch(() => {});
   // The shell carries an h1 and the CSR boot fallback can satisfy loose
   // landmark selectors — wait for main/form/header, which only the real

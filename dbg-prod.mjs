@@ -1,0 +1,10 @@
+import { chromium, devices } from 'playwright';
+const b = await chromium.launch();
+const ctx = await b.newContext({ ...devices['Desktop Chrome'] });
+const page = await ctx.newPage();
+page.on('pageerror', e => console.log('PAGE-ERR:', String(e).slice(0,400)));
+page.on('console', m => { if (m.type()==='error') console.log('CON:', m.text().slice(0,250)); });
+await page.goto('http://127.0.0.1:8081/products', { waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(12000);
+console.log('text:', (await page.evaluate(() => document.body.innerText.slice(0,80))).replace(/\n/g,' '));
+await b.close();
