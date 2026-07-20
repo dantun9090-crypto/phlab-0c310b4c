@@ -2,6 +2,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import LegacyClientApp from "@/legacy/LegacyClientApp";
 import { LegacySsrShell } from "@/legacy/LegacySsrShell";
 import { fetchPromoBanner } from "@/lib/firestore-rest";
+import { cfImg, cfSrcSet } from "@/lib/cf-image";
+
+// Hero banner <img> props (src/pages/Home/index.tsx) — the preload below
+// must mirror these EXACTLY so the browser reuses the preloaded candidate
+// instead of double-fetching.
+const BANNER_WIDTHS = [480, 640, 800, 1024, 1280, 1600, 1920];
+const BANNER_SIZES =
+  "(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1600px";
+const BANNER_QUALITY = 78;
 
 
 const HOME_TITLE = "HPLC-Verified Research Peptides UK | PH Labs";
@@ -48,7 +57,29 @@ export const Route = createFileRoute("/")({
   // Public content routes must SSR a non-empty body. Do not disable SSR
   // here or wrap the route in deferred loading with an empty fallback; that combination
   // caused staging to stick on the boot loader after publishes.
-  head: () => {
+  head: ({ loaderData }) => {
+    // LCP preload for the hero banner image. The banner <img> only mounts
+    // after the CSR boot (~5-7s on mobile) — without a preload the browser
+    // starts the image fetch at React-render time, which IS the mobile LCP
+    // (~7-8.7s). Preloading at TTFB overlaps the download with the JS boot.
+    // imageSrcSet/imageSizes mirror the <img> exactly so the picked
+    // candidate matches (the 2026-07-16 preload was removed because a
+    // single fixed-width variant mismatched the srcset pick — full srcset
+    // avoids that).
+    const banner = loaderData?.banner;
+    const bannerPreload =
+      banner?.imageUrl && banner?.active !== false && banner?.isActive !== false
+        ? [
+            {
+              rel: "preload",
+              as: "image",
+              href: cfImg(banner.imageUrl, { width: 1280, quality: BANNER_QUALITY }),
+              imageSrcSet: cfSrcSet(banner.imageUrl, BANNER_WIDTHS, { quality: BANNER_QUALITY }),
+              imageSizes: BANNER_SIZES,
+              fetchPriority: "high",
+            } as const,
+          ]
+        : [];
     return {
 
     meta: [
@@ -72,13 +103,7 @@ export const Route = createFileRoute("/")({
       { rel: "preconnect", href: "https://firestore.googleapis.com", crossOrigin: "" },
       { rel: "preconnect", href: "https://firebasestorage.googleapis.com", crossOrigin: "" },
       { rel: "dns-prefetch", href: "https://firebasestorage.googleapis.com" },
-      // LCP preload removed 2026-07-16: the banner <img> already emits its
-      // own srcset request within the same tick, and the preload variant
-      // frequently didn't match the picked srcset candidate on non-1600px
-      // viewports — producing "preloaded but not used" warnings, especially
-      // when users SPA-navigated away from `/` before the browser could
-      // consume the preload. Home LCP stays well within budget without it.
-
+      ...bannerPreload,
     ],
 
 
