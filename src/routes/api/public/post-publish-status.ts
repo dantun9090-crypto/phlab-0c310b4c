@@ -39,7 +39,8 @@ export const Route = createFileRoute('/api/public/post-publish-status')({
             limit: 100,
           });
         } catch (e) {
-          readError = e instanceof Error ? e.message : String(e);
+          console.error('[post-publish-status] read failed:', e);
+          readError = 'read_failed';
         }
 
         const entries = rows

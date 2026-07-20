@@ -264,7 +264,7 @@ async function handler(request: Request): Promise<Response> {
     return new Response(
       JSON.stringify({
         error: "scan_failed",
-        message: e instanceof Error ? e.message : String(e),
+        message: "Internal scan error — details logged server-side.",
       }),
       { status: 500, headers: { "content-type": "application/json" } },
     );

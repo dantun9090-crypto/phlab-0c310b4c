@@ -145,7 +145,7 @@ export const inspectGscUrl = createServerFn({ method: 'POST' })
     if (!data?.inspectionUrl) throw new Error('inspectionUrl required');
     try {
       const u = new URL(data.inspectionUrl);
-      if (!u.hostname.endsWith('phlabs.co.uk')) {
+      if (u.hostname !== 'phlabs.co.uk' && !u.hostname.endsWith('.phlabs.co.uk')) {
         throw new Error('Only phlabs.co.uk URLs allowed');
       }
     } catch {

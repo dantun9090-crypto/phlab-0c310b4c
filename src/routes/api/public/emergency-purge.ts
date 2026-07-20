@@ -77,7 +77,8 @@ async function purgeZone(token: string, zoneName: string): Promise<{ zoneName: s
     const body = await res.text().catch(() => '');
     return { zoneName, ok: res.ok, status: res.status, error: res.ok ? undefined : body.slice(0, 500) };
   } catch (e) {
-    return { zoneName, ok: false, status: 0, error: e instanceof Error ? e.message : String(e) };
+    console.error('[emergency-purge] zone request failed:', e);
+    return { zoneName, ok: false, status: 0, error: 'purge_request_failed' };
   }
 }
 
@@ -94,7 +95,8 @@ async function forceRefreshHome(): Promise<{ ok: boolean; status: number; error?
     await res.arrayBuffer().catch(() => new ArrayBuffer(0));
     return { ok: res.ok, status: res.status };
   } catch (e) {
-    return { ok: false, status: 0, error: e instanceof Error ? e.message : String(e) };
+    console.error('[emergency-purge] request failed:', e);
+    return { ok: false, status: 0, error: 'purge_request_failed' };
   }
 }
 

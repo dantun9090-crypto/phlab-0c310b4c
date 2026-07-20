@@ -324,7 +324,8 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
         try {
           products = await fetchAllProducts();
         } catch (e: any) {
-          debugError = String(e?.message || e || "unknown");
+          console.error('[merchant-feed] fetchAllProducts failed:', e);
+          debugError = "fetch_failed";
           products = [];
         }
 

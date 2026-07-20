@@ -47,11 +47,13 @@ function textBetween(itemXml: string, tag: string): string {
   return match[1]
     .replace(/^<!\[CDATA\[/, '')
     .replace(/\]\]>$/, '')
-    .replace(/&amp;/g, '&')
+    // Decode specific entities first, &amp; LAST — otherwise "&amp;lt;"
+    // double-decodes to "<" (CodeQL js/double-escaping).
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&')
     .trim();
 }
 
@@ -67,11 +69,12 @@ function decodeHtml(value: string): string {
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
-    .replace(/&amp;/g, '&')
+    // Specific entities first, &amp; LAST (see textBetween above).
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&')
     .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
     .replace(/\s+/g, ' ')
     .trim();
