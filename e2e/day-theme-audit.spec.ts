@@ -84,6 +84,27 @@ async function forceTheme(page: Page, mode: "light" | "dark") {
   );
 }
 
+// CI webkit/firefox flake guard: the app's own client-side boot can trigger
+// a navigation (e.g. the 404 catch-all redirecting to "/") that interrupts
+// an in-flight goto, and axe's page.evaluate can lose its execution context
+// to the same race. Retry only on those two navigation-race signatures.
+function isNavRace(err: unknown): boolean {
+  return /interrupted by another navigation|Execution context was destroyed/i.test(
+    String(err),
+  );
+}
+
+async function gotoRobust(page: Page, url: string) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      await page.goto(url, { waitUntil: "domcontentloaded" });
+      return;
+    } catch (err) {
+      if (!isNavRace(err) || attempt === 2) throw err;
+    }
+  }
+}
+
 async function waitForTheme(page: Page, mode: "light" | "dark") {
   await page.waitForFunction(
     (expected) =>
@@ -190,14 +211,20 @@ test.describe("Day theme — unified audit", () => {
       page,
     }) => {
       await forceTheme(page, "light");
-      await page.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded" });
-      await waitForTheme(page, "light");
-      await stabilise(page);
-
-      const results = await new AxeBuilder({ page })
-        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-        .disableRules(["region"])
-        .analyze();
+      let results: Awaited<ReturnType<AxeBuilder["analyze"]>> | null = null;
+      for (let attempt = 0; attempt < 2 && !results; attempt++) {
+        try {
+          await gotoRobust(page, `${BASE}${path}`);
+          await waitForTheme(page, "light");
+          await stabilise(page);
+          results = await new AxeBuilder({ page })
+            .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+            .disableRules(["region"])
+            .analyze();
+        } catch (err) {
+          if (!isNavRace(err) || attempt === 1) throw err;
+        }
+      }
       const blocking = results.violations.filter(
         (v) => v.impact === "critical" || v.impact === "serious",
       );
@@ -387,14 +414,14 @@ test.describe("Day theme — unified audit", () => {
         const page = await ctx.newPage();
         // Wipe any persisted storage on the BASE origin before we seed the
         // theme, so the toggle value we set is the only one present.
-        await page.goto(`${BASE}/__blank`, { waitUntil: "domcontentloaded" })
-          .catch(() => page.goto(BASE, { waitUntil: "domcontentloaded" }));
+        await gotoRobust(page, `${BASE}/__blank`)
+          .catch(() => gotoRobust(page, BASE));
         await page.evaluate(() => {
           try { localStorage.clear(); } catch { /* ignore */ }
           try { sessionStorage.clear(); } catch { /* ignore */ }
         });
         await forceTheme(page, "light");
-        await page.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded" });
+        await gotoRobust(page, `${BASE}${path}`);
         await waitForTheme(page, "light");
         await stabilise(page);
 
