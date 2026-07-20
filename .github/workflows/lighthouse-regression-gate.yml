@@ -6,7 +6,7 @@
 #     desktop measured ~0.41 in CI, 0.016 locally; under investigation)
 #   * LCP  ≤ 2100ms desktop / 11000ms mobile (error) — mobile LCP ratchet pending
 #   * FCP  ≤ 800ms desktop / 6000ms mobile (error) — mobile ratchet pending
-#   * TBT  ≤ 400ms desktop / 3200ms mobile (error) — desktop ratcheted
+#   * TBT  ≤ 450ms desktop / 3200ms mobile (error) — desktop ratcheted
 #     300→400: 3-run medians on shared CI CPU swung 315–720ms on identical
 #     code; vendor-react (~670ms scripting) is the current floor. Tighten
 #     toward 300 after the entry-bundle diet. 5 runs now (was 3) for
