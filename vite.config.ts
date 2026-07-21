@@ -27,6 +27,11 @@ export default defineConfig({
   tanstackStart: {
     client: { entry: "client" },
     server: { entry: "server" },
+    // Split each route's component/error/notFound into lazy chunks.
+    // Without this, routeTree.gen.ts statically imports every route module,
+    // so ALL route components (incl. the heavy research.* article pages,
+    // ~150 KB source) sit in the eager chunk of every page.
+    autoCodeSplitting: true,
   },
   vite: {
     plugins: [mcpPlugin()],
