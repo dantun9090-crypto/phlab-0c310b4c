@@ -1,8 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { Loader2, Shield, RefreshCw, Copy, ExternalLink, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
-import { auth, db, doc, getDoc, onAuthStateChanged } from '@/lib/firebase';
 import { validateMerchantFeedAdmin, type MerchantFeedValidationReport } from '@/lib/merchant-feed-validation.functions';
+
+// Firebase is loaded lazily inside the component: routeTree.gen.ts imports
+// every route file STATICALLY, so a top-level `@/lib/firebase` import here
+// pulled the whole ~540 KB vendor-firebase chunk into the eager graph of
+// EVERY page on the site.
+type FirebaseMod = typeof import('@/lib/firebase');
 
 export const Route = createFileRoute('/admin/merchant-feed-preview')({
   head: () => ({
@@ -28,8 +33,17 @@ function MerchantFeedPreview() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [report, setReport] = useState<MerchantFeedValidationReport | null>(null);
+  const [fb, setFb] = useState<FirebaseMod | null>(null);
 
   useEffect(() => {
+    let alive = true;
+    void import('@/lib/firebase').then((m) => { if (alive) setFb(m); });
+    return () => { alive = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!fb) return;
+    const { auth, db, doc, getDoc, onAuthStateChanged } = fb;
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         if (typeof window !== 'undefined') window.location.href = '/login';
@@ -44,13 +58,13 @@ function MerchantFeedPreview() {
       setAuthChecked(true);
     });
     return () => unsub();
-  }, []);
+  }, [fb]);
 
   const loadFeed = async () => {
     setLoading(true);
     setError(null);
     try {
-      const token = await auth.currentUser?.getIdToken(true);
+      const token = await fb?.auth.currentUser?.getIdToken(true);
       if (!token) throw new Error('Not signed in');
       const [feedRes, validation] = await Promise.all([
         fetch(`/google-merchant-feed.xml?adminPreview=${Date.now()}`, {
