@@ -509,8 +509,13 @@ async function serveWithEdgePopulate(cache, url, path, wEligible, out, ctx) {
     const buf = await out.clone().arrayBuffer();
     const bodyText = new TextDecoder().decode(buf);
     const hasEntry = !!extractIndexAssetPath(bodyText);
-    const hasWatchdog = bodyText.includes("Taking longer than usual");
-    if (buf.byteLength >= 10000 && hasEntry && !hasWatchdog) {
+    // NOTE: no "Taking longer than usual" rejection here — that watchdog
+    // markup is embedded (hidden) in EVERY normal origin shell, so the
+    // substring check rejected 100% of real pages and the edge cache never
+    // populated. Watchdog-ONLY shells are exactly the "0-asset bodies"
+    // already rejected by the hasEntry guard (they carry no /assets/index
+    // reference) and by the 10KB floor.
+    if (buf.byteLength >= 10000 && hasEntry) {
       // Snapshot response headers so cache hits replay the exact CSP
       // (with its original per-request nonce), build id, and content-type.
       // Filter hop-by-hop headers that mustn't be replayed. CRITICAL:
