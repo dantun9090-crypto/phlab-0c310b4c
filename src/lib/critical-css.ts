@@ -86,7 +86,7 @@ h1, h2, .font-display { letter-spacing: -0.01em; }
 .font-semibold{font-weight:var(--font-weight-semibold)}
 .gap-0{gap:calc(var(--spacing) * 0)}
 .gap-2{gap:calc(var(--spacing) * 2)}
-.gap-2\.5{gap:calc(var(--spacing) * 2.5)}
+.gap-2\\.5{gap:calc(var(--spacing) * 2.5)}
 .gap-3{gap:calc(var(--spacing) * 3)}
 .gap-4{gap:calc(var(--spacing) * 4)}
 .gap-6{gap:calc(var(--spacing) * 6)}
@@ -95,9 +95,9 @@ h1, h2, .font-display { letter-spacing: -0.01em; }
 .grid{display:grid}
 .grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
-.h-1\.5{height:calc(var(--spacing) * 1.5)}
+.h-1\\.5{height:calc(var(--spacing) * 1.5)}
 .h-10{height:calc(var(--spacing) * 10)}
-.h-\[18px\]{height:18px}
+.h-\\[18px\\]{height:18px}
 .h-full{height:100%}
 .h-px{height:1px}
 .hidden{display:none}
@@ -108,36 +108,36 @@ h1, h2, .font-display { letter-spacing: -0.01em; }
 .items-center{align-items:center}
 .justify-between{justify-content:space-between}
 .justify-center{justify-content:center}
-.leading-\[1\.02\]{--tw-leading:1.02;line-height:1.02}
-.leading-\[1\.7\]{--tw-leading:1.7;line-height:1.7}
+.leading-\\[1\\.02\\]{--tw-leading:1.02;line-height:1.02}
+.leading-\\[1\\.7\\]{--tw-leading:1.7;line-height:1.7}
 .leading-none{--tw-leading:1;line-height:1}
 .left-4{left:calc(var(--spacing) * 4)}
-@media(min-width:64rem){.lg\:min-h-\[96vh\]{min-height:96vh}}
-@media(min-width:64rem){.lg\:py-36{padding-block:calc(var(--spacing) * 36)}}
-@media(min-width:64rem){.lg\:text-\[6\.5rem\]{font-size:6.5rem}}
+@media(min-width:64rem){.lg\\:min-h-\\[96vh\\]{min-height:96vh}}
+@media(min-width:64rem){.lg\\:py-36{padding-block:calc(var(--spacing) * 36)}}
+@media(min-width:64rem){.lg\\:text-\\[6\\.5rem\\]{font-size:6.5rem}}
 .max-w-2xl{max-width:var(--container-2xl)}
 .max-w-6xl{max-width:var(--container-6xl)}
 .max-w-7xl{max-width:var(--container-7xl)}
 .max-w-lg{max-width:var(--container-lg)}
 .mb-12{margin-bottom:calc(var(--spacing) * 12)}
-@media(min-width:48rem){.md\:border-l{border-left-width:1px}}
-@media(min-width:48rem){.md\:border-t-0{border-top-width:0}}
-@media(min-width:48rem){.md\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}}
-@media(min-width:48rem){.md\:inline{display:inline}}
-@media(min-width:48rem){.md\:px-6{padding-inline:calc(var(--spacing) * 6)}}
-@media(min-width:48rem){.md\:py-6{padding-block:calc(var(--spacing) * 6)}}
-@media(min-width:48rem){.md\:text-3xl{font-size:var(--text-3xl);line-height:var(--tw-leading,var(--text-3xl--line-height))}}
-@media(min-width:48rem){.md\:text-\[5\.5rem\]{font-size:5.5rem}}
-@media(min-width:48rem){.md\:text-sm{font-size:var(--text-sm);line-height:var(--tw-leading,var(--text-sm--line-height))}}
-@media(min-width:48rem){.md\:text-xs{font-size:var(--text-xs);line-height:var(--tw-leading,var(--text-xs--line-height))}}
-.min-h-\[44px\]{min-height:44px}
-.min-h-\[85vh\]{min-height:85vh}
+@media(min-width:48rem){.md\\:border-l{border-left-width:1px}}
+@media(min-width:48rem){.md\\:border-t-0{border-top-width:0}}
+@media(min-width:48rem){.md\\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(min-width:48rem){.md\\:inline{display:inline}}
+@media(min-width:48rem){.md\\:px-6{padding-inline:calc(var(--spacing) * 6)}}
+@media(min-width:48rem){.md\\:py-6{padding-block:calc(var(--spacing) * 6)}}
+@media(min-width:48rem){.md\\:text-3xl{font-size:var(--text-3xl);line-height:var(--tw-leading,var(--text-3xl--line-height))}}
+@media(min-width:48rem){.md\\:text-\\[5\\.5rem\\]{font-size:5.5rem}}
+@media(min-width:48rem){.md\\:text-sm{font-size:var(--text-sm);line-height:var(--tw-leading,var(--text-sm--line-height))}}
+@media(min-width:48rem){.md\\:text-xs{font-size:var(--text-xs);line-height:var(--tw-leading,var(--text-xs--line-height))}}
+.min-h-\\[44px\\]{min-height:44px}
+.min-h-\\[85vh\\]{min-height:85vh}
 .min-h-screen{min-height:100vh}
-.min-w-\[44px\]{min-width:44px}
+.min-w-\\[44px\\]{min-width:44px}
 .ml-1{margin-left:calc(var(--spacing) * 1)}
 .ml-3{margin-left:calc(var(--spacing) * 3)}
 .mt-1{margin-top:calc(var(--spacing) * 1)}
-.mt-1\.5{margin-top:calc(var(--spacing) * 1.5)}
+.mt-1\\.5{margin-top:calc(var(--spacing) * 1.5)}
 .mt-10{margin-top:calc(var(--spacing) * 10)}
 .mt-14{margin-top:calc(var(--spacing) * 14)}
 .mt-24{margin-top:calc(var(--spacing) * 24)}
@@ -147,56 +147,56 @@ h1, h2, .font-display { letter-spacing: -0.01em; }
 .object-cover{object-fit:cover}
 .overflow-hidden{overflow:hidden}
 .px-10{padding-inline:calc(var(--spacing) * 10)}
-.px-2\.5{padding-inline:calc(var(--spacing) * 2.5)}
+.px-2\\.5{padding-inline:calc(var(--spacing) * 2.5)}
 .px-3{padding-inline:calc(var(--spacing) * 3)}
 .px-4{padding-inline:calc(var(--spacing) * 4)}
 .px-6{padding-inline:calc(var(--spacing) * 6)}
 .py-1{padding-block:calc(var(--spacing) * 1)}
-.py-1\.5{padding-block:calc(var(--spacing) * 1.5)}
-.py-2\.5{padding-block:calc(var(--spacing) * 2.5)}
+.py-1\\.5{padding-block:calc(var(--spacing) * 1.5)}
+.py-2\\.5{padding-block:calc(var(--spacing) * 2.5)}
 .py-28{padding-block:calc(var(--spacing) * 28)}
-.py-3\.5{padding-block:calc(var(--spacing) * 3.5)}
+.py-3\\.5{padding-block:calc(var(--spacing) * 3.5)}
 .py-4{padding-block:calc(var(--spacing) * 4)}
 .py-5{padding-block:calc(var(--spacing) * 5)}
 .py-7{padding-block:calc(var(--spacing) * 7)}
 .relative{position:relative}
-@media(min-width:40rem){.sm\:flex-row{flex-direction:row}}
-@media(min-width:40rem){.sm\:inline{display:inline}}
-@media(min-width:40rem){.sm\:min-h-\[92vh\]{min-height:92vh}}
-@media(min-width:40rem){.sm\:px-6{padding-inline:calc(var(--spacing) * 6)}}
-@media(min-width:40rem){.sm\:text-3xl{font-size:var(--text-3xl);line-height:var(--tw-leading,var(--text-3xl--line-height))}}
-@media(min-width:40rem){.sm\:text-\[12px\]{font-size:12px}}
-@media(min-width:40rem){.sm\:text-\[13px\]{font-size:13px}}
-@media(min-width:40rem){.sm\:text-\[4\.2rem\]{font-size:4.2rem}}
-@media(min-width:40rem){.sm\:text-lg{font-size:var(--text-lg);line-height:var(--tw-leading,var(--text-lg--line-height))}}
+@media(min-width:40rem){.sm\\:flex-row{flex-direction:row}}
+@media(min-width:40rem){.sm\\:inline{display:inline}}
+@media(min-width:40rem){.sm\\:min-h-\\[92vh\\]{min-height:92vh}}
+@media(min-width:40rem){.sm\\:px-6{padding-inline:calc(var(--spacing) * 6)}}
+@media(min-width:40rem){.sm\\:text-3xl{font-size:var(--text-3xl);line-height:var(--tw-leading,var(--text-3xl--line-height))}}
+@media(min-width:40rem){.sm\\:text-\\[12px\\]{font-size:12px}}
+@media(min-width:40rem){.sm\\:text-\\[13px\\]{font-size:13px}}
+@media(min-width:40rem){.sm\\:text-\\[4\\.2rem\\]{font-size:4.2rem}}
+@media(min-width:40rem){.sm\\:text-lg{font-size:var(--text-lg);line-height:var(--tw-leading,var(--text-lg--line-height))}}
 .sr-only{white-space:nowrap;border-width:0;width:1px;height:1px;margin:-1px;padding:0;position:absolute;overflow:hidden}
 .sr-only{white-space:nowrap;border:0;width:1px;height:1px;margin:-1px;padding:0;position:absolute;overflow:hidden}
 .sticky{position:sticky}
 .text-2xl{font-size:var(--text-2xl);line-height:var(--tw-leading,var(--text-2xl--line-height))}
-.text-\[1\.75rem\]{font-size:1.75rem}
-.text-\[10\.5px\]{font-size:10.5px}
-.text-\[10px\]{font-size:10px}
-.text-\[11px\]{font-size:11px}
-.text-\[12px\]{font-size:12px}
-.text-\[2\.8rem\]{font-size:2.8rem}
+.text-\\[1\\.75rem\\]{font-size:1.75rem}
+.text-\\[10\\.5px\\]{font-size:10.5px}
+.text-\\[10px\\]{font-size:10px}
+.text-\\[11px\\]{font-size:11px}
+.text-\\[12px\\]{font-size:12px}
+.text-\\[2\\.8rem\\]{font-size:2.8rem}
 .text-base{font-size:var(--text-base);line-height:var(--tw-leading,var(--text-base--line-height))}
 .text-center{text-align:center}
 .text-xs{font-size:var(--text-xs);line-height:var(--tw-leading,var(--text-xs--line-height))}
 .top-0{top:calc(var(--spacing) * 0)}
-.tracking-\[0\.18em\]{letter-spacing:.18em}
-.tracking-\[0\.2em\]{letter-spacing:.2em}
-.tracking-\[0\.35em\]{letter-spacing:.35em}
-.tracking-\[0\.3em\]{letter-spacing:.3em}
-.tracking-\[0\.45em\]{letter-spacing:.45em}
+.tracking-\\[0\\.18em\\]{letter-spacing:.18em}
+.tracking-\\[0\\.2em\\]{letter-spacing:.2em}
+.tracking-\\[0\\.35em\\]{letter-spacing:.35em}
+.tracking-\\[0\\.3em\\]{letter-spacing:.3em}
+.tracking-\\[0\\.45em\\]{letter-spacing:.45em}
 .tracking-tight{letter-spacing:var(--tracking-tight)}
 .tracking-wide{letter-spacing:var(--tracking-wide)}
 .tracking-wider{letter-spacing:var(--tracking-wider)}
 .uppercase{text-transform:uppercase}
-.w-1\.5{width:calc(var(--spacing) * 1.5)}
+.w-1\\.5{width:calc(var(--spacing) * 1.5)}
 .w-10{width:calc(var(--spacing) * 10)}
 .w-14{width:calc(var(--spacing) * 14)}
 .w-20{width:calc(var(--spacing) * 20)}
-.w-\[18px\]{width:18px}
+.w-\\[18px\\]{width:18px}
 .w-full{width:100%}
 .z-30{z-index:30}
 .z-40{z-index:40}
