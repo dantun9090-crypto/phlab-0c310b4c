@@ -69,7 +69,11 @@ export default defineConfig({
             if (id.includes("/framer-motion/")) return "vendor-motion";
             if (id.includes("/jspdf/") || id.includes("/pdfjs")) return "vendor-pdf";
             if (id.includes("/@radix-ui/")) return "vendor-radix";
-            if (id.includes("/lucide-react/")) return "vendor-icons";
+            // lucide-react deliberately NOT force-chunked: grouping all icons
+            // into one vendor chunk defeats tree-shaking — any single icon
+            // import pulled the whole ~580 KB set eagerly (100% executed at
+            // load per CDP coverage). Let icons tree-shake into the per-route
+            // chunks that actually use them instead.
             if (id.includes("/react-dom/") || id.includes("/react/") || id.includes("/scheduler/")) return "vendor-react";
             if (id.includes("/@tanstack/")) return "vendor-tanstack";
             // Everything else stays in the default vendor chunk.
