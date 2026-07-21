@@ -52,11 +52,18 @@ const HASHED_STATIC_ASSET_RE = /(?:^|\/)[^/?#]+(?:[-._][a-f0-9]{8,}|-[A-Za-z0-9_
 // the wire contract (browsers and CDN tier still see no-store; CSP nonce +
 // strict-dynamic is replayed verbatim as a consistent pair).
 //
-// Freshness after deploy: the scoped post-deploy purge evicts "/" and
-// "/products" explicitly; all other entries expire within HTML_EDGE_TTL_S
-// anyway; the client-side build-killer script is the final safety net.
+// Freshness after deploy: every HIT runs a background build-id probe
+// against the origin and evicts the entry when the live build changes, so
+// a stale shell is served at most ONCE per path after a deploy (and the
+// client-side build-killer force-reloads even that one). The scoped
+// post-deploy purge ("/" and "/products") is the second net.
+//
+// TTL 1h (was 5 min): at 5 min virtually every real visit was an
+// edge-html-miss, so browsers paid the full 0.6-2.3s origin TTFB (CrUX
+// p75 TTFB 1.5s). 1h aligns the entry lifetime with real traffic
+// intervals; staleness is bounded by the build-id probe, not the TTL.
 // ═══════════════════════════════════════════════════════════════════════════════
-const HTML_EDGE_TTL_S = 300; // 5 min entry TTL for cached HTML shells
+const HTML_EDGE_TTL_S = 3600; // 1h entry TTL for cached HTML shells
 const WARM_SKIP_PREFIXES = [
   "/admin", "/auth", "/login", "/logout", "/account",
   "/cart", "/checkout", "/payment", "/register", "/api/", "/downloads/",
