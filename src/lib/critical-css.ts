@@ -60,15 +60,21 @@ h1, h2, .font-display { letter-spacing: -0.01em; }
   nav a, [role="menu"] a, [role="menuitem"], li > a:only-child { min-height: 44px; display: inline-flex; align-items: center; }
   nav a + a, [role="menu"] a + a, li + li > a { margin-top: 4px; }
 }
+/* Layer order must match the built sheet, or these earlier-loading
+   duplicates would hijack the cascade (unlayered beats layered) and
+   break utility overrides on every page. */
+@layer theme, base, components, utilities;
 /* -- Tailwind preflight (verbatim, paint-only rules dropped) -- */
+@layer base {
 *,:after,:before,::backdrop{box-sizing:border-box;border:0 solid;margin:0;padding:0}html,:host{-webkit-text-size-adjust:100%;tab-size:4;line-height:1.5;font-family:var(--default-font-family,ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");font-feature-settings:var(--default-font-feature-settings,normal);font-variation-settings:var(--default-font-variation-settings,normal);-webkit-tap-highlight-color:transparent}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;-webkit-text-decoration:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,samp,pre{font-family:var(--default-mono-font-family,ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);font-feature-settings:var(--default-mono-font-feature-settings,normal);font-variation-settings:var(--default-mono-font-variation-settings,normal);font-size:1em}small{font-size:80%}sub,sup{vertical-align:baseline;font-size:75%;line-height:0;position:relative}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}:-moz-focusring{outline:auto}progress{vertical-align:baseline}summary{display:list-item}ol,ul,menu{list-style:none}img,svg,video,canvas,audio,iframe,embed,object{vertical-align:middle;display:block}img,video{max-width:100%;height:auto}button,input,select,optgroup,textarea{font:inherit;font-feature-settings:inherit;font-variation-settings:inherit;letter-spacing:inherit;color:inherit;opacity:1;background-color:#0000;border-radius:0}::file-selector-button{font:inherit;font-feature-settings:inherit;font-variation-settings:inherit;letter-spacing:inherit;color:inherit;opacity:1;background-color:#0000;border-radius:0}:where(select:is([multiple],[size])) optgroup{font-weight:bolder}:where(select:is([multiple],[size])) optgroup option{padding-inline-start:20px}::file-selector-button{margin-inline-end:4px}::placeholder{opacity:1}@supports (not ((-webkit-appearance:-apple-pay-button))) or (contain-intrinsic-size:1px){::placeholder{color:currentColor}@supports (color:color-mix(in lab,red,red)){::placeholder{color:color-mix(in oklab,currentcolor 50%,transparent)}}}textarea{resize:vertical}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-date-and-time-value{min-height:1lh;text-align:inherit}::-webkit-datetime-edit{display:inline-flex}::-webkit-datetime-edit-fields-wrapper{padding:0}::-webkit-datetime-edit{padding-block:0}::-webkit-datetime-edit-year-field{padding-block:0}::-webkit-datetime-edit-month-field{padding-block:0}::-webkit-datetime-edit-day-field{padding-block:0}::-webkit-datetime-edit-hour-field{padding-block:0}::-webkit-datetime-edit-minute-field{padding-block:0}::-webkit-datetime-edit-second-field{padding-block:0}::-webkit-datetime-edit-millisecond-field{padding-block:0}::-webkit-datetime-edit-meridiem-field{padding-block:0}::-webkit-calendar-picker-indicator{line-height:1}:-moz-ui-invalid{box-shadow:none}button,input:where([type=button],[type=reset],[type=submit]){appearance:button}::file-selector-button{appearance:button}::-webkit-inner-spin-button{height:auto}::-webkit-outer-spin-button{height:auto}[hidden]:where(:not([hidden=until-found])){display:none!important}body,#root{max-width:100%;overflow-x:clip}
-button{font:inherit;color:inherit;background-color:transparent;padding:0;border-radius:0}
-a{color:inherit;text-decoration:inherit}
+}
+@layer utilities {
 :root{--container-2xl:42rem;--container-6xl:72rem;--container-7xl:80rem;--container-lg:32rem;--font-weight-bold:700;--font-weight-light:300;--font-weight-medium:500;--font-weight-semibold:600;--spacing:.25rem;--text-2xl:1.5rem;--text-2xl--line-height:calc(2 / 1.5);--text-3xl:1.875rem;--text-3xl--line-height:1.2 ;--text-base:1rem;--text-base--line-height:1.5 ;--text-lg:1.125rem;--text-lg--line-height:calc(1.75 / 1.125);--text-sm:.875rem;--text-sm--line-height:calc(1.25 / .875);--text-xs:.75rem;--text-xs--line-height:calc(1 / .75);--tracking-tight:-.025em;--tracking-wide:.025em;--tracking-wider:.05em;--tw-leading:initial}
 .absolute{position:absolute}
 .block{display:block}
-.border{border-width:1px}
 .border-b{border-bottom-width:1px}
+.border-l{border-left-width:1px}
+.border-t{border-top-width:1px}
 .bottom-4{bottom:calc(var(--spacing) * 4)}
 .fixed{position:fixed}
 .flex{display:flex}
@@ -89,15 +95,6 @@ a{color:inherit;text-decoration:inherit}
 .grid{display:grid}
 .grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
-.group-last\:border-b-0:is(:where(.group):last-child *){border-bottom-width:0}
-@media(hover:hover){.group-hover\:gap-2:is(:where(.group):hover *){gap:calc(var(--spacing) * 2)}}
-@media(hover:hover){.group-hover\:gap-3:is(:where(.group):hover *){gap:calc(var(--spacing) * 3)}}
-@media(hover:hover){.group-hover\:italic:is(:where(.group):hover *){font-style:italic}}
-.group-data-\[side\=left\]\:-right-4:is(:where(.group)[data-side=left] *){right:calc(var(--spacing) * -4)}
-.group-data-\[side\=left\]\:border-r:is(:where(.group)[data-side=left] *){border-right-width:1px}
-.group-data-\[side\=right\]\:left-0:is(:where(.group)[data-side=right] *){left:calc(var(--spacing) * 0)}
-.group-data-\[side\=right\]\:border-l:is(:where(.group)[data-side=right] *){border-left-width:1px}
-.group-data-\[variant\=floating\]\:border:is(:where(.group)[data-variant=floating] *){border-width:1px}
 .h-1\.5{height:calc(var(--spacing) * 1.5)}
 .h-10{height:calc(var(--spacing) * 10)}
 .h-\[18px\]{height:18px}
@@ -123,14 +120,20 @@ a{color:inherit;text-decoration:inherit}
 .max-w-7xl{max-width:var(--container-7xl)}
 .max-w-lg{max-width:var(--container-lg)}
 .mb-12{margin-bottom:calc(var(--spacing) * 12)}
+@media(min-width:48rem){.md\:border-l{border-left-width:1px}}
+@media(min-width:48rem){.md\:border-t-0{border-top-width:0}}
 @media(min-width:48rem){.md\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(min-width:48rem){.md\:inline{display:inline}}
+@media(min-width:48rem){.md\:px-6{padding-inline:calc(var(--spacing) * 6)}}
+@media(min-width:48rem){.md\:py-6{padding-block:calc(var(--spacing) * 6)}}
 @media(min-width:48rem){.md\:text-3xl{font-size:var(--text-3xl);line-height:var(--tw-leading,var(--text-3xl--line-height))}}
 @media(min-width:48rem){.md\:text-\[5\.5rem\]{font-size:5.5rem}}
 @media(min-width:48rem){.md\:text-sm{font-size:var(--text-sm);line-height:var(--tw-leading,var(--text-sm--line-height))}}
 @media(min-width:48rem){.md\:text-xs{font-size:var(--text-xs);line-height:var(--tw-leading,var(--text-xs--line-height))}}
+.min-h-\[44px\]{min-height:44px}
 .min-h-\[85vh\]{min-height:85vh}
 .min-h-screen{min-height:100vh}
+.min-w-\[44px\]{min-width:44px}
 .ml-1{margin-left:calc(var(--spacing) * 1)}
 .ml-3{margin-left:calc(var(--spacing) * 3)}
 .mt-1{margin-top:calc(var(--spacing) * 1)}
@@ -145,6 +148,7 @@ a{color:inherit;text-decoration:inherit}
 .overflow-hidden{overflow:hidden}
 .px-10{padding-inline:calc(var(--spacing) * 10)}
 .px-2\.5{padding-inline:calc(var(--spacing) * 2.5)}
+.px-3{padding-inline:calc(var(--spacing) * 3)}
 .px-4{padding-inline:calc(var(--spacing) * 4)}
 .px-6{padding-inline:calc(var(--spacing) * 6)}
 .py-1{padding-block:calc(var(--spacing) * 1)}
@@ -153,6 +157,7 @@ a{color:inherit;text-decoration:inherit}
 .py-28{padding-block:calc(var(--spacing) * 28)}
 .py-3\.5{padding-block:calc(var(--spacing) * 3.5)}
 .py-4{padding-block:calc(var(--spacing) * 4)}
+.py-5{padding-block:calc(var(--spacing) * 5)}
 .py-7{padding-block:calc(var(--spacing) * 7)}
 .relative{position:relative}
 @media(min-width:40rem){.sm\:flex-row{flex-direction:row}}
@@ -193,4 +198,7 @@ a{color:inherit;text-decoration:inherit}
 .w-20{width:calc(var(--spacing) * 20)}
 .w-\[18px\]{width:18px}
 .w-full{width:100%}
+.z-30{z-index:30}
+.z-40{z-index:40}
+}
 `;
