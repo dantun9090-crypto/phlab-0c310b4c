@@ -1,4 +1,4 @@
-import { articles } from "@/pages/Resources/data/articles";
+import { ARTICLE_INDEX as articles } from "@/pages/Resources/data/articles-index";
 import { fetchAllProducts } from "@/lib/firestore-rest";
 import { isIndexable } from "@/lib/sitemap-policy";
 import { PROGRAMMATIC_PAGES } from "@/lib/programmatic-seo";

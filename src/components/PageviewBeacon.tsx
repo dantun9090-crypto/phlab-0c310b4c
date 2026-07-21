@@ -48,17 +48,30 @@ export function PageviewBeacon() {
       /* ignore */
     }
 
-    // Record page_view into Supabase analytics_events (RLS-allowed anon insert).
+    // Record page_view into Supabase analytics_events (RLS-allowed anon
+    // insert) via a plain PostgREST call — importing the supabase-js SDK
+    // here cost every visitor ~200 KB of JS (GoTrueClient, realtime,
+    // storage) for a single INSERT.
     try {
-      import("@/integrations/supabase/client")
-        .then(({ supabase }) =>
-          supabase.from("analytics_events").insert({
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+      const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+      if (SUPABASE_URL && SUPABASE_KEY) {
+        fetch(`${SUPABASE_URL}/rest/v1/analytics_events`, {
+          method: "POST",
+          keepalive: true,
+          headers: {
+            "content-type": "application/json",
+            apikey: SUPABASE_KEY,
+            authorization: `Bearer ${SUPABASE_KEY}`,
+            prefer: "return=minimal",
+          },
+          body: JSON.stringify({
             event_type: "page_view",
             path: pathname.slice(0, 2048),
             user_agent: (navigator.userAgent || "").slice(0, 1024),
           }),
-        )
-        .then(() => {}, () => {});
+        }).catch(() => {});
+      }
     } catch {
       /* ignore */
     }

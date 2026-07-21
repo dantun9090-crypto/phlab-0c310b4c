@@ -1,8 +1,14 @@
 import { createStart, createMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
-import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 import { enforceRateLimit } from "@/lib/rate-limit";
+
+// attachSupabaseAuth intentionally NOT registered. It was a Lovable
+// template leftover whose .client() middleware pulled the ENTIRE
+// @supabase/supabase-js stack (~730 KB of source: auth-js, postgrest,
+// storage, realtime) into the eager client chunk of every page — only to
+// attach a Supabase bearer token to serverFn RPCs. App auth is Firebase;
+// no server function ever consumed a Supabase token.
 
 // NOTE: prerenderMiddleware intentionally NOT registered here.
 // Prerender.io interception is handled exclusively at the Cloudflare Worker
@@ -61,7 +67,6 @@ const publicApiRateLimitMiddleware = createMiddleware().server(async ({ next, re
 
 export const startInstance = createStart(() => ({
   requestMiddleware: [errorMiddleware, publicApiRateLimitMiddleware],
-  functionMiddleware: [attachSupabaseAuth],
 }));
 
 

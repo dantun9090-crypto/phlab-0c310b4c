@@ -1,10 +1,12 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { LegacyMount as LegacyClientMount } from "@/lib/legacy-mount";
 import { SEO_LIMITS, SITE_URL, canonicalUrl, clamp, metaForPath } from "@/lib/seo-meta";
-// Full dataset (not the slug/title ARTICLE_INDEX): the Article JSON-LD
-// contract (tests/jsonld-validation.test.ts) requires datePublished per
-// article, which the lightweight index does not carry.
-import { articles } from "@/pages/Resources/data/articles";
+// Lightweight index (slug/title/publishDate/readTime) — enough for the
+// Article JSON-LD contract (tests/jsonld-validation.test.ts requires
+// datePublished per article). Importing the full ~340 KB articles dataset
+// here forced it into the EAGER client chunk of every page, because
+// routeTree.gen.ts statically imports every route module.
+import { ARTICLE_INDEX as articles } from "@/pages/Resources/data/articles-index";
 import { KNOWN_ROOTS } from "@/lib/known-roots";
 import { DynamicImportFallback } from "@/components/DynamicImportFallback";
 
@@ -33,14 +35,9 @@ export const Route = createFileRoute("/$")({
       if (article) {
         // ISO 8601 duration from the human-readable readTime (minutes).
         const timeRequired = `PT${Math.max(0, Math.round(article.readTime || 0))}M`;
-        // Plain-text articleBody — HTML markup stripped so the schema never
-        // carries raw tags (Google ignores/penalises markup in articleBody).
-        const articleBody = article.content
-          .map((s) => `${s.heading ?? ""} ${s.body}`)
-          .join("\n\n")
-          .replace(/<[^>]*>/g, " ")
-          .replace(/\s+/g, " ")
-          .trim();
+        // articleBody intentionally omitted: it required the full article
+        // text (hundreds of KB eager JS). Google only needs headline,
+        // description and datePublished here.
         scripts.push({
           type: "application/ld+json",
           children: JSON.stringify({
@@ -55,7 +52,6 @@ export const Route = createFileRoute("/$")({
             isAccessibleForFree: true,
             datePublished: article.publishDate,
             timeRequired,
-            articleBody,
             author: {
               "@type": "Organization",
               name: "PH Labs UK",
