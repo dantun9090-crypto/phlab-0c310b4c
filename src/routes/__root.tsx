@@ -1296,7 +1296,7 @@ function installCanonicalEnforcer() {
 // Critical above-the-fold CSS lives in `src/lib/critical-css.ts` so the
 // build script `scripts/emit-csp-style-hash.ts` can compute the CSP
 // `sha256-...` directive from the same source.
-import { CRITICAL_CSS } from "@/lib/critical-css";
+import { CRITICAL_CSS_BASE, CRITICAL_CSS_LANDING } from "@/lib/critical-css";
 
 function RootShell({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -1334,7 +1334,12 @@ function RootShell({ children }: { children: React.ReactNode }) {
             response — removed for LCP. */}
 
 
-        <style suppressHydrationWarning dangerouslySetInnerHTML={{ __html: CRITICAL_CSS }} />
+        <style suppressHydrationWarning dangerouslySetInnerHTML={{ __html: CRITICAL_CSS_BASE }} />
+        {/* Landing above-the-fold rules (~12 KB) only on the routes that need
+            them — other pages would pay HTML bytes (FCP) for no benefit. */}
+        {(pathname.startsWith("/compound") || pathname.startsWith("/landing")) && (
+          <style suppressHydrationWarning dangerouslySetInnerHTML={{ __html: CRITICAL_CSS_LANDING }} />
+        )}
         <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: BUILD_ID_CACHE_KILLER }} />
         {/* These must run before HeadContent, because HeadContent emits
             modulepreload links for hashed bundles. Old service workers can

@@ -13,7 +13,7 @@
  * `scripts/emit-csp-style-hash.ts` can compute the SHA-256 hash for the
  * CSP `style-src 'sha256-...'` directive without regex-scraping JSX.
  */
-export const CRITICAL_CSS = `
+export const CRITICAL_CSS_BASE = `
 *,*::before,*::after{box-sizing:border-box;border-width:0;border-style:solid;min-width:0}
 html,body,#root{max-width:100%;overflow-x:hidden;margin:0;background:#060f1e;color:#f0f6ff}
 body{font-family:'Inter Tight','Inter Tight Fallback',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
@@ -26,8 +26,12 @@ header{top:0;z-index:50;min-height:64px;background:rgba(6,15,30,.92);border-bott
 .site-logo-wrap{height:48px;width:48px;display:flex;align-items:center;justify-content:center;flex:0 0 48px}
 [data-phl-banner]{min-height:32px}
 [data-phl-research-banner]{min-height:34px}
-.phl-boot{display:flex;align-items:center;justify-content:center;min-height:60vh;color:#9fb0c8;font-size:14px}
+.phl-boot{display:flex;align-items:center;justify-content:center;min-height:60vh;color:#9fb0c8;font-size:14px}`;
 
+/** Landing-only block: emitted only on /compound and /landing/* routes (it
+ *  adds ~11 KB of above-the-fold rules those pages need; other routes would
+ *  pay HTML bytes for no benefit). */
+export const CRITICAL_CSS_LANDING = `
 /* Landing pages above the fold (/compound, /landing/phlabs): top bar, hero,
    promo strip, trust strip, day/night toggle. Layout-affecting declarations
    (box metrics, flex/grid, font metrics incl. text-transform — uppercase is
@@ -202,3 +206,6 @@ h1, h2, .font-display { letter-spacing: -0.01em; }
 .z-40{z-index:40}
 }
 `;
+
+/** Full sheet (base + landing) — kept for tooling that hashes the whole thing. */
+export const CRITICAL_CSS = CRITICAL_CSS_BASE + CRITICAL_CSS_LANDING;
