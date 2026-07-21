@@ -1,8 +1,10 @@
 name: Post-Deploy Edge Purge
 
 # Automatically purge the Cloudflare edge cache after a successful production
-# deploy. Do not warm HTML shells here: public HTML is intentionally no-store,
-# and warming used to repopulate the old edge HTML cache rule.
+# deploy, then warm key routes so the first real visitor gets an edge hit.
+# (Warming targets the phlabs-prerender Worker's own caches.default HTML
+# store — NOT the legacy CDN cache rule that the old "do not warm" note
+# referred to. The wire contract stays no-store for browsers.)
 
 on:
   workflow_run:
@@ -71,3 +73,22 @@ jobs:
           echo "$headers" | grep -i '^cdn-cache-control:'
           echo "$headers" | grep -i '^cache-control:' | grep -qi 'no-store'
           echo "$headers" | grep -i '^cdn-cache-control:' | grep -qi 'no-store'
+
+      - name: Warm worker edge HTML cache for key routes
+        run: |
+          # Prime the phlabs-prerender Worker's caches.default HTML store so
+          # even the first real visitor after a deploy gets an edge-html-hit
+          # (~50-150ms TTFB instead of 0.6-2.3s). This is SAFE post-0396876:
+          # the worker store guards reject broken shells, and the per-hit
+          # background build-id probe evicts stale entries. (The old "do not
+          # warm" note above referred to a legacy CDN Cache Rule layer that
+          # no longer serves HTML.)
+          UA="Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
+          URLS="/ /products /research /resources /compound /about /contact /quality-control /storage-guide /request-catalog /lab-reports /install /privacy-policy /terms-and-conditions /shipping-policy /refund-policy /cookies"
+          for p in $URLS; do
+            code=$(curl -s -A "$UA" -o /dev/null -w '%{http_code}' "https://phlabs.co.uk$p" || true)
+            via=$(curl -s -A "$UA" -D - -o /dev/null "https://phlabs.co.uk$p" | grep -i '^x-phl-via:' | tr -d '\r' || true)
+            echo "$p -> HTTP $code | $via"
+            sleep 1
+          done
+          echo "✅ Edge HTML cache warmed"
