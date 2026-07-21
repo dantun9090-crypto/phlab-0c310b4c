@@ -49,10 +49,16 @@ export default function LegacyClientApp({
 
   if (LegacyApp) return <LegacyApp initialPath={initialPath} initialBanner={initialBanner} />;
   if (failed) return <DynamicImportFallback label="LegacyApp" />;
-  // Home pre-mount: paint the static hero shell so something meaningful is
-  // on screen during the LegacyApp/Home chunk waterfall instead of a blank
-  // dark page. Scoped to "/" — the shell's hero copy is home-specific.
-  if (!fallback && (initialPath === "/" || initialPath === "")) {
+  // Pre-mount: keep painting the static hero shell so something meaningful
+  // stays on screen during the LegacyApp chunk waterfall instead of a blank
+  // dark page. This matters for EVERY legacy route, not just "/": the SSR
+  // worker already serves this same generic shell in the HTML, so when the
+  // hydrated tree rendered `null` here, the painted shell got unmounted and
+  // the page went blank ("Loading PH Labs…") until the chunk arrived —
+  // pushing mobile LCP on /research to ~6.5s in the Lighthouse gate.
+  // Keeping the shell until LegacyApp is ready preserves the early LCP
+  // paint; the swap cost is identical either way.
+  if (!fallback) {
     return <LegacySsrShell />;
   }
   return <>{fallback}</>;
