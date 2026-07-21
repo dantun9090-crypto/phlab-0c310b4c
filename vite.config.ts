@@ -62,6 +62,14 @@ export default defineConfig({
           // this only groups shared node_modules.
           manualChunks(id) {
             if (!id.includes("node_modules")) return;
+            // tslib must never be absorbed into vendor-firebase. Rollup
+            // (onlyExplicitManualChunks=false) merged the shared tslib
+            // helpers into vendor-firebase, so @supabase/supabase-js in
+            // vendor-tanstack imported just __awaiter/__rest from the
+            // vendor-firebase chunk — a static edge that forced the whole
+            // ~540 KB firebase chunk to load + execute on EVERY page.
+            // Give tslib its own tiny chunk instead.
+            if (id.includes("/tslib/")) return "vendor-tslib";
             if (id.includes("/firebase/") || id.includes("@firebase/")) return "vendor-firebase";
             if (id.includes("/@sentry/") || id.includes("/sentry-")) return "vendor-sentry";
             if (id.includes("/recharts/") || id.includes("/d3-")) return "vendor-charts";
