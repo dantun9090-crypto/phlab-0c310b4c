@@ -494,6 +494,56 @@ async function buildHashCspResponseBrowserSelf(body, status, statusText) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // MAIN HANDLER
 // ═══════════════════════════════════════════════════════════════════════════════
+// Populate the edge HTML cache from a browser pass-through response, then
+// serve it. Buffers the body ONCE (origin sends chunked transfer-encoding,
+// no Content-Length header), serves from the buffer AND caches from the
+// same buffer — avoids any tee/waitUntil race that silently dropped
+// cache.put and made every request an edge-html-miss.
+// Skips caching when: not eligible, non-200, non-HTML, Set-Cookie present
+// (per-user response must never be shared), body <10KB, missing entry
+// <script>, or watchdog-only shell (deploy-race artifacts).
+async function serveWithEdgePopulate(cache, url, path, wEligible, out, ctx) {
+  const ctype = out.headers.get("Content-Type") || "";
+  const hasSetCookie = out.headers.has("set-cookie") || out.headers.has("Set-Cookie");
+  if (wEligible && out.status === 200 && ctype.includes("text/html") && out.body && !hasSetCookie) {
+    const buf = await out.clone().arrayBuffer();
+    const bodyText = new TextDecoder().decode(buf);
+    const hasEntry = !!extractIndexAssetPath(bodyText);
+    const hasWatchdog = bodyText.includes("Taking longer than usual");
+    if (buf.byteLength >= 10000 && hasEntry && !hasWatchdog) {
+      // Snapshot response headers so cache hits replay the exact CSP
+      // (with its original per-request nonce), build id, and content-type.
+      // Filter hop-by-hop headers that mustn't be replayed. CRITICAL:
+      // Cache API refuses no-store responses — override to a private
+      // public,max-age header that only the Cache API sees (the wire keeps
+      // no-store via applyBrowserHtmlNoCache on every hit + miss).
+      const snapshotHeaders = new Headers();
+      out.headers.forEach((value, name) => {
+        const n = name.toLowerCase();
+        if (n === "set-cookie" || n === "connection" || n === "keep-alive" ||
+            n === "transfer-encoding" || n === "cf-ray" || n === "cf-request-id" ||
+            n === "server-timing" || n === "x-phl-via" || n === "age" ||
+            n === "date" || n === "cache-control" || n === "cdn-cache-control" ||
+            n === "cloudflare-cdn-cache-control" || n === "surrogate-control" ||
+            n === "pragma" || n === "expires" || n === "content-length") return;
+        snapshotHeaders.set(name, value);
+      });
+      snapshotHeaders.set("Cache-Control", "public, max-age=" + HTML_EDGE_TTL_S);
+      const cacheKey = edgeHtmlCacheKey(url);
+      const snapshot = new Response(buf, {
+        status: out.status,
+        statusText: out.statusText,
+        headers: snapshotHeaders,
+      });
+      ctx.waitUntil(cache.put(cacheKey, snapshot).catch((e) => {
+        console.warn("[PHL Worker] edge HTML cache populate failed: " + (e && e.message));
+      }));
+    }
+    return new Response(buf, { status: out.status, statusText: out.statusText, headers: out.headers });
+  }
+  return out;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -995,7 +1045,11 @@ export default {
       }
       // Fallback: serve the origin shell we already fetched, unchanged.
       // Never populate the prerender cache slot with a hydration-only shell.
-      wEligible = false;
+      // BUT: the origin shell itself is perfectly cacheable — keep
+      // wEligible so the shared populate block below stores it in the
+      // edge HTML cache. (Previously wEligible=false here meant a
+      // prerender.io outage disabled edge caching for ALL browser
+      // traffic — every visit paid full origin TTFB.)
       if (originShellRes && originShellRes.ok) {
         const passRes = await buildBrowserResponse(originShellRes, path);
         const out = new Response(passRes.body, {
@@ -1010,7 +1064,7 @@ export default {
         const total = Date.now() - startTime;
         out.headers.set("X-PHL-Via", "edge-html-miss;bot=0;fallback=origin;origin=" + originShellMs + "ms;total=" + total + "ms");
         out.headers.set("Server-Timing", `edge-html;desc="FALLBACK", origin;dur=${originShellMs}, worker;dur=${total}`);
-        return out;
+        return serveWithEdgePopulate(cache, url, path, wEligible, out, ctx);
       }
     }
 
@@ -1063,57 +1117,8 @@ export default {
       out.headers.delete("Last-Modified");
     }
 
-    // Populate the edge HTML cache on successful HTML pass-through. Buffer
-    // the body ONCE (origin sends chunked transfer-encoding, no
-    // Content-Length header), then serve from the buffer AND cache from the
-    // same buffer. Avoids any tee/waitUntil race that silently dropped
-    // cache.put and made every request an edge-html-miss.
-    // Skip if origin sent Set-Cookie (per-user response) — must never share.
-    const ctype = out.headers.get("Content-Type") || "";
-    const hasSetCookie = out.headers.has("set-cookie") || out.headers.has("Set-Cookie");
-    if (wEligible && out.status === 200 && ctype.includes("text/html") && out.body && !hasSetCookie) {
-      const buf = await out.clone().arrayBuffer();
-      // STORE GUARD: measure ACTUAL body bytes (not Content-Length, which
-      // is absent on chunked HTML). Real shells are 50KB+; <10KB is a
-      // deploy-race artifact (0-byte origin, error page) that would replay
-      // a blank homepage to every visitor until manual purge.
-      // Defensive sanity: this path only runs when the prerender branch was
-      // bypassed. Reject watchdog-only shells and 0-asset bodies before cache.
-      const bodyText = new TextDecoder().decode(buf);
-      const hasEntry = !!extractIndexAssetPath(bodyText);
-      const hasWatchdog = bodyText.includes("Taking longer than usual");
-      if (buf.byteLength >= 10000 && hasEntry && !hasWatchdog) {
-        // Snapshot response headers so cache hits replay the exact CSP
-        // (with its original per-request nonce), build id, and
-        // content-type. Filter hop-by-hop / connection headers that
-        // mustn't be replayed. CRITICAL: Cache API refuses no-store
-        // responses — override to a private public,max-age header that
-        // only the Cache API sees (the wire keeps no-store via
-        // applyBrowserHtmlNoCache on every hit + miss).
-        const snapshotHeaders = new Headers();
-        out.headers.forEach((value, name) => {
-          const n = name.toLowerCase();
-          if (n === "set-cookie" || n === "connection" || n === "keep-alive" ||
-              n === "transfer-encoding" || n === "cf-ray" || n === "cf-request-id" ||
-              n === "server-timing" || n === "x-phl-via" || n === "age" ||
-              n === "date" || n === "cache-control" || n === "cdn-cache-control" ||
-              n === "cloudflare-cdn-cache-control" || n === "surrogate-control" ||
-              n === "pragma" || n === "expires" || n === "content-length") return;
-          snapshotHeaders.set(name, value);
-        });
-        snapshotHeaders.set("Cache-Control", "public, max-age=" + HTML_EDGE_TTL_S);
-        const cacheKey = edgeHtmlCacheKey(url);
-        const snapshot = new Response(buf, {
-          status: out.status,
-          statusText: out.statusText,
-          headers: snapshotHeaders,
-        });
-        ctx.waitUntil(cache.put(cacheKey, snapshot).catch((e) => {
-          console.warn("[PHL Worker] edge HTML cache populate failed: " + (e && e.message));
-        }));
-      }
-      return new Response(buf, { status: out.status, statusText: out.statusText, headers: out.headers });
-    }
-    return out;
+    // Populate the edge HTML cache on successful HTML pass-through and
+    // serve the buffered response (see serveWithEdgePopulate).
+    return serveWithEdgePopulate(cache, url, path, wEligible, out, ctx);
   },
 };
