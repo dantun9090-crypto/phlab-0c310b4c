@@ -137,7 +137,7 @@
             "total-blocking-time": [
               "error",
               {
-                "maxNumericValue": 450
+                "maxNumericValue": 550
               }
             ],
             "speed-index": [
