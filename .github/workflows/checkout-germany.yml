@@ -96,6 +96,14 @@ jobs:
           else
             bunx playwright install --with-deps ${{ matrix.browser }}
           fi
+          # The dev server itself spawns a chromium headless shell
+          # (independent of the test browser). Webkit/firefox jobs used to
+          # fail intermittently with "Executable doesn't exist ...
+          # chromium_headless_shell-*" depending on cache luck — install it
+          # explicitly in every non-chromium job.
+          if [ "${{ matrix.browser }}" != "chromium" ]; then
+            bunx playwright install --with-deps chromium --only-shell
+          fi
 
       - name: Start local dev server
         run: |
