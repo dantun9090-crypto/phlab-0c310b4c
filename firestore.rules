@@ -134,6 +134,7 @@ service cloud.firestore {
     match /site_config/{id}     { allow read: if true; allow write: if isAdmin(); }
     match /banners/{id}         { allow read: if true; allow write: if isAdmin(); }
     match /landingPage/{id}     { allow read: if true; allow write: if isAdmin(); }
+    match /landingPages/{id}    { allow read: if true; allow write: if isAdmin(); }
     match /themes/{id}          { allow read: if true; allow write: if isAdmin(); }
     match /policies/{id}        { allow read: if true; allow write: if isAdmin(); }
     match /articles/{id}        { allow read: if true; allow write: if isAdmin(); }
