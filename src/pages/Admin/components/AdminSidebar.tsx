@@ -65,6 +65,7 @@ const navGroups = [
       { id: 'banner', label: 'Promo Banner', icon: Image },
       { id: 'adverts', label: 'Adverts', icon: Radio },
       { id: 'landing', label: 'Landing Pages', icon: Rocket },
+      { id: 'adsdomains', label: 'Ads & Domains', icon: Megaphone },
       { id: 'policies', label: 'Policies', icon: Scale },
     ],
   },
