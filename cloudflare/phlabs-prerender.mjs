@@ -871,6 +871,11 @@ export default {
     const cache = caches.default;
     let wEligible = warmCacheEligible(path);
     const swrRefill = request.headers.get("x-phl-swr-refill") === "1";
+    // Build-id probes must bypass the edge HTML cache — otherwise the probe
+    // is served the very entry it is meant to validate and never sees the
+    // live build (self-referential eviction check that can never fire).
+    const buildProbe = request.headers.get("x-phl-build-probe") === "1";
+    if (buildProbe) wEligible = false;
     if (wEligible && !swrRefill) {
       const cacheKey = edgeHtmlCacheKey(url);
       const cached = await cache.match(cacheKey);
@@ -895,14 +900,29 @@ export default {
           // Background build-id validation: never blocks the customer.
           ctx.waitUntil((async () => {
             try {
+              // x-phl-build-probe forces a cache bypass (see above) — without
+              // it this request HITs the same cached entry and always reads
+              // back the stale bid, so eviction could never trigger.
               const probe = await fetch(new Request(url.toString(), {
                 method: "GET",
-                headers: { "User-Agent": "phlabs-worker/build-id-check" },
+                headers: {
+                  "User-Agent": "phlabs-worker/build-id-check",
+                  "x-phl-build-probe": "1",
+                },
               }), { cf: { cacheTtl: 0, cacheEverything: false } });
               if (!probe || !probe.ok) return;
-              const liveBid =
+              let liveBid =
                 probe.headers.get("x-build-id") ||
                 probe.headers.get("x-phl-build-id") || "";
+              if (!liveBid) {
+                // Origin passthrough does not always stamp the header — fall
+                // back to the <meta name="build-id"> tag in the HTML shell.
+                const body = await probe.text();
+                const m =
+                  body.match(/<meta[^>]+name=["']build-id["'][^>]*content=["']([^"']+)["']/i) ||
+                  body.match(/<meta[^>]+content=["']([^"']+)["'][^>]*name=["']build-id["']/i);
+                liveBid = m ? m[1] : "";
+              }
               if (liveBid && cachedBid && liveBid !== cachedBid) {
                 await cache.delete(cacheKey);
               }
