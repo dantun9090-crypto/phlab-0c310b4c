@@ -127,7 +127,7 @@ header .container{display:flex;align-items:center;justify-content:space-between;
 .logo:hover .logo-img{transform:scale(1.06)}
 .logo-text{
   font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:500;
-  letter-spacing:1px;color:var(--text);
+  letter-spacing:1px;color:var(--text);white-space:nowrap;
 }
 .logo-text span{color:var(--gold);font-style:italic}
 .nav-links{display:flex;gap:44px;list-style:none}
