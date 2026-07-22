@@ -219,6 +219,45 @@ function LandingModule() {
     load();
   };
 
+
+  // One-click starter: writes a complete, compliant landing page authored for
+  // UK research-campaign use (no product names, no health claims).
+  const [seeding, setSeeding] = useState(false);
+  const createStarter = async () => {
+    setSeeding(true);
+    try {
+      await addDoc(collection(db, 'landingPages'), {
+        slug: 'research-quality-standards',
+        headline: 'UK Research Compound Quality Standards',
+        subheadline: 'How independent analytical verification — HPLC and mass spectrometry — protects the integrity of in-vitro research.',
+        bullets: [
+          'Every batch analytically verified to ≥99% purity by reverse-phase HPLC',
+          'Molecular identity confirmed by mass spectrometry (ESI-MS)',
+          'Certificate of Analysis supplied with every order',
+          'Lyophilised compounds, cold-chain dispatched from the UK',
+          'Supplied strictly for laboratory research use only',
+        ],
+        faq: [
+          { q: 'What does a Certificate of Analysis include?', a: 'Each CoA documents the HPLC chromatogram, mass spectrometry result, batch identifier, measured purity, and recommended storage conditions for the specific batch supplied.' },
+          { q: 'Are these products intended for human use?', a: 'No. All compounds are supplied strictly for in-vitro laboratory research. They are not medicines, supplements, or foods, and are not for human or veterinary use.' },
+          { q: 'How are orders packed and shipped?', a: 'Compounds are lyophilised, sealed, and dispatched from the UK in protective cold-chain packaging with full batch documentation.' },
+          { q: 'Who can place an order?', a: 'We supply verified UK research customers aged 18+. By ordering, customers confirm compounds will be used exclusively for legitimate laboratory research.' },
+        ],
+        ctaText: 'Contact our team',
+        ctaUrl: '/contact',
+        metaTitle: 'Research Compound Quality Standards | PH Labs',
+        metaDescription: 'How PH Labs verifies every research compound: HPLC purity testing, mass spectrometry identity confirmation, and a Certificate of Analysis with every UK order. Research use only.',
+        published: true,
+        createdAt: serverTimestamp(),
+      });
+      setMsg('Starter page created — live at /lp/research-quality-standards');
+      setTimeout(() => setMsg(''), 4000);
+      load();
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   const remove = async (id?: string) => {
     if (!id) return;
     await deleteDoc(doc(db, 'landingPages', id));
@@ -237,7 +276,12 @@ function LandingModule() {
 
       {!edit ? (
         <>
-          <button style={btn} onClick={() => startEdit({ ...emptyLanding })}><Plus size={14} /> New landing page</button>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button style={btn} onClick={() => startEdit({ ...emptyLanding })}><Plus size={14} /> New landing page</button>
+            <button style={btnGhost} onClick={createStarter} disabled={seeding}>
+              <ShieldCheck size={14} /> {seeding ? 'Creating…' : 'Create ready-made compliant page'}
+            </button>
+          </div>
           {msg && <span style={{ color: '#34d399', fontSize: 12, marginLeft: 10 }}>{msg}</span>}
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginTop: 14 }}>
             <thead>
