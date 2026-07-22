@@ -4,7 +4,7 @@ import { db, PRODUCTS_COL } from '@/lib/firebase';
 import type { Product } from '@/lib/firebase';
 import { Globe, FileText, ShieldCheck, Plus, Trash2, Save, Eye, EyeOff, RefreshCw } from 'lucide-react';
 
-// ---------- shared ----------
+// ---------- shared (dark admin theme) ----------
 
 const DEFAULT_DOMAINS = ['phlabs.co.uk', 'www.phlabs.co.uk'];
 
@@ -24,10 +24,38 @@ function useDomains() {
   return { domains, setDomains, loaded };
 }
 
-const card: React.CSSProperties = { background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 20 };
-const btn: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, background: '#0f172a', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontSize: 13 };
-const btnGhost: React.CSSProperties = { ...btn, background: '#f1f5f9', color: '#0f172a', border: '1px solid #e2e8f0' };
-const input: React.CSSProperties = { width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 13 };
+const card: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.03)',
+  border: '1px solid rgba(59,130,246,0.18)',
+  borderRadius: 16,
+  padding: 20,
+  marginBottom: 20,
+};
+const btn: React.CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', gap: 6,
+  background: 'linear-gradient(135deg, #1d4ed8, #2563eb)',
+  color: '#fff', border: '1px solid rgba(96,165,250,0.35)',
+  borderRadius: 10, padding: '9px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+};
+const btnGhost: React.CSSProperties = {
+  ...btn,
+  background: 'rgba(255,255,255,0.05)',
+  color: '#c8dff5',
+  border: '1px solid rgba(255,255,255,0.12)',
+  fontWeight: 500,
+};
+const input: React.CSSProperties = {
+  width: '100%', padding: '9px 12px',
+  background: 'rgba(255,255,255,0.05)',
+  border: '1px solid rgba(255,255,255,0.14)',
+  borderRadius: 10, fontSize: 13, color: '#e4f0ff',
+  outline: 'none',
+};
+const h3Style: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 8, marginTop: 0, color: '#e4f0ff', fontSize: 16 };
+const descStyle: React.CSSProperties = { color: '#9cb8d9', fontSize: 13, lineHeight: 1.6 };
+const thStyle: React.CSSProperties = { padding: 8, color: '#7a98b8', fontSize: 12, fontWeight: 700 };
+const tdStyle: React.CSSProperties = { padding: 8, color: '#c8dff5' };
+const codeStyle: React.CSSProperties = { color: '#93c5fd', background: 'rgba(37,99,235,0.12)', padding: '1px 6px', borderRadius: 6, fontSize: 12 };
 
 // ---------- Module 1: per-domain product visibility ----------
 
@@ -75,50 +103,50 @@ function VisibilityModule() {
 
   return (
     <div style={card}>
-      <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 0 }}><Globe size={18} /> Per-domain product visibility</h3>
-      <p style={{ color: '#64748b', fontSize: 13 }}>
+      <h3 style={h3Style}><Globe size={18} color="#60a5fa" /> Per-domain product visibility</h3>
+      <p style={descStyle}>
         Choose which domains each product is visible on. Products hidden on a domain disappear from the shop and home page there
         (useful for compliant ad domains). No selection = visible everywhere.
       </p>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
         {domains.map((d) => (
-          <span key={d} style={{ background: '#eef2ff', border: '1px solid #c7d2fe', borderRadius: 999, padding: '4px 10px', fontSize: 12, display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+          <span key={d} style={{ background: 'rgba(37,99,235,0.15)', border: '1px solid rgba(59,130,246,0.35)', color: '#c8dff5', borderRadius: 999, padding: '5px 12px', fontSize: 12, display: 'inline-flex', gap: 8, alignItems: 'center' }}>
             {d}
-            <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#ef4444' }} onClick={() => saveDomains(domains.filter((x) => x !== d))} title="Remove domain">
+            <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#f87171', display: 'inline-flex', padding: 0 }} onClick={() => saveDomains(domains.filter((x) => x !== d))} title="Remove domain">
               <Trash2 size={12} />
             </button>
           </span>
         ))}
-        <input style={{ ...input, width: 200 }} placeholder="add domain e.g. ads.phlabs.co.uk" value={newDomain} onChange={(e) => setNewDomain(e.target.value)} />
+        <input style={{ ...input, width: 220 }} placeholder="add domain e.g. ads.phlabs.co.uk" value={newDomain} onChange={(e) => setNewDomain(e.target.value)} />
         <button style={btnGhost} onClick={() => { const d = newDomain.trim().toLowerCase(); if (d && !domains.includes(d)) saveDomains([...domains, d]); setNewDomain(''); }}>
           <Plus size={14} /> Add
         </button>
       </div>
-      {msg && <p style={{ color: '#16a34a', fontSize: 12 }}>{msg}</p>}
+      {msg && <p style={{ color: '#34d399', fontSize: 12 }}>{msg}</p>}
 
       {loading ? (
-        <p>Loading products…</p>
+        <p style={{ color: '#7a98b8' }}>Loading products…</p>
       ) : (
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
-            <tr style={{ textAlign: 'left', borderBottom: '2px solid #e5e7eb' }}>
-              <th style={{ padding: 8 }}>Product</th>
-              {domains.map((d) => <th key={d} style={{ padding: 8 }}>{d}</th>)}
+            <tr style={{ textAlign: 'left', borderBottom: '1px solid rgba(59,130,246,0.25)' }}>
+              <th style={thStyle}>Product</th>
+              {domains.map((d) => <th key={d} style={thStyle}>{d}</th>)}
             </tr>
           </thead>
           <tbody>
             {products.map((p) => {
               const vis = visibleOn(p);
               return (
-                <tr key={p.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: 8 }}>{p.name || p.id}</td>
+                <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <td style={tdStyle}>{p.name || p.id}</td>
                   {domains.map((d) => {
                     const on = vis.includes(d);
                     return (
-                      <td key={d} style={{ padding: 8 }}>
+                      <td key={d} style={tdStyle}>
                         <button
-                          style={{ ...btnGhost, opacity: saving === p.id ? 0.5 : 1, color: on ? '#16a34a' : '#94a3b8' }}
+                          style={{ ...btnGhost, opacity: saving === p.id ? 0.5 : 1, color: on ? '#34d399' : '#5a7a9a', padding: '6px 12px' }}
                           disabled={saving === p.id}
                           onClick={() => toggle(p, d)}
                           title={on ? 'Visible — click to hide' : 'Hidden — click to show'}
@@ -197,57 +225,59 @@ function LandingModule() {
     load();
   };
 
+  const labelStyle: React.CSSProperties = { color: '#9cb8d9', fontSize: 12, fontWeight: 600, display: 'grid', gap: 5 };
+
   return (
     <div style={card}>
-      <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 0 }}><FileText size={18} /> Compliant campaign landing pages</h3>
-      <p style={{ color: '#64748b', fontSize: 13 }}>
-        Pages published here are served at <code>/lp/&lt;slug&gt;</code> — clean, policy-safe destinations for ad campaigns
+      <h3 style={h3Style}><FileText size={18} color="#60a5fa" /> Compliant campaign landing pages</h3>
+      <p style={descStyle}>
+        Pages published here are served at <code style={codeStyle}>/lp/&lt;slug&gt;</code> — clean, policy-safe destinations for ad campaigns
         (no product names or claims). Keep content informational only.
       </p>
 
       {!edit ? (
         <>
           <button style={btn} onClick={() => startEdit({ ...emptyLanding })}><Plus size={14} /> New landing page</button>
-          {msg && <span style={{ color: '#16a34a', fontSize: 12, marginLeft: 10 }}>{msg}</span>}
+          {msg && <span style={{ color: '#34d399', fontSize: 12, marginLeft: 10 }}>{msg}</span>}
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginTop: 14 }}>
             <thead>
-              <tr style={{ textAlign: 'left', borderBottom: '2px solid #e5e7eb' }}>
-                <th style={{ padding: 8 }}>Slug</th><th style={{ padding: 8 }}>Headline</th><th style={{ padding: 8 }}>Status</th><th style={{ padding: 8 }}></th>
+              <tr style={{ textAlign: 'left', borderBottom: '1px solid rgba(59,130,246,0.25)' }}>
+                <th style={thStyle}>Slug</th><th style={thStyle}>Headline</th><th style={thStyle}>Status</th><th style={thStyle}></th>
               </tr>
             </thead>
             <tbody>
               {pages.map((p) => (
-                <tr key={p.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: 8 }}><code>/lp/{p.slug}</code></td>
-                  <td style={{ padding: 8 }}>{p.headline}</td>
-                  <td style={{ padding: 8 }}>{p.published ? '🟢 live' : '⚪ draft'}</td>
-                  <td style={{ padding: 8, display: 'flex', gap: 6 }}>
+                <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <td style={tdStyle}><code style={codeStyle}>/lp/{p.slug}</code></td>
+                  <td style={tdStyle}>{p.headline}</td>
+                  <td style={tdStyle}>{p.published ? '🟢 live' : '⚪ draft'}</td>
+                  <td style={{ ...tdStyle, display: 'flex', gap: 6 }}>
                     <button style={btnGhost} onClick={() => startEdit(p)}>Edit</button>
-                    <button style={{ ...btnGhost, color: '#ef4444' }} onClick={() => remove(p.id)}><Trash2 size={14} /></button>
+                    <button style={{ ...btnGhost, color: '#f87171' }} onClick={() => remove(p.id)}><Trash2 size={14} /></button>
                   </td>
                 </tr>
               ))}
-              {!pages.length && <tr><td colSpan={4} style={{ padding: 12, color: '#94a3b8' }}>No landing pages yet.</td></tr>}
+              {!pages.length && <tr><td colSpan={4} style={{ padding: 12, color: '#5a7a9a' }}>No landing pages yet.</td></tr>}
             </tbody>
           </table>
         </>
       ) : (
-        <div style={{ display: 'grid', gap: 10, maxWidth: 640 }}>
-          <label>Slug<input style={input} value={edit.slug} onChange={(e) => setEdit({ ...edit, slug: e.target.value })} placeholder="quality-assurance" /></label>
-          <label>Headline<input style={input} value={edit.headline} onChange={(e) => setEdit({ ...edit, headline: e.target.value })} /></label>
-          <label>Subheadline<input style={input} value={edit.subheadline} onChange={(e) => setEdit({ ...edit, subheadline: e.target.value })} /></label>
-          <label>Bullet points (one per line)<textarea style={{ ...input, minHeight: 90 }} value={bulletsText} onChange={(e) => setBulletsText(e.target.value)} /></label>
-          <label>CTA text<input style={input} value={edit.ctaText} onChange={(e) => setEdit({ ...edit, ctaText: e.target.value })} /></label>
-          <label>CTA URL<input style={input} value={edit.ctaUrl} onChange={(e) => setEdit({ ...edit, ctaUrl: e.target.value })} /></label>
-          <label>Meta title<input style={input} value={edit.metaTitle} onChange={(e) => setEdit({ ...edit, metaTitle: e.target.value })} /></label>
-          <label>Meta description<textarea style={{ ...input, minHeight: 60 }} value={edit.metaDescription} onChange={(e) => setEdit({ ...edit, metaDescription: e.target.value })} /></label>
-          <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'grid', gap: 12, maxWidth: 640 }}>
+          <label style={labelStyle}>Slug<input style={input} value={edit.slug} onChange={(e) => setEdit({ ...edit, slug: e.target.value })} placeholder="quality-assurance" /></label>
+          <label style={labelStyle}>Headline<input style={input} value={edit.headline} onChange={(e) => setEdit({ ...edit, headline: e.target.value })} /></label>
+          <label style={labelStyle}>Subheadline<input style={input} value={edit.subheadline} onChange={(e) => setEdit({ ...edit, subheadline: e.target.value })} /></label>
+          <label style={labelStyle}>Bullet points (one per line)<textarea style={{ ...input, minHeight: 90 }} value={bulletsText} onChange={(e) => setBulletsText(e.target.value)} /></label>
+          <label style={labelStyle}>CTA text<input style={input} value={edit.ctaText} onChange={(e) => setEdit({ ...edit, ctaText: e.target.value })} /></label>
+          <label style={labelStyle}>CTA URL<input style={input} value={edit.ctaUrl} onChange={(e) => setEdit({ ...edit, ctaUrl: e.target.value })} /></label>
+          <label style={labelStyle}>Meta title<input style={input} value={edit.metaTitle} onChange={(e) => setEdit({ ...edit, metaTitle: e.target.value })} /></label>
+          <label style={labelStyle}>Meta description<textarea style={{ ...input, minHeight: 60 }} value={edit.metaDescription} onChange={(e) => setEdit({ ...edit, metaDescription: e.target.value })} /></label>
+          <label style={{ ...labelStyle, display: 'flex', gap: 8, alignItems: 'center', color: '#c8dff5' }}>
             <input type="checkbox" checked={edit.published} onChange={(e) => setEdit({ ...edit, published: e.target.checked })} /> Published (live at /lp/{edit.slug || '…'})
           </label>
           <div style={{ display: 'flex', gap: 8 }}>
             <button style={btn} onClick={save}><Save size={14} /> Save</button>
             <button style={btnGhost} onClick={() => setEdit(null)}>Cancel</button>
-            {msg && <span style={{ color: '#ef4444', fontSize: 12, alignSelf: 'center' }}>{msg}</span>}
+            {msg && <span style={{ color: '#f87171', fontSize: 12, alignSelf: 'center' }}>{msg}</span>}
           </div>
         </div>
       )}
@@ -314,13 +344,13 @@ function ComplianceModule() {
 
   return (
     <div style={card}>
-      <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 0 }}><ShieldCheck size={18} /> Ads compliance scanner</h3>
-      <p style={{ color: '#64748b', fontSize: 13 }}>
+      <h3 style={h3Style}><ShieldCheck size={18} color="#60a5fa" /> Ads compliance scanner</h3>
+      <p style={descStyle}>
         Scans product names and descriptions for phrases likely to violate Google Ads / MHRA rules, and flags products missing a COA.
-        Fix issues before pointing ads at <code>{domains[0] || 'your domain'}</code>.
+        Fix issues before pointing ads at <code style={codeStyle}>{domains[0] || 'your domain'}</code>.
       </p>
 
-      <label style={{ fontSize: 13 }}>Banned phrases (one per line)</label>
+      <label style={{ color: '#9cb8d9', fontSize: 12, fontWeight: 600 }}>Banned phrases (one per line)</label>
       <textarea style={{ ...input, minHeight: 120, margin: '6px 0' }} value={bannedText} onChange={(e) => setBannedText(e.target.value)} />
       <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
         <button style={btnGhost} onClick={saveBanned}><Save size={14} /> Save phrases</button>
@@ -329,20 +359,20 @@ function ComplianceModule() {
 
       {results && (
         results.length === 0 ? (
-          <p style={{ color: '#16a34a' }}>✅ No issues found.</p>
+          <p style={{ color: '#34d399' }}>✅ No issues found.</p>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
-              <tr style={{ textAlign: 'left', borderBottom: '2px solid #e5e7eb' }}>
-                <th style={{ padding: 8 }}>Product</th><th style={{ padding: 8 }}>Issues</th><th style={{ padding: 8 }}></th>
+              <tr style={{ textAlign: 'left', borderBottom: '1px solid rgba(59,130,246,0.25)' }}>
+                <th style={thStyle}>Product</th><th style={thStyle}>Issues</th><th style={thStyle}></th>
               </tr>
             </thead>
             <tbody>
               {results.map(({ p, hits }) => (
-                <tr key={p.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: 8 }}>{p.name || p.id}</td>
-                  <td style={{ padding: 8 }}>{hits.map((h) => <div key={h} style={{ color: '#b45309' }}>⚠ {h}</div>)}</td>
-                  <td style={{ padding: 8 }}>
+                <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <td style={tdStyle}>{p.name || p.id}</td>
+                  <td style={tdStyle}>{hits.map((h) => <div key={h} style={{ color: '#fbbf24' }}>⚠ {h}</div>)}</td>
+                  <td style={tdStyle}>
                     <button style={btnGhost} onClick={() => hideEverywhere(p)} title="Hide from all domains until fixed">
                       <EyeOff size={14} /> Hide everywhere
                     </button>
@@ -362,7 +392,7 @@ function ComplianceModule() {
 export default function AdsDomainsTab() {
   return (
     <div>
-      <h2 style={{ marginTop: 0 }}>Ads & Domains</h2>
+      <h2 style={{ marginTop: 0, color: '#e4f0ff' }}>Ads & Domains</h2>
       <VisibilityModule />
       <LandingModule />
       <ComplianceModule />
