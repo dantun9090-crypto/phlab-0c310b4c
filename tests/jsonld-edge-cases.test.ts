@@ -304,8 +304,10 @@ describe("Article JSON-LD — edge cases", () => {
         // timeRequired must be a valid ISO 8601 duration (PT<n>M)
         expect(articleBlock!.timeRequired).toMatch(/^PT\d+M$/);
 
-        // articleBody must not contain raw HTML tags
-        expect(articleBlock!.articleBody).not.toMatch(/<[a-z]+[^>]*>/i);
+        // articleBody is intentionally NOT emitted since 2026-07: it forced
+        // the full ~340KB articles dataset into the eager client chunk.
+        // Google only needs headline/description/datePublished.
+        expect(articleBlock!.articleBody).toBeUndefined();
 
         // Round-trips cleanly
         expect(() => JSON.stringify(blocks)).not.toThrow();
