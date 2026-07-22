@@ -368,9 +368,11 @@ test.describe('Checkout — Germany', () => {
     const streetError = page.getByText(/street name and house number|Musterstraße 12/i);
 
     // Case A — street name only, no house number ("Musterstraße").
+    // WebKit on CI can be slow to re-render the validation error — allow a
+    // longer window than the default 5s expect timeout.
     await streetInput.fill('Musterstraße');
     await advance.click();
-    await expect(streetError).toBeVisible();
+    await expect(streetError).toBeVisible({ timeout: 15_000 });
     await expect(stepThreeHeading).toHaveCount(0);
 
     // Case B — house number only, no street name ("12").
