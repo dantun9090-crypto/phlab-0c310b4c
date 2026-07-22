@@ -17,6 +17,7 @@ const MarketingAdvertSlot = lazy(() => import('@/components/MarketingAdvertSlot'
 
 import { getProductImage } from '@/lib/productImages';
 import type { Product } from '@/lib/firebase';
+import { filterProductsForHost } from '@/lib/domain-visibility';
 // Firebase is dynamically imported below to keep it off the home-route critical chunk.
 const loadFirebase = () => import('@/lib/firebase');
 import { nameToSlug } from '@/lib/seedProducts';
@@ -241,7 +242,7 @@ export default function HomePage() {
     const loadProducts = () => {
       loadFirebase().then(({ getAllProducts }) => getAllProducts()).then((prods: Product[]) => {
         if (cancelled) return;
-        setProducts(prods);
+        setProducts(filterProductsForHost(prods));
         // Wait for the first product tiles to render, then flip ready.
         flipPrerenderReadyWhenRendered('[data-product-card], [data-home-product]', Math.min(prods.length, 3));
       }).catch(() => {
@@ -942,8 +943,7 @@ export default function HomePage() {
                     {/* HPLC badge */}
                     <div className="absolute top-3 right-3">
                       <span className="px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1" style={{ background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.1)', color: '#4ade80', textShadow: '0 1px 2px rgba(0,0,0,0.65)' }}>
-                        <CheckCircle2 style={{ width: 10, height: 10 }} />
-                        ≥99%
+                        <CheckCircle2 style={{ width: 10, height: 10 }} />≥99%
                       </span>
                     </div>
                   </div>
@@ -1448,4 +1448,3 @@ export default function HomePage() {
     </div>
   );
 }
-
