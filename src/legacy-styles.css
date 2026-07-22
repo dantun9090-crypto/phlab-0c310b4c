@@ -1461,3 +1461,17 @@ body {
     display: none !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════
+   MOBILE STICKY CTA vs MHRA BAR
+   The Home sticky "Free UK Shipping" bar hardcoded a 42px
+   bottom offset, which overlapped the fixed MHRA disclaimer
+   whenever its text wrapped to 2-3 lines on phones.
+   Layout.tsx (MhraBottomBar) now measures the bar live and
+   publishes its height as --phl-mhra-bar-h; this rule pins
+   the sticky bar directly above it. !important wins over the
+   inline style in src/pages/Home/index.tsx.
+   ═══════════════════════════════════════════════════════ */
+[data-mobile-sticky-bar] {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--phl-mhra-bar-h, 64px)) !important;
+}
