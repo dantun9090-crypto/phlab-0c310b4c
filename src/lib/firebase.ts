@@ -986,7 +986,7 @@ export const subscribeToUsers = (callback: (users: User[]) => void) => {
 // ==================== PRODUCTS / INVENTORY ====================
 
 // The real Firestore collection is 'product_stock'
-const PRODUCTS_COL = 'product_stock';
+export const PRODUCTS_COL = 'product_stock';
 
 function productNameToSlug(name: string): string {
   return name
