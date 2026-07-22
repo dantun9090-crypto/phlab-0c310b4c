@@ -2,6 +2,7 @@ import { createStart, createMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
 import { enforceRateLimit } from "@/lib/rate-limit";
+import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
 // attachSupabaseAuth intentionally NOT registered. It was a Lovable
 // template leftover whose .client() middleware pulled the ENTIRE
@@ -66,6 +67,7 @@ const publicApiRateLimitMiddleware = createMiddleware().server(async ({ next, re
 });
 
 export const startInstance = createStart(() => ({
+  functionMiddleware: [attachSupabaseAuth],
   requestMiddleware: [errorMiddleware, publicApiRateLimitMiddleware],
 }));
 
