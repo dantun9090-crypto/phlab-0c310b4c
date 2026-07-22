@@ -16,6 +16,15 @@ test.describe("/research axe-core a11y audit", () => {
     await page.goto(`${BASE}/research`, { waitUntil: "domcontentloaded" });
     await expect(page.locator("h1")).toBeVisible();
     await page.waitForLoadState("load", { timeout: 10_000 }).catch(() => undefined);
+    // Same deferred-stylesheet race guard as compound-axe.spec.ts.
+    await page.waitForFunction(
+      () =>
+        [...document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')].every(
+          (l) => l.media === "all" || l.media === "" || l.disabled,
+        ),
+      undefined,
+      { timeout: 30_000 },
+    ).catch(() => undefined);
 
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"])

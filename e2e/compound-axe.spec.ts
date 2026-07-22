@@ -33,6 +33,21 @@ test.describe("/compound axe-core a11y audit", () => {
     });
     await expect(page.locator("h1")).toBeVisible({ timeout: 30_000 });
 
+    // Wait for the deferred full stylesheet (loaded via media="print" and
+    // swapped to "all" on load) before scanning. H1 becomes visible with
+    // just the inline critical CSS — scanning then makes axe evaluate
+    // elements whose color utilities live in the deferred sheet against the
+    // wrong colors (e.g. a gold-bg button falling back to the light body
+    // text color = false 2.17:1 color-contrast violation).
+    await page.waitForFunction(
+      () =>
+        [...document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')].every(
+          (l) => l.media === "all" || l.media === "" || l.disabled,
+        ),
+      undefined,
+      { timeout: 30_000 },
+    );
+
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"])
       .disableRules(["region"])
