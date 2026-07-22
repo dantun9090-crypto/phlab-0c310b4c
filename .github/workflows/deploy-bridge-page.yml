@@ -1,0 +1,54 @@
+name: Deploy bridge page (add.phlabs.co.uk)
+
+# Manual deploy of the ads bridge page worker (phlabs-bridge-page).
+# Source: cloudflare/bridge-page.js (logo spliced from the live worker
+# at deploy time — placeholder __LOGO_DATA_URI__).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy phlabs-bridge-page
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Splice logo from live worker
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_API }}
+        run: |
+          set -euo pipefail
+          curl -sf -H "Authorization: Bearer $CF_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/workers/scripts/phlabs-bridge-page" \
+            -o /tmp/live-worker.js
+          LOGO=$(grep -o 'data:image/jpeg;base64,[A-Za-z0-9+/=]*' /tmp/live-worker.js | head -1)
+          if [ -z "$LOGO" ]; then echo "logo not found in live worker"; exit 1; fi
+          LOGO="$LOGO" python3 - <<'PY'
+          import os
+          s = open('cloudflare/bridge-page.js').read()
+          assert '__LOGO_DATA_URI__' in s, 'placeholder missing'
+          s = s.replace('__LOGO_DATA_URI__', os.environ['LOGO'])
+          open('cloudflare/bridge-page.js', 'w').write(s)
+          print('logo spliced, script bytes:', len(s))
+          PY
+
+      - name: Write wrangler config
+        run: |
+          cat > wrangler.bridge.toml <<'EOF'
+          name = "phlabs-bridge-page"
+          main = "cloudflare/bridge-page.js"
+          compatibility_date = "2024-06-01"
+          EOF
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_API }}
+          command: deploy --config wrangler.bridge.toml
