@@ -151,6 +151,18 @@ async function stabilise(page: Page) {
     page.evaluate(() => (document as any).fonts?.ready),
     page.waitForTimeout(2_000),
   ]).catch(() => {});
+  // Wait for the deferred full stylesheet (media="print" -> "all" swap).
+  // Without this, axe/screenshots can run against partial styles and
+  // misjudge colors (e.g. gold-bg + light body text = false 2.17:1
+  // contrast violation).
+  await page.waitForFunction(
+    () =>
+      [...document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')].every(
+        (l) => l.media === "all" || l.media === "" || l.disabled,
+      ),
+    undefined,
+    { timeout: 30_000 },
+  ).catch(() => {});
   // networkidle inherits the test timeout by default (30s) and hangs whenever
   // an SSE/WS/analytics beacon keeps the pool busy. Cap it so a chatty page
   // does not eat every test's budget — 3s of quiet is enough for screenshots.
