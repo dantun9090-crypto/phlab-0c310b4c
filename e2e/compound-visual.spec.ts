@@ -57,6 +57,17 @@ test.describe("/compound visual regression", () => {
 
     await expect(page.locator("h1")).toBeVisible();
     await page.waitForLoadState("load", { timeout: 10_000 }).catch(() => undefined);
+    // Wait for the deferred full stylesheet (media="print" -> "all" swap)
+    // before any measurement — otherwise the capture races the swap and the
+    // page renders partially unstyled (wrong heights, pixel diffs).
+    await page.waitForFunction(
+      () =>
+        [...document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')].every(
+          (l) => l.media === "all" || l.media === "" || l.disabled,
+        ),
+      undefined,
+      { timeout: 30_000 },
+    );
     await page.waitForTimeout(500);
 
     // Collapse any open <details> for determinism
