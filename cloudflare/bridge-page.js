@@ -487,7 +487,7 @@ body.gate-active{overflow:hidden}
   <div class="stat"><div class="num">50+</div><div class="label">Countries Served</div></div>
   <div class="stat"><div class="num">99.7%</div><div class="label">Purity Standard</div></div>
   <div class="stat"><div class="num">24h</div><div class="label">Dispatch Time</div></div>
-  <div class="stat"><div class="num">ISO</div><div class="label">Certified</div></div>
+  <div class="stat"><div class="num">HPLC</div><div class="label">Batch Verified</div></div>
 </section>
 
 <!-- FEATURES -->
