@@ -290,12 +290,18 @@ test.describe('Checkout — Germany', () => {
     await page.getByRole('button', { name: /continue|next/i }).first().click();
 
 
-    // Step 3 — confirm 18+ and Terms, then pay.
-    await page.getByLabel(/18\s*years?\s*(of age)?\s*or\s*older|18\s*or\s*older|18\+/i).check();
+    // Step 3 — confirm 18+ and Terms, then pay. Both checkboxes are custom-
+    // styled with opacity-0 inputs, and WebKit hit-testing refuses to toggle
+    // a fully transparent input ("Clicking the checkbox did not change its
+    // state"). Click the LABEL text instead — native label activation toggles
+    // the associated input in every engine.
+    await page.getByText(/I confirm I am\s*18\s*years?/i).click();
+    await expect(page.locator('#ageVerified')).toBeChecked();
     // Scope to the actual checkbox — `terms|research use/i` also matches the
     // page's "Research use notice" banner and "Confirm research use" button,
     // causing a strict-mode locator conflict.
-    await page.locator('#acceptedTerms').check();
+    await page.locator('label', { has: page.locator('#acceptedTerms') }).click();
+    await expect(page.locator('#acceptedTerms')).toBeChecked();
     // Click the REAL place-order button by its stable test id: a role+name
     // locator matches the step-3 accordion header ("3 Payment") first, so
     // .first() toggled the accordion instead of placing the order — the
