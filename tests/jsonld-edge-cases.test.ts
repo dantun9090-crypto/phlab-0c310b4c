@@ -11,7 +11,7 @@
 import { describe, it, expect } from "vitest";
 import { Route as ProductRoute } from "../src/routes/products_.$slug";
 import { Route as SplatRoute } from "../src/routes/$";
-import { articles as liveArticles } from "../src/pages/Resources/data/articles";
+import { ARTICLE_INDEX } from "../src/pages/Resources/data/articles-index";
 import type { SeoProduct } from "../src/lib/firestore-rest";
 import type { Article } from "../src/pages/Resources/data/articles";
 
@@ -275,10 +275,15 @@ const ARTICLE_EDGE_CASES: Array<{ label: string; article: Article }> = [
 describe("Article JSON-LD — edge cases", () => {
   for (const { label, article } of ARTICLE_EDGE_CASES) {
     it(label, () => {
-      // Inject the fixture into the live articles array so the splat
-      // route's article lookup finds it. Reverted in the finally block.
-      const original = liveArticles.length;
-      liveArticles.push(article);
+      // Inject the fixture into the article index the splat route reads
+      // (it no longer reads the full articles array). Reverted below.
+      const original = ARTICLE_INDEX.length;
+      ARTICLE_INDEX.push({
+        slug: article.slug,
+        title: article.title,
+        publishDate: article.publishDate,
+        readTime: article.readTime,
+      });
       try {
         const head = callHead(SplatRoute, {
           params: { _splat: `resources/${article.slug}` },
@@ -313,7 +318,7 @@ describe("Article JSON-LD — edge cases", () => {
         expect(() => JSON.stringify(blocks)).not.toThrow();
         expect(blocks).toMatchSnapshot();
       } finally {
-        liveArticles.length = original;
+        ARTICLE_INDEX.length = original;
       }
     });
   }
