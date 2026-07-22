@@ -146,7 +146,7 @@ function MobileNavItem({
       <Link
         to={link.href}
         onClick={() => { onClose(); window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); }}
-        className="flex items-center gap-3 px-4 py-3.5 rounded-2xl font-semibold transition-all duration-200 min-h-[52px]"
+        className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl font-semibold transition-all duration-200 min-h-[52px]"
         style={
           link.highlight
             ? { background: 'rgba(16,185,129,0.12)', color: '#4ade80', border: '1px solid rgba(16,185,129,0.2)' }
