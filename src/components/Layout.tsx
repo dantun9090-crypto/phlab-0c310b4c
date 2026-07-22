@@ -100,6 +100,51 @@ const FREE_SHIPPING_THRESHOLD = 50;
 
 // Navigation is handled by Navigation.tsx component
 
+/**
+ * Fixed bottom MHRA bar. Exposes its live height as the
+ * --phl-mhra-bar-h CSS variable so other fixed elements (mobile sticky
+ * CTA bar on Home, install banner, etc.) can stack above it instead of
+ * overlapping the legal text when it wraps to 2-3 lines on phones.
+ */
+function MhraBottomBar() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const apply = () => {
+      document.documentElement.style.setProperty('--phl-mhra-bar-h', `${el.offsetHeight}px`);
+    };
+    apply();
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(apply);
+      ro.observe(el);
+    }
+    window.addEventListener('resize', apply);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener('resize', apply);
+      document.documentElement.style.removeProperty('--phl-mhra-bar-h');
+    };
+  }, []);
+  return (
+    <div ref={ref} data-mhra-bottom-bar className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none">
+      <div
+        className="px-4 py-2.5 text-center"
+        style={{
+          background: 'linear-gradient(to top, rgba(4,8,18,0.98) 0%, rgba(4,8,18,0.92) 100%)',
+          borderTop: '1px solid rgba(245,158,11,0.2)',
+        }}
+      >
+        <p className="text-[10px] leading-relaxed" style={{ color: 'rgba(245,158,11,0.7)' }}>
+          <span className="font-bold">Research use only.</span>{' '}
+          All products are strictly for laboratory research. Not for human or veterinary consumption. Not intended to diagnose, treat, cure or prevent any disease. Not evaluated by MHRA or FDA. 18+ only.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -1626,20 +1671,7 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* ── Sticky MHRA Disclaimer Bar — hidden on auth/admin pages ── */}
-      {!isCleanPage && <div className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none">
-        <div
-          className="px-4 py-2.5 text-center"
-          style={{
-            background: 'linear-gradient(to top, rgba(4,8,18,0.98) 0%, rgba(4,8,18,0.92) 100%)',
-            borderTop: '1px solid rgba(245,158,11,0.2)',
-          }}
-        >
-          <p className="text-[10px] leading-relaxed" style={{ color: 'rgba(245,158,11,0.7)' }}>
-            <span className="font-bold">Research use only.</span>{' '}
-            All products are strictly for laboratory research. Not for human or veterinary consumption. Not intended to diagnose, treat, cure or prevent any disease. Not evaluated by MHRA or FDA. 18+ only.
-          </p>
-        </div>
-      </div>}
+      {!isCleanPage && <MhraBottomBar />}
 
     </div>
   );
@@ -1688,6 +1720,3 @@ export function dispatchAddToCart(item: CartItem) {
   }
   window.dispatchEvent(new CustomEvent(cartEventName, { detail: item }));
 }
-
-
-
