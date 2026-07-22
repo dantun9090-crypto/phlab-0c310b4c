@@ -9,6 +9,7 @@ import { useLocation, Link } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { dispatchAddToCart, CartItem } from '@/components/Layout';
 import { auth, db, getAllProducts, doc, getDoc, getDocs, collection, query, onAuthStateChanged } from '@/lib/firebase';
+import { filterProductsForHost } from '@/lib/domain-visibility';
 import {
   markPrerenderPending,
   markPrerenderReady,
@@ -210,7 +211,7 @@ export default function Products() {
         if (cancelled) return;
         clearTimeout(slowTimer);
         setSlowLoad(false);
-        const visible = products
+        const visible = filterProductsForHost(products)
           .filter(p => p.isActive !== false && p.visibility !== 'hidden')
           .sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
         setAllProducts(visible);
@@ -750,7 +751,7 @@ export default function Products() {
         </div>
       </section>
 
-      {/* ── ADMIN PRODUCT EDITOR ────────────────────────────────────────────── */}
+      {/* ── ADMIN PRODUCT EDITOR ───────────────────────────────────────────── */}
       {editingProduct && (
         <ProductEditor
           product={editingProduct}

@@ -54,6 +54,7 @@ const CookiePolicy = lazyWithRetry(() => import('@/pages/CookiePolicy'));
 const SearchPage = lazyWithRetry(() => import('@/pages/Search'));
 const ArticlePage = lazyWithRetry(() => import('@/pages/Resources/ArticlePage'));
 const LandingPage = lazyWithRetry(() => import('@/pages/LandingPage'));
+const CampaignLanding = lazyWithRetry(() => import('@/pages/CampaignLanding'));
 const StorageGuide = lazyWithRetry(() => import('@/pages/StorageGuide'));
 const LabReports = lazyWithRetry(() => import('@/pages/LabReports'));
 const Research = lazyWithRetry(() => import('@/pages/Research'));
@@ -186,6 +187,7 @@ const routes = [
       { path: 'checkout',           element: <Checkout /> },
       { path: 'landing/peptides',  element: <Navigate to="/products" replace /> },
       { path: 'landing/:slug',     element: <LandingPage /> },
+      { path: 'lp/:slug',          element: <CampaignLanding /> },
       { path: 'vip',               element: <VipStore /> },
       { path: 'quality-control',   element: <QualityControl /> },
       { path: 'lab-reports',       element: <LabReports /> },
