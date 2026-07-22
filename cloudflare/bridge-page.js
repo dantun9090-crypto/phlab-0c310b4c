@@ -90,8 +90,8 @@ body{
 .age-box .disclaimer{font-size:11px;color:var(--text-muted);margin-top:32px;line-height:1.7;letter-spacing:0.2px}
 .age-box .disclaimer strong{color:var(--text-dim);font-weight:500}
 .btn{
-  display:inline-block;padding:16px 36px;border-radius:12px;
-  font-size:13px;font-weight:700;cursor:pointer;border:none;
+  display:inline-block;padding:14px 31px;border-radius:11px;
+  font-size:11.5px;font-weight:700;cursor:pointer;border:none;
   transition:all 0.3s ease;text-decoration:none;font-family:'Inter Tight',sans-serif;
   letter-spacing:1.2px;text-transform:uppercase;
 }
@@ -143,8 +143,8 @@ header .container{display:flex;align-items:center;justify-content:space-between;
 .nav-links a:hover{color:var(--gold-bright)}
 .nav-links a:hover::after{width:100%}
 .cta-nav{
-  padding:11px 26px;border:1px solid var(--hairline-strong);
-  color:var(--gold-bright);border-radius:10px;font-size:11px;font-weight:600;
+  padding:9px 22px;border:1px solid var(--hairline-strong);
+  color:var(--gold-bright);border-radius:9px;font-size:10px;font-weight:600;
   letter-spacing:1.5px;text-transform:uppercase;
   text-decoration:none;transition:all 0.3s;background:rgba(201,164,76,0.05);
 }
@@ -187,11 +187,11 @@ header .container{display:flex;align-items:center;justify-content:space-between;
 }
 .hero-actions{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
 .hero-cta{
-  padding:19px 42px;
+  padding:16px 36px;
   background:linear-gradient(135deg,var(--gold-bright),var(--gold) 60%,var(--gold-deep));
-  color:#060f1e;border-radius:12px;font-size:13px;font-weight:700;
+  color:#060f1e;border-radius:11px;font-size:11.5px;font-weight:700;
   letter-spacing:1.2px;text-transform:uppercase;
-  text-decoration:none;display:inline-flex;align-items:center;gap:12px;
+  text-decoration:none;display:inline-flex;align-items:center;gap:11px;
   transition:all 0.3s ease;position:relative;overflow:hidden;
   box-shadow:0 12px 36px rgba(201,164,76,0.3),inset 0 1px 0 rgba(255,255,255,0.35);
 }
@@ -204,10 +204,10 @@ header .container{display:flex;align-items:center;justify-content:space-between;
 .hero-cta:hover{transform:translateY(-2px);box-shadow:0 16px 44px rgba(201,164,76,0.42),inset 0 1px 0 rgba(255,255,255,0.35)}
 .hero-cta svg{width:16px;height:16px;stroke:#060f1e}
 .code-chip{
-  display:inline-flex;align-items:center;gap:10px;cursor:pointer;
-  padding:17px 26px;border-radius:12px;border:1px solid var(--hairline-strong);
+  display:inline-flex;align-items:center;gap:9px;cursor:pointer;
+  padding:14px 22px;border-radius:11px;border:1px solid var(--hairline-strong);
   background:rgba(13,29,54,0.7);color:var(--gold-bright);
-  font-size:13px;font-weight:700;letter-spacing:1.5px;
+  font-size:11.5px;font-weight:700;letter-spacing:1.5px;
   transition:all 0.3s;font-family:'Inter Tight',sans-serif;
 }
 .code-chip:hover{background:rgba(201,164,76,0.1);border-color:var(--gold);transform:translateY(-2px)}
@@ -347,11 +347,11 @@ header .container{display:flex;align-items:center;justify-content:space-between;
   max-width:480px;margin-left:auto;margin-right:auto;font-weight:300;line-height:1.8;
 }
 .cta-big{
-  padding:21px 60px;
+  padding:18px 51px;
   background:linear-gradient(135deg,var(--gold-bright),var(--gold) 60%,var(--gold-deep));
-  color:#060f1e;border-radius:12px;font-size:13px;font-weight:700;
+  color:#060f1e;border-radius:11px;font-size:11.5px;font-weight:700;
   letter-spacing:1.5px;text-transform:uppercase;
-  text-decoration:none;display:inline-flex;align-items:center;gap:16px;
+  text-decoration:none;display:inline-flex;align-items:center;gap:14px;
   transition:all 0.3s ease;position:relative;overflow:hidden;
   box-shadow:0 14px 40px rgba(201,164,76,0.3),inset 0 1px 0 rgba(255,255,255,0.35);
 }
