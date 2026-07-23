@@ -54,6 +54,10 @@ async function prep(page: Page, opts: { mailStatus?: number; capture?: CapturedM
   });
 }
 
+// Cold CI dev servers mount route content tens of seconds after the SSR
+// shell; two route loads + interactions overflow the default 30s budget.
+test.setTimeout(120_000);
+
 async function readDataLayer(page: Page): Promise<unknown[][]> {
   return await page.evaluate(() => (window as any).dataLayer as unknown[][]);
 }
