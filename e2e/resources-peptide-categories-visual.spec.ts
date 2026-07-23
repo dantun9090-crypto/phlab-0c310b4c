@@ -17,7 +17,7 @@ const BASE =
   "https://phlabs.co.uk";
 
 const SLUG = "peptide-categories-uk-research";
-const URL = `${BASE}/resources/${SLUG}`;
+const PAGE_URL = `${BASE}/resources/${SLUG}`;
 
 const KILL_MOTION_CSS = `
   *, *::before, *::after {
@@ -42,7 +42,7 @@ test.describe("/resources/peptide-categories-uk-research", () => {
       r.abort(),
     );
 
-    const res = await page.goto(URL, { waitUntil: "domcontentloaded" });
+    const res = await page.goto(PAGE_URL, { waitUntil: "domcontentloaded" });
     expect(res?.ok(), `GET returned ${res?.status()}`).toBeTruthy();
 
     // SEO head assertions (these are the regression catches for the new route).
@@ -150,7 +150,7 @@ test.describe("/resources/peptide-categories-uk-research", () => {
       else document.addEventListener("DOMContentLoaded", apply);
     }, KILL_MOTION_CSS);
 
-    await page.goto(URL, { waitUntil: "domcontentloaded" });
+    await page.goto(PAGE_URL, { waitUntil: "domcontentloaded" });
     await expect(page.locator("h1")).toContainText(/Peptide Categories/i, {
       timeout: 15_000,
     });
@@ -171,11 +171,11 @@ test.describe("/resources/peptide-categories-uk-research", () => {
     );
   });
 
-  test("canonical, og:url and twitter:url exactly equal the canonical URL", async ({
+  test("canonical, og:url and twitter:url exactly equal the canonical PAGE_URL", async ({
     page,
   }) => {
     const EXPECTED = `https://phlabs.co.uk/resources/${SLUG}`;
-    const res = await page.goto(URL, { waitUntil: "domcontentloaded" });
+    const res = await page.goto(PAGE_URL, { waitUntil: "domcontentloaded" });
     expect(res?.ok(), `GET returned ${res?.status()}`).toBeTruthy();
 
     const canonical = await page
@@ -228,7 +228,7 @@ test.describe("/resources/peptide-categories-uk-research", () => {
   });
 
   test("has no critical axe WCAG violations", async ({ page }) => {
-    await page.goto(URL, { waitUntil: "domcontentloaded" });
+    await page.goto(PAGE_URL, { waitUntil: "domcontentloaded" });
     await expect(page.locator("h1")).toContainText(/Peptide Categories/i, {
       timeout: 15_000,
     });
@@ -272,7 +272,7 @@ test.describe("/resources/peptide-categories-uk-research", () => {
   });
 
   test("emits Article JSON-LD with required fields", async ({ page }) => {
-    await page.goto(URL, { waitUntil: "domcontentloaded" });
+    await page.goto(PAGE_URL, { waitUntil: "domcontentloaded" });
     await expect(page.locator("h1")).toContainText(/Peptide Categories/i, {
       timeout: 15_000,
     });
@@ -317,7 +317,7 @@ test.describe("/resources/peptide-categories-uk-research", () => {
   });
 
   test("og:image and twitter:image return HTTP 200", async ({ page, request }) => {
-    await page.goto(URL, { waitUntil: "domcontentloaded" });
+    await page.goto(PAGE_URL, { waitUntil: "domcontentloaded" });
 
     const ogImage = await page
       .locator('meta[property="og:image"]')
@@ -340,22 +340,22 @@ test.describe("/resources/peptide-categories-uk-research", () => {
     }
   });
 
-  test("trailing-slash URL normalizes and canonical/og:url/twitter:url still match", async ({
+  test("trailing-slash PAGE_URL normalizes and canonical/og:url/twitter:url still match", async ({
     page,
   }) => {
     const EXPECTED = `https://phlabs.co.uk/resources/${SLUG}`;
     // Hit the trailing-slash variant. The router may either redirect
-    // (final URL has no trailing slash) or serve the same document; in
+    // (final PAGE_URL has no trailing slash) or serve the same document; in
     // both cases the canonical/og:url/twitter:url must point at the
-    // canonical no-trailing-slash URL — never at the slashed variant.
-    const res = await page.goto(`${URL}/`, { waitUntil: "domcontentloaded" });
-    expect(res, "no response for trailing-slash URL").toBeTruthy();
+    // canonical no-trailing-slash PAGE_URL — never at the slashed variant.
+    const res = await page.goto(`${PAGE_URL}/`, { waitUntil: "domcontentloaded" });
+    expect(res, "no response for trailing-slash PAGE_URL").toBeTruthy();
     expect(
       res!.status(),
-      `trailing-slash URL returned ${res!.status()}`,
+      `trailing-slash PAGE_URL returned ${res!.status()}`,
     ).toBeLessThan(400);
 
-    // Final URL (after any normalization) must not keep a trailing slash
+    // Final PAGE_URL (after any normalization) must not keep a trailing slash
     // on the article path.
     const finalUrl = new URL(page.url());
     expect(
@@ -385,7 +385,7 @@ test.describe("/resources/peptide-categories-uk-research", () => {
   test("robots meta tag is index,follow (page must remain crawlable)", async ({
     page,
   }) => {
-    await page.goto(URL, { waitUntil: "domcontentloaded" });
+    await page.goto(PAGE_URL, { waitUntil: "domcontentloaded" });
 
     const robots = await page
       .locator('meta[name="robots"]')
@@ -426,7 +426,7 @@ test.describe("/resources/peptide-categories-uk-research", () => {
   test("JSON-LD blocks declare @context schema.org and a recognised @type", async ({
     page,
   }) => {
-    await page.goto(URL, { waitUntil: "domcontentloaded" });
+    await page.goto(PAGE_URL, { waitUntil: "domcontentloaded" });
     await expect(page.locator("h1")).toContainText(/Peptide Categories/i, {
       timeout: 15_000,
     });
@@ -444,15 +444,25 @@ test.describe("/resources/peptide-categories-uk-research", () => {
       } catch (e) {
         throw new Error(`JSON-LD block is not valid JSON: ${(e as Error).message}\n${raw.slice(0, 200)}`);
       }
-      const nodes = Array.isArray(parsed) ? parsed : [parsed];
+      // @graph containers expand to their member nodes (site-wide graph
+      // carries Organization without a top-level @type).
+      const nodes = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed["@graph"])
+          ? parsed["@graph"]
+          : [parsed];
+      const fromGraph = !Array.isArray(parsed) && Array.isArray(parsed["@graph"]);
       for (const n of nodes) {
-        // Each top-level node must declare schema.org as its @context.
-        const ctx = n["@context"];
-        const ctxStr = Array.isArray(ctx) ? ctx.join(",") : ctx;
-        expect(
-          typeof ctxStr === "string" && /schema\.org/i.test(ctxStr),
-          `JSON-LD @context must reference schema.org, got ${JSON.stringify(ctx)}`,
-        ).toBe(true);
+        // Top-level nodes must declare schema.org as @context. @graph
+        // members inherit the parent's context — only @type is checked.
+        if (!fromGraph) {
+          const ctx = n["@context"];
+          const ctxStr = Array.isArray(ctx) ? ctx.join(",") : ctx;
+          expect(
+            typeof ctxStr === "string" && /schema\.org/i.test(ctxStr),
+            `JSON-LD @context must reference schema.org, got ${JSON.stringify(ctx)}`,
+          ).toBe(true);
+        }
         // @type is required for crawler parsing.
         expect(n["@type"], "JSON-LD @type missing").toBeTruthy();
         allNodes.push(n);
@@ -486,7 +496,7 @@ test.describe("/resources/peptide-categories-uk-research (mobile)", () => {
   test("has no critical axe WCAG violations on mobile viewport", async ({
     page,
   }) => {
-    await page.goto(URL, { waitUntil: "domcontentloaded" });
+    await page.goto(PAGE_URL, { waitUntil: "domcontentloaded" });
     await expect(page.locator("h1")).toContainText(/Peptide Categories/i, {
       timeout: 15_000,
     });
