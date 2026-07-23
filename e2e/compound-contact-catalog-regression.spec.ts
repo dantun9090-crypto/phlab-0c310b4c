@@ -125,11 +125,15 @@ test.describe("/contact qualification gating", () => {
 
     await page.goto(`${BASE}/contact`, { waitUntil: "domcontentloaded" });
 
-    // Fill required fields.
-    await page.getByLabel(/name/i).first().fill("Dr Test Researcher");
-    await page.getByLabel(/email/i).first().fill("researcher@lab.invalid");
-    const msg = page.getByLabel(/message/i).first();
-    await msg.fill("Please send batch CoA for internal QC.");
+    // The page carries TWO forms — the header search box is form[0], the
+    // contact form is form[1]. Wait specifically for the contact one.
+    await page.locator("form:has(#contact-name)").waitFor({ state: "visible", timeout: 90_000 });
+
+    // Fill required fields — by id, not loose /name|message/ label regexes
+    // ("/message/i" also matches the site-announcement region aria-label).
+    await page.locator("#contact-name").fill("Dr Test Researcher");
+    await page.locator("#contact-email").fill("researcher@lab.invalid");
+    await page.locator("#contact-message").fill("Please send batch CoA for internal QC.");
 
     const submit = page.getByRole("button", { name: /send|submit/i }).last();
 
@@ -137,7 +141,7 @@ test.describe("/contact qualification gating", () => {
     await expect(submit).toBeDisabled();
 
     // Programmatic submit attempts (e.g. form.submit()) are also gated — no mail call.
-    await page.evaluate(() => (document.querySelector("form") as HTMLFormElement | null)?.requestSubmit());
+    await page.evaluate(() => (document.querySelector("form:has(#contact-name)") as HTMLFormElement | null)?.requestSubmit());
     await page.waitForTimeout(250);
     expect(captured.length, "no mail call before qualified is ticked").toBe(0);
 
