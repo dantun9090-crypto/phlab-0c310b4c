@@ -148,7 +148,7 @@ test.describe("/contact qualification gating", () => {
 test.describe("/request-catalog email payload handling", () => {
   async function fillCatalogForm(page: Page) {
     await page.getByLabel(/full name/i).fill("Dr Jane Smith");
-    await page.getByLabel(/institution/i).fill("Imperial College Research Lab");
+    await page.getByLabel(/institution \/ company/i).fill("Imperial College Research Lab");
     await page.getByLabel(/role/i).fill("Principal Investigator");
     await page.getByLabel(/^email/i).fill("jane@institution.invalid");
   }

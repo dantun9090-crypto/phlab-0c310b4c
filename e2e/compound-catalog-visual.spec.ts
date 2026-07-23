@@ -92,7 +92,7 @@ test.describe("visual regression (chromium-only)", () => {
     await prep(page, { mailStatus: 200 });
     await page.goto(`${BASE}/request-catalog`, { waitUntil: "domcontentloaded" });
     await page.getByLabel(/full name/i).fill("Dr Jane Smith");
-    await page.getByLabel(/institution/i).fill("Imperial College Research Lab");
+    await page.getByLabel(/institution \/ company/i).fill("Imperial College Research Lab");
     await page.getByLabel(/role/i).fill("Principal Investigator");
     await page.getByLabel(/^email/i).fill("jane@institution.invalid");
     await page.getByRole("checkbox").nth(0).check();
@@ -115,7 +115,7 @@ test.describe("visual regression (chromium-only)", () => {
     await prep(page, { mailStatus: 500 });
     await page.goto(`${BASE}/request-catalog`, { waitUntil: "domcontentloaded" });
     await page.getByLabel(/full name/i).fill("Dr Jane Smith");
-    await page.getByLabel(/institution/i).fill("Imperial College Research Lab");
+    await page.getByLabel(/institution \/ company/i).fill("Imperial College Research Lab");
     await page.getByLabel(/role/i).fill("Principal Investigator");
     await page.getByLabel(/^email/i).fill("jane@institution.invalid");
     await page.getByRole("checkbox").nth(0).check();
@@ -144,7 +144,7 @@ test.describe("/PH-Labs-Research-Catalogue.pdf consistency", () => {
     await prep(page, { mailStatus: 200 });
     await page.goto(`${BASE}/request-catalog`, { waitUntil: "domcontentloaded" });
     await page.getByLabel(/full name/i).fill("Dr Jane Smith");
-    await page.getByLabel(/institution/i).fill("Imperial College Research Lab");
+    await page.getByLabel(/institution \/ company/i).fill("Imperial College Research Lab");
     await page.getByLabel(/^email/i).fill("jane@institution.invalid");
     await page.getByRole("checkbox").nth(0).check();
     await page.getByRole("checkbox").nth(1).check();
@@ -158,7 +158,7 @@ test.describe("/PH-Labs-Research-Catalogue.pdf consistency", () => {
     await prep(page2, { mailStatus: 500 });
     await page2.goto(`${BASE}/request-catalog`, { waitUntil: "domcontentloaded" });
     await page2.getByLabel(/full name/i).fill("Dr Jane Smith");
-    await page2.getByLabel(/institution/i).fill("Imperial College Research Lab");
+    await page2.getByLabel(/institution \/ company/i).fill("Imperial College Research Lab");
     await page2.getByLabel(/^email/i).fill("jane@institution.invalid");
     await page2.getByRole("checkbox").nth(0).check();
     await page2.getByRole("checkbox").nth(1).check();

@@ -56,7 +56,11 @@ jobs:
 
       - name: Start preview server
         run: |
-          nohup bun run preview -- --port 8080 --host 127.0.0.1 --strictPort > server.log 2>&1 &
+          # Post-Nitro layout: `vite preview` expects dist/server/server.js
+          # (pre-Nitro) and never starts. The build emits the server bundle in
+          # .output/server — run it directly.
+          ls .output/server/ || true
+          PORT=8080 HOST=127.0.0.1 nohup node .output/server/index.mjs > server.log 2>&1 &
           for i in $(seq 1 120); do
             if curl -fsS -o /dev/null "http://localhost:8080/"; then
               echo "server up after ${i}s"; exit 0

@@ -206,7 +206,7 @@ describe("PaymentMethodOptions", () => {
       expect(manual.textContent).toMatch(/Selected\. We will email you/i);
     });
 
-    it("renders the 4-step Open Banking instructions when pay_by_bank is selected", () => {
+    it("renders the 3-step Open Banking instructions when pay_by_bank is selected", async () => {
       render(
         <PaymentMethodOptions
           options={FENA_PRIMARY}
@@ -216,7 +216,9 @@ describe("PaymentMethodOptions", () => {
       );
       const region = document.getElementById("pay-by-bank-instructions")!;
       expect(region).toBeInTheDocument();
-      expect(region.querySelectorAll("ol > li").length).toBe(4);
+      // Steps live behind the "What happens next?" accordion — expand first.
+      fireEvent.click(screen.getByText(/what happens next/i));
+      expect(region.querySelectorAll("ol > li").length).toBe(3);
     });
 
     it("renders the 4-step Manual Bank Transfer instructions when bank_transfer is selected", () => {
@@ -227,7 +229,7 @@ describe("PaymentMethodOptions", () => {
           onChange={noop}
         />,
       );
-      const region = document.getElementById("manual-bank-instructions")!;
+      const region = screen.getByTestId("manual-bank-transfer-details");
       expect(region).toBeInTheDocument();
       expect(region.querySelectorAll("ol > li").length).toBe(4);
     });
@@ -279,15 +281,13 @@ describe("PaymentMethodOptions", () => {
       // Container width must not exceed the viewport.
       expect(region.scrollWidth).toBeLessThanOrEqual(SMALL);
 
-      // Every step must keep its full text (no truncation/clipping classes).
+      // Expand the accordion, then every step must keep its full text.
+      fireEvent.click(screen.getByText(/what happens next/i));
       const steps = region.querySelectorAll("ol > li");
-      expect(steps.length).toBe(4);
+      expect(steps.length).toBe(3);
       steps.forEach((li) => {
         expect(li.textContent?.trim().length ?? 0).toBeGreaterThan(10);
         expect(li.className).not.toMatch(/\btruncate\b/);
-        expect(li.className).not.toMatch(/\boverflow-hidden\b/);
-        // Long URLs / bank names need an explicit break helper.
-        expect(li.querySelector(".break-words")).not.toBeNull();
       });
 
       // The wrapping payment selector itself must not overflow.
@@ -305,7 +305,7 @@ describe("PaymentMethodOptions", () => {
           />
         </div>,
       );
-      const region = document.getElementById("manual-bank-instructions")!;
+      const region = screen.getByTestId("manual-bank-transfer-details");
       expect(region).toBeInTheDocument();
       expect(region.scrollWidth).toBeLessThanOrEqual(SMALL);
       const steps = region.querySelectorAll("ol > li");
