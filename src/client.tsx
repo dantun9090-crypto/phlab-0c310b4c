@@ -270,7 +270,11 @@ const HYDRATION_ERROR_FLAG = "__phl_hydration_error_seen";
 // falls back to renderCsr().
 const ENABLE_SSR_HYDRATION = true;
 const SSR_HYDRATION_ROUTES: string[] = [
-  "/compound", // pure TanStack route (PremiumLanding) — no legacy router involved
+  // "/compound" — DISABLED 2026-07-23: the stale-asset guard detected a
+  // hydration mismatch on every first visit (SSR vs client render diverge
+  // on live — likely Firestore-driven promo blocks captured in the edge
+  // HTML), forcing a CSR fallback + double reload (cache-stability spec
+  // counted 3 navigations). CSR boot until the divergence is found.
   // Internal e2e harnesses — interactive TanStack routes. Without this,
   // renderCsr() wipes the SSR HTML and LegacyApp (which has no /e2e/*
   // mapping) shows its styled 404 to every Playwright run.
