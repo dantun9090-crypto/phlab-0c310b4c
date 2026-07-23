@@ -1,1 +1,1077 @@
-PLACEHOLDER
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+/* Display font — Space Grotesk (variable, self-hosted via fontsource).
+   Fontsource ships font-display: swap by default, so this never blocks
+   render and the LCP heading paints in the fallback family first. */
+@import "@fontsource-variable/space-grotesk";
+/* CLS prevention — must load on every route, in parallel with the main
+   CSS, so legacy-styles.css doesn't serial-fetch it (FCP regression). */
+@import "./styles/cls-fixes.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design system definition.
+ *
+ * The @theme inline block maps CSS custom properties to Tailwind utility
+ * classes (e.g. --color-primary -> bg-primary, text-primary).
+ *
+ * The :root and .dark blocks define the actual color values using oklch.
+ * All colors MUST use oklch format.
+ *
+ * To add a new semantic color:
+ * 1. Add the variable to :root (light value) and .dark (dark value)
+ * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.625rem;
+  /* Reserve disclaimer height from first paint so the DisclaimerBanner
+     mount (which measures offsetHeight and writes it back) doesn't push
+     <main> down ~28px after hydration → CLS>0.1 on / and /products. */
+  --phl-disclaimer-h: 28px;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.129 0.042 264.695);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.129 0.042 264.695);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.129 0.042 264.695);
+  --primary: oklch(0.208 0.042 265.755);
+  --primary-foreground: oklch(0.984 0.003 247.858);
+  --secondary: oklch(0.968 0.007 247.896);
+  --secondary-foreground: oklch(0.208 0.042 265.755);
+  --muted: oklch(0.968 0.007 247.896);
+  /* WCAG AA fix: bumped from 0.554 → 0.48 so muted body text/headings hit
+     ≥4.5:1 contrast against --muted (0.968) and --background (1.0). */
+  --muted-foreground: oklch(0.48 0.046 257.417);
+  --accent: oklch(0.968 0.007 247.896);
+  --accent-foreground: oklch(0.208 0.042 265.755);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(0.929 0.013 255.508);
+  --input: oklch(0.929 0.013 255.508);
+  --ring: oklch(0.704 0.04 256.788);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.984 0.003 247.858);
+  --sidebar-foreground: oklch(0.129 0.042 264.695);
+  --sidebar-primary: oklch(0.208 0.042 265.755);
+  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-accent: oklch(0.968 0.007 247.896);
+  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
+  --sidebar-border: oklch(0.929 0.013 255.508);
+  --sidebar-ring: oklch(0.704 0.04 256.788);
+}
+
+.dark {
+  --background: oklch(0.129 0.042 264.695);
+  --foreground: oklch(0.984 0.003 247.858);
+  --card: oklch(0.208 0.042 265.755);
+  --card-foreground: oklch(0.984 0.003 247.858);
+  --popover: oklch(0.208 0.042 265.755);
+  --popover-foreground: oklch(0.984 0.003 247.858);
+  --primary: oklch(0.929 0.013 255.508);
+  --primary-foreground: oklch(0.208 0.042 265.755);
+  --secondary: oklch(0.279 0.041 260.031);
+  --secondary-foreground: oklch(0.984 0.003 247.858);
+  --muted: oklch(0.279 0.041 260.031);
+  --muted-foreground: oklch(0.82 0.03 256.788);
+  --accent: oklch(0.279 0.041 260.031);
+  --accent-foreground: oklch(0.984 0.003 247.858);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  /* Emerald accent ring in night mode too (token-lock contract expects
+     hue ~160; the previous slate-blue 264 was a shadcn default). */
+  --ring: oklch(0.696 0.17 162.48);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.208 0.042 265.755);
+  --sidebar-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-accent: oklch(0.279 0.041 260.031);
+  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.551 0.027 264.364);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+    min-width: 0;
+  }
+
+  body,
+  #root {
+    max-width: 100%;
+    /* clip on BODY only. Any explicit overflow on <html> turns it into a
+       scroll container, which axe flags as scrollable-region-focusable;
+       the default viewport scroller is exempt and the page still can't
+       overflow horizontally. */
+    overflow-x: clip;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * THEME PERSONALITY HOOKS
+ * Drive layout/feel from [data-theme] + theme CSS vars set by
+ * ThemeContext, so switching themes reshapes the whole site
+ * (not just colors).
+ * ═══════════════════════════════════════════════════════════════ */
+
+html[data-theme] body {
+  font-family: var(--theme-font-body, inherit);
+}
+
+html[data-theme] h1,
+html[data-theme] h2,
+html[data-theme] h3,
+html[data-theme] .font-display {
+  font-family: var(--theme-font-display, inherit);
+}
+
+/* ──── FLAGSHIP: Business Pro · Luxury Laboratory ──── */
+html[data-theme="luxury-laboratory"] body {
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(201,162,76,0.10), transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, rgba(245,230,184,0.06), transparent 55%),
+    #08070a;
+  letter-spacing: 0.005em;
+}
+
+html[data-theme="luxury-laboratory"] h1,
+html[data-theme="luxury-laboratory"] h2,
+html[data-theme="luxury-laboratory"] h3 {
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.08;
+}
+
+html[data-theme="luxury-laboratory"] h1 {
+  background: linear-gradient(180deg, #f7f3e9 0%, #c9a24c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+html[data-theme="luxury-laboratory"] header,
+html[data-theme="luxury-laboratory"] nav {
+  background: rgba(8, 7, 10, 0.72) !important;
+  backdrop-filter: saturate(140%) blur(14px);
+  -webkit-backdrop-filter: saturate(140%) blur(14px);
+  border-bottom: 1px solid rgba(201,162,76,0.18);
+}
+
+html[data-theme="luxury-laboratory"] .min-h-screen {
+  background: transparent !important;
+}
+
+/* Cards / panels — glass + gold hairline */
+html[data-theme="luxury-laboratory"] [class*="rounded-xl"],
+html[data-theme="luxury-laboratory"] [class*="rounded-2xl"],
+html[data-theme="luxury-laboratory"] [class*="rounded-lg"] {
+  border-radius: 18px;
+}
+
+html[data-theme="luxury-laboratory"] .bg-card,
+html[data-theme="luxury-laboratory"] [class*="bg-slate-900"],
+html[data-theme="luxury-laboratory"] [class*="bg-slate-800"] {
+  background: linear-gradient(180deg, rgba(28,24,36,0.85) 0%, rgba(15,13,20,0.85) 100%) !important;
+  border: 1px solid rgba(201,162,76,0.18) !important;
+  box-shadow:
+    0 24px 60px -28px rgba(0,0,0,0.7),
+    inset 0 1px 0 rgba(245,230,184,0.06);
+}
+
+/* Primary buttons — champagne gold gradient */
+html[data-theme="luxury-laboratory"] button[class*="bg-blue"],
+html[data-theme="luxury-laboratory"] button[class*="bg-emerald"],
+html[data-theme="luxury-laboratory"] button[class*="bg-primary"],
+html[data-theme="luxury-laboratory"] a[class*="bg-blue"],
+html[data-theme="luxury-laboratory"] a[class*="bg-emerald"] {
+  background: linear-gradient(135deg, #c9a24c 0%, #e6c875 50%, #c9a24c 100%) !important;
+  color: #1a1408 !important;
+  border: 1px solid rgba(245,230,184,0.5) !important;
+  box-shadow:
+    0 10px 30px -10px rgba(201,162,76,0.55),
+    inset 0 1px 0 rgba(255,255,255,0.25);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+html[data-theme="luxury-laboratory"] button[class*="bg-blue"]:hover,
+html[data-theme="luxury-laboratory"] button[class*="bg-emerald"]:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+/* Links + accent text */
+html[data-theme="luxury-laboratory"] a:not([class*="bg-"]) {
+  color: #e6c875;
+}
+
+/* Form controls */
+html[data-theme="luxury-laboratory"] input,
+html[data-theme="luxury-laboratory"] textarea,
+html[data-theme="luxury-laboratory"] select {
+  background: rgba(19,17,26,0.8) !important;
+  border: 1px solid rgba(201,162,76,0.25) !important;
+  color: #f7f3e9 !important;
+}
+
+html[data-theme="luxury-laboratory"] input:focus,
+html[data-theme="luxury-laboratory"] textarea:focus {
+  border-color: #c9a24c !important;
+  box-shadow: 0 0 0 3px rgba(201,162,76,0.18) !important;
+}
+
+/* Scrollbar */
+html[data-theme="luxury-laboratory"] ::-webkit-scrollbar { width: 10px; height: 10px; }
+html[data-theme="luxury-laboratory"] ::-webkit-scrollbar-track { background: #08070a; }
+html[data-theme="luxury-laboratory"] ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #c9a24c, #6e6757);
+  border-radius: 999px;
+}
+
+/* Generic personality for ANY theme using var fallbacks */
+html[data-theme]:not([data-theme="navy-professional"]) .shadow-xl,
+html[data-theme]:not([data-theme="navy-professional"]) .shadow-2xl {
+  box-shadow: var(--theme-shadow, 0 20px 50px -20px rgba(0,0,0,0.5));
+}
+
+
+
+/* Screen-reader-only utility (visually hidden, accessible to assistive tech) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ----------------------------------------------------------------------------
+ * Day mode (opt-in via DayNightToggle → `html.light`)
+ * ----------------------------------------------------------------------------
+ * The PH Labs site is locked to a dark slate-950 palette. When the user
+ * explicitly toggles day mode, we invert the largest surfaces (slate-950 →
+ * white, slate-900 → slate-50, white text → slate-900) so the site is
+ * readable in bright environments WITHOUT redesigning brand colors.
+ * Emerald accents, header height, layout and spacing all stay unchanged.
+ * Admin pages keep their dark chrome regardless.
+ */
+/* Smooth color transitions when toggling day/night — applied to all
+ * elements but limited to color-related properties so layout/scroll
+ * performance is unaffected. Honors prefers-reduced-motion. */
+html[data-theme-mode] *,
+html[data-theme-mode] *::before,
+html[data-theme-mode] *::after {
+  transition-property: background-color, color, border-color, fill, stroke, box-shadow;
+  transition-duration: 280ms;
+  transition-timing-function: ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme-mode] *,
+  html[data-theme-mode] *::before,
+  html[data-theme-mode] *::after {
+    transition-duration: 0ms !important;
+  }
+}
+
+html.light {
+  color-scheme: light;
+  background-color: #ffffff !important;
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 35%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 160 84% 39%;
+}
+html.light,
+html.light body,
+html.light #root {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  color: #0f172a !important;
+}
+
+
+/* Large surfaces → clean white / near-white scale, no gradients.
+   :not([data-keep-dark]) — dark islands (toggle pill, consent-adjacent
+   chrome) keep their slate surfaces. */
+html.light .bg-slate-950:not([data-keep-dark]),
+html.light [class*="bg-slate-950"]:not([data-keep-dark]) { background-color: #ffffff !important; }
+html.light .bg-slate-900:not([data-keep-dark]),
+html.light [class*="bg-slate-900"]:not([data-keep-dark]) { background-color: #ffffff !important; }
+html.light .bg-slate-800:not([data-keep-dark]),
+html.light [class*="bg-slate-800"]:not([data-keep-dark]) { background-color: #f8fafc !important; }
+html.light .bg-slate-700:not([data-keep-dark]),
+html.light [class*="bg-slate-700"]:not([data-keep-dark]) { background-color: #f1f5f9 !important; }
+html.light .bg-black:not([data-keep-dark]),
+html.light [class*="bg-black"]:not([data-keep-dark]) { background-color: #ffffff !important; }
+
+/* Flatten heavy dark gradients to a single calm tone */
+html.light [class*="from-slate-9"],
+html.light [class*="via-slate-9"],
+html.light [class*="to-slate-9"],
+html.light [class*="from-slate-950"],
+html.light [class*="to-slate-950"],
+html.light [class*="from-black"],
+html.light [class*="to-black"] {
+  --tw-gradient-from: #ffffff !important;
+  --tw-gradient-via: #ffffff !important;
+  --tw-gradient-to: #ffffff !important;
+  --tw-gradient-stops: #ffffff, #ffffff !important;
+  background-image: none !important;
+  background-color: #ffffff !important;
+}
+
+/* Header — flat white, single hairline, no blur/shadow drama */
+html.light header[style*="#040d1a"],
+html.light header[style*="#020617"],
+html.light header[style*="rgba(0,4,12"],
+html.light header[style*="rgba(2,6,23"] {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: 1px solid #e5e7eb !important;
+  box-shadow: none !important;
+}
+
+/* Text colors */
+html.light .text-white,
+html.light .text-slate-50,
+html.light .text-slate-100,
+html.light .text-slate-200 { color: #0f172a !important; }
+html.light .text-slate-300 { color: #334155 !important; }
+html.light .text-slate-400 { color: #475569 !important; }
+html.light .text-slate-500 { color: #64748b !important; }
+
+/* Emerald button text stays white */
+html.light .bg-emerald-500.text-white,
+html.light .bg-emerald-600.text-white,
+html.light [class*="bg-emerald-"].text-white { color: #ffffff !important; }
+
+/* Emerald accents — slightly darker for AA on white */
+html.light .text-emerald-400 { color: #047857 !important; }
+html.light .text-emerald-300 { color: #047857 !important; }
+
+/* Borders — single neutral hairline */
+html.light .border-white\/5,
+html.light .border-white\/10,
+html.light .border-white\/20,
+html.light .border-slate-600,
+html.light .border-slate-700,
+html.light .border-slate-800,
+html.light .border-slate-900 { border-color: #e5e7eb !important; }
+
+/* Cards on translucent white → flat white with hairline */
+html.light .bg-white\/5,
+html.light .bg-white\/\[0\.05\],
+html.light .bg-white\/\[0\.06\],
+html.light .bg-white\/\[0\.08\],
+html.light .bg-white\/10 {
+  background-color: #ffffff !important;
+  border: 1px solid #e5e7eb;
+}
+
+/* Minimal, calm card shadows */
+html.light .shadow-2xl { box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 8px 24px -18px rgba(15,23,42,0.10) !important; }
+html.light .shadow-xl  { box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 6px 18px -14px rgba(15,23,42,0.08) !important; }
+html.light .shadow-lg  { box-shadow: 0 1px 2px rgba(15,23,42,0.04) !important; }
+
+/* Header icon buttons — readable, quiet hover */
+html.light header button[aria-label],
+html.light nav button[aria-label] { color: #334155; }
+html.light header button[aria-label]:hover,
+html.light nav button[aria-label]:hover { color: #0f172a; background-color: #f3f4f6 !important; }
+html.light header button:focus-visible,
+html.light nav button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px rgba(16,185,129,0.55) !important;
+}
+
+/* Form controls */
+html.light input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html.light textarea,
+html.light select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #d1d5db !important;
+}
+html.light input::placeholder,
+html.light textarea::placeholder { color: #9ca3af !important; }
+html.light input:focus,
+html.light textarea:focus,
+html.light select:focus {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16,185,129,0.15) !important;
+  outline: none;
+}
+
+/* Links — quiet emerald, underline on hover */
+html.light a:not([class*="bg-"]):not([class*="text-"]) { color: #047857; }
+/* ...but not inside dark islands: axe also tests the <a> wrapping the
+   advert CTA, which would inherit the day-link green onto the dark card. */
+html.light [data-keep-dark] a:not([class*="bg-"]):not([class*="text-"]) { color: inherit !important; }
+html.light a:not([class*="bg-"]):not([class*="text-"]):hover { color: #065f46; text-decoration: underline; }
+
+/* Dividers */
+html.light hr { border-color: #e5e7eb !important; }
+
+/* Footer — flat slate-50, single hairline */
+html.light footer {
+  background-color: #f8fafc !important;
+  background-image: none !important;
+  border-top: 1px solid #e5e7eb !important;
+}
+
+
+
+/* Keep the admin panel and any opt-out element dark regardless.
+   NOTE: `revert` is only safe for .admin-dark (inline-styled). Applied to
+   [data-keep-dark] children it also strips Tailwind class colors (e.g. the
+   advert CTA's bg-emerald-500 + text-[#03131f]) and they fall back to
+   inherited day-link colors on the dark card — exact opposite of the
+   intent. Dark islands instead rely on the explicit restorations below. */
+html.light .admin-dark,
+html.light .admin-dark * {
+  background-color: revert;
+  color: revert;
+  border-color: revert;
+}
+
+/* NOTE on `revert` above: it rolls back to UA styles, which also drops
+   the Tailwind utility colors on class-styled children. The explicit
+   restorations below put the original palette back inside dark islands
+   (LandingPromoStrip, NewsletterPopup dialog, ResearchGate modal). */
+html.light [data-keep-dark].text-white,
+html.light [data-keep-dark] .text-white { color: #ffffff !important; }
+html.light [data-keep-dark].hover\:text-white:hover,
+html.light [data-keep-dark] .hover\:text-white:hover { color: #ffffff !important; }
+html.light [data-keep-dark] .text-white\/50 { color: rgba(255, 255, 255, 0.5) !important; }
+html.light [data-keep-dark] .text-white\/55 { color: rgba(255, 255, 255, 0.55) !important; }
+html.light [data-keep-dark] .text-white\/60 { color: rgba(255, 255, 255, 0.6) !important; }
+html.light [data-keep-dark] .text-white\/65 { color: rgba(255, 255, 255, 0.65) !important; }
+html.light [data-keep-dark] .text-white\/70 { color: rgba(255, 255, 255, 0.7) !important; }
+html.light [data-keep-dark] .text-white\/75 { color: rgba(255, 255, 255, 0.75) !important; }
+html.light [data-keep-dark] .text-white\/80 { color: rgba(255, 255, 255, 0.8) !important; }
+html.light [data-keep-dark] .text-white\/85 { color: rgba(255, 255, 255, 0.85) !important; }
+html.light [data-keep-dark] .text-white\/90 { color: rgba(255, 255, 255, 0.9) !important; }
+html.light [data-keep-dark] .text-emerald-300,
+html.light [data-keep-dark] .text-emerald-400 { color: #34d399 !important; }
+html.light [data-keep-dark] .text-green-400 { color: #4ade80 !important; }
+html.light [data-keep-dark] .text-blue-300 { color: #8ec5ff !important; }
+html.light [data-keep-dark] .text-blue-400 { color: #51a2ff !important; }
+html.light [data-keep-dark] .text-indigo-400 { color: #7d87ff !important; }
+html.light [data-keep-dark] .text-sky-400,
+html.light [data-keep-dark] .text-cyan-400 { color: #22d3ee !important; }
+html.light [data-keep-dark] .text-yellow-300 { color: #ffd84d !important; }
+html.light [data-keep-dark] .gold-text { color: #c9a44c !important; opacity: 1 !important; }
+html.light [data-keep-dark] .text-slate-50 { color: #f8fafc !important; }
+html.light [data-keep-dark] .text-slate-100 { color: #f1f5f9 !important; }
+html.light [data-keep-dark] .text-slate-200 { color: #e2e8f0 !important; }
+html.light [data-keep-dark] .text-slate-300 { color: #cbd5e1 !important; }
+html.light [data-keep-dark] .text-slate-400 { color: #94a3b8 !important; }
+html.light [data-keep-dark] .text-slate-500 { color: #64748b !important; }
+html.light [data-keep-dark] .text-\[\#9cb8d9\] { color: #9cb8d9 !important; }
+html.light [data-keep-dark] .text-\[\#f0f6ff\] { color: #f0f6ff !important; }
+
+
+/* Dark islands: undo every inline-style text remap inside them
+   (remaps are for lightened surfaces only). */
+html.light [data-keep-dark] [style*="#8db4d8" i] { color: #8db4d8 !important; }
+html.light [data-keep-dark] [style*="rgb(141, 180, 216)"] { color: #8db4d8 !important; }
+html.light [data-keep-dark] [style*="#5a80a6" i] { color: #5a80a6 !important; }
+html.light [data-keep-dark] [style*="rgb(90, 128, 166)"] { color: #5a80a6 !important; }
+html.light [data-keep-dark] [style*="#8ec5ff" i] { color: #8ec5ff !important; }
+html.light [data-keep-dark] [style*="rgb(142, 197, 255)"] { color: #8ec5ff !important; }
+html.light [data-keep-dark] [style*="#8caad4" i] { color: #8caad4 !important; }
+html.light [data-keep-dark] [style*="rgb(140, 170, 212)"] { color: #8caad4 !important; }
+html.light [data-keep-dark] [style*="#9cb8d9" i] { color: #9cb8d9 !important; }
+html.light [data-keep-dark] [style*="rgb(156, 184, 217)"] { color: #9cb8d9 !important; }
+html.light [data-keep-dark] [style*="#7a9ec2" i] { color: #7a9ec2 !important; }
+html.light [data-keep-dark] [style*="rgb(122, 158, 194)"] { color: #7a9ec2 !important; }
+html.light [data-keep-dark] [style*="#c8daf0" i] { color: #c8daf0 !important; }
+html.light [data-keep-dark] [style*="rgb(200, 218, 240)"] { color: #c8daf0 !important; }
+html.light [data-keep-dark] [style*="#c8dff5" i] { color: #c8dff5 !important; }
+html.light [data-keep-dark] [style*="rgb(200, 223, 245)"] { color: #c8dff5 !important; }
+html.light [data-keep-dark] [style*="#8aa8c8" i] { color: #8aa8c8 !important; }
+html.light [data-keep-dark] [style*="rgb(138, 168, 200)"] { color: #8aa8c8 !important; }
+html.light [data-keep-dark] [style*="#7a98b8" i] { color: #7a98b8 !important; }
+html.light [data-keep-dark] [style*="rgb(122, 152, 184)"] { color: #7a98b8 !important; }
+html.light [data-keep-dark] [style*="#ad976d" i] { color: #ad976d !important; }
+html.light [data-keep-dark] [style*="rgb(173, 151, 109)"] { color: #ad976d !important; }
+html.light [data-keep-dark] [style*="#51a2ff" i] { color: #51a2ff !important; }
+html.light [data-keep-dark] [style*="rgb(81, 162, 255)"] { color: #51a2ff !important; }
+html.light [data-keep-dark] [style*="#10b981" i] { color: #10b981 !important; }
+html.light [data-keep-dark] [style*="rgb(16, 185, 129)"] { color: #10b981 !important; }
+html.light [data-keep-dark] [style*="#34d399" i] { color: #34d399 !important; }
+html.light [data-keep-dark] [style*="rgb(52, 211, 153)"] { color: #34d399 !important; }
+html.light [data-keep-dark] [style*="#4ade80" i] { color: #4ade80 !important; }
+html.light [data-keep-dark] [style*="rgb(74, 222, 128)"] { color: #4ade80 !important; }
+html.light [data-keep-dark] [style*="#ffd84d" i] { color: #ffd84d !important; }
+html.light [data-keep-dark] [style*="rgb(255, 216, 77)"] { color: #ffd84d !important; }
+html.light [data-keep-dark] [style*="#d0e8f5" i] { color: #d0e8f5 !important; }
+html.light [data-keep-dark] [style*="rgb(208, 232, 245)"] { color: #d0e8f5 !important; }
+html.light [data-keep-dark] [style*="#f0f6ff" i] { color: #f0f6ff !important; }
+html.light [data-keep-dark] [style*="rgb(240, 246, 255)"] { color: #f0f6ff !important; }
+html.light [data-keep-dark] [style*="#f0f8ff" i] { color: #f0f8ff !important; }
+html.light [data-keep-dark] [style*="rgb(240, 248, 255)"] { color: #f0f8ff !important; }
+html.light [data-keep-dark] [style*="#c9d8f0" i] { color: #c9d8f0 !important; }
+html.light [data-keep-dark] [style*="rgb(201, 216, 240)"] { color: #c9d8f0 !important; }
+html.light [data-keep-dark] [style*="#e4f0ff" i] { color: #e4f0ff !important; }
+html.light [data-keep-dark] [style*="rgb(228, 240, 255)"] { color: #e4f0ff !important; }
+html.light [data-keep-dark] [style*="#f0fdfa" i] { color: #f0fdfa !important; }
+html.light [data-keep-dark] [style*="rgb(240, 253, 250)"] { color: #f0fdfa !important; }
+
+/* Marketing advert cards: admin text colors are tuned for dark cards —
+   force the dark surface in day mode so the palette stays AA. */
+html.light [data-advert-placement] [data-keep-dark] {
+  background-color: #0b1a30 !important;
+  background-image: none !important;
+}
+html.light [data-advert-placement] [data-keep-dark] p {
+  color: #f0f6ff !important;
+}
+
+/* ----------------------------------------------------------------------------
+ * Day-mode surface repairs (day-theme axe audit)
+ * Components with hardcoded dark backgrounds that the blanket palette above
+ * misses: the global text-white → slate-900 remap then produces dark text on
+ * a dark surface (measured 1.03–1.12:1). Repaint the surfaces light.
+ * ------------------------------------------------------------------------- */
+html.light header,
+html.light footer {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border-color: #e5e7eb !important;
+}
+
+/* legacy-styles.css forces --theme-bg (dark) onto .min-h-screen / nav /
+   footer with !important at equal specificity — outrank it in day mode.
+   :not() guard — dark islands (e.g. /compound landing) stay dark. */
+html.light body .min-h-screen:not([data-keep-dark]),
+html.light body nav:not([data-keep-dark]),
+html.light body footer:not([data-keep-dark]) {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border-color: #e5e7eb !important;
+}
+
+/* ...but legacy's own rule paints var(--theme-bg) (WHITE in day mode) onto
+   EVERY .min-h-screen at (0,3,1), including marked islands. Restore the
+   island surface with higher specificity. */
+html.light body .min-h-screen[data-keep-dark] {
+  background-color: #060b18 !important;
+}
+
+
+
+/* PremiumLanding arbitrary-value dark surfaces (incl. /90 /95 opacity
+   variants — those generate separate Tailwind classes). :not() guard —
+   the landing page itself is a dark island in day mode. */
+html.light .bg-\[\#060b18\]:not([data-keep-dark]),
+html.light .bg-\[\#060b18\]\/90:not([data-keep-dark]),
+html.light .bg-\[\#060b18\]\/95:not([data-keep-dark]),
+html.light .bg-\[\#070d1c\]:not([data-keep-dark]),
+html.light .bg-\[\#070d1c\]\/90:not([data-keep-dark]),
+html.light .bg-\[\#070d1c\]\/95:not([data-keep-dark]),
+html.light .bg-\[\#080e1f\]:not([data-keep-dark]),
+html.light .bg-\[\#080e1f\]\/90:not([data-keep-dark]),
+html.light .bg-\[\#080e1f\]\/95:not([data-keep-dark]) { background-color: #ffffff !important; }
+
+/* Dark-island children with dark bg classes: the flatten rules above fire
+   on descendants too (they are not themselves marked), so restore their
+   surfaces inside islands. The trailing [class] bump makes these strictly
+   more specific than the flatten rules, so order can never matter. */
+html.light [data-keep-dark] .bg-\[\#060b18\][class],
+html.light [data-keep-dark] .bg-\[\#060b18\]\/90[class],
+html.light [data-keep-dark] .bg-\[\#060b18\]\/95[class] { background-color: #060b18 !important; }
+html.light [data-keep-dark] .bg-\[\#070d1c\][class],
+html.light [data-keep-dark] .bg-\[\#070d1c\]\/90[class],
+html.light [data-keep-dark] .bg-\[\#070d1c\]\/95[class] { background-color: #070d1c !important; }
+html.light [data-keep-dark] .bg-\[\#080e1f\][class],
+html.light [data-keep-dark] .bg-\[\#080e1f\]\/90[class],
+html.light [data-keep-dark] .bg-\[\#080e1f\]\/95[class] { background-color: #080e1f !important; }
+html.light [data-keep-dark] .bg-slate-950[class] { background-color: #020618 !important; }
+html.light [data-keep-dark] .bg-slate-900[class] { background-color: #0f172b !important; }
+html.light [data-keep-dark] .bg-slate-800[class] { background-color: #1d293d !important; }
+html.light [data-keep-dark] .bg-slate-700[class] { background-color: #314158 !important; }
+html.light [data-keep-dark] .bg-black[class] { background-color: #000000 !important; }
+
+/* HomeSeoIndex band + Products trust/disclaimer bands */
+html.light section[aria-label="Site index"],
+/* NOTE: no #disclaimer here — PremiumLanding has its own id="disclaimer"
+   section inside the dark island (the Products band is covered by the
+   inline-style rules below via its #04101f background). */
+html.light #trust {
+  background-color: #ffffff !important;
+  border-color: #e5e7eb !important;
+}
+
+/* Inline-styled dark surfaces (Products cards/sections, page roots,
+   Home gradient sections — gradients sit in background-image, killed here).
+   IMPORTANT: browsers serialize React inline styles to rgb() in the style
+   attribute, so every hex below is matched in BOTH notations. */
+html.light [style*="#060f1e"]:not([data-keep-dark]), html.light [style*="rgb(6, 15, 30)"]:not([data-keep-dark]),
+html.light [style*="#030812"]:not([data-keep-dark]), html.light [style*="rgb(3, 8, 18)"]:not([data-keep-dark]),
+html.light [style*="#04101f"]:not([data-keep-dark]), html.light [style*="rgb(4, 16, 31)"]:not([data-keep-dark]),
+html.light [style*="#0b1a30"]:not([data-keep-dark]), html.light [style*="rgb(11, 26, 48)"]:not([data-keep-dark]),
+html.light [style*="#100b1a"]:not([data-keep-dark]), html.light [style*="rgb(16, 11, 26)"]:not([data-keep-dark]),
+html.light [style*="#020812"]:not([data-keep-dark]), html.light [style*="rgb(2, 8, 18)"]:not([data-keep-dark]),
+html.light [style*="#020617" i]:not([data-keep-dark]), html.light [style*="rgb(2, 6, 23)"]:not([data-keep-dark]),
+html.light [style*="#04121d" i]:not([data-keep-dark]), html.light [style*="rgb(4, 18, 29)"]:not([data-keep-dark]),
+html.light [style*="#030a14" i]:not([data-keep-dark]), html.light [style*="rgb(3, 10, 20)"]:not([data-keep-dark]),
+html.light [style*="#040d1a" i]:not([data-keep-dark]), html.light [style*="rgb(4, 13, 26)"]:not([data-keep-dark]),
+html.light [style*="#061428" i]:not([data-keep-dark]), html.light [style*="rgb(6, 20, 40)"]:not([data-keep-dark]),
+html.light [style*="#060b18" i]:not([data-keep-dark]), html.light [style*="rgb(6, 11, 24)"]:not([data-keep-dark]),
+html.light [style*="#070d1c" i]:not([data-keep-dark]), html.light [style*="rgb(7, 13, 28)"]:not([data-keep-dark]),
+html.light [style*="#080e1f" i]:not([data-keep-dark]), html.light [style*="rgb(8, 14, 31)"]:not([data-keep-dark]),
+html.light [style*="#0b111b" i]:not([data-keep-dark]), html.light [style*="rgb(11, 17, 27)"]:not([data-keep-dark]),
+html.light [style*="rgba(3, 10, 20,"]:not([data-keep-dark]) {
+background-color: #ffffff !important;
+  background-image: none !important;
+  border-color: #e5e7eb !important;
+}
+
+/* Cookie banner + consent borders go light with everything else */
+html.light .bg-\[\#0b1a30\] { background-color: #ffffff !important; }
+html.light .border-white\/\[0\.06\],
+html.light .border-white\/\[0\.08\] { border-color: #e5e7eb !important; }
+
+/* TopStripe announcement bar: inline dark gradient + near-white text */
+html.light [style*="#030914" i], html.light [style*="rgb(3, 9, 20)"],
+html.light [style*="#061426" i], html.light [style*="rgb(6, 20, 38)"] {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border-bottom-color: #e5e7eb !important;
+}
+
+/* Inline-styled near-white texts that turn invisible on the lightened
+   surfaces above (style-attribute selectors — inline styles win the
+   cascade, so these need !important). */
+html.light [style*="#d0e8f5" i], html.light [style*="rgb(208, 232, 245)"],
+html.light .text-\[\#d0e8f5\] { color: #0f172a !important; }
+html.light [style*="#f0f6ff" i], html.light [style*="rgb(240, 246, 255)"],
+html.light .text-\[\#f0f6ff\] { color: #0f172a !important; }
+html.light strong[style*="#10b981"] { color: #047857 !important; }
+
+/* text-white opacity variants (PremiumLanding body copy on lightened cards) */
+html.light .text-white\/50,
+html.light .text-white\/55,
+html.light .text-white\/60 { color: #64748b !important; }
+html.light .text-white\/65,
+html.light .text-white\/70 { color: #475569 !important; }
+html.light .text-white\/75,
+html.light .text-white\/80 { color: #334155 !important; }
+html.light .text-white\/85,
+html.light .text-white\/90 { color: #1e293b !important; }
+
+/* PremiumLanding gold accent — #c9a44c is 2.9:1 on white; darken to ~5:1.
+   opacity-70 variants blend to 2.8:1 — force full opacity in day mode. */
+html.light .gold-text { color: #8a6a2e !important; opacity: 1 !important; }
+
+/* Light-blue inline text palette → AA-on-white shades. The originals were
+   designed for dark surfaces (1.4–2.8:1 on white); replacements keep the
+   same hue family at ≥4.5:1. Style attributes are matched in hex AND rgb()
+   notation (React inline styles serialize to rgb()); class forms use the
+   escaped Tailwind arbitrary-value selector. */
+html.light [style*="#8db4d8" i], html.light [style*="rgb(141, 180, 216)"],
+html.light .text-\[\#8db4d8\] { color: #3a648f !important; }
+html.light [style*="#5a80a6" i], html.light [style*="rgb(90, 128, 166)"],
+html.light .text-\[\#5a80a6\] { color: #3f6184 !important; }
+html.light [style*="#8ec5ff" i], html.light [style*="rgb(142, 197, 255)"] { color: #2f6fb0 !important; }
+html.light [style*="#8caad4" i], html.light [style*="rgb(140, 170, 212)"],
+html.light .text-\[\#8caad4\], html.light .hover\:text-\[\#8caad4\]:hover { color: #4a6f9a !important; }
+html.light [style*="#9cb8d9" i], html.light [style*="rgb(156, 184, 217)"],
+html.light .text-\[\#9cb8d9\] { color: #3a648f !important; }
+html.light [style*="#7a9ec2" i], html.light [style*="rgb(122, 158, 194)"] { color: #46709a !important; }
+html.light [style*="#c8daf0" i], html.light [style*="rgb(200, 218, 240)"] { color: #3a648f !important; }
+html.light [style*="#c8dff5" i], html.light [style*="rgb(200, 223, 245)"] { color: #3a648f !important; }
+html.light [style*="#8aa8c8" i], html.light [style*="rgb(138, 168, 200)"] { color: #4a7196 !important; }
+html.light [style*="#7a98b8" i], html.light [style*="rgb(122, 152, 184)"] { color: #3f6184 !important; }
+html.light [style*="#ad976d" i], html.light [style*="rgb(173, 151, 109)"] { color: #7a6534 !important; }
+html.light [style*="#51a2ff" i], html.light [style*="rgb(81, 162, 255)"] { color: #1d6fd1 !important; }
+html.light [style*="#10b981" i], html.light [style*="rgb(16, 185, 129)"] { color: #065f46 !important; }
+html.light [style*="#ffd84d" i], html.light [style*="rgb(255, 216, 77)"] { color: #8a6a2e !important; }
+html.light [style*="#f0f8ff" i], html.light [style*="rgb(240, 248, 255)"] { color: #0f172a !important; }
+html.light [style*="#c9d8f0" i], html.light [style*="rgb(201, 216, 240)"] { color: #334155 !important; }
+html.light [style*="#e4f0ff" i], html.light [style*="rgb(228, 240, 255)"] { color: #0f172a !important; }
+html.light [style*="#4ade80" i], html.light [style*="rgb(74, 222, 128)"] { color: #065f46 !important; }
+html.light [style*="#34d399" i], html.light [style*="rgb(52, 211, 153)"] { color: #065f46 !important; }
+html.light [style*="#f0fdfa" i], html.light [style*="rgb(240, 253, 250)"] { color: #0f172a !important; }
+html.light [style*="#fbbf24" i], html.light [style*="rgb(251, 191, 36)"] { color: #8a6a2e !important; }
+
+/* animate-pulse blends text to ~50% opacity mid-cycle, which drops AA
+   colors below threshold on light surfaces — day mode is flat anyway. */
+html.light .animate-pulse { animation: none !important; opacity: 1 !important; }
+html.light .placeholder-\[\#5a80a6\]::placeholder { color: #3f6184 !important; }
+
+/* Class-form custom-hex texts (footer columns, trust badges, consent) */
+html.light .text-\[\#7a9ec2\] { color: #46709a !important; }
+html.light .text-\[\#7a9ec8\] { color: #46709a !important; }
+html.light .text-\[\#c8daf0\] { color: #3a648f !important; }
+html.light .text-\[\#8aa8c8\] { color: #4a7196 !important; }
+html.light .hover\:text-\[\#f0f6ff\]:hover { color: #0f172a !important; }
+
+/* Tailwind accent utilities used on dark-by-default surfaces — darker
+   shades required once those surfaces go white (measured via axe: v4
+   blue-300 #8ec5ff / blue-400 #51a2ff fail AA on white). */
+html.light .text-blue-300 { color: #1d6fd1 !important; }
+html.light .text-blue-400 { color: #1447e6 !important; }
+html.light .text-indigo-400 { color: #4f39f6 !important; }
+html.light .text-violet-300 { color: #6d28d9 !important; }
+html.light .text-violet-400 { color: #6d28d9 !important; }
+html.light .text-green-400 { color: #047857 !important; }
+html.light .text-yellow-300 { color: #8a6a2e !important; }
+html.light .text-amber-300,
+html.light .text-amber-400 { color: #8a6a2e !important; }
+html.light .text-sky-400,
+html.light .text-cyan-400 { color: #1d6fd1 !important; }
+
+/* Opacity-variant accent classes (separate Tailwind classes; blended over
+   white they fall below AA, so force full opacity at the darker shade) */
+html.light .text-emerald-400\/90 { color: #047857 !important; opacity: 1 !important; }
+html.light .text-blue-300\/90 { color: #1d6fd1 !important; opacity: 1 !important; }
+html.light .text-blue-400\/60 { color: #1447e6 !important; opacity: 1 !important; }
+html.light .text-green-400\/80 { color: #047857 !important; opacity: 1 !important; }
+html.light .text-amber-300\/85 { color: #8a6a2e !important; opacity: 1 !important; }
+
+/* OrderTrackingBar white text on a blue→violet gradient (4.2:1 midpoints) —
+   flatten to solid AA blue in day mode. */
+html.light [class*="to-violet-600"],
+html.light [class*="to-violet-500"] {
+  background-image: none !important;
+  background-color: #1447e6 !important;
+}
+
+/* Blue buttons keep white label text in day mode */
+html.light .bg-blue-600.text-white,
+html.light .bg-blue-600 .text-white,
+html.light .bg-blue-700.text-white,
+html.light .bg-blue-700 .text-white { color: #ffffff !important; }
+
+/* HomeSeoIndex inline accent colors (rgb() inline notation) */
+html.light [style*="rgb(96, 165, 250)"] { color: #1447e6 !important; }
+html.light [style*="rgb(192, 132, 252)"] { color: #7c3aed !important; }
+
+
+
+
+/* Live Sales Popup — locked layout (left side, below the fixed disclaimer).
+   JS sets --phl-popup-top dynamically by measuring the disclaimer strip. */
+.phl-live-sales-popup {
+  position: fixed;
+  top: var(--phl-popup-top, calc(var(--rg-banner-h, 0px) + 36px + 64px + var(--phl-disclaimer-h, 28px) + 8px + env(safe-area-inset-top, 0px)));
+  left: calc(12px + env(safe-area-inset-left, 0px));
+  right: auto;
+  bottom: auto;
+  width: min(320px, calc(100vw - 24px));
+  max-width: 320px;
+  z-index: 2147483000;
+}
+@media (min-width: 580px) {
+  .phl-live-sales-popup {
+    left: calc(14px + env(safe-area-inset-left, 0px));
+  }
+}
+@media (min-width: 768px) {
+  .phl-live-sales-popup {
+    left: calc(16px + env(safe-area-inset-left, 0px));
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+ * Mobile UX baseline (Task 2 — Conversion Hardening)
+ * Applied globally; no visual redesign, only iOS/Android friction fixes.
+ * ────────────────────────────────────────────────────────────────────── */
+
+/* iOS Safari zooms the viewport when an input < 16px gains focus.
+   Force 16px on form fields so the keyboard never shifts the page. */
+@media (max-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Mobile-friendly base typography: legible font size (≥16px) and generous
+   line-height on narrow screens so Lighthouse "font-size" and readability
+   heuristics pass without overriding component-level type scales. */
+@media (max-width: 640px) {
+  html { font-size: 16px; }
+  body {
+    font-size: 1rem;
+    line-height: 1.6;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  p, li, dd, dt, blockquote, label, figcaption, small {
+    line-height: 1.6;
+  }
+  h1 { line-height: 1.2; }
+  h2, h3 { line-height: 1.25; }
+  h4, h5, h6 { line-height: 1.3; }
+}
+
+/* Kill the 300ms tap delay and double-tap-zoom on interactive elements,
+   without disabling pinch-zoom for accessibility. */
+button,
+a,
+[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+label[for],
+summary {
+  touch-action: manipulation;
+}
+
+/* Mobile tap-target minimums (WCAG 2.5.5 / Lighthouse tap-targets).
+   Ensure interactive controls hit 44x44 CSS px on narrow screens, and
+   give adjacent links/buttons breathing room so they don't overlap. */
+@media (max-width: 640px) {
+  button,
+  a[role="button"],
+  [role="button"],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  summary {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  /* Inline text links inside prose keep their natural size, but standalone
+     nav/menu/list links get the 44px minimum via a generous line-height. */
+  nav a,
+  [role="menu"] a,
+  [role="menuitem"],
+  li > a:only-child {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  /* Spacing between stacked tap targets so fingertips don't hit two at once. */
+  nav a + a,
+  [role="menu"] a + a,
+  li + li > a {
+    margin-top: 4px;
+  }
+}
+
+/* Sticky header safety: in-page anchors and focused inputs must not
+   land under the fixed header. Header is ~64px desktop / 56px mobile;
+   --phl-disclaimer-h already accounts for the optional notice strip. */
+html {
+  scroll-padding-top: calc(72px + var(--phl-disclaimer-h, 0px));
+}
+@media (max-width: 640px) {
+  html { scroll-padding-top: calc(64px + var(--phl-disclaimer-h, 0px)); }
+}
+
+/* Prevent runaway horizontal scroll without masking the real cause —
+   only clip body, never the html element (would break sticky positioning). */
+body {
+  overflow-x: clip;
+}
+
+/* Recharts overrides for shadcn Chart component.
+   Moved out of arbitrary Tailwind variants because encoding attribute
+   selectors like [stroke='#ccc'] inside a class name required escaping
+   the single-quotes as \', which Firefox rejects (spec-invalid), causing
+   "Ruleset ignored due to bad selector" warnings for every chart rule. */
+[data-chart] .recharts-cartesian-axis-tick text { fill: var(--color-muted-foreground); }
+[data-chart] .recharts-cartesian-grid line[stroke="#ccc"] { stroke: color-mix(in oklab, var(--color-border) 50%, transparent); }
+[data-chart] .recharts-curve.recharts-tooltip-cursor { stroke: var(--color-border); }
+[data-chart] .recharts-dot[stroke="#fff"] { stroke: transparent; }
+[data-chart] .recharts-layer { outline: none; }
+[data-chart] .recharts-polar-grid [stroke="#ccc"] { stroke: var(--color-border); }
+[data-chart] .recharts-radial-bar-background-sector,
+[data-chart] .recharts-rectangle.recharts-tooltip-cursor { fill: var(--color-muted); }
+[data-chart] .recharts-reference-line [stroke="#ccc"] { stroke: var(--color-border); }
+[data-chart] .recharts-sector[stroke="#fff"] { stroke: transparent; }
+[data-chart] .recharts-sector { outline: none; }
+[data-chart] .recharts-surface { outline: none; }
+
+/* ============================================================
+   Cart / Checkout mobile & Safari hardening
+   Non-destructive: only affects containers explicitly opted-in
+   via [data-checkout-scope] or [data-cart-scope] wrappers, plus
+   the /checkout page and cart drawer components. Adds:
+   - iOS-safe input font-size (>=16px prevents auto-zoom)
+   - touch-action: manipulation on tap targets (removes 300ms delay)
+   - Min 44x44 CSS px tap targets (Apple/Google a11y guideline)
+   ============================================================ */
+[data-checkout-scope] input:not([type="checkbox"]):not([type="radio"]),
+[data-checkout-scope] select,
+[data-checkout-scope] textarea,
+[data-cart-scope] input:not([type="checkbox"]):not([type="radio"]),
+[data-cart-scope] select,
+[data-cart-scope] textarea {
+  font-size: 16px;
+}
+
+[data-checkout-scope] button,
+[data-checkout-scope] [role="button"],
+[data-checkout-scope] a[href],
+[data-cart-scope] button,
+[data-cart-scope] [role="button"],
+[data-cart-scope] a[href] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Tap-target minimums — apply only to primary action buttons in cart
+   & checkout, so we don't inflate icon buttons that already opt out
+   via [data-compact-tap]. */
+[data-checkout-scope] button:not([data-compact-tap]):not([data-icon-only]),
+[data-cart-scope] button:not([data-compact-tap]):not([data-icon-only]) {
+  min-height: 44px;
+}
+
+/* Prevent horizontal scroll from long unbreakable strings (order IDs,
+   emails) in cart / checkout summaries on narrow viewports. */
+[data-checkout-scope],
+[data-cart-scope] {
+  overflow-wrap: anywhere;
+}
+
+/* ═══════════════════════════════════════════════════════
+   VISUAL WOW — DESIGN TOKENS + UTILITIES
+   Display font (Space Grotesk) for h1/h2, glassmorphism,
+   gradient text, hover-lift, view-transition timing.
+   ═══════════════════════════════════════════════════════ */
+:root {
+  --font-display: "Space Grotesk Variable", "Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --phl-grad-brand: linear-gradient(90deg, #10b981 0%, #06b6d4 100%);
+}
+
+h1, h2, .font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+.phl-gradient-text {
+  background: var(--phl-grad-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.phl-glass {
+  background: linear-gradient(135deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
+  backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  position: relative;
+}
+.phl-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(16,185,129,0.35), rgba(6,182,212,0.15) 45%, rgba(255,255,255,0.05));
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .phl-hover-lift {
+    transition: transform .2s ease, box-shadow .2s ease;
+    will-change: transform;
+  }
+  .phl-hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 42px -18px rgba(16,185,129,0.35), 0 6px 16px -8px rgba(6,182,212,0.18);
+  }
+}
+
+/* View Transitions — subtle 150ms cross-fade on route change.
+   Browsers without the API ignore this entirely. */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 150ms;
+    animation-timing-function: ease-out;
+  }
+}
+
+/* ── 2026-07-23: catalogue/product headings invisible in day mode ─────────
+   Products + Home cards set near-white text via inline styles
+   (#eef4ff, #d8ecff, #9ab8d8) — not covered by the remaps above, so
+   headings rendered near-white on the day-mode white background
+   (products hero H1 was unreadable). */
+html.light [style*="#eef4ff" i], html.light [style*="rgb(238, 244, 255)"] { color: #0f172a !important; }
+html.light [style*="#d8ecff" i], html.light [style*="rgb(216, 236, 255)"] { color: #0f172a !important; }
+html.light [style*="#9ab8d8" i], html.light [style*="rgb(154, 184, 216)"] { color: #3a648f !important; }
