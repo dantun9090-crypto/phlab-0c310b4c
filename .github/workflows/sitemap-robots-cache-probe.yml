@@ -39,7 +39,7 @@ jobs:
       PROBE_BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
       PROBE_OUT_DIR: sitemap-robots-probe
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.2.21"
