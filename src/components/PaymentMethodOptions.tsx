@@ -204,6 +204,7 @@ export default function PaymentMethodOptions({
   };
 
   return (
+    <>
     <div
       ref={rootRef}
       role="radiogroup"
@@ -280,14 +281,6 @@ export default function PaymentMethodOptions({
             <TrustBadgesRow />
           </button>
 
-          {primarySelected && (
-            <>
-              <div id={primaryInstructionsId}>
-                <WhatHappensNext />
-              </div>
-              {wallidEnabled && <WallidCheckoutTrustInline />}
-            </>
-          )}
         </div>
       )}
 
@@ -364,5 +357,19 @@ export default function PaymentMethodOptions({
         </div>
       </div>
     </div>
+
+    {/* Expanded instructions for the primary option. Rendered OUTSIDE the
+        radiogroup so the accordion toggle is not part of the group's tab
+        order (keyboard users must be able to Shift+Tab out of the group —
+        radiogroup contains only the two role=radio cards). */}
+    {primarySelected && (
+      <>
+        <div id={primaryInstructionsId}>
+          <WhatHappensNext />
+        </div>
+        {wallidEnabled && <WallidCheckoutTrustInline />}
+      </>
+    )}
+    </>
   );
 }
