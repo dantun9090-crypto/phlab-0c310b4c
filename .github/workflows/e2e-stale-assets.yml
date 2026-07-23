@@ -48,19 +48,14 @@ jobs:
       - name: Install Playwright (Node + Chromium)
         run: bunx playwright install --with-deps chromium
 
-      - name: Build app
-        run: bun run build
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
-
-      - name: Start preview server
+      - name: Start dev server
+        # NOTE: the production build targets the Cloudflare Workers Nitro
+        # preset (.output/server = wrangler bundle) — there is no node-
+        # runnable server output, and `vite preview` still looks for the
+        # pre-Nitro dist/server/server.js. Every other e2e workflow drives
+        # the dev server instead, which serves the same app + build-id meta.
         run: |
-          # Post-Nitro layout: `vite preview` expects dist/server/server.js
-          # (pre-Nitro) and never starts. The build emits the server bundle in
-          # .output/server — run it directly.
-          ls .output/server/ || true
-          PORT=8080 HOST=127.0.0.1 nohup node .output/server/index.mjs > server.log 2>&1 &
+          (bun run dev > server.log 2>&1 &)
           for i in $(seq 1 120); do
             if curl -fsS -o /dev/null "http://localhost:8080/"; then
               echo "server up after ${i}s"; exit 0

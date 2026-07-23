@@ -125,7 +125,7 @@ describe("PaymentMethodOptions", () => {
 
   it("calls onChange when the user selects each payment method", () => {
     const onChange = vi.fn();
-    render(
+    const { rerender } = render(
       <PaymentMethodOptions
         options={FENA_PRIMARY_TL_BACKUP}
         value="pay_by_bank"
@@ -133,6 +133,15 @@ describe("PaymentMethodOptions", () => {
       />,
     );
     fireEvent.click(screen.getByTestId("manual-bank-transfer-button"));
+    // Controlled component: the parent must apply the new value, otherwise
+    // the second click targets the still-selected option and no-ops.
+    rerender(
+      <PaymentMethodOptions
+        options={FENA_PRIMARY_TL_BACKUP}
+        value="bank_transfer"
+        onChange={onChange}
+      />,
+    );
     fireEvent.click(screen.getByTestId("pay-by-bank-button"));
     expect(onChange).toHaveBeenNthCalledWith(1, "bank_transfer");
     expect(onChange).toHaveBeenNthCalledWith(2, "pay_by_bank");
