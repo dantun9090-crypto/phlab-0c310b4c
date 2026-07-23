@@ -55,13 +55,33 @@ export default function Resources() {
     },
   };
 
-  const orderedCategories = [
+  // Preferred groups first (custom headings), then every remaining
+  // category found in the data — previously articles whose category was not
+  // hard-coded here (e.g. 'Foundational Science', 'Laboratory Protocols',
+  // 'Neuroscience', 'Tissue Repair Research') were silently dropped from
+  // the index, orphaning pages like /resources/peptide-categories-uk-research.
+  const preferredOrder = [
     'Tissue Repair',
     'Metabolic Research',
     'Cognitive Research',
     'Endocrinology',
     'Peptide Science',
     'Analytical Methods',
+  ];
+  const known = new Set(Object.keys(categoryGroups));
+  const dynamicGroups = Array.from(new Set(articles.map(a => a.category)))
+    .filter(cat => !known.has(cat))
+    .sort()
+    .map(cat => {
+      categoryGroups[cat] = {
+        heading: cat,
+        articles: articles.filter(a => a.category === cat),
+      };
+      return cat;
+    });
+  const orderedCategories = [
+    ...preferredOrder,
+    ...dynamicGroups,
   ].filter(cat => categoryGroups[cat]?.articles.length > 0);
 
   // SEO: title + meta description + canonical + Article schema
