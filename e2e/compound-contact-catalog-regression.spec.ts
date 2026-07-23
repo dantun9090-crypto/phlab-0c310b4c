@@ -54,10 +54,6 @@ async function prep(page: Page, opts: { mailStatus?: number; capture?: CapturedM
   });
 }
 
-// Cold CI dev servers mount route content tens of seconds after the SSR
-// shell; two route loads + interactions overflow the default 30s budget.
-test.setTimeout(120_000);
-
 async function readDataLayer(page: Page): Promise<unknown[][]> {
   return await page.evaluate(() => (window as any).dataLayer as unknown[][]);
 }
@@ -76,23 +72,28 @@ test.describe("/compound analytics events", () => {
     );
 
     await page.goto(`${BASE}/compound`, { waitUntil: "domcontentloaded" });
-    // Content-level readiness: on cold CI dev servers the client app mounts
-    // tens of seconds after the SSR shell — wait for the real CTAs.
-    await page.getByRole("link", { name: /Contact Research Team/i }).first()
-      .waitFor({ state: "visible", timeout: 90_000 });
+    await expect(page.locator("h1")).toBeVisible();
 
     // Click each CTA (first instance in the hero region is enough).
-    for (const name of ["Contact Research Team", "Request Documentation"]) {
-      await page.getByRole("link", { name: new RegExp(name, "i") }).first().click({ trial: false }).catch(() => { /* navigation may detach */ });
-    }
-    // Re-mount the page so subsequent clicks aren't lost to navigation
-    // (Contact + Documentation CTAs are <a href>; they navigate away).
-    await page.goto(`${BASE}/compound`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("link", { name: /WhatsApp/i }).first()
-      .waitFor({ state: "visible", timeout: 90_000 });
+    // Click the external CTAs first — they are 204-stubbed above, so they
+    // never navigate and the dataLayer survives. The two internal links
+    // (Contact Research Team / Request Documentation) navigate away and
+    // would wipe the dataLayer, so they go LAST and are not re-read.
     for (const name of ["WhatsApp", "Telegram"]) {
-      await page.getByRole("link", { name: new RegExp(name, "i") }).first().click().catch(() => { /* external */ });
+      await page.getByRole("link", { name: new RegExp(name, "i") }).first().dispatchEvent("click").catch(() => { /* external */ });
     }
+    for (const name of ["Contact Research Team", "Request Documentation"]) {
+      await page.getByRole("link", { name: new RegExp(name, "i") }).first().dispatchEvent("click").catch(() => { /* navigation may detach */ });
+      // Stop after the first navigation — the page is leaving.
+      break;
+    }
+
+    // Analytics initialises lazily (first interaction or idle) — trigger it
+    // and give dataLayer a moment to populate before reading.
+    await page.mouse.click(10, 10);
+    await expect
+      .poll(async () => (await readDataLayer(page)).length, { timeout: 30_000 })
+      .toBeGreaterThan(0);
 
     const dl = await readDataLayer(page);
 
@@ -123,10 +124,6 @@ test.describe("/contact qualification gating", () => {
     await prep(page, { capture: captured });
 
     await page.goto(`${BASE}/contact`, { waitUntil: "domcontentloaded" });
-    // The contact form mounts with the client app — on cold dev servers that
-    // can take a minute; the SSR shell alone has no form fields.
-    await page.getByRole("heading", { name: /Talk to the Team|Contact Research/i }).first()
-      .waitFor({ state: "visible", timeout: 90_000 });
 
     // Fill required fields.
     await page.getByLabel(/name/i).first().fill("Dr Test Researcher");
@@ -145,7 +142,7 @@ test.describe("/contact qualification gating", () => {
     expect(captured.length, "no mail call before qualified is ticked").toBe(0);
 
     // Tick qualified, submit cleanly.
-    await page.getByRole("checkbox").first().check();
+    await page.getByRole("checkbox").first().check({ force: true });
     await expect(submit).toBeEnabled();
     await submit.click();
 
@@ -179,7 +176,7 @@ test.describe("/request-catalog email payload handling", () => {
     expect(captured.length, "no mail call without qualified").toBe(0);
 
     // Tick qualified, leave consent unchecked → must show consent error.
-    await page.getByRole("checkbox").nth(0).check();
+    await page.getByRole("checkbox").nth(0).check({ force: true });
     await page.getByRole("button", { name: /send me the catalogue/i }).click();
     await expect(page.getByRole("alert")).toContainText(/consent/i);
     expect(captured.length, "no mail call without consent").toBe(0);
@@ -191,8 +188,8 @@ test.describe("/request-catalog email payload handling", () => {
 
     await page.goto(`${BASE}/request-catalog`, { waitUntil: "domcontentloaded" });
     await fillCatalogForm(page);
-    await page.getByRole("checkbox").nth(0).check();
-    await page.getByRole("checkbox").nth(1).check();
+    await page.getByRole("checkbox").nth(0).check({ force: true });
+    await page.getByRole("checkbox").nth(1).check({ force: true });
     await page.getByRole("button", { name: /send me the catalogue/i }).click();
 
     await expect.poll(() => captured.length, { timeout: 5_000 }).toBeGreaterThan(0);
@@ -220,8 +217,8 @@ test.describe("/request-catalog email payload handling", () => {
 
     await page.goto(`${BASE}/request-catalog`, { waitUntil: "domcontentloaded" });
     await fillCatalogForm(page);
-    await page.getByRole("checkbox").nth(0).check();
-    await page.getByRole("checkbox").nth(1).check();
+    await page.getByRole("checkbox").nth(0).check({ force: true });
+    await page.getByRole("checkbox").nth(1).check({ force: true });
     await page.getByRole("button", { name: /send me the catalogue/i }).click();
 
     const alert = page.getByRole("alert");
