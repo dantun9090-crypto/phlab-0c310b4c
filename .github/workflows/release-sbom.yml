@@ -34,7 +34,7 @@ jobs:
       contents: write    # upload release assets
       id-token: write    # cosign keyless OIDC
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -198,7 +198,7 @@ jobs:
       contents: write   # update README badge + re-upload report
       id-token: write   # cosign keyless OIDC
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
