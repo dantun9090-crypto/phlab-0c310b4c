@@ -142,7 +142,10 @@ test.describe("/contact qualification gating", () => {
     expect(captured.length, "no mail call before qualified is ticked").toBe(0);
 
     // Tick qualified, submit cleanly.
-    await page.getByRole("checkbox").first().check({ force: true });
+    // The qualified toggle is a real <input type="checkbox"> but inside a
+    // styled <label>; on some runs getByRole does not resolve it — click the
+    // label text, which toggles the native input via label activation.
+    await page.getByText(/I confirm I'm a qualified researcher/i).click();
     await expect(submit).toBeEnabled();
     await submit.click();
 
