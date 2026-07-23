@@ -1,6 +1,6 @@
 /**
  * Clicking the dark overlay (outside the panel) must close the Orders modal
- * and return focus to the trigger element. Uses the `/__e2e/orders-modal`
+ * and return focus to the trigger element. Uses the `/e2e/orders-modal`
  * harness which mirrors `OrdersTab.tsx`.
  */
 import { test, expect } from '@playwright/test';
@@ -9,7 +9,7 @@ const BASE = process.env.E2E_BASE_URL || 'http://localhost:8080';
 
 test('clicking the overlay closes the modal and restores focus to the trigger', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto(`${BASE}/__e2e/orders-modal`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/e2e/orders-modal`, { waitUntil: 'domcontentloaded' });
 
   const trigger = page.getByTestId('orders-modal-open');
   await trigger.scrollIntoViewIfNeeded();

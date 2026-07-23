@@ -1,7 +1,7 @@
 /**
  * Payment selector — accessibility & keyboard navigation e2e.
  *
- * Runs against the preview build's harness route (/__e2e/payment-options).
+ * Runs against the preview build's harness route (/e2e/payment-options).
  * Verifies:
  *   - radiogroup + role="radio" semantics
  *   - aria-checked flips on real keyboard activation
@@ -12,7 +12,7 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-const HARNESS = "/__e2e/payment-options";
+const HARNESS = "/e2e/payment-options";
 
 test.describe("PaymentMethodOptions — a11y + keyboard", () => {
   test("radiogroup exposes role=radio + aria-checked per option", async ({

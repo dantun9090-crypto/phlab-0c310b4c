@@ -11,7 +11,7 @@ const BASE = process.env.E2E_BASE_URL || "http://localhost:8080";
 
 test("Shift+Tab cycle stays trapped inside the Orders modal", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto(`${BASE}/__e2e/orders-modal`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${BASE}/e2e/orders-modal`, { waitUntil: "domcontentloaded" });
 
   const trigger = page.getByTestId("orders-modal-open");
   await trigger.scrollIntoViewIfNeeded();

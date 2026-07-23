@@ -23,7 +23,7 @@ function isAllowedHost(host: string): boolean {
   return !PROD_HOSTS.has(host.toLowerCase());
 }
 
-export const Route = createFileRoute("/__e2e/watchdog-panel")({
+export const Route = createFileRoute("/e2e/watchdog-panel")({
   head: () => ({
     meta: [
       { title: "E2E Harness — Blank Watchdog Panel" },

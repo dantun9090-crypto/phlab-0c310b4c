@@ -1,6 +1,6 @@
 /**
  * Verifies the focus trap inside the Orders detail modal.
- * Uses the `/__e2e/orders-modal` harness which mirrors the production wrapper
+ * Uses the `/e2e/orders-modal` harness which mirrors the production wrapper
  * markup and the same focus-trap effect used in `OrdersTab.tsx`.
  */
 import { test, expect } from '@playwright/test';
@@ -9,7 +9,7 @@ const BASE = process.env.E2E_BASE_URL || 'http://localhost:8080';
 
 test('Tab + Shift+Tab cycle stays inside the dialog while open', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto(`${BASE}/__e2e/orders-modal`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/e2e/orders-modal`, { waitUntil: 'domcontentloaded' });
 
   const trigger = page.getByTestId('orders-modal-open');
   await trigger.scrollIntoViewIfNeeded();

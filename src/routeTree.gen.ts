@@ -63,6 +63,9 @@ import { Route as OrderCancelledRouteImport } from './routes/order.cancelled'
 import { Route as OrderCancelRouteImport } from './routes/order.cancel'
 import { Route as LandingPhlabsRouteImport } from './routes/landing.phlabs'
 import { Route as LandingSlugRouteImport } from './routes/landing.$slug'
+import { Route as E2eWatchdogPanelRouteImport } from './routes/e2e/watchdog-panel'
+import { Route as E2ePaymentOptionsRouteImport } from './routes/e2e/payment-options'
+import { Route as E2eOrdersModalRouteImport } from './routes/e2e/orders-modal'
 import { Route as DownloadsFileRouteImport } from './routes/downloads.$file'
 import { Route as CompareSlugRouteImport } from './routes/compare.$slug'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
@@ -75,9 +78,6 @@ import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.mer
 import { Route as AdminHealthRouteImport } from './routes/admin.health'
 import { Route as AdminAuditReportRouteImport } from './routes/admin.audit-report'
 import { Route as MarketingCompoundRouteImport } from './routes/_marketing.compound'
-import { Route as _e2eWatchdogPanelRouteImport } from './routes/__e2e.watchdog-panel'
-import { Route as _e2ePaymentOptionsRouteImport } from './routes/__e2e.payment-options'
-import { Route as _e2eOrdersModalRouteImport } from './routes/__e2e.orders-modal'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as ProductsCategorySlugRouteImport } from './routes/products.category.$slug'
@@ -414,6 +414,21 @@ const LandingSlugRoute = LandingSlugRouteImport.update({
   path: '/landing/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const E2eWatchdogPanelRoute = E2eWatchdogPanelRouteImport.update({
+  id: '/e2e/watchdog-panel',
+  path: '/e2e/watchdog-panel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const E2ePaymentOptionsRoute = E2ePaymentOptionsRouteImport.update({
+  id: '/e2e/payment-options',
+  path: '/e2e/payment-options',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const E2eOrdersModalRoute = E2eOrdersModalRouteImport.update({
+  id: '/e2e/orders-modal',
+  path: '/e2e/orders-modal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DownloadsFileRoute = DownloadsFileRouteImport.update({
   id: '/downloads/$file',
   path: '/downloads/$file',
@@ -474,21 +489,6 @@ const MarketingCompoundRoute = MarketingCompoundRouteImport.update({
   id: '/compound',
   path: '/compound',
   getParentRoute: () => MarketingRoute,
-} as any)
-const _e2eWatchdogPanelRoute = _e2eWatchdogPanelRouteImport.update({
-  id: '/__e2e/watchdog-panel',
-  path: '/watchdog-panel',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const _e2ePaymentOptionsRoute = _e2ePaymentOptionsRouteImport.update({
-  id: '/__e2e/payment-options',
-  path: '/payment-options',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const _e2eOrdersModalRoute = _e2eOrdersModalRouteImport.update({
-  id: '/__e2e/orders-modal',
-  path: '/orders-modal',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const Char91DotwellKnownChar93OauthProtectedResourceRoute =
   Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
@@ -840,9 +840,6 @@ export interface FileRoutesByFullPath {
   '/{$indexnowKey}.txt': typeof Char123indexnowKeyChar125DottxtRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  '/orders-modal': typeof _e2eOrdersModalRoute
-  '/payment-options': typeof _e2ePaymentOptionsRoute
-  '/watchdog-panel': typeof _e2eWatchdogPanelRoute
   '/compound': typeof MarketingCompoundRoute
   '/admin/audit-report': typeof AdminAuditReportRoute
   '/admin/health': typeof AdminHealthRoute
@@ -855,6 +852,9 @@ export interface FileRoutesByFullPath {
   '/checkout/success': typeof CheckoutSuccessRoute
   '/compare/$slug': typeof CompareSlugRoute
   '/downloads/$file': typeof DownloadsFileRoute
+  '/e2e/orders-modal': typeof E2eOrdersModalRoute
+  '/e2e/payment-options': typeof E2ePaymentOptionsRoute
+  '/e2e/watchdog-panel': typeof E2eWatchdogPanelRoute
   '/landing/$slug': typeof LandingSlugRoute
   '/landing/phlabs': typeof LandingPhlabsRoute
   '/order/cancel': typeof OrderCancelRoute
@@ -967,9 +967,6 @@ export interface FileRoutesByTo {
   '/{$indexnowKey}.txt': typeof Char123indexnowKeyChar125DottxtRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  '/orders-modal': typeof _e2eOrdersModalRoute
-  '/payment-options': typeof _e2ePaymentOptionsRoute
-  '/watchdog-panel': typeof _e2eWatchdogPanelRoute
   '/compound': typeof MarketingCompoundRoute
   '/admin/audit-report': typeof AdminAuditReportRoute
   '/admin/health': typeof AdminHealthRoute
@@ -982,6 +979,9 @@ export interface FileRoutesByTo {
   '/checkout/success': typeof CheckoutSuccessRoute
   '/compare/$slug': typeof CompareSlugRoute
   '/downloads/$file': typeof DownloadsFileRoute
+  '/e2e/orders-modal': typeof E2eOrdersModalRoute
+  '/e2e/payment-options': typeof E2ePaymentOptionsRoute
+  '/e2e/watchdog-panel': typeof E2eWatchdogPanelRoute
   '/landing/$slug': typeof LandingSlugRoute
   '/landing/phlabs': typeof LandingPhlabsRoute
   '/order/cancel': typeof OrderCancelRoute
@@ -1097,9 +1097,6 @@ export interface FileRoutesById {
   '/{$indexnowKey}.txt': typeof Char123indexnowKeyChar125DottxtRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  '/__e2e/orders-modal': typeof _e2eOrdersModalRoute
-  '/__e2e/payment-options': typeof _e2ePaymentOptionsRoute
-  '/__e2e/watchdog-panel': typeof _e2eWatchdogPanelRoute
   '/_marketing/compound': typeof MarketingCompoundRoute
   '/admin/audit-report': typeof AdminAuditReportRoute
   '/admin/health': typeof AdminHealthRoute
@@ -1112,6 +1109,9 @@ export interface FileRoutesById {
   '/checkout/success': typeof CheckoutSuccessRoute
   '/compare/$slug': typeof CompareSlugRoute
   '/downloads/$file': typeof DownloadsFileRoute
+  '/e2e/orders-modal': typeof E2eOrdersModalRoute
+  '/e2e/payment-options': typeof E2ePaymentOptionsRoute
+  '/e2e/watchdog-panel': typeof E2eWatchdogPanelRoute
   '/landing/$slug': typeof LandingSlugRoute
   '/landing/phlabs': typeof LandingPhlabsRoute
   '/order/cancel': typeof OrderCancelRoute
@@ -1227,9 +1227,6 @@ export interface FileRouteTypes {
     | '/{$indexnowKey}.txt'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
-    | '/orders-modal'
-    | '/payment-options'
-    | '/watchdog-panel'
     | '/compound'
     | '/admin/audit-report'
     | '/admin/health'
@@ -1242,6 +1239,9 @@ export interface FileRouteTypes {
     | '/checkout/success'
     | '/compare/$slug'
     | '/downloads/$file'
+    | '/e2e/orders-modal'
+    | '/e2e/payment-options'
+    | '/e2e/watchdog-panel'
     | '/landing/$slug'
     | '/landing/phlabs'
     | '/order/cancel'
@@ -1354,9 +1354,6 @@ export interface FileRouteTypes {
     | '/{$indexnowKey}.txt'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
-    | '/orders-modal'
-    | '/payment-options'
-    | '/watchdog-panel'
     | '/compound'
     | '/admin/audit-report'
     | '/admin/health'
@@ -1369,6 +1366,9 @@ export interface FileRouteTypes {
     | '/checkout/success'
     | '/compare/$slug'
     | '/downloads/$file'
+    | '/e2e/orders-modal'
+    | '/e2e/payment-options'
+    | '/e2e/watchdog-panel'
     | '/landing/$slug'
     | '/landing/phlabs'
     | '/order/cancel'
@@ -1483,9 +1483,6 @@ export interface FileRouteTypes {
     | '/{$indexnowKey}.txt'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
-    | '/__e2e/orders-modal'
-    | '/__e2e/payment-options'
-    | '/__e2e/watchdog-panel'
     | '/_marketing/compound'
     | '/admin/audit-report'
     | '/admin/health'
@@ -1498,6 +1495,9 @@ export interface FileRouteTypes {
     | '/checkout/success'
     | '/compare/$slug'
     | '/downloads/$file'
+    | '/e2e/orders-modal'
+    | '/e2e/payment-options'
+    | '/e2e/watchdog-panel'
     | '/landing/$slug'
     | '/landing/phlabs'
     | '/order/cancel'
@@ -1613,14 +1613,14 @@ export interface RootRouteChildren {
   Char123indexnowKeyChar125DottxtRoute: typeof Char123indexnowKeyChar125DottxtRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  _e2eOrdersModalRoute: typeof _e2eOrdersModalRoute
-  _e2ePaymentOptionsRoute: typeof _e2ePaymentOptionsRoute
-  _e2eWatchdogPanelRoute: typeof _e2eWatchdogPanelRoute
   CheckoutCancelRoute: typeof CheckoutCancelRoute
   CheckoutCancelledRoute: typeof CheckoutCancelledRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   CompareSlugRoute: typeof CompareSlugRoute
   DownloadsFileRoute: typeof DownloadsFileRoute
+  E2eOrdersModalRoute: typeof E2eOrdersModalRoute
+  E2ePaymentOptionsRoute: typeof E2ePaymentOptionsRoute
+  E2eWatchdogPanelRoute: typeof E2eWatchdogPanelRoute
   LandingSlugRoute: typeof LandingSlugRoute
   LandingPhlabsRoute: typeof LandingPhlabsRoute
   OrderCancelRoute: typeof OrderCancelRoute
@@ -2069,6 +2069,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LandingSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/e2e/watchdog-panel': {
+      id: '/e2e/watchdog-panel'
+      path: '/e2e/watchdog-panel'
+      fullPath: '/e2e/watchdog-panel'
+      preLoaderRoute: typeof E2eWatchdogPanelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/e2e/payment-options': {
+      id: '/e2e/payment-options'
+      path: '/e2e/payment-options'
+      fullPath: '/e2e/payment-options'
+      preLoaderRoute: typeof E2ePaymentOptionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/e2e/orders-modal': {
+      id: '/e2e/orders-modal'
+      path: '/e2e/orders-modal'
+      fullPath: '/e2e/orders-modal'
+      preLoaderRoute: typeof E2eOrdersModalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/downloads/$file': {
       id: '/downloads/$file'
       path: '/downloads/$file'
@@ -2152,27 +2173,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/compound'
       preLoaderRoute: typeof MarketingCompoundRouteImport
       parentRoute: typeof MarketingRoute
-    }
-    '/__e2e/watchdog-panel': {
-      id: '/__e2e/watchdog-panel'
-      path: '/watchdog-panel'
-      fullPath: '/watchdog-panel'
-      preLoaderRoute: typeof _e2eWatchdogPanelRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/__e2e/payment-options': {
-      id: '/__e2e/payment-options'
-      path: '/payment-options'
-      fullPath: '/payment-options'
-      preLoaderRoute: typeof _e2ePaymentOptionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/__e2e/orders-modal': {
-      id: '/__e2e/orders-modal'
-      path: '/orders-modal'
-      fullPath: '/orders-modal'
-      preLoaderRoute: typeof _e2eOrdersModalRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/.well-known/oauth-protected-resource': {
       id: '/.well-known/oauth-protected-resource'
@@ -2706,14 +2706,14 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
-  _e2eOrdersModalRoute: _e2eOrdersModalRoute,
-  _e2ePaymentOptionsRoute: _e2ePaymentOptionsRoute,
-  _e2eWatchdogPanelRoute: _e2eWatchdogPanelRoute,
   CheckoutCancelRoute: CheckoutCancelRoute,
   CheckoutCancelledRoute: CheckoutCancelledRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   CompareSlugRoute: CompareSlugRoute,
   DownloadsFileRoute: DownloadsFileRoute,
+  E2eOrdersModalRoute: E2eOrdersModalRoute,
+  E2ePaymentOptionsRoute: E2ePaymentOptionsRoute,
+  E2eWatchdogPanelRoute: E2eWatchdogPanelRoute,
   LandingSlugRoute: LandingSlugRoute,
   LandingPhlabsRoute: LandingPhlabsRoute,
   OrderCancelRoute: OrderCancelRoute,

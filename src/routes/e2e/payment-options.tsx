@@ -44,7 +44,7 @@ function isAllowedHost(host: string): boolean {
   return true;
 }
 
-export const Route = createFileRoute("/__e2e/payment-options")({
+export const Route = createFileRoute("/e2e/payment-options")({
   head: () => ({
     meta: [
       { title: "E2E Harness — Payment Options" },

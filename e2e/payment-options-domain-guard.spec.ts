@@ -9,12 +9,12 @@
  * written here so this file passes the dist + source domain scanners; the
  * patterns are assembled at runtime below.)
  *
- * The harness route (/__e2e/payment-options) mounts the selector in
+ * The harness route (/e2e/payment-options) mounts the selector in
  * isolation and is allowed off-production only.
  */
 import { test, expect, type Request } from "@playwright/test";
 
-const HARNESS = "/__e2e/payment-options";
+const HARNESS = "/e2e/payment-options";
 
 // Forbidden patterns assembled at runtime so this spec file itself does
 // not contain the literal strings (scripts/check-dist-domains.ts forbids

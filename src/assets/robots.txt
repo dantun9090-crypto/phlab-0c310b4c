@@ -16,12 +16,11 @@ Disallow: /__/
 Disallow: /__/auth/
 # Internal API / server endpoints — never indexable
 Disallow: /api/
-Disallow: /_serverFn/
 Disallow: /webhook/
 Disallow: /server-functions/
 Disallow: /lovable/
 # Internal e2e harnesses — never linked, never indexable
-Disallow: /__e2e/
+Disallow: /e2e/
 # Block only specific tracking / session query params, not all query strings
 # (was: Disallow: /*?*  — blocked legitimate ?category=, ?page= filter URLs)
 Disallow: /*?utm_*

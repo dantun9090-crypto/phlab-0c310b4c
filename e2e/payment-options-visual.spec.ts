@@ -20,7 +20,7 @@
  */
 import { test, expect, type Page } from "@playwright/test";
 
-const HARNESS = "/__e2e/payment-options";
+const HARNESS = "/e2e/payment-options";
 
 const VIEWPORTS: { name: string; width: number; height: number }[] = [
   { name: "320w-mobile", width: 320, height: 900 },

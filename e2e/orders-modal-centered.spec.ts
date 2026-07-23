@@ -1,7 +1,7 @@
 /**
  * Orders detail modal centering / a11y guard.
  *
- * Uses the `/__e2e/orders-modal` harness (not the real admin tab, which is
+ * Uses the `/e2e/orders-modal` harness (not the real admin tab, which is
  * auth-walled) to exercise the same wrapper markup:
  *   - `fixed inset-0 z-[1000] flex items-center justify-center`, portalled to body.
  * If the page is scrolled and the modal positions at the bottom (the original
@@ -13,7 +13,7 @@ const BASE = process.env.E2E_BASE_URL || 'http://localhost:8080';
 
 test('orders modal stays centered after scroll and supports Escape + focus return', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto(`${BASE}/__e2e/orders-modal`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/e2e/orders-modal`, { waitUntil: 'domcontentloaded' });
 
   // Scroll the trigger button into view at the bottom of the long page.
   const trigger = page.getByTestId('orders-modal-open');
