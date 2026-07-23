@@ -138,7 +138,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
     "@eslint/js": "^9.32.0",
-    "@lovable.dev/vite-tanstack-config": "2.7.7",
+    "@lovable.dev/vite-tanstack-config": "2.7.6",
     "@playwright/test": "^1.61.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -184,7 +184,9 @@
     "undici": "^8.5.0",
     "uuid": "^11.1.0",
     "websocket-driver": ">=0.7.5",
-    "ws": "^8.21.0"
+    "ws": "^8.21.0",
+    "react-router": "^7.18.0",
+    "postcss": "^8.5.12"
   },
   "resolutions": {
     "@hono/node-server": "^2.0.11",
@@ -200,6 +202,8 @@
     "undici": "^8.5.0",
     "uuid": "^11.1.0",
     "websocket-driver": ">=0.7.5",
-    "ws": "^8.21.0"
+    "ws": "^8.21.0",
+    "react-router": "^7.18.0",
+    "postcss": "^8.5.12"
   }
 }
