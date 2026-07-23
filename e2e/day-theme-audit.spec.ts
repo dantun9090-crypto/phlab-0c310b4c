@@ -163,14 +163,13 @@ async function stabilise(page: Page) {
     undefined,
     { timeout: 30_000 },
   ).catch(() => {});
-  // Firestore-driven content (campaign blocks, product tiles) can resolve
-  // AFTER the capped networkidle — CI screenshots raced it and captured
-  // empty sections (recurring webkit-tablet / products flakes). The app
-  // flips window.prerenderReady once the first data-driven tiles render;
-  // wait for it where the route uses it, no-op elsewhere.
+  // Firestore-driven tiles (products page especially) can resolve tens of
+  // seconds after networkidle — webkit skeletons otherwise leak into the
+  // screenshot. The app flips window.prerenderReady once the first tiles
+  // render; wait for it where the route uses it, no-op elsewhere.
   await page
     .waitForFunction(() => (window as any).prerenderReady === true, undefined, {
-      timeout: 20_000,
+      timeout: 60_000,
     })
     .catch(() => {});
   // networkidle inherits the test timeout by default (30s) and hangs whenever
