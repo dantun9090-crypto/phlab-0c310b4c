@@ -62,7 +62,7 @@ jobs:
       matrix:
         browser: [chromium, firefox]
     env:
-      TEST_BASE_URL: http://localhost:8080
+      TEST_BASE_URL: https://phlabs.co.uk
     steps:
       - uses: actions/checkout@v5
 
@@ -78,16 +78,6 @@ jobs:
           bunx playwright install --with-deps ${{ matrix.browser }}
           bunx playwright install --with-deps chromium --only-shell
 
-      - name: Start dev server
-        run: |
-          (bun run dev > server.log 2>&1 &)
-          for i in $(seq 1 90); do
-            if curl -fsS -o /dev/null "http://localhost:8080/"; then
-              echo "server up after ${i}s"; exit 0
-            fi
-            sleep 1
-          done
-          echo "server failed to start"; tail -n 200 server.log; exit 1
 
       - name: Run regression spec (functional, both browsers)
         run: |
