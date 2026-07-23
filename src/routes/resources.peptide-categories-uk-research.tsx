@@ -50,6 +50,7 @@ export const Route = createFileRoute(
           description: DESCRIPTION,
           mainEntityOfPage: URL,
           url: URL,
+          image: OG_IMAGE,
           inLanguage: "en-GB",
           datePublished: "2026-06-28",
           author: { "@type": "Organization", name: "PH Labs UK" },

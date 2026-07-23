@@ -205,7 +205,7 @@ function SectionBlock({ section }: { section: Section }) {
         para.trim() ? (
           <p 
             key={i} 
-            className="text-[#7a9cc0] leading-relaxed mb-4 text-[15px]"
+            className="text-[#7a9cc0] leading-relaxed mb-4 text-[15px] [&_a]:text-[#a8ccff] [&_a]:underline [&_a]:decoration-[#4a7fb8] [&_a]:underline-offset-2 hover:[&_a]:text-white"
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(para.trim(), { ALLOWED_TAGS: ['a','strong','em','b','i','u','br','span','sup','sub','code'], ALLOWED_ATTR: ['href','title','target','rel','class'] }) }}
           />
         ) : null
