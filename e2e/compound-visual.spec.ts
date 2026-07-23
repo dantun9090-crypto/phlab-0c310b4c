@@ -126,6 +126,13 @@ test.describe("/compound visual regression", () => {
       await page.waitForTimeout(300);
     }
 
-    await expect(page).toHaveScreenshot("compound.png", { fullPage: true });
+    // The page is 21.5Mpx with an animated/overlay-heavy hero — sub-pixel
+    // shimmer across that area produces tens of thousands of differing
+    // pixels between healthy runs. 0.5% absorbs it; layout-level breakage
+    // is still far above it.
+    await expect(page).toHaveScreenshot("compound.png", {
+      fullPage: true,
+      maxDiffPixelRatio: 0.005,
+    });
   });
 });
