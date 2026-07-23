@@ -130,6 +130,14 @@ function PaymentSuccessPage() {
       return;
     }
 
+    // Watchdog: if Firebase Auth init hangs after the bank-HPP redirect
+    // (Safari ITP / webview), onAuthStateChanged may never fire — flip to
+    // "pending" (with exit buttons) instead of an infinite spinner.
+    const authWatchdog = setTimeout(() => {
+      if (stopRef.current) return;
+      setPhase((cur) => (cur === "checking" ? "pending" : cur));
+    }, 15_000);
+
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         setPhase("error");
@@ -183,6 +191,7 @@ function PaymentSuccessPage() {
 
     return () => {
       stopRef.current = true;
+      clearTimeout(authWatchdog);
       unsub();
     };
   }, [fetchStatus]);
@@ -198,6 +207,7 @@ function PaymentSuccessPage() {
               <p className="mt-2 text-sm text-slate-300">
                 We're waiting for the bank to confirm. This usually takes a few seconds.
               </p>
+              <a href="/" className="mt-6 inline-block text-xs text-slate-400 underline hover:text-slate-200">Back to shop</a>
             </>
           )}
           {phase === "paid" && (
@@ -228,6 +238,10 @@ function PaymentSuccessPage() {
                 as soon as the payment lands. Order
                 <span className="ml-1 font-mono text-emerald-400">{reference}</span>.
               </p>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+                <a href="/account" className="inline-block rounded-lg bg-emerald-500 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-400">View my orders</a>
+                <a href="/" className="inline-block rounded-lg bg-slate-700 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-600">Back to shop</a>
+              </div>
             </>
           )}
           {phase === "error" && (

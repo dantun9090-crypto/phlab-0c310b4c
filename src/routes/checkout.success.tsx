@@ -59,6 +59,21 @@ async function fireGaPurchaseOnce(orderId: string, snapData?: Record<string, unk
   } catch { /* ignore — analytics must never break the success page */ }
 }
 
+/**
+ * auth.authStateReady() can hang indefinitely after a bank-HPP redirect
+ * (Safari ITP / webview cookie restore). Never await it bare — race it
+ * against a 2.5s timeout so status polling always proceeds (the status
+ * API also works with just the paymentToken for guests).
+ */
+async function authReadyFast(): Promise<void> {
+  try {
+    await Promise.race([
+      auth.authStateReady(),
+      new Promise<void>((resolve) => setTimeout(resolve, 2500)),
+    ]);
+  } catch { /* ignore */ }
+}
+
 export const Route = createFileRoute("/checkout/success")({
   head: () => ({
     meta: [
@@ -121,7 +136,7 @@ function CheckoutSuccessPage() {
     // immediately — no polling lag.
     let unsubSnap: (() => void) | null = null;
     const attachSnapshot = async () => {
-      try { await auth.authStateReady(); } catch { /* ignore */ }
+      await authReadyFast();
       if (stopRef.current || !auth.currentUser) return;
       try {
         unsubSnap = onSnapshot(
@@ -158,6 +173,15 @@ function CheckoutSuccessPage() {
     };
     void attachSnapshot();
 
+    // Independent soft-deadline: flip spinner → "Still processing" (with
+    // exit buttons) after 8s even if the poll loop is stalled (e.g. hung
+    // auth restore). Previously this flip only happened inside tick(), so
+    // a hung await left users on a spinner forever.
+    const softTimer = setTimeout(() => {
+      if (stopRef.current) return;
+      if (phaseRef.current === "checking") setPhaseSafe("pending");
+    }, 8_000);
+
     // Escalation timers — independent of polling so they always fire.
     const waitingTimer = setTimeout(() => {
       if (stopRef.current) return;
@@ -176,7 +200,7 @@ function CheckoutSuccessPage() {
       if (stopRef.current) return;
       attempt += 1;
       try {
-        try { await auth.authStateReady(); } catch { /* ignore */ }
+        await authReadyFast();
         const idToken = auth.currentUser
           ? await auth.currentUser.getIdToken().catch(() => null)
           : null;
@@ -245,6 +269,7 @@ function CheckoutSuccessPage() {
     tick();
     return () => {
       stopRef.current = true;
+      clearTimeout(softTimer);
       clearTimeout(waitingTimer);
       clearTimeout(supportTimer);
       clearTimeout(alertTimer);
@@ -257,7 +282,7 @@ function CheckoutSuccessPage() {
     if (!orderId || refreshing) return;
     setRefreshing(true);
     try {
-      try { await auth.authStateReady(); } catch { /* ignore */ }
+      await authReadyFast();
       const idToken = auth.currentUser
         ? await auth.currentUser.getIdToken().catch(() => null)
         : null;
@@ -293,6 +318,7 @@ function CheckoutSuccessPage() {
             <Loader className="w-10 h-10 mx-auto text-emerald-500 animate-spin" />
             <h1 className="mt-4 text-xl font-bold text-white">Confirming your payment…</h1>
             <p className="mt-2 text-sm text-slate-300">We're waiting for your bank to confirm.</p>
+            <a href="/" className="mt-6 inline-block text-xs text-slate-400 underline hover:text-slate-200">Back to shop</a>
           </>
         )}
         {phase === "paid" && (
