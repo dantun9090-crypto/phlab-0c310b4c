@@ -70,7 +70,7 @@ function TrustBadgesRow() {
       {TRUST_ITEMS.map(({ icon: Icon, label }) => (
         <div
           key={label}
-          className="flex items-center gap-2 text-[11px] sm:text-xs text-slate-400 whitespace-nowrap"
+          className="flex items-center gap-2 text-[11px] sm:text-xs text-slate-200 whitespace-nowrap"
         >
           <Icon className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
           <span>{label}</span>
