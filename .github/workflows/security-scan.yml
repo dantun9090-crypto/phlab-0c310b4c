@@ -25,7 +25,7 @@ jobs:
   security-scan:
     name: Dependency vulnerability scan
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 15
     permissions:
       contents: read
       security-events: write
