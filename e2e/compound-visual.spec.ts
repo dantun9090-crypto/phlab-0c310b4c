@@ -53,18 +53,12 @@ test.describe("/compound visual regression", () => {
       else document.addEventListener("DOMContentLoaded", apply);
     }, KILL_MOTION_CSS);
 
-    await page.goto(`${BASE}/compound`, { waitUntil: "domcontentloaded" });
-
     // First visit on a fresh profile triggers one cache-guard reload on live
-    // — capture before it finishes = black/torn screenshots. Wait for the
-    // client boot flag (set after the app mounts post-reload), then proceed.
-    await page
-      .waitForFunction(
-        () => (window as unknown as { __PHL_REACT_READY__?: boolean }).__PHL_REACT_READY__ === true,
-        undefined,
-        { timeout: 60_000 },
-      )
-      .catch(() => {});
+    // — screenshots taken around it come out black or torn. Warm the session
+    // first: the second visit is stable (verified: 1 navigation, no reload).
+    await page.goto(`${BASE}/compound`, { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(10_000);
+    await page.goto(`${BASE}/compound`, { waitUntil: "domcontentloaded" });
 
     await expect(page.locator("h1")).toBeVisible();
     await page.waitForLoadState("load", { timeout: 10_000 }).catch(() => undefined);
