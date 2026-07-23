@@ -1066,3 +1066,12 @@ h1, h2, .font-display {
     animation-timing-function: ease-out;
   }
 }
+
+/* ── 2026-07-23: catalogue/product headings invisible in day mode ─────────
+   Products + Home cards set near-white text via inline styles
+   (#eef4ff, #d8ecff, #9ab8d8) — not covered by the remaps above, so
+   headings rendered near-white on the day-mode white background
+   (products hero H1 was unreadable). */
+html.light [style*="#eef4ff" i], html.light [style*="rgb(238, 244, 255)"] { color: #0f172a !important; }
+html.light [style*="#d8ecff" i], html.light [style*="rgb(216, 236, 255)"] { color: #0f172a !important; }
+html.light [style*="#9ab8d8" i], html.light [style*="rgb(154, 184, 216)"] { color: #3a648f !important; }
