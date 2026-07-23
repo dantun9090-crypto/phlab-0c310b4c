@@ -16,6 +16,7 @@ Disallow: /__/
 Disallow: /__/auth/
 # Internal API / server endpoints — never indexable
 Disallow: /api/
+Disallow: /_serverFn/
 Disallow: /webhook/
 Disallow: /server-functions/
 Disallow: /lovable/

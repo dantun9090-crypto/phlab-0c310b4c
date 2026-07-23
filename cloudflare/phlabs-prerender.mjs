@@ -136,10 +136,60 @@ const SCANNER_PATH_PREFIXES = [
   "/client_secret",
   "/user_secrets",
   "/wp-",          // /wp-admin, /wp-login.php, /wp-content, /wp-includes
+  "/wp.php",
   "/phpmyadmin",
   "/phpMyAdmin",
   "/xmlrpc.php",
+  // 2026-07-23 quota audit: exploit probes were burning paid prerender
+  // renders (475 404-renders/period) because the browser MISS path still
+  // fired prerender for non-allowlisted UAs. Block the full probe surface.
+  "/etc/",
+  "/proc/",
+  "/root/",
+  "/var/",
+  "/docker",
+  "/.docker",
+  "/.terraform",
+  "/.amplify",
+  "/.npmrc",
+  "/.s3cfg",
+  "/.boto",
+  "/.cache",
+  "/backup",
+  "/database.sql",
+  "/config.",
+  "/actuator",
+  "/server-status",
+  "/server-info",
+  "/swagger",
+  "/api-docs",
+  "/aws-ses",
+  "/appsettings",
+  "/storage/logs",
+  "/Jenkinsfile",
+  "/solr/",
+  "/.aider/",
+  "/getcmd",
+  "/debug.log",
+  "/info.php",
+  "/test.php",
 ];
+// Probe file extensions — no legitimate route on this site uses them.
+const SCANNER_EXT_RX =
+  /\.(php\d?|phtml|sql|env|ini|cfg|conf|bak|old|save|swp|tfstate|tfrc|log|sh|py|rb|pl|cgi|asp|aspx|jsp)$/i;
+const SCANNER_EXACT_PATHS = new Set([
+  "/aaa9",
+  "/aab9",
+  "/healthz",
+  "/__debug__",
+  "/_profiler",
+  "/env",
+  "/config.yaml",
+  "/config.yml",
+]);
+// Scanner UAs — never touch origin or prerender at all.
+const SCANNER_UA_RX =
+  /l9scan|leakix|pathscan|Go-http-client|masscan|zgrab|nmap|sqlmap|nikto|acunetix|nessus|openvas|wpscan/i;
 
 function isMonitoringUA(ua) {
   return MONITORING_UA_RX.test(ua || "");
@@ -157,6 +207,8 @@ function isNonHtmlPath(path) {
 }
 
 function isScannerPath(path) {
+  if (SCANNER_EXACT_PATHS.has(path)) return true;
+  if (SCANNER_EXT_RX.test(path)) return true;
   return SCANNER_PATH_PREFIXES.some((p) => path.startsWith(p));
 }
 
@@ -571,6 +623,45 @@ export default {
           "Server-Timing": `scanner-block;dur=${Date.now() - startTime}`,
         },
       });
+    }
+
+    // (a1) Scanner UAs (leakix, pathscan, Go probes, vuln tools) — 403 at edge.
+    if (SCANNER_UA_RX.test(ua)) {
+      return new Response("Forbidden", {
+        status: 403,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "public, max-age=3600",
+          "X-Robots-Tag": "noindex, nofollow",
+          "Server-Timing": `scanner-ua-block;dur=${Date.now() - startTime}`,
+        },
+      });
+    }
+
+    // (a1b) Legacy URL redirects — hard 301 at the edge so old slugs don't
+    // burn a prerender render just to 404/redirect client-side.
+    const LEGACY_REDIRECTS = {
+      "/research/pt-141-uk": "/research",
+      "/downloads": "/resources",
+      "/faq": "/#faq",
+    };
+    const legacyTarget = LEGACY_REDIRECTS[path];
+    if (legacyTarget) {
+      return new Response(null, {
+        status: 301,
+        headers: {
+          Location: legacyTarget,
+          "Cache-Control": "public, max-age=86400",
+          "Server-Timing": `legacy-redirect;dur=${Date.now() - startTime}`,
+        },
+      });
+    }
+
+    // (a1c) Machine endpoints — origin direct, never prerender, never edge
+    // HTML cache. /_serverFn is TanStack RPC (bots hitting it caused 26
+    // paid 500-renders/period); /.well-known and /__health are machine reads.
+    if (path.startsWith("/_serverFn") || path === "/__health" || path.startsWith("/.well-known/")) {
+      return fetch(request, { cf: { cacheTtl: 0, cacheEverything: false } });
     }
 
     // (a2) WordPress pingback/trackback spam — UAs shaped like
