@@ -2,7 +2,6 @@ import { createStart, createMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
 import { enforceRateLimit } from "@/lib/rate-limit";
-import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
 // attachSupabaseAuth intentionally NOT registered. It was a Lovable
 // template leftover whose .client() middleware pulled the ENTIRE
@@ -10,6 +9,7 @@ import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 // storage, realtime) into the eager client chunk of every page — only to
 // attach a Supabase bearer token to serverFn RPCs. App auth is Firebase;
 // no server function ever consumed a Supabase token.
+
 
 // NOTE: prerenderMiddleware intentionally NOT registered here.
 // Prerender.io interception is handled exclusively at the Cloudflare Worker
