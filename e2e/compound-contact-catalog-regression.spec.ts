@@ -25,19 +25,6 @@ import { test, expect, type Page, type Route } from "@playwright/test";
 
 const BASE = process.env.TEST_BASE_URL || "http://localhost:8080";
 
-// Wait for client hydration before interacting — on cold CI dev servers the
-// app SSRs markup first and hydrates seconds later; early clicks land on
-// inert HTML and the tests time out.
-async function bootReady(page: import("@playwright/test").Page) {
-  await page
-    .waitForFunction(
-      () => (window as unknown as { __PHL_REACT_READY__?: boolean }).__PHL_REACT_READY__ === true,
-      undefined,
-      { timeout: 30_000 },
-    )
-    .catch(() => {});
-}
-
 type CapturedMail = { url: string; body: any };
 
 async function prep(page: Page, opts: { mailStatus?: number; capture?: CapturedMail[] } = {}) {
@@ -67,12 +54,6 @@ async function prep(page: Page, opts: { mailStatus?: number; capture?: CapturedM
   });
 }
 
-// Cold CI dev servers need 10-20s of vite transform per route plus a second
-// hydration pass after CTA navigations — the default 30s test budget is not
-// enough for these flows (all recent failures are plain timeouts, not
-// assertion failures).
-test.setTimeout(120_000);
-
 async function readDataLayer(page: Page): Promise<unknown[][]> {
   return await page.evaluate(() => (window as any).dataLayer as unknown[][]);
 }
@@ -91,23 +72,22 @@ test.describe("/compound analytics events", () => {
     );
 
     await page.goto(`${BASE}/compound`, { waitUntil: "domcontentloaded" });
-    await bootReady(page);
-    await expect(page.locator("h1")).toBeVisible();
+    // Content-level readiness: on cold CI dev servers the client app mounts
+    // tens of seconds after the SSR shell — wait for the real CTAs.
+    await page.getByRole("link", { name: /Contact Research Team/i }).first()
+      .waitFor({ state: "visible", timeout: 90_000 });
 
     // Click each CTA (first instance in the hero region is enough).
-    // dispatchEvent (not click): these links navigate away, and Playwright's
-    // actionability + post-click navigation waits can stall past the 30s
-    // test budget on a slow dev server. The analytics handler fires on the
-    // DOM click event regardless.
     for (const name of ["Contact Research Team", "Request Documentation"]) {
-      await page.getByRole("link", { name: new RegExp(name, "i") }).first().dispatchEvent("click").catch(() => { /* navigation may detach */ });
+      await page.getByRole("link", { name: new RegExp(name, "i") }).first().click({ trial: false }).catch(() => { /* navigation may detach */ });
     }
     // Re-mount the page so subsequent clicks aren't lost to navigation
     // (Contact + Documentation CTAs are <a href>; they navigate away).
     await page.goto(`${BASE}/compound`, { waitUntil: "domcontentloaded" });
-    await bootReady(page);
+    await page.getByRole("link", { name: /WhatsApp/i }).first()
+      .waitFor({ state: "visible", timeout: 90_000 });
     for (const name of ["WhatsApp", "Telegram"]) {
-      await page.getByRole("link", { name: new RegExp(name, "i") }).first().dispatchEvent("click").catch(() => { /* external */ });
+      await page.getByRole("link", { name: new RegExp(name, "i") }).first().click().catch(() => { /* external */ });
     }
 
     const dl = await readDataLayer(page);
@@ -139,7 +119,10 @@ test.describe("/contact qualification gating", () => {
     await prep(page, { capture: captured });
 
     await page.goto(`${BASE}/contact`, { waitUntil: "domcontentloaded" });
-    await bootReady(page);
+    // The contact form mounts with the client app — on cold dev servers that
+    // can take a minute; the SSR shell alone has no form fields.
+    await page.getByRole("heading", { name: /Talk to the Team|Contact Research/i }).first()
+      .waitFor({ state: "visible", timeout: 90_000 });
 
     // Fill required fields.
     await page.getByLabel(/name/i).first().fill("Dr Test Researcher");
@@ -157,9 +140,8 @@ test.describe("/contact qualification gating", () => {
     await page.waitForTimeout(250);
     expect(captured.length, "no mail call before qualified is ticked").toBe(0);
 
-    // Tick qualified, submit cleanly. The custom checkbox input can be
-    // visually hidden behind a styled label — force the state change.
-    await page.getByRole("checkbox").first().check({ force: true });
+    // Tick qualified, submit cleanly.
+    await page.getByRole("checkbox").first().check();
     await expect(submit).toBeEnabled();
     await submit.click();
 
@@ -185,7 +167,6 @@ test.describe("/request-catalog email payload handling", () => {
     await prep(page, { capture: captured });
 
     await page.goto(`${BASE}/request-catalog`, { waitUntil: "domcontentloaded" });
-    await bootReady(page);
     await fillCatalogForm(page);
 
     // Submit without any checkboxes ticked — must show qualified error.
@@ -205,7 +186,6 @@ test.describe("/request-catalog email payload handling", () => {
     await prep(page, { mailStatus: 200, capture: captured });
 
     await page.goto(`${BASE}/request-catalog`, { waitUntil: "domcontentloaded" });
-    await bootReady(page);
     await fillCatalogForm(page);
     await page.getByRole("checkbox").nth(0).check();
     await page.getByRole("checkbox").nth(1).check();
@@ -235,7 +215,6 @@ test.describe("/request-catalog email payload handling", () => {
     await prep(page, { mailStatus: 500 });
 
     await page.goto(`${BASE}/request-catalog`, { waitUntil: "domcontentloaded" });
-    await bootReady(page);
     await fillCatalogForm(page);
     await page.getByRole("checkbox").nth(0).check();
     await page.getByRole("checkbox").nth(1).check();
