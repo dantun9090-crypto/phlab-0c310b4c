@@ -22,6 +22,17 @@ import { test, expect, type Page } from "@playwright/test";
 
 const HARNESS = "/e2e/payment-options";
 
+// Wait for client hydration before interacting (see a11y spec for rationale).
+async function bootReady(page: import("@playwright/test").Page) {
+  await page
+    .waitForFunction(
+      () => (window as unknown as { __PHL_REACT_READY__?: boolean }).__PHL_REACT_READY__ === true,
+      undefined,
+      { timeout: 30_000 },
+    )
+    .catch(() => {});
+}
+
 const VIEWPORTS: { name: string; width: number; height: number }[] = [
   { name: "320w-mobile", width: 320, height: 900 },
   { name: "360w-mobile", width: 360, height: 900 },
@@ -57,6 +68,7 @@ test.describe("PaymentMethodOptions — integration smoke", () => {
     page.on("pageerror", (err) => pageErrors.push(err.message));
 
     await page.goto(HARNESS, { waitUntil: "domcontentloaded" });
+    await bootReady(page);
     await page.waitForSelector('[data-testid="harness-root"]');
 
     // Both option buttons must exist and be enabled+visible.
@@ -96,6 +108,7 @@ test.describe("PaymentMethodOptions — keyboard focus order @ small viewports",
     }) => {
       await page.setViewportSize({ width: vw, height: 900 });
       await page.goto(HARNESS, { waitUntil: "domcontentloaded" });
+    await bootReady(page);
       await settle(page);
 
       // Anchor focus at the document body, then Tab forward and record which
@@ -170,6 +183,7 @@ test.describe("PaymentMethodOptions — visual regression", () => {
     }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto(HARNESS, { waitUntil: "domcontentloaded" });
+    await bootReady(page);
       await settle(page);
 
       await expect(page.getByTestId("harness-root")).toHaveScreenshot(
@@ -182,6 +196,7 @@ test.describe("PaymentMethodOptions — visual regression", () => {
     }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto(HARNESS, { waitUntil: "domcontentloaded" });
+    await bootReady(page);
       await settle(page);
 
       await page.getByTestId("manual-bank-transfer-button").click();

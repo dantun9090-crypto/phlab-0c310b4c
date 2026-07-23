@@ -137,6 +137,8 @@ function isLikelyIndexable(path: string): boolean {
   }
   // Skip obviously private/utility page routes we don't want in sitemap.
   if (/^\/(install|request-catalog|privacy-requests|search|sentry-test)$/.test(path)) return false;
+  // Internal e2e harnesses — Disallow'ed in robots.txt, never indexed.
+  if (path.startsWith("/e2e/")) return false;
   // Wallid redirect aliases → canonical /checkout/* routes; not indexable.
   if (path === "/order/success" || path === "/order/cancel" || path === "/order/cancelled") return false;
   // MCP server + its OAuth/discovery companion routes are machine endpoints,

@@ -14,11 +14,27 @@ import AxeBuilder from "@axe-core/playwright";
 
 const HARNESS = "/e2e/payment-options";
 
+// The harness page SSRs its markup, but option buttons only become
+// interactive after the client bundle hydrates. On a cold CI dev server
+// hydration can take 10s+ — clicking/pressing keys before that lands on
+// inert SSR HTML and the assertions flake. Wait for the client's ready
+// flag (window.__PHL_REACT_READY__ is set right after StartClient mounts).
+async function gotoHarness(page: import("@playwright/test").Page) {
+  await gotoHarness(page);
+  await page
+    .waitForFunction(
+      () => (window as unknown as { __PHL_REACT_READY__?: boolean }).__PHL_REACT_READY__ === true,
+      undefined,
+      { timeout: 30_000 },
+    )
+    .catch(() => {});
+}
+
 test.describe("PaymentMethodOptions — a11y + keyboard", () => {
   test("radiogroup exposes role=radio + aria-checked per option", async ({
     page,
   }) => {
-    await page.goto(HARNESS, { waitUntil: "domcontentloaded" });
+    await gotoHarness(page);
 
     const group = page.getByRole("radiogroup", {
       name: /choose how you want to pay/i,
@@ -38,7 +54,7 @@ test.describe("PaymentMethodOptions — a11y + keyboard", () => {
   test("keyboard activation flips aria-checked + aria-describedby", async ({
     page,
   }) => {
-    await page.goto(HARNESS, { waitUntil: "domcontentloaded" });
+    await gotoHarness(page);
 
     const payByBank = page.getByTestId("pay-by-bank-button");
     const manual = page.getByTestId("manual-bank-transfer-button");
@@ -57,10 +73,10 @@ test.describe("PaymentMethodOptions — a11y + keyboard", () => {
     // must not linger on the now-unselected option.
     await expect(manual).toHaveAttribute(
       "aria-describedby",
-      "manual-bank-instructions",
+      "manual-bank-transfer-details",
     );
     expect(await payByBank.getAttribute("aria-describedby")).toBeNull();
-    await expect(page.locator("#manual-bank-instructions")).toBeVisible();
+    await expect(page.locator("#manual-bank-transfer-details")).toBeVisible();
 
     // Now switch back to pay-by-bank with Enter and re-check the wiring.
     await payByBank.focus();
@@ -75,7 +91,7 @@ test.describe("PaymentMethodOptions — a11y + keyboard", () => {
   });
 
   test("focus-visible ring renders on the focused option", async ({ page }) => {
-    await page.goto(HARNESS, { waitUntil: "domcontentloaded" });
+    await gotoHarness(page);
     const manual = page.getByTestId("manual-bank-transfer-button");
     await manual.focus();
     // The component applies a 4px emerald ring on focus-visible. Verify the
@@ -90,7 +106,7 @@ test.describe("PaymentMethodOptions — a11y + keyboard", () => {
   test("axe-core: no serious/critical accessibility violations", async ({
     page,
   }) => {
-    await page.goto(HARNESS, { waitUntil: "domcontentloaded" });
+    await gotoHarness(page);
     const results = await new AxeBuilder({ page })
       .include('[data-testid="harness-root"]')
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
@@ -108,7 +124,7 @@ test.describe("PaymentMethodOptions — a11y + keyboard", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 360, height: 800 });
-    await page.goto(HARNESS, { waitUntil: "domcontentloaded" });
+    await gotoHarness(page);
     for (const id of ["pay-by-bank-button", "manual-bank-transfer-button"]) {
       const box = await page.getByTestId(id).boundingBox();
       expect(box, `bounding box for ${id}`).not.toBeNull();

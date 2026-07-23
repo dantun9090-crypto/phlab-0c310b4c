@@ -16,6 +16,17 @@ import { test, expect, type Request } from "@playwright/test";
 
 const HARNESS = "/e2e/payment-options";
 
+// Wait for client hydration before interacting (see a11y spec for rationale).
+async function bootReady(page: import("@playwright/test").Page) {
+  await page
+    .waitForFunction(
+      () => (window as unknown as { __PHL_REACT_READY__?: boolean }).__PHL_REACT_READY__ === true,
+      undefined,
+      { timeout: 30_000 },
+    )
+    .catch(() => {});
+}
+
 // Forbidden patterns assembled at runtime so this spec file itself does
 // not contain the literal strings (scripts/check-dist-domains.ts forbids
 // them in e2e/). Source: stable canonical is https://phlabs.co.uk.
@@ -39,6 +50,7 @@ test.describe("Payment step — canonical-host guard", () => {
     page,
   }) => {
     await page.goto(HARNESS, { waitUntil: "domcontentloaded" });
+    await bootReady(page);
 
     // Collect every <a href> and <form action> rendered in the harness.
     const urls = await page.evaluate(() => {
@@ -77,6 +89,7 @@ test.describe("Payment step — canonical-host guard", () => {
     });
 
     await page.goto(HARNESS, { waitUntil: "domcontentloaded" });
+    await bootReady(page);
 
     // Mouse: click manual transfer.
     const manual = page.getByTestId("manual-bank-transfer-button");
