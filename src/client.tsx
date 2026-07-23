@@ -271,6 +271,12 @@ const HYDRATION_ERROR_FLAG = "__phl_hydration_error_seen";
 const ENABLE_SSR_HYDRATION = true;
 const SSR_HYDRATION_ROUTES: string[] = [
   "/compound", // pure TanStack route (PremiumLanding) — no legacy router involved
+  // Internal e2e harnesses — interactive TanStack routes. Without this,
+  // renderCsr() wipes the SSR HTML and LegacyApp (which has no /e2e/*
+  // mapping) shows its styled 404 to every Playwright run.
+  "/e2e/payment-options",
+  "/e2e/orders-modal",
+  "/e2e/watchdog-panel",
 ];
 
 // ============================================================
