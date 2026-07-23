@@ -299,6 +299,7 @@ export default function PaymentMethodOptions({
           onClick={(e) => handleSelect("bank_transfer", e.currentTarget)}
           role="radio"
           aria-checked={manualSelected}
+          aria-describedby={manualSelected ? "manual-bank-transfer-details" : undefined}
           className={manualCardClass}
         >
           <div className="flex items-start gap-3">
@@ -328,6 +329,7 @@ export default function PaymentMethodOptions({
         <div
           ref={manualDetailsRef}
           data-testid="manual-bank-transfer-details"
+          id="manual-bank-transfer-details"
           aria-hidden={!manualSelected}
           className={`grid transition-all duration-300 ease-out ${
             manualSelected

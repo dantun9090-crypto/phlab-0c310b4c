@@ -128,14 +128,14 @@ describe("PaymentMethodOptions", () => {
     render(
       <PaymentMethodOptions
         options={FENA_PRIMARY_TL_BACKUP}
-        value="bank_transfer"
+        value="pay_by_bank"
         onChange={onChange}
       />,
     );
-    fireEvent.click(screen.getByTestId("pay-by-bank-button"));
     fireEvent.click(screen.getByTestId("manual-bank-transfer-button"));
-    expect(onChange).toHaveBeenNthCalledWith(1, "pay_by_bank");
-    expect(onChange).toHaveBeenNthCalledWith(2, "bank_transfer");
+    fireEvent.click(screen.getByTestId("pay-by-bank-button"));
+    expect(onChange).toHaveBeenNthCalledWith(1, "bank_transfer");
+    expect(onChange).toHaveBeenNthCalledWith(2, "pay_by_bank");
   });
 
   describe("accessibility semantics", () => {
@@ -182,10 +182,10 @@ describe("PaymentMethodOptions", () => {
       );
       const manual = screen.getByTestId("manual-bank-transfer-button");
       expect(manual.getAttribute("aria-describedby")).toBe(
-        "manual-bank-instructions",
+        "manual-bank-transfer-details",
       );
       expect(
-        document.getElementById("manual-bank-instructions"),
+        document.getElementById("manual-bank-transfer-details"),
       ).toBeInTheDocument();
       // unselected option must not carry a stale describedby
       expect(
@@ -203,7 +203,7 @@ describe("PaymentMethodOptions", () => {
       );
       const manual = screen.getByTestId("manual-bank-transfer-button");
       expect(manual.textContent).toMatch(/Selected/);
-      expect(manual.textContent).toMatch(/Selected\. We will email you/i);
+      expect(manual.textContent).toMatch(/Receive bank details by email/i);
     });
 
     it("renders the 3-step Open Banking instructions when pay_by_bank is selected", async () => {
