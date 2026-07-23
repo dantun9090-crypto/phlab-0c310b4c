@@ -55,6 +55,17 @@ test.describe("/compound visual regression", () => {
 
     await page.goto(`${BASE}/compound`, { waitUntil: "domcontentloaded" });
 
+    // First visit on a fresh profile triggers one cache-guard reload on live
+    // — capture before it finishes = black/torn screenshots. Wait for the
+    // client boot flag (set after the app mounts post-reload), then proceed.
+    await page
+      .waitForFunction(
+        () => (window as unknown as { __PHL_REACT_READY__?: boolean }).__PHL_REACT_READY__ === true,
+        undefined,
+        { timeout: 60_000 },
+      )
+      .catch(() => {});
+
     await expect(page.locator("h1")).toBeVisible();
     await page.waitForLoadState("load", { timeout: 10_000 }).catch(() => undefined);
     // Wait for the deferred full stylesheet (media="print" -> "all" swap)
