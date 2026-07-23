@@ -25,6 +25,19 @@ import { test, expect, type Page, type Route } from "@playwright/test";
 
 const BASE = process.env.TEST_BASE_URL || "http://localhost:8080";
 
+// Wait for client hydration before interacting — on cold CI dev servers the
+// app SSRs markup first and hydrates seconds later; early clicks land on
+// inert HTML and the tests time out.
+async function bootReady(page: import("@playwright/test").Page) {
+  await page
+    .waitForFunction(
+      () => (window as unknown as { __PHL_REACT_READY__?: boolean }).__PHL_REACT_READY__ === true,
+      undefined,
+      { timeout: 30_000 },
+    )
+    .catch(() => {});
+}
+
 type CapturedMail = { url: string; body: any };
 
 async function prep(page: Page, opts: { mailStatus?: number; capture?: CapturedMail[] } = {}) {
@@ -72,6 +85,7 @@ test.describe("/compound analytics events", () => {
     );
 
     await page.goto(`${BASE}/compound`, { waitUntil: "domcontentloaded" });
+    await bootReady(page);
     await expect(page.locator("h1")).toBeVisible();
 
     // Click each CTA (first instance in the hero region is enough).
@@ -81,6 +95,7 @@ test.describe("/compound analytics events", () => {
     // Re-mount the page so subsequent clicks aren't lost to navigation
     // (Contact + Documentation CTAs are <a href>; they navigate away).
     await page.goto(`${BASE}/compound`, { waitUntil: "domcontentloaded" });
+    await bootReady(page);
     for (const name of ["WhatsApp", "Telegram"]) {
       await page.getByRole("link", { name: new RegExp(name, "i") }).first().click().catch(() => { /* external */ });
     }
@@ -114,6 +129,7 @@ test.describe("/contact qualification gating", () => {
     await prep(page, { capture: captured });
 
     await page.goto(`${BASE}/contact`, { waitUntil: "domcontentloaded" });
+    await bootReady(page);
 
     // Fill required fields.
     await page.getByLabel(/name/i).first().fill("Dr Test Researcher");
@@ -158,6 +174,7 @@ test.describe("/request-catalog email payload handling", () => {
     await prep(page, { capture: captured });
 
     await page.goto(`${BASE}/request-catalog`, { waitUntil: "domcontentloaded" });
+    await bootReady(page);
     await fillCatalogForm(page);
 
     // Submit without any checkboxes ticked — must show qualified error.
@@ -177,6 +194,7 @@ test.describe("/request-catalog email payload handling", () => {
     await prep(page, { mailStatus: 200, capture: captured });
 
     await page.goto(`${BASE}/request-catalog`, { waitUntil: "domcontentloaded" });
+    await bootReady(page);
     await fillCatalogForm(page);
     await page.getByRole("checkbox").nth(0).check();
     await page.getByRole("checkbox").nth(1).check();
@@ -206,6 +224,7 @@ test.describe("/request-catalog email payload handling", () => {
     await prep(page, { mailStatus: 500 });
 
     await page.goto(`${BASE}/request-catalog`, { waitUntil: "domcontentloaded" });
+    await bootReady(page);
     await fillCatalogForm(page);
     await page.getByRole("checkbox").nth(0).check();
     await page.getByRole("checkbox").nth(1).check();

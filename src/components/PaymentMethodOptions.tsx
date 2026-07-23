@@ -316,10 +316,10 @@ export default function PaymentMethodOptions({
               </div>
             </div>
           </div>
-          <p className="text-sm text-slate-400 mt-1 ml-8">
+          <p className="text-sm text-slate-300 mt-1 ml-8">
             Receive bank details by email and transfer manually within 48 hours.
           </p>
-          <p className="text-xs text-slate-500 mt-2 ml-8">
+          <p className="text-xs text-slate-400 mt-2 ml-8">
             Your order will be reserved for 48 hours. Confirmation email sent immediately.
           </p>
         </button>
