@@ -1,6 +1,9 @@
 /**
- * PH Labs - Bridge Page v8 "Modern" rebrand
+ * PH Labs - Bridge Page v8.1 "Modern" rebrand + SALE15 hero image
  * Onyx & emerald aesthetic (matches main site). Claims corrected 2026-07-23.
+ * Deploy: sale image is inlined from cloudflare/sale15-image.b64 via the
+ * Cloudflare API deploy pipeline. The 'Deploy bridge page' GH workflow only
+ * splices the logo - do NOT use it for this worker (sale image placeholder).
  */
 
 const HTML_PAGE = `<!DOCTYPE html>
@@ -468,7 +471,7 @@ body.gate-active{overflow:hidden}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
         </a>
         <button class="code-chip" onclick="copyCode(this)" type="button">
-          CODE: SALE10
+          CODE: SALE15
           <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         </button>
       </div>
@@ -476,7 +479,7 @@ body.gate-active{overflow:hidden}
     </div>
     <div class="hero-visual">
       <div class="sale-frame">
-        <img src="__SALE_IMG_DATA_URI__" alt="Flash Sale — 10% off everything, code SALE10" width="640" height="640">
+        <img src="__SALE_IMG_DATA_URI__" alt="Flash Sale — 15% off everything, code SALE15" width="520" height="650">
       </div>
     </div>
   </div>
@@ -614,10 +617,10 @@ function copyCode(btn){
   };
   try{
     if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText('SALE10').then(done).catch(done);
+      navigator.clipboard.writeText('SALE15').then(done).catch(done);
     }else{
       var t=document.createElement('textarea');
-      t.value='SALE10';document.body.appendChild(t);t.select();
+      t.value='SALE15';document.body.appendChild(t);t.select();
       document.execCommand('copy');document.body.removeChild(t);done();
     }
   }catch(e){ done(); }
