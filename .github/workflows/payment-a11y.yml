@@ -20,6 +20,7 @@ on:
       - "playwright.config.ts"
       - "vitest.config.ts"
       - ".github/workflows/payment-a11y.yml"
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
