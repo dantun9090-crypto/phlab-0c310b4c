@@ -67,6 +67,12 @@ async function prep(page: Page, opts: { mailStatus?: number; capture?: CapturedM
   });
 }
 
+// Cold CI dev servers need 10-20s of vite transform per route plus a second
+// hydration pass after CTA navigations — the default 30s test budget is not
+// enough for these flows (all recent failures are plain timeouts, not
+// assertion failures).
+test.setTimeout(120_000);
+
 async function readDataLayer(page: Page): Promise<unknown[][]> {
   return await page.evaluate(() => (window as any).dataLayer as unknown[][]);
 }
