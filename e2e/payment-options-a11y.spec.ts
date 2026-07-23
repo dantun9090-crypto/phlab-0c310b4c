@@ -20,7 +20,7 @@ const HARNESS = "/e2e/payment-options";
 // inert SSR HTML and the assertions flake. Wait for the client's ready
 // flag (window.__PHL_REACT_READY__ is set right after StartClient mounts).
 async function gotoHarness(page: import("@playwright/test").Page) {
-  await gotoHarness(page);
+  await page.goto(HARNESS, { waitUntil: "domcontentloaded" });
   await page
     .waitForFunction(
       () => (window as unknown as { __PHL_REACT_READY__?: boolean }).__PHL_REACT_READY__ === true,

@@ -141,6 +141,8 @@ function isLikelyIndexable(path: string): boolean {
   if (path.startsWith("/e2e/")) return false;
   // Wallid redirect aliases → canonical /checkout/* routes; not indexable.
   if (path === "/order/success" || path === "/order/cancel" || path === "/order/cancelled") return false;
+  // Redirect aliases (live 301s) — not indexable destinations.
+  if (path === "/research/pt-141-uk" || path === "/downloads") return false;
   // MCP server + its OAuth/discovery companion routes are machine endpoints,
   // not indexable pages.
   if (path === "/mcp" || path.startsWith("/[.mcp]/") || path.startsWith("/[.well-known]/")) return false;
