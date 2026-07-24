@@ -559,7 +559,7 @@ export function Layout({ children }: LayoutProps) {
   const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.priceNum * item.quantity, 0), [cart]);
   const getSubtotal = useCallback(() => subtotal, [subtotal]);
 
-  const shippingCost = useMemo(() => subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 4.99, [subtotal]);
+  const shippingCost = useMemo(() => subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 3.20, [subtotal]);
   const getTotalPrice = useCallback(() => Math.max(0, subtotal + shippingCost).toFixed(2), [subtotal, shippingCost]);
 
   const addToCart = (item: CartItem) => {
@@ -1689,6 +1689,5 @@ export function dispatchAddToCart(item: CartItem) {
   }
   window.dispatchEvent(new CustomEvent(cartEventName, { detail: item }));
 }
-
 
 

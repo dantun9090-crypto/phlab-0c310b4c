@@ -168,7 +168,7 @@ function defaultsFor(feedKey: FeedKey): MerchantFeedConfig {
     promoIds: isFree ? [] : ["PHL_LAUNCH"],
     shippingCountry: "GB",
     shippingService: "Standard",
-    shippingPrice: "4.99",
+    shippingPrice: "3.20",
     cacheTtl: 0,
     bannedTokens: [
       "treats", "cures", "heals", "medicine", "drug", "prescription",

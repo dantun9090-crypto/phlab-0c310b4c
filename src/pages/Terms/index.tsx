@@ -156,7 +156,7 @@ export default function Terms() {
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             {[
-              { label: 'Standard Delivery', value: '3–5 working days', price: '£4.99' },
+              { label: 'Standard Delivery', value: '3–5 working days', price: '£3.20' },
               { label: 'Express Delivery', value: 'Next working day', price: '£9.99' },
             ].map(({ label, value, price }) => (
               <div key={label} className="p-3 rounded-lg border" style={{ background: '#0b1a30', borderColor: 'rgba(6,182,212,0.15)' }}>
