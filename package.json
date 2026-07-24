@@ -152,7 +152,7 @@
     "@vitejs/plugin-react": "^5.0.4",
     "axe-core": "^4.12.1",
     "eslint": "^9.32.0",
-    "eslint-config-prettier": "^10.1.1",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.2.6",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
