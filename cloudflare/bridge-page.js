@@ -605,7 +605,7 @@ try{
 
 function handleCTA(e){
   e.preventDefault();
-  var url='https://phlabs.co.uk/?utm_source=google&utm_medium=cpc&utm_campaign=bridge_page&utm_content=research_portal';
+  var url='https://phlabs.co.uk/contact?utm_source=google&utm_medium=cpc&utm_campaign=bridge_page&utm_content=research_portal';
   window.location.href=url;
 }
 
