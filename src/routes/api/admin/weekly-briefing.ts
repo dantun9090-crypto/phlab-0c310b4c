@@ -64,14 +64,14 @@ export const Route = createFileRoute("/api/admin/weekly-briefing")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env.CRON_SECRET || "";
-        const provided = request.headers.get("x-cron-secret") || "";
+        const expected = (process.env.CRON_SECRET || "").trim();
+        const provided = (request.headers.get("x-cron-secret") || "").trim();
         if (!expected || provided !== expected) {
           return json({ ok: false, error: "unauthorized" }, 401);
         }
-        const recipient = process.env.BRIEFING_EMAIL || "info@phlabs.co.uk";
-        const gatewayUrl = process.env.AI_GATEWAY_URL;
-        const gatewaySecret = process.env.AI_GATEWAY_SECRET;
+        const recipient = (process.env.BRIEFING_EMAIL || "info@phlabs.co.uk").trim();
+        const gatewayUrl = (process.env.AI_GATEWAY_URL || "").trim();
+        const gatewaySecret = (process.env.AI_GATEWAY_SECRET || "").trim();
 
         const now = Date.now();
         const weekStart = now - 7 * DAY_MS;
