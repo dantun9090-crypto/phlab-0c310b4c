@@ -9,7 +9,7 @@ interface Msg { role: 'user' | 'assistant'; content: string; }
 
 const PROVIDERS: { id: Provider; label: string }[] = [
   { id: 'lovable', label: 'Gemini (Lovable)' },
-  { id: 'kimi', label: 'Kimi K2 (Moonshot)' },
+  { id: 'kimi', label: 'Kimi K3 (Moonshot)' },
 ];
 
 const MODES: { id: Mode; label: string; icon: typeof Sparkles; placeholder: string; intro: string }[] = [

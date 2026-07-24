@@ -108,6 +108,8 @@ async function buildInsightsContext(): Promise<string> {
 /**
  * Kimi (Moonshot AI) — OpenAI-compatible chat completions endpoint.
  * Server-side only: the key never leaves the Pages environment.
+ * Note: current Kimi models (kimi-k3, kimi-k2.6) reject any temperature
+ * other than 1, so the field is omitted and the API default is used.
  */
 async function callKimi(opts: {
   apiKey: string;
@@ -123,7 +125,6 @@ async function callKimi(opts: {
     },
     body: JSON.stringify({
       model: opts.model,
-      temperature: 0.6,
       messages: [
         { role: 'system', content: opts.system },
         ...opts.messages,
@@ -168,7 +169,7 @@ export const aiAdminChat = createServerFn({ method: 'POST' })
       try {
         const text = await callKimi({
           apiKey: kimiKey,
-          model: process.env.KIMI_MODEL || 'kimi-k2-0905-preview',
+          model: process.env.KIMI_MODEL || 'kimi-k3',
           system,
           messages: messages.map((m) => ({ role: m.role, content: m.content })),
         });
