@@ -11,7 +11,7 @@ export const SHIPPING_CONFIG = {
   cutoffHour: 11,
   cutoffMinute: 30,
   nextDayPrice: 7.99,
-  standardPrice: 3.99,
+  standardPrice: 3.20,
   freeThreshold: 50,
   // Flat tracked-mail postage to EU delivery countries we currently ship to
   // (Germany, Poland). Matches the "Delivery EU" policy configured in Google
