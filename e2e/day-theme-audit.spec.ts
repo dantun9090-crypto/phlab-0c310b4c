@@ -486,18 +486,19 @@ test.describe("Day theme — unified audit", () => {
         ).toBe(true);
         await page.mouse.move(0, 0);
 
-        // WebKit intermittently renders the cookie-consent dialog despite the
-        // localStorage seed + CSS hide (it overlays the bottom of the page
-        // and breaks the pixel diff). Remove it outright before capturing.
-        // Marketing advert slots load from Firestore campaigns and rotate —
-        // they appear in some runs and not others, shifting the whole page
-        // down ~40px. Remove them too; they are not under test here.
+        // Marketing advert slots are LAZY (Firestore) and can mount AFTER a
+        // one-off DOM removal — hide them permanently for the session via an
+        // injected stylesheet so late renders never appear in screenshots.
+        // Also strip the cookie dialog (WebKit flake).
+        await page.addStyleTag({
+          content: "[data-advert-placement]{display:none!important}",
+        });
         await page.evaluate(() => {
           document
-            .querySelectorAll('[data-cookie-consent], [role="dialog"], [data-advert-placement]')
+            .querySelectorAll('[data-cookie-consent], [role="dialog"]')
             .forEach((el) => {
               const text = (el.textContent || "").toLowerCase();
-              if (text.includes("cookie") || el.hasAttribute("data-advert-placement")) el.remove();
+              if (text.includes("cookie")) el.remove();
             });
         });
 
