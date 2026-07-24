@@ -465,5 +465,13 @@ jobs:
           name: determinism-cached-${{ github.sha }}
           path: cached
 
+      - name: Upload fresh determinism inputs (debug)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: determinism-fresh-${{ github.sha }}
+          path: fresh
+          retention-days: 7
+
       - name: Compare hashes (cached vs fresh)
         run: bun scripts/check-determinism.ts cached fresh
