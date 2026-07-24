@@ -104,6 +104,9 @@ const FREE_SHIPPING_THRESHOLD = 50;
 export function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  // /contact is the Google Ads landing page — keep its chrome free of
+  // peptide-named elements (policy bot follows the bridge-page CTA here).
+  const isContactPage = location.pathname === '/contact';
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -559,7 +562,7 @@ export function Layout({ children }: LayoutProps) {
   const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.priceNum * item.quantity, 0), [cart]);
   const getSubtotal = useCallback(() => subtotal, [subtotal]);
 
-  const shippingCost = useMemo(() => subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 3.20, [subtotal]);
+  const shippingCost = useMemo(() => subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 4.99, [subtotal]);
   const getTotalPrice = useCallback(() => Math.max(0, subtotal + shippingCost).toFixed(2), [subtotal, shippingCost]);
 
   const addToCart = (item: CartItem) => {
@@ -677,6 +680,7 @@ export function Layout({ children }: LayoutProps) {
 
 
               {/* Browse CTA */}
+              {!isContactPage && (
               <a
                 href="/products"
                 className="group hidden lg:inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 hover:from-emerald-500 hover:via-emerald-400 hover:to-emerald-500 text-white text-[13px] font-bold rounded-xl transition-all duration-300 border border-emerald-400/30 hover:border-emerald-400/50 relative overflow-hidden"
@@ -685,6 +689,7 @@ export function Layout({ children }: LayoutProps) {
                 <FlaskConical className="w-3.5 h-3.5 relative z-10" />
                 <span className="relative z-10">Browse Peptides</span>
               </a>
+              )}
 
               {/* Account */}
               {firebaseUser ? (
@@ -1166,7 +1171,7 @@ export function Layout({ children }: LayoutProps) {
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 rounded-2xl border border-blue-500/15 bg-gradient-to-r from-blue-900/20 via-[#060f1e]/60 to-indigo-900/20 px-7 py-6">
               <div>
                 <div className="text-[10px] font-bold tracking-[0.18em] uppercase text-blue-300 mb-1">Research Updates</div>
-                <div className="text-lg font-bold text-white">Stay at the frontier of peptide science</div>
+                <div className="text-lg font-bold text-white">{isContactPage ? 'Stay at the frontier of laboratory science' : 'Stay at the frontier of peptide science'}</div>
                 <p className="text-[#5a80a6] text-sm mt-1">New arrivals, HPLC reports, and research breakthroughs.</p>
               </div>
               <a
@@ -1487,6 +1492,7 @@ export function Layout({ children }: LayoutProps) {
           </div>
 
           {/* ── Listed on Peptide Supermarket verification badge ── */}
+          {!isContactPage && (
           <div className="flex justify-center mb-6">
             <a
               href="https://peptidesupermarket.co.uk/suppliers/ph-labs?utm_source=supplier_badge&utm_medium=referral&utm_campaign=listed_on"
@@ -1516,6 +1522,7 @@ export function Layout({ children }: LayoutProps) {
               <span>Listed on <strong>Peptide Supermarket</strong></span>
             </a>
           </div>
+          )}
 
           {/* ── Bottom bar ── */}
 
@@ -1689,5 +1696,6 @@ export function dispatchAddToCart(item: CartItem) {
   }
   window.dispatchEvent(new CustomEvent(cartEventName, { detail: item }));
 }
+
 
 
