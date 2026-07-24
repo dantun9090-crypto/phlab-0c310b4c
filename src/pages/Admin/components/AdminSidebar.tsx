@@ -27,6 +27,7 @@ const navGroups = [
       { id: 'liveactivity', label: 'Live Activity', icon: Activity },
       { id: 'toastaudit', label: 'Toast Audit', icon: Activity },
       { id: 'ai', label: 'AI Assistant', icon: Sparkles },
+      { id: 'aigraphics', label: 'AI Graphics', icon: Image },
     ],
   },
   {

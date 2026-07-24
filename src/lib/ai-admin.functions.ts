@@ -1,9 +1,11 @@
 /**
- * Admin-only AI assistant — backed by Lovable AI Gateway or Kimi (Moonshot).
+ * Admin-only AI assistant — backed by Lovable AI Gateway, Kimi (Moonshot),
+ * or Cloudflare Workers AI (via the phlabs-ai-gateway Worker).
  *
  * Verifies Firebase ID token + isAdmin on every call. Never exposes
- * LOVABLE_API_KEY / KIMI_API_KEY to the client. Supports four "modes" that
- * map to different system prompts and optional Firestore context injection.
+ * LOVABLE_API_KEY / KIMI_API_KEY / AI_GATEWAY_SECRET to the client.
+ * Supports five "modes" that map to different system prompts and optional
+ * Firestore context injection.
  */
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
@@ -15,7 +17,7 @@ import { listDocsAdmin } from './server/firestore-admin';
 const MODEL = 'google/gemini-3-flash-preview';
 const KIMI_API_URL = 'https://api.moonshot.ai/v1/chat/completions';
 
-const Mode = z.enum(['chat', 'product_copy', 'email_draft', 'insights']);
+const Mode = z.enum(['chat', 'product_copy', 'email_draft', 'insights', 'blend_check']);
 
 const Message = z.object({
   role: z.enum(['user', 'assistant']),
@@ -25,7 +27,7 @@ const Message = z.object({
 const Input = z.object({
   idToken: z.string().min(10).max(4096),
   mode: Mode,
-  provider: z.enum(['lovable', 'kimi']).default('lovable'),
+  provider: z.enum(['lovable', 'kimi', 'workers-ai']).default('workers-ai'),
   messages: z.array(Message).min(1).max(40),
   // Optional structured input for the tool modes (used to pre-fill prompt)
   meta: z.record(z.string(), z.string().max(2000)).optional(),
@@ -66,6 +68,17 @@ You will be given recent orders / customers / stock data as JSON context. Produc
 - Anomalies or risks (bullet list)
 - Recommended actions (bullet list, max 5)
 Use markdown. Be specific and quantitative. If data is empty, say so.`,
+
+  blend_check: `You are the PH Labs blend product analyst.
+${BRAND}
+You will be given JSON context for the shop's BLEND products (GLOW, KLOW, etc.) and their individual component products. The context includes, per blend: the declared composition, the blend's price, the summed price of its components, stock levels, and any missing fields detected deterministically in code.
+Produce a "Blend Health Check" report:
+- One line per blend: status OK or ISSUE, with the reason
+- Pricing sanity: flag blends priced ABOVE the sum of their components (hard to sell) or suspiciously below (margin leak)
+- Stock risk: blends whose components are low/out of stock
+- Data gaps: missing descriptions, specs, or CoA fields
+- Recommended actions (bullet list, max 5)
+Use markdown. Be quantitative. Never invent figures that are not in the context.`,
 };
 
 async function buildInsightsContext(): Promise<string> {
@@ -100,6 +113,53 @@ async function buildInsightsContext(): Promise<string> {
       stock: trimmedStock,
       recentCustomerCount: customerCount,
     });
+  } catch (e) {
+    return JSON.stringify({ error: e instanceof Error ? e.message : 'context_failed' });
+  }
+}
+
+/** Known blend compositions (matches the merchant feed COMPOUND_SPECS). */
+const BLEND_COMPONENTS: Record<string, string[]> = {
+  'glow-blend': ['ghk-cu-research-peptide', 'bpc-157', 'tb-500-thymosin-beta-4'],
+  'klow-blend': ['kpv-research-peptide', 'ghk-cu-research-peptide', 'bpc-157', 'tb-500-thymosin-beta-4'],
+};
+
+async function buildBlendContext(): Promise<string> {
+  try {
+    const stock = await listDocsAdmin('product_stock', { limit: 200 }).catch(() => []);
+    const bySlug = new Map<string, any>();
+    for (const p of stock as any[]) {
+      if (p && typeof p.slug === 'string') bySlug.set(p.slug.toLowerCase(), p);
+    }
+
+    const blends = Object.entries(BLEND_COMPONENTS).map(([slug, components]) => {
+      const blend = bySlug.get(slug);
+      const compDetails = components.map((c) => {
+        const p = bySlug.get(c);
+        return {
+          slug: c,
+          present: Boolean(p),
+          price: typeof p?.price === 'number' ? p.price : null,
+          stock: typeof p?.stock === 'number' ? p.stock : null,
+        };
+      });
+      const componentSum = compDetails.reduce((acc, c) => acc + (c.price ?? 0), 0);
+      const blendPrice = typeof blend?.price === 'number' ? blend.price : null;
+      return {
+        slug,
+        present: Boolean(blend),
+        name: blend?.name ?? null,
+        price: blendPrice,
+        stock: typeof blend?.stock === 'number' ? blend.stock : null,
+        hasDescription: Boolean(blend?.description && String(blend.description).trim().length > 20),
+        includeInMerchantFeed: blend?.includeInMerchantFeed === true,
+        components: compDetails,
+        componentPriceSum: Number(componentSum.toFixed(2)),
+        priceVsComponentSum: blendPrice !== null ? Number((blendPrice - componentSum).toFixed(2)) : null,
+      };
+    });
+
+    return JSON.stringify({ generatedAt: new Date().toISOString(), blends });
   } catch (e) {
     return JSON.stringify({ error: e instanceof Error ? e.message : 'context_failed' });
   }
@@ -143,6 +203,38 @@ async function callKimi(opts: {
   return text;
 }
 
+/**
+ * Cloudflare Workers AI — via the phlabs-ai-gateway Worker (AI binding,
+ * no API key needed). Only the shared gateway secret travels over the wire.
+ */
+async function callWorkersAi(opts: {
+  system: string;
+  messages: { role: 'user' | 'assistant'; content: string }[];
+}): Promise<string> {
+  const gatewayUrl = process.env.AI_GATEWAY_URL;
+  const gatewaySecret = process.env.AI_GATEWAY_SECRET;
+  if (!gatewayUrl || !gatewaySecret) {
+    throw new Error('AI gateway is not configured (AI_GATEWAY_URL / AI_GATEWAY_SECRET missing)');
+  }
+  const res = await fetch(`${gatewayUrl}/chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-gateway-secret': gatewaySecret,
+    },
+    body: JSON.stringify({
+      model: process.env.WORKERS_AI_MODEL || '@cf/moonshotai/kimi-k2.6',
+      system: opts.system,
+      messages: opts.messages,
+    }),
+  });
+  const json: any = await res.json().catch(() => null);
+  if (!json?.ok) {
+    throw new Error(json?.error || `AI gateway HTTP ${res.status}`);
+  }
+  return json.text as string;
+}
+
 export const aiAdminChat = createServerFn({ method: 'POST' })
   .validator((d: unknown) => Input.parse(d))
   .handler(async ({ data }) => {
@@ -150,7 +242,7 @@ export const aiAdminChat = createServerFn({ method: 'POST' })
 
     const system = SYSTEM[data.mode];
 
-    // Inject Firestore context for insights mode
+    // Inject Firestore context for data-driven modes
     const messages = [...data.messages];
     if (data.mode === 'insights') {
       const context = await buildInsightsContext();
@@ -158,6 +250,29 @@ export const aiAdminChat = createServerFn({ method: 'POST' })
         role: 'user',
         content: `Operational data (JSON):\n\`\`\`json\n${context}\n\`\`\``,
       });
+    } else if (data.mode === 'blend_check') {
+      const context = await buildBlendContext();
+      messages.unshift({
+        role: 'user',
+        content: `Blend product data (JSON):\n\`\`\`json\n${context}\n\`\`\``,
+      });
+    }
+
+    // ── Cloudflare Workers AI provider (default) ─────────────────────────
+    if (data.provider === 'workers-ai') {
+      try {
+        const text = await callWorkersAi({
+          system,
+          messages: messages.map((m) => ({ role: m.role, content: m.content })),
+        });
+        return { ok: true as const, text };
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg.includes('401') || msg.includes('unauthorized')) {
+          return { ok: false as const, error: 'AI gateway secret rejected (401) — check AI_GATEWAY_SECRET matches the Worker.' };
+        }
+        return { ok: false as const, error: msg };
+      }
     }
 
     // ── Kimi (Moonshot AI) provider ──────────────────────────────────────
@@ -186,7 +301,7 @@ export const aiAdminChat = createServerFn({ method: 'POST' })
       }
     }
 
-    // ── Lovable AI Gateway provider (default) ────────────────────────────
+    // ── Lovable AI Gateway provider ──────────────────────────────────────
     const key = process.env.LOVABLE_API_KEY;
     if (!key) {
       return { ok: false as const, error: 'LOVABLE_API_KEY is not configured' };
