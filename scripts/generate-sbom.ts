@@ -109,9 +109,17 @@ for (const pkgJsonPath of walk(NM)) {
 
 const root = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as Pkg;
 const buildId = process.env.BUILD_ID ?? process.env.GITHUB_SHA ?? new Date().toISOString();
-const componentList = [...components.values()].sort((a, b) =>
-  String(a.name).localeCompare(String(b.name)),
-);
+const componentList = [...components.values()].sort((a, b) => {
+  // Sort by name, then version, then bom-ref. Sorting by name alone leaves
+  // same-name multi-version packages (e.g. @esbuild/linux-x64 0.27.3 vs
+  // 0.27.7) in filesystem-walk order, which differs across machines and
+  // breaks the cached-vs-fresh determinism gate.
+  const byName = String(a.name).localeCompare(String(b.name));
+  if (byName !== 0) return byName;
+  const byVersion = String(a.version ?? "").localeCompare(String(b.version ?? ""));
+  if (byVersion !== 0) return byVersion;
+  return String(a["bom-ref"]).localeCompare(String(b["bom-ref"]));
+});
 
 // Deterministic serial number: derived from the BOM content itself (a
 // UUID-shaped SHA-256 truncation, version/variant bits set per RFC 4122).
