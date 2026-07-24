@@ -12,8 +12,8 @@ export default function RefundPolicy() {
 
   // Inject MerchantReturnPolicy schema for Google Merchant Center.
   // Values mirror the return policy configured in Merchant Center
-  // (Countries: GB + PL + DE, 14-day window, ReturnByMail, customer pays
-  // return shipping for non-defective returns, full refund, 3-day
+  // (Countries: GB + PL + DE, 14-day window, ReturnByMail, free return
+  // label for all authorised returns, full refund, 3-day
   // refund processing) so the on-page schema and the GMC policy match
   // exactly — mismatches cause product disapprovals.
   useEffect(() => {
@@ -36,12 +36,12 @@ export default function RefundPolicy() {
       refundType: 'https://schema.org/FullRefund',
       itemCondition: 'https://schema.org/NewCondition',
       inStoreReturnsOffered: false,
-      customerRemorseReturnFees: 'https://schema.org/ReturnShippingFees',
-      customerRemorseReturnLabelSource: 'https://schema.org/ReturnLabelCustomerResponsibility',
+      customerRemorseReturnFees: 'https://schema.org/FreeReturn',
+      customerRemorseReturnLabelSource: 'https://schema.org/ReturnLabelDownloadAndPrint',
       itemDefectReturnFees: 'https://schema.org/FreeReturn',
       itemDefectReturnLabelSource: 'https://schema.org/ReturnLabelInBox',
       refundProcessingTime: 'P3D',
-      description: 'Returns accepted within 14 days for sealed, unopened items in new condition. Under UK Consumer Contracts Regulations 2013 Regulation 28(3), sterile research peptides supplied in tamper-evident sealed vials are exempt from the 14-day right to cancel once the seal is broken (health-protection and hygiene exemption). Defective, damaged, or mis-shipped items remain fully returnable at PH Labs\u2019 cost. Customer covers return postage for change-of-mind returns of unopened items. Exchanges not offered. Refunds processed within 3 business days of receipt.',
+      description: 'Returns accepted within 14 days for sealed, unopened items in new condition. Under UK Consumer Contracts Regulations 2013 Regulation 28(3), sterile research peptides supplied in tamper-evident sealed vials are exempt from the 14-day right to cancel once the seal is broken (health-protection and hygiene exemption). Defective, damaged, or mis-shipped items remain fully returnable at PH Labs\u2019 cost. Return postage is free of charge for all authorised returns (prepaid label to download and print). Exchanges accepted. Refunds processed within 3 business days of receipt.',
     };
     const el = document.createElement('script');
     el.type = 'application/ld+json';
@@ -105,12 +105,12 @@ export default function RefundPolicy() {
               ['Countries', 'United Kingdom, Poland, Germany'],
               ['Returns', 'Accepted — sealed & unopened items within 14 days; defective items within 14 days'],
               ['Sealed-goods exemption', 'Opened vials cannot be returned (CCR 2013 Reg. 28(3))'],
-              ['Exchanges', 'Not accepted'],
+              ['Exchanges', 'Accepted'],
               ['Product condition', 'New, sealed, tamper-evident closure intact'],
               ['Return window', '14 days from delivery'],
               ['Return method', 'By post'],
-              ['Return label (change of mind)', 'Customer responsibility'],
-              ['Return label (defective)', 'Provided by PH Labs — free'],
+              ['Return label (change of mind)', 'Free — download & print'],
+              ['Return label (defective)', 'Free — provided by PH Labs'],
               ['Restocking fees', 'None'],
               ['Refund processing time', '3 business days after receipt'],
             ].map(([label, value]) => (
@@ -140,7 +140,7 @@ export default function RefundPolicy() {
                 <ul className="space-y-2 text-sm text-[#8caad4] mb-3">
                   <li className="flex gap-2"><span className="text-cyan-400">•</span>The 14-day period starts the day after you (or your nominated recipient) receive the goods.</li>
                   <li className="flex gap-2"><span className="text-cyan-400">•</span>To cancel, email <a href="mailto:info@phlabs.co.uk" className="underline text-cyan-300">info@phlabs.co.uk</a> stating your order number and intention to cancel.</li>
-                  <li className="flex gap-2"><span className="text-cyan-400">•</span>Return the goods within 14 days of notifying us. You are responsible for the cost of return postage unless the goods are defective.</li>
+                  <li className="flex gap-2"><span className="text-cyan-400">•</span>Return the goods within 14 days of notifying us. Return postage is free of charge — we provide a prepaid label to download and print.</li>
                   <li className="flex gap-2"><span className="text-cyan-400">•</span>We will refund the full purchase price (including original standard delivery) within 14 days of receiving the goods back, or proof of return.</li>
                 </ul>
                 <div className="rounded-lg p-3 text-xs" style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)' }}>
@@ -164,7 +164,7 @@ export default function RefundPolicy() {
                   Every research compound is supplied in a <strong className="text-[#c8daf0]">single-use, sterile vial fitted with a tamper-evident closure</strong>. Because sterility cannot be re-established once the seal is broken, opened vials are excluded from the 14-day right to cancel under UK Consumer Contracts Regulations 2013 Regulation 28(3) — the same health-protection and hygiene exemption applied to sealed cosmetics, supplements, and sterile laboratory consumables.
                 </p>
                 <ul className="space-y-2 text-sm text-[#8caad4] mb-3">
-                  <li className="flex gap-2"><span className="text-amber-400">•</span><span><strong className="text-[#c8daf0]">Sealed &amp; unopened vial:</strong> full refund within the 14-day cooling-off period. Customer covers return postage.</span></li>
+                  <li className="flex gap-2"><span className="text-amber-400">•</span><span><strong className="text-[#c8daf0]">Sealed &amp; unopened vial:</strong> full refund within the 14-day cooling-off period. Return postage is free of charge.</span></li>
                   <li className="flex gap-2"><span className="text-amber-400">•</span><span><strong className="text-[#c8daf0]">Seal broken / tamper strip missing / vial opened:</strong> not eligible for return under the sealed-goods exemption.</span></li>
                   <li className="flex gap-2"><span className="text-amber-400">•</span><span><strong className="text-[#c8daf0]">Defective, damaged, or mis-shipped:</strong> unaffected by this exemption — full refund and return postage covered by PH Labs.</span></li>
                 </ul>
@@ -219,9 +219,9 @@ export default function RefundPolicy() {
                 <Package className="w-5 h-5 text-emerald-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="text-[#f0f6ff] font-bold text-lg mb-3">Accepted Returns — Defective Items Only</h2>
+                <h2 className="text-[#f0f6ff] font-bold text-lg mb-3">Accepted Returns</h2>
                 <p className="text-[#9cb8d9] text-sm leading-relaxed mb-3">
-                  Due to the nature of research-grade compounds, we <strong className="text-[#c8daf0]">only accept returns for items that are defective or damaged</strong>. Accepted reasons include:
+                  We accept returns for <strong className="text-[#c8daf0]">defective or damaged items</strong>, and for <strong className="text-[#c8daf0]">sealed, unopened items returned within the 14-day window</strong> (change of mind — see your statutory right to cancel above). Examples of defective-item returns include:
                 </p>
                 <div className="space-y-2">
                   {[
@@ -256,7 +256,7 @@ export default function RefundPolicy() {
                 <div className="space-y-2">
                   {[
                     'Opened, used, or otherwise non-defective products.',
-                    'Items returned due to a change of mind or ordering error.',
+                    'Items returned after the 14-day return window.',
                     'Products where customer-supplied storage conditions cannot be verified.',
                     'Items returned without prior written authorisation from PH Labs Ltd.',
                   ].map((item, i) => (
@@ -315,7 +315,7 @@ export default function RefundPolicy() {
               <div className="flex-1 min-w-0">
                 <h2 className="text-[#f0f6ff] font-bold text-lg mb-3">Return Shipping</h2>
                 <p className="text-[#9cb8d9] text-sm leading-relaxed">
-                  For confirmed defective items, PH Labs Ltd will cover the cost of return shipping. We will provide a prepaid return label upon approval. Items must be returned in their original packaging where possible.
+                  Return shipping is free of charge for all authorised returns — defective and change-of-mind alike. We will provide a prepaid return label to download and print upon approval. Items must be returned in their original packaging where possible.
                 </p>
               </div>
             </div>
@@ -330,7 +330,7 @@ export default function RefundPolicy() {
               <div className="flex-1 min-w-0">
                 <h2 className="text-[#f0f6ff] font-bold text-lg mb-3">Refunds</h2>
                 <p className="text-[#9cb8d9] text-sm leading-relaxed mb-2">
-                  Once a returned item is received and inspected, approved refunds will be processed within <strong className="text-[#c8daf0]">5–10 business days</strong> to the original payment method. You will receive a confirmation email when the refund is issued.
+                  Once a returned item is received and inspected, approved refunds will be processed within <strong className="text-[#c8daf0]">3 business days</strong> to the original payment method. You will receive a confirmation email when the refund is issued.
                 </p>
                 <p className="text-[#9cb8d9] text-sm leading-relaxed">
                   Where a replacement is preferred and stock is available, we will dispatch a replacement at no additional cost following return authorisation.

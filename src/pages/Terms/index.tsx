@@ -156,7 +156,7 @@ export default function Terms() {
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             {[
-              { label: 'Standard Delivery', value: '3–5 working days', price: '£3.20' },
+              { label: 'Standard Delivery', value: '1–3 working days', price: '£3.20' },
               { label: 'Express Delivery', value: 'Next working day', price: '£9.99' },
             ].map(({ label, value, price }) => (
               <div key={label} className="p-3 rounded-lg border" style={{ background: '#0b1a30', borderColor: 'rgba(6,182,212,0.15)' }}>
@@ -221,8 +221,8 @@ export default function Terms() {
               'Returns accepted within 14 days of delivery (unopened, original sealed condition)',
               'Product must be in original sealed condition',
               'Temperature-sensitive items must have been stored correctly',
-              'Refunds processed within 5–10 business days',
-              'Shipping costs are non-refundable unless the item is faulty',
+              'Refunds processed within 3 business days',
+              'Return shipping is free of charge for all authorised returns',
             ].map((item) => (
               <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#9cb8d9' }}>
                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#f97316' }} />

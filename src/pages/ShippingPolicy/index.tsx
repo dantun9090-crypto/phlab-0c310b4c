@@ -33,7 +33,7 @@ export default function ShippingPolicy() {
         <div className="space-y-4 text-sm">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
-              { label: 'UK Standard', time: '1–3 working days', price: 'Free over £50', sub: '£3.99 under £50' },
+              { label: 'UK Standard', time: '1–3 working days', price: 'Free over £50', sub: '£3.20 under £50' },
               { label: 'UK Next Day by 12 PM', time: 'Next working day', price: '£7.99', sub: 'Order before 11:30 AM Mon–Fri' },
               { label: 'Germany — Tracked', time: '7–14 working days', price: 'Free over £200', sub: '£20 flat under £200' },
               { label: 'Poland — Tracked', time: '7–14 working days', price: 'Free over £200', sub: '£20 flat under £200' },
@@ -79,7 +79,7 @@ export default function ShippingPolicy() {
               <p className="text-[#9cb8d9] text-xs mt-0.5">Applied automatically at checkout. No code required.</p>
             </div>
           </div>
-          <p className="text-[#9cb8d9] leading-relaxed">UK orders below £50 are subject to a £3.99 standard delivery charge. Next Day by 12 PM is £7.99 regardless of order value. Germany and Poland are a flat £20 tracked international rate, waived automatically on orders over £200 — matching our &ldquo;Delivery EU&rdquo; policy in Google Merchant Center.</p>
+          <p className="text-[#9cb8d9] leading-relaxed">UK orders below £50 are subject to a £3.20 standard delivery charge. Next Day by 12 PM is £7.99 regardless of order value. Germany and Poland are a flat £20 tracked international rate, waived automatically on orders over £200 — matching our &ldquo;Delivery EU&rdquo; policy in Google Merchant Center.</p>
         </div>
       ),
     },
