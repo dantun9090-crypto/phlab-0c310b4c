@@ -17,7 +17,6 @@ const MarketingAdvertSlot = lazy(() => import('@/components/MarketingAdvertSlot'
 
 import { getProductImage } from '@/lib/productImages';
 import type { Product } from '@/lib/firebase';
-import { filterProductsForHost } from '@/lib/domain-visibility';
 // Firebase is dynamically imported below to keep it off the home-route critical chunk.
 const loadFirebase = () => import('@/lib/firebase');
 import { nameToSlug } from '@/lib/seedProducts';
@@ -242,7 +241,7 @@ export default function HomePage() {
     const loadProducts = () => {
       loadFirebase().then(({ getAllProducts }) => getAllProducts()).then((prods: Product[]) => {
         if (cancelled) return;
-        setProducts(filterProductsForHost(prods));
+        setProducts(prods);
         // Wait for the first product tiles to render, then flip ready.
         flipPrerenderReadyWhenRendered('[data-product-card], [data-home-product]', Math.min(prods.length, 3));
       }).catch(() => {
@@ -653,7 +652,10 @@ export default function HomePage() {
       ════════════════════════════════ */}
       {(!advertsResolved || reserveHeroAdvert || heroAdverts.length > 0) && <div
         className="container mx-auto px-6 py-6"
-        style={{ minHeight: (!advertsResolved || heroAdverts.length > 0) ? 'clamp(240px, 26vw, 336px)' : 0 }}
+        // Reserve must cover the tallest rendered campaign block (mobile
+        // block ~340px incl. padding) or the late Firestore render shifts
+        // the hero down — measured as CLS 0.136 on mobile Lighthouse.
+        style={{ minHeight: (!advertsResolved || heroAdverts.length > 0) ? 'clamp(300px, 34vw, 380px)' : 0 }}
         data-advert-reserve="homepage_hero"
       >
         {heroAdverts.length > 0 && (
@@ -943,7 +945,8 @@ export default function HomePage() {
                     {/* HPLC badge */}
                     <div className="absolute top-3 right-3">
                       <span className="px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1" style={{ background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.1)', color: '#4ade80', textShadow: '0 1px 2px rgba(0,0,0,0.65)' }}>
-                        <CheckCircle2 style={{ width: 10, height: 10 }} />≥99%
+                        <CheckCircle2 style={{ width: 10, height: 10 }} />
+                        ≥99%
                       </span>
                     </div>
                   </div>
@@ -1448,3 +1451,4 @@ export default function HomePage() {
     </div>
   );
 }
+
