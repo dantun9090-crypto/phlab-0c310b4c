@@ -1,15 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
-import { Sparkles, Send, Loader2, MessageSquare, Package, Mail, BarChart3, Copy, Check, AlertCircle } from 'lucide-react';
+import { Sparkles, Send, Loader2, MessageSquare, Package, Mail, BarChart3, Copy, Check, AlertCircle, FlaskConical } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { aiAdminChat } from '@/lib/ai-admin.functions';
 
-type Mode = 'chat' | 'product_copy' | 'email_draft' | 'insights';
-type Provider = 'lovable' | 'kimi';
+type Mode = 'chat' | 'product_copy' | 'email_draft' | 'insights' | 'blend_check';
+type Provider = 'workers-ai' | 'kimi' | 'lovable';
 interface Msg { role: 'user' | 'assistant'; content: string; }
 
 const PROVIDERS: { id: Provider; label: string }[] = [
+  { id: 'workers-ai', label: 'Kimi (Cloudflare)' },
+  { id: 'kimi', label: 'Moonshot K3' },
   { id: 'lovable', label: 'Gemini (Lovable)' },
-  { id: 'kimi', label: 'Kimi K3 (Moonshot)' },
 ];
 
 const MODES: { id: Mode; label: string; icon: typeof Sparkles; placeholder: string; intro: string }[] = [
@@ -41,13 +42,20 @@ const MODES: { id: Mode; label: string; icon: typeof Sparkles; placeholder: stri
     placeholder: 'Ask: "Summarise today" — or leave blank and press Generate.',
     intro: 'Pulls the latest 50 orders + recent customers + product stock from the database and asks the AI to produce a briefing.',
   },
+  {
+    id: 'blend_check',
+    label: 'Blend Check',
+    icon: FlaskConical,
+    placeholder: 'Ask about blends — or leave blank and press Generate.',
+    intro: 'Analyses blend products (GLOW, KLOW) against their components: pricing sanity, stock risk, missing data. Read-only — nothing is changed.',
+  },
 ];
 
 export default function AIAssistantTab() {
   const [mode, setMode] = useState<Mode>('chat');
-  const [provider, setProvider] = useState<Provider>('lovable');
+  const [provider, setProvider] = useState<Provider>('workers-ai');
   const [messages, setMessages] = useState<Record<Mode, Msg[]>>({
-    chat: [], product_copy: [], email_draft: [], insights: [],
+    chat: [], product_copy: [], email_draft: [], insights: [], blend_check: [],
   });
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -58,18 +66,22 @@ export default function AIAssistantTab() {
 
   const active = MODES.find((m) => m.id === mode)!;
   const thread = messages[mode];
+  const blankAllowed = mode === 'insights' || mode === 'blend_check';
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [thread, loading]);
   useEffect(() => { textareaRef.current?.focus(); }, [mode]);
 
   const send = async () => {
     const text = input.trim();
-    // Insights mode can run with no text input — uses live DB context
-    if (!text && mode !== 'insights') return;
+    // Insights / blend_check can run with no text input — they use live DB context
+    if (!text && !blankAllowed) return;
     setError(null);
     setLoading(true);
 
-    const userMsg: Msg = { role: 'user', content: text || 'Generate a current operational briefing.' };
+    const userMsg: Msg = {
+      role: 'user',
+      content: text || (mode === 'blend_check' ? 'Run the blend health check.' : 'Generate a current operational briefing.'),
+    };
     const nextThread = [...thread, userMsg];
     setMessages((m) => ({ ...m, [mode]: nextThread }));
     setInput('');
@@ -114,7 +126,7 @@ export default function AIAssistantTab() {
         </div>
         <div>
           <h1 className="text-white text-xl font-bold">AI Assistant</h1>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
             <span className="text-[#7a96b8] text-xs">Admin only ·</span>
             <div className="inline-flex rounded-lg border border-slate-700 overflow-hidden">
               {PROVIDERS.map((p) => (
@@ -136,7 +148,7 @@ export default function AIAssistantTab() {
       </div>
 
       {/* Mode tabs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 mb-4">
         {MODES.map((m) => {
           const Icon = m.icon;
           const active = mode === m.id;
@@ -223,11 +235,11 @@ export default function AIAssistantTab() {
             />
             <button
               onClick={send}
-              disabled={loading || (!input.trim() && mode !== 'insights')}
+              disabled={loading || (!input.trim() && !blankAllowed)}
               className="shrink-0 min-h-[48px] px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              <span className="hidden sm:inline">{mode === 'insights' && !input.trim() ? 'Generate' : 'Send'}</span>
+              <span className="hidden sm:inline">{blankAllowed && !input.trim() ? 'Generate' : 'Send'}</span>
             </button>
           </div>
           <div className="flex justify-between items-center mt-2">
