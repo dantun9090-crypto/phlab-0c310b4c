@@ -259,7 +259,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               `    <g:shipping>`,
               `      <g:country>GB</g:country>`,
               `      <g:service>Standard</g:service>`,
-              `      <g:price>4.99 ${CURRENCY}</g:price>`,
+              `      <g:price>3.20 ${CURRENCY}</g:price>`,
               `    </g:shipping>`,
               `    <g:shipping_weight>${(p.weightGrams ?? 20)} g</g:shipping_weight>`,
               `    <g:product_detail><g:section_name>Specification</g:section_name><g:attribute_name>CAS Number</g:attribute_name><g:attribute_value>${xmlEscape(cas)}</g:attribute_value></g:product_detail>`,

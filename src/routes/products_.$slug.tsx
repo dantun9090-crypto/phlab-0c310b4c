@@ -312,7 +312,7 @@ export const Route = createFileRoute("/products_/$slug")({
           "@type": "OfferShippingDetails",
           shippingRate: {
             "@type": "MonetaryAmount",
-            value: "4.99",
+            value: "3.20",
             currency: "GBP",
           },
           shippingDestination: {
