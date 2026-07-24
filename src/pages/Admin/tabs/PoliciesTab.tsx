@@ -87,15 +87,14 @@ const DEFAULT_SHIPPING = `SHIPPING & DELIVERY POLICY — PH Labs UK
 Last updated: ${new Date().toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}
 
 1. ORDER PROCESSING
-Orders are typically processed within 1–3 working days. Orders placed before 2pm on working days may be dispatched the same day. Working days: Monday–Friday, excluding UK public holidays.
+Orders are typically processed within 1–3 working days. Orders placed before 11:30 AM on working days may be dispatched the same day. Working days: Monday–Friday, excluding UK public holidays.
 
 2. UK SHIPPING OPTIONS
-- Standard (Royal Mail 2nd Class): 2–3 working days — FREE on orders over £50, otherwise £3.99
-- Tracked (Royal Mail 1st Class Tracked): 1–2 working days — £5.99
-- Express (Next Day Courier): Next working day if ordered before 2pm — £9.99
+- Standard: 1–3 working days — FREE on orders over £50, otherwise £3.20
+- Next Day by 12 PM: next working day when ordered before 11:30 AM Mon–Fri — £7.99
 
 3. INTERNATIONAL SHIPPING
-We currently ship to EU countries and select international destinations. International orders are subject to customs clearance, which may cause delays beyond our control. Import duties and taxes are the buyer's responsibility.
+We ship to Germany and Poland by tracked international mail: £20 flat, FREE on orders over £200. Transit is typically 7–14 working days and may be extended by customs clearance. Import duties and taxes are the buyer's responsibility.
 
 4. PACKAGING
 All orders are dispatched in thermally sealed bags to protect compounds during transit. No ice packs are included. Lyophilised peptides are stable at ambient temperature for the duration of standard UK domestic delivery. Upon receipt, store immediately at the temperature specified on the product page.
@@ -110,7 +109,7 @@ If your parcel is lost, please contact us within 10 working days of the expected
 Please ensure your shipping address is correct at checkout. We are not liable for orders lost or delayed due to incorrect address information provided by the customer.
 
 8. RETURNS
-Returns accepted within 48 hours for damaged or incorrectly supplied items only. Due to the nature of research chemicals, we cannot accept returns for change of mind.
+Returns accepted within 14 days of delivery for sealed, unopened items and for defective items. Return shipping is free of charge for all authorised returns. See the Return & Refund Policy for full details.
 
 CONTACT: info@phlabs.co.uk — phlabs.co.uk`;
 

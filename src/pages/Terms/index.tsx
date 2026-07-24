@@ -152,12 +152,13 @@ export default function Terms() {
       content: (
         <>
           <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
-            We ship to UK addresses only. Delivery times are estimates and not guaranteed.
+            We ship to UK addresses and, by tracked international mail, to Germany and Poland. Delivery times are estimates and not guaranteed.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             {[
               { label: 'Standard Delivery', value: '1–3 working days', price: '£3.20' },
-              { label: 'Express Delivery', value: 'Next working day', price: '£9.99' },
+              { label: 'Next Day by 12 PM', value: 'Next working day — order before 11:30 AM Mon–Fri', price: '£7.99' },
+              { label: 'Germany & Poland — Tracked', value: '7–14 working days', price: '£20 · free over £200' },
             ].map(({ label, value, price }) => (
               <div key={label} className="p-3 rounded-lg border" style={{ background: '#0b1a30', borderColor: 'rgba(6,182,212,0.15)' }}>
                 <p className="text-xs font-semibold mb-1" style={{ color: '#06b6d4' }}>{label}</p>
@@ -168,7 +169,7 @@ export default function Terms() {
           </div>
           <div className="p-3 rounded-lg border" style={{ background: 'rgba(6,182,212,0.05)', borderColor: 'rgba(6,182,212,0.15)' }}>
             <p className="text-xs leading-relaxed" style={{ color: '#06b6d4' }}>
-              <span className="font-semibold">Free Shipping:</span> Orders over £50 qualify for free standard delivery.
+              <span className="font-semibold">Free Shipping:</span> UK orders over £50 qualify for free standard delivery. Germany and Poland: free tracked delivery on orders over £200.
             </p>
           </div>
         </>
