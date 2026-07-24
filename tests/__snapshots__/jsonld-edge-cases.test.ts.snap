@@ -387,7 +387,7 @@ exports[`Product JSON-LD — edge cases > custom seoTitle / seoDescription overr
         "shippingRate": {
           "@type": "MonetaryAmount",
           "currency": "GBP",
-          "value": "4.99",
+          "value": "3.20",
         },
       },
       "url": "https://phlabs.co.uk/products/kpv",
@@ -506,7 +506,7 @@ exports[`Product JSON-LD — edge cases > high-priced large molecular size 1`] =
         "shippingRate": {
           "@type": "MonetaryAmount",
           "currency": "GBP",
-          "value": "4.99",
+          "value": "3.20",
         },
       },
       "url": "https://phlabs.co.uk/products/tirzepatide-60mg",
@@ -684,7 +684,7 @@ exports[`Product JSON-LD — edge cases > out-of-stock, no SEO overrides, no mea
         "shippingRate": {
           "@type": "MonetaryAmount",
           "currency": "GBP",
-          "value": "4.99",
+          "value": "3.20",
         },
       },
       "url": "https://phlabs.co.uk/products/mystery-blend",
@@ -804,7 +804,7 @@ exports[`Product JSON-LD — edge cases > verified aggregate rating is emitted 1
         "shippingRate": {
           "@type": "MonetaryAmount",
           "currency": "GBP",
-          "value": "4.99",
+          "value": "3.20",
         },
       },
       "url": "https://phlabs.co.uk/products/bpc-157-rated",
@@ -923,7 +923,7 @@ exports[`Product JSON-LD — edge cases > very long name with unicode + microgra
         "shippingRate": {
           "@type": "MonetaryAmount",
           "currency": "GBP",
-          "value": "4.99",
+          "value": "3.20",
         },
       },
       "url": "https://phlabs.co.uk/products/semaglutide-analogue-250mcg",

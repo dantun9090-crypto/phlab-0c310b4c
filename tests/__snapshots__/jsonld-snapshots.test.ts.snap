@@ -2371,7 +2371,7 @@ exports[`Product JSON-LD snapshots > /products/bpc-157 1`] = `
         "shippingRate": {
           "@type": "MonetaryAmount",
           "currency": "GBP",
-          "value": "4.99",
+          "value": "3.20",
         },
       },
       "url": "https://phlabs.co.uk/products/bpc-157",
@@ -2568,7 +2568,7 @@ exports[`Product JSON-LD snapshots > /products/ghk-cu 1`] = `
         "shippingRate": {
           "@type": "MonetaryAmount",
           "currency": "GBP",
-          "value": "4.99",
+          "value": "3.20",
         },
       },
       "url": "https://phlabs.co.uk/products/ghk-cu",
@@ -2704,7 +2704,7 @@ exports[`Product JSON-LD snapshots > /products/retatrutide 1`] = `
         "shippingRate": {
           "@type": "MonetaryAmount",
           "currency": "GBP",
-          "value": "4.99",
+          "value": "3.20",
         },
       },
       "url": "https://phlabs.co.uk/products/retatrutide",
@@ -2823,7 +2823,7 @@ exports[`Product JSON-LD snapshots > /products/tb-500 1`] = `
         "shippingRate": {
           "@type": "MonetaryAmount",
           "currency": "GBP",
-          "value": "4.99",
+          "value": "3.20",
         },
       },
       "url": "https://phlabs.co.uk/products/tb-500",
@@ -2942,7 +2942,7 @@ exports[`Product JSON-LD snapshots > /products/tirzepatide 1`] = `
         "shippingRate": {
           "@type": "MonetaryAmount",
           "currency": "GBP",
-          "value": "4.99",
+          "value": "3.20",
         },
       },
       "url": "https://phlabs.co.uk/products/tirzepatide",
