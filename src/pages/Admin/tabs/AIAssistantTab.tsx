@@ -4,7 +4,13 @@ import { auth } from '@/lib/firebase';
 import { aiAdminChat } from '@/lib/ai-admin.functions';
 
 type Mode = 'chat' | 'product_copy' | 'email_draft' | 'insights';
+type Provider = 'lovable' | 'kimi';
 interface Msg { role: 'user' | 'assistant'; content: string; }
+
+const PROVIDERS: { id: Provider; label: string }[] = [
+  { id: 'lovable', label: 'Gemini (Lovable)' },
+  { id: 'kimi', label: 'Kimi K2 (Moonshot)' },
+];
 
 const MODES: { id: Mode; label: string; icon: typeof Sparkles; placeholder: string; intro: string }[] = [
   {
@@ -39,6 +45,7 @@ const MODES: { id: Mode; label: string; icon: typeof Sparkles; placeholder: stri
 
 export default function AIAssistantTab() {
   const [mode, setMode] = useState<Mode>('chat');
+  const [provider, setProvider] = useState<Provider>('lovable');
   const [messages, setMessages] = useState<Record<Mode, Msg[]>>({
     chat: [], product_copy: [], email_draft: [], insights: [],
   });
@@ -72,7 +79,7 @@ export default function AIAssistantTab() {
       if (!user) throw new Error('Not signed in');
       const idToken = await user.getIdToken();
       const res = await aiAdminChat({
-        data: { idToken, mode, messages: nextThread.map((m) => ({ role: m.role, content: m.content })) },
+        data: { idToken, mode, provider, messages: nextThread.map((m) => ({ role: m.role, content: m.content })) },
       });
       if (!res.ok) {
         setError(res.error);
@@ -107,7 +114,24 @@ export default function AIAssistantTab() {
         </div>
         <div>
           <h1 className="text-white text-xl font-bold">AI Assistant</h1>
-          <p className="text-[#7a96b8] text-xs">Powered by Lovable AI · Admin only · {MODEL_LABEL}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-[#7a96b8] text-xs">Admin only ·</span>
+            <div className="inline-flex rounded-lg border border-slate-700 overflow-hidden">
+              {PROVIDERS.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setProvider(p.id)}
+                  className={`px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                    provider === p.id
+                      ? 'bg-violet-600 text-white'
+                      : 'bg-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -217,5 +241,3 @@ export default function AIAssistantTab() {
     </div>
   );
 }
-
-const MODEL_LABEL = 'Gemini 3 Flash';

@@ -1,9 +1,9 @@
 /**
- * Admin-only AI assistant — backed by Lovable AI Gateway.
+ * Admin-only AI assistant — backed by Lovable AI Gateway or Kimi (Moonshot).
  *
  * Verifies Firebase ID token + isAdmin on every call. Never exposes
- * LOVABLE_API_KEY to the client. Supports four "modes" that map to
- * different system prompts and optional Firestore context injection.
+ * LOVABLE_API_KEY / KIMI_API_KEY to the client. Supports four "modes" that
+ * map to different system prompts and optional Firestore context injection.
  */
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
@@ -13,6 +13,7 @@ import { requireFirebaseAdmin } from './server/firebase-auth-admin';
 import { listDocsAdmin } from './server/firestore-admin';
 
 const MODEL = 'google/gemini-3-flash-preview';
+const KIMI_API_URL = 'https://api.moonshot.ai/v1/chat/completions';
 
 const Mode = z.enum(['chat', 'product_copy', 'email_draft', 'insights']);
 
@@ -24,6 +25,7 @@ const Message = z.object({
 const Input = z.object({
   idToken: z.string().min(10).max(4096),
   mode: Mode,
+  provider: z.enum(['lovable', 'kimi']).default('lovable'),
   messages: z.array(Message).min(1).max(40),
   // Optional structured input for the tool modes (used to pre-fill prompt)
   meta: z.record(z.string(), z.string().max(2000)).optional(),
@@ -103,17 +105,48 @@ async function buildInsightsContext(): Promise<string> {
   }
 }
 
+/**
+ * Kimi (Moonshot AI) — OpenAI-compatible chat completions endpoint.
+ * Server-side only: the key never leaves the Pages environment.
+ */
+async function callKimi(opts: {
+  apiKey: string;
+  model: string;
+  system: string;
+  messages: { role: 'user' | 'assistant'; content: string }[];
+}): Promise<string> {
+  const res = await fetch(KIMI_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${opts.apiKey}`,
+    },
+    body: JSON.stringify({
+      model: opts.model,
+      temperature: 0.6,
+      messages: [
+        { role: 'system', content: opts.system },
+        ...opts.messages,
+      ],
+    }),
+  });
+  if (!res.ok) {
+    const body = (await res.text().catch(() => '')).slice(0, 300);
+    throw new Error(`Kimi API HTTP ${res.status}${body ? `: ${body}` : ''}`);
+  }
+  const json: any = await res.json();
+  const text = json?.choices?.[0]?.message?.content;
+  if (typeof text !== 'string' || !text.trim()) {
+    throw new Error('Kimi API returned an empty completion');
+  }
+  return text;
+}
+
 export const aiAdminChat = createServerFn({ method: 'POST' })
   .validator((d: unknown) => Input.parse(d))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
 
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) {
-      return { ok: false as const, error: 'LOVABLE_API_KEY is not configured' };
-    }
-
-    const gateway = createLovableAiGatewayProvider(key);
     const system = SYSTEM[data.mode];
 
     // Inject Firestore context for insights mode
@@ -125,6 +158,40 @@ export const aiAdminChat = createServerFn({ method: 'POST' })
         content: `Operational data (JSON):\n\`\`\`json\n${context}\n\`\`\``,
       });
     }
+
+    // ── Kimi (Moonshot AI) provider ──────────────────────────────────────
+    if (data.provider === 'kimi') {
+      const kimiKey = process.env.KIMI_API_KEY;
+      if (!kimiKey) {
+        return { ok: false as const, error: 'KIMI_API_KEY is not configured — add it in Cloudflare Pages → Settings → Environment variables.' };
+      }
+      try {
+        const text = await callKimi({
+          apiKey: kimiKey,
+          model: process.env.KIMI_MODEL || 'kimi-k2-0905-preview',
+          system,
+          messages: messages.map((m) => ({ role: m.role, content: m.content })),
+        });
+        return { ok: true as const, text };
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg.includes('401')) {
+          return { ok: false as const, error: 'Kimi API key rejected (401) — check KIMI_API_KEY in Cloudflare Pages env vars.' };
+        }
+        if (msg.includes('429')) {
+          return { ok: false as const, error: 'Kimi rate limit reached — please wait a moment and try again.' };
+        }
+        return { ok: false as const, error: msg };
+      }
+    }
+
+    // ── Lovable AI Gateway provider (default) ────────────────────────────
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) {
+      return { ok: false as const, error: 'LOVABLE_API_KEY is not configured' };
+    }
+
+    const gateway = createLovableAiGatewayProvider(key);
 
     try {
       const { text } = await generateText({
