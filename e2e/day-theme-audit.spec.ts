@@ -163,15 +163,6 @@ async function stabilise(page: Page) {
     undefined,
     { timeout: 30_000 },
   ).catch(() => {});
-  // Firestore-driven tiles (products page especially) can resolve tens of
-  // seconds after networkidle — webkit skeletons otherwise leak into the
-  // screenshot. The app flips window.prerenderReady once the first tiles
-  // render; wait for it where the route uses it, no-op elsewhere.
-  await page
-    .waitForFunction(() => (window as any).prerenderReady === true, undefined, {
-      timeout: 60_000,
-    })
-    .catch(() => {});
   // networkidle inherits the test timeout by default (30s) and hangs whenever
   // an SSE/WS/analytics beacon keeps the pool busy. Cap it so a chatty page
   // does not eat every test's budget — 3s of quiet is enough for screenshots.
@@ -494,6 +485,18 @@ test.describe("Day theme — unified audit", () => {
           await btn.evaluate((el) => getComputedStyle(el).boxShadow !== "none"),
         ).toBe(true);
         await page.mouse.move(0, 0);
+
+        // WebKit intermittently renders the cookie-consent dialog despite the
+        // localStorage seed + CSS hide (it overlays the bottom of the page
+        // and breaks the pixel diff). Remove it outright before capturing.
+        await page.evaluate(() => {
+          document
+            .querySelectorAll('[data-cookie-consent], [role="dialog"]')
+            .forEach((el) => {
+              const text = (el.textContent || "").toLowerCase();
+              if (text.includes("cookie")) el.remove();
+            });
+        });
 
         const slug =
           path === "/" ? "home" : path.replace(/[\\/]/g, "-").replace(/^-/, "");
