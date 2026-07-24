@@ -105,6 +105,16 @@ test.describe("cache stability — page must not auto-refresh", () => {
     mkdirSync(DIAG_DIR, { recursive: true });
   });
 
+  // Every test gets a fresh context = a "first visit", and the site's
+  // cache-guard does exactly ONE reload per fresh session (60s window) —
+  // which this suite then misreads as an auto-refresh loop. Pre-seed the
+  // guard's recovery marker so it considers the reload already done.
+  test.beforeEach(async ({ context }) => {
+    await context.addInitScript(() => {
+      try { localStorage.setItem("phlFreshHtmlRecoveryAt", String(Date.now())); } catch { /* ignore */ }
+    });
+  });
+
   for (const path of ["/", "/products", "/about", "/contact", "/compound", "/research"]) {
     test(`${path} stays put for ${OBSERVATION_MS / 1000}s after load`, async ({ page }, testInfo) => {
       const documentUrl = `${BASE}${path}`;
