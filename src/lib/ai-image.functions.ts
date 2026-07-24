@@ -54,7 +54,7 @@ export const aiGenerateImage = createServerFn({ method: 'POST' })
         });
         const j: any = await r.json().catch(() => null);
         if (j?.ok && typeof j.text === 'string' && j.text.trim().length > 10) {
-          enhancedPrompt = j.text.trim();
+          enhancedPrompt = j.text.trim() as string;
           prompt = enhancedPrompt;
         }
       } catch {
