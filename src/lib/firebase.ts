@@ -328,6 +328,8 @@ export interface Product {
   coaPdfName?: string;
   coaBatch?: string;
   coaUploadedAt?: string; // ISO date
+  /** Show the COA certificate on the public product page. Defaults to true when a PDF exists. */
+  coaVisible?: boolean;
   // Product promo banner image (uploaded to Firebase Storage)
   bannerImageUrl?: string;
   // Mark product as popular — shows badge on product cards
