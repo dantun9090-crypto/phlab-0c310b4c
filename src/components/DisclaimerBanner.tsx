@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useLayoutEffect, useRef } from 'react';
 
 // Read persisted dismissal synchronously so the initial render already
 // reflects the user's choice. Without this, every returning visitor got
@@ -17,7 +17,12 @@ export function DisclaimerBanner() {
   const bannerRef = useRef<HTMLDivElement>(null);
 
 
-  useEffect(() => {
+  // useLayoutEffect, not useEffect: the height var feeds main's paddingTop.
+  // A post-paint effect let the first frame render with --phl-disclaimer-h=0
+  // and then pushed the whole page down ~24px when it fired — a guaranteed
+  // layout shift on every cold visit (measured in the mobile Lighthouse
+  // trace as part of the home CLS session).
+  useLayoutEffect(() => {
     if (dismissed) {
       document.documentElement.style.setProperty('--phl-disclaimer-h', '0px');
     } else {

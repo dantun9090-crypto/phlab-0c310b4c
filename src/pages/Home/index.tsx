@@ -190,6 +190,17 @@ export default function HomePage() {
   const ssrBanner = useSSRBanner();
   const [banner, setBanner] = useState<any>(ssrBanner ?? null);
   const [bannerResolved, setBannerResolved] = useState<boolean>(!!ssrBanner);
+  // Reserve banner space only when a banner is EXPECTED (SSR seed or
+  // last-known cached state). While the promo banner is disabled, an
+  // unconditional 224-280px reserve painted on every cold visit and then
+  // collapsed when Firestore resolved — a ~0.12 CLS layout shift on mobile
+  // Lighthouse (the exact 0.1227 the gate kept failing at). The cache makes
+  // the rare "admin enables a banner" case shift only on the very first
+  // cold visit after enabling; every later visit reserves correctly.
+  const [bannerExpected, setBannerExpected] = useState<boolean>(() => {
+    if (ssrBanner) return true;
+    try { return localStorage.getItem('php_promo_banner_state') === '1'; } catch { return false; }
+  });
   const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
   const [showHeroEffects, setShowHeroEffects] = useState(false);
   const [reserveHeroAdvert, setReserveHeroAdvert] = useState<boolean>(false);
@@ -331,6 +342,11 @@ export default function HomePage() {
         getDocFromServer(doc(db, 'settings', 'promoBanner')).then(snap => {
           const data = snap.exists() ? snap.data() : null;
           if (data) setBanner(data);
+          try {
+            const hasBanner = !!(data && data.active !== false && data.isActive !== false && data.imageUrl);
+            localStorage.setItem('php_promo_banner_state', hasBanner ? '1' : '0');
+            setBannerExpected(hasBanner);
+          } catch { /* ignore */ }
           setBannerResolved(true);
         }).catch(() => setBannerResolved(true));
 
@@ -632,16 +648,11 @@ export default function HomePage() {
         </div>
         );
       })() : (
-        // Reserve banner height BEFORE resolve to prevent CLS shift on hero when
-        // banner arrives async. Unconditional (not localStorage-gated): the
-        // previous expectBanner gate only covered repeat visits, so every cold
-        // first visit — exactly what Lighthouse measures — inserted the banner
-        // above the fold and shifted the whole page (~0.7 CLS in CI).
-        // Height matches the banner formula with the default heightPx=320:
-        // clamp(round(320*0.7), 22vw, max(320,560)/2). If the admin disables
-        // the banner the reserve collapses once on resolve (one shift, bounded
-        // by 280px), which is strictly better than an unbounded insert.
-        !bannerResolved ? (
+        // Reserve banner height BEFORE resolve — but only when a banner is
+        // expected (SSR seed or cached last-known state). While the banner
+        // is disabled long-term the reserve painted on every cold visit and
+        // collapsed on resolve: a deterministic ~0.12 CLS on mobile.
+        !bannerResolved && bannerExpected ? (
           <div aria-hidden="true" style={{ minHeight: 'clamp(224px, 22vw, 280px)' }} data-home-promo-banner />
         ) : null
       )}
