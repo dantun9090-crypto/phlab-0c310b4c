@@ -14,6 +14,8 @@ import HomeSeoIndex from '@/components/HomeSeoIndex';
 // MarketingAdvertSlot is lazy — it renders in two slots (hero + mid), both
 // non-critical for LCP. Off the initial critical chunk on the home route.
 const MarketingAdvertSlot = lazy(() => import('@/components/MarketingAdvertSlot'));
+// Advert pop-up — client-only marketing modal, chosen after hydration.
+const AdvertPopup = lazy(() => import('@/components/AdvertPopup'));
 
 import { getProductImage } from '@/lib/productImages';
 import type { Product } from '@/lib/firebase';
@@ -890,6 +892,13 @@ export default function HomePage() {
 
 
 
+
+      {/* Advert pop-up — never rendered during prerender (client-only pick). */}
+      {advertsResolved && adverts.length > 0 && (
+        <Suspense fallback={null}>
+          <AdvertPopup adverts={adverts} />
+        </Suspense>
+      )}
 
       {/* Mid advert slot — reserves card banner height (h-64 + py-6) to prevent CLS. */}
       <div

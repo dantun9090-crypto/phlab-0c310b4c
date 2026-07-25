@@ -7,6 +7,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { db, storage, collection, getDocs, addDoc, doc, updateDoc, deleteDoc, Timestamp, orderBy, query, storageRef, uploadBytesResumable, getDownloadURL, triggerContentCdnInvalidation, bumpMarketingVersion } from '@/lib/firebase';
+import { toMillis } from '@/lib/advert-popup';
 
 const PLACEMENT_ICONS: Record<string, typeof Home> = {
   homepage_hero: Home,
@@ -27,6 +28,9 @@ interface Advert {
   isActive: boolean;
   bgColor: string;
   textColor: string;
+  /** Optional schedule window — `null` means "no bound". */
+  startDate?: any;
+  endDate?: any;
   createdAt?: any;
   updatedAt?: any;
 }
@@ -43,7 +47,24 @@ const EMPTY: Advert = {
   title: '', subtitle: '', ctaText: 'Shop Now', ctaUrl: '/products',
   imageUrl: '', placement: 'homepage_hero', isActive: true,
   bgColor: '#0b1a30', textColor: '#e8f0fe',
+  startDate: null, endDate: null,
 };
+
+/** Firestore Timestamp | null → value for `<input type="datetime-local">`. */
+function toLocalInput(value: unknown): string {
+  const ms = toMillis(value);
+  if (ms == null) return '';
+  const d = new Date(ms - new Date(ms).getTimezoneOffset() * 60000);
+  return d.toISOString().slice(0, 16);
+}
+
+/** `<input type="datetime-local">` value → Firestore Timestamp | null. */
+function fromLocalInput(value: string): any {
+  if (!value) return null;
+  const ms = Date.parse(value);
+  return Number.isNaN(ms) ? null : Timestamp.fromMillis(ms);
+}
+
 
 export default function AdvertsTab() {
   const [adverts, setAdverts] = useState<Advert[]>([]);
@@ -54,6 +75,7 @@ export default function AdvertsTab() {
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [showPopupPreview, setShowPopupPreview] = useState(false);
 
   const showToast = (msg: string, ok = true) => {
     setToast({ msg, ok });
@@ -220,6 +242,13 @@ export default function AdvertsTab() {
               {advert.ctaText ? (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/5 text-[#cfe2ff] border border-white/[0.08] text-[10px]">
                   <LinkIcon className="w-3 h-3" /> {advert.ctaText}
+                </span>
+              ) : null}
+              {(toMillis(advert.startDate) != null || toMillis(advert.endDate) != null) ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/25 text-[10px]">
+                  {toMillis(advert.startDate) != null ? new Date(toMillis(advert.startDate)!).toLocaleDateString('en-GB') : '—'}
+                  {' → '}
+                  {toMillis(advert.endDate) != null ? new Date(toMillis(advert.endDate)!).toLocaleDateString('en-GB') : '—'}
                 </span>
               ) : null}
             </div>
@@ -536,6 +565,73 @@ export default function AdvertsTab() {
                     <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${editing.isActive ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
                   </button>
                 </div>
+
+                {/* Schedule window (optional) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#9cb8d9] uppercase tracking-wider mb-1.5" htmlFor="advert-start">
+                      Start date (optional)
+                    </label>
+                    <input
+                      id="advert-start"
+                      type="datetime-local"
+                      value={toLocalInput(editing.startDate)}
+                      onChange={e => setEditing(p => p ? { ...p, startDate: fromLocalInput(e.target.value) } : p)}
+                      className="w-full px-4 py-3 bg-[#1e293b] border-2 border-[#475569] rounded-lg text-[#f8fafc] text-base focus:outline-none focus:border-[#3b82f6] transition-all min-h-[48px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#9cb8d9] uppercase tracking-wider mb-1.5" htmlFor="advert-end">
+                      End date (optional)
+                    </label>
+                    <input
+                      id="advert-end"
+                      type="datetime-local"
+                      value={toLocalInput(editing.endDate)}
+                      onChange={e => setEditing(p => p ? { ...p, endDate: fromLocalInput(e.target.value) } : p)}
+                      className="w-full px-4 py-3 bg-[#1e293b] border-2 border-[#475569] rounded-lg text-[#f8fafc] text-base focus:outline-none focus:border-[#3b82f6] transition-all min-h-[48px]"
+                    />
+                  </div>
+                  <p className="sm:col-span-2 text-[11px] text-[#2a4a7a]">
+                    Leave blank for no limit. Outside the window the advert is hidden even when live.
+                  </p>
+                </div>
+
+                {/* Pop-up mock-up */}
+                {editing.placement === 'popup' && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-xs font-semibold text-[#9cb8d9] uppercase tracking-wider">Pop-up preview</label>
+                      <button
+                        type="button"
+                        onClick={() => setShowPopupPreview(v => !v)}
+                        className="text-[11px] px-3 py-1.5 rounded-lg border border-white/[0.12] text-[#cfe2ff] hover:border-blue-500/50 transition-colors min-h-[36px]"
+                      >
+                        {showPopupPreview ? 'Hide mock-up' : 'Show mock-up'}
+                      </button>
+                    </div>
+                    {showPopupPreview && (
+                      <div className="rounded-xl border border-white/[0.08] bg-black/40 p-6 flex items-center justify-center">
+                        <div className="relative w-full max-w-[320px] rounded-2xl overflow-hidden border border-white/[0.12]" style={{ background: editing.bgColor }}>
+                          <span className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white text-xs flex items-center justify-center">✕</span>
+                          {editing.imageUrl && <img src={editing.imageUrl} alt="" className="w-full h-auto block" />}
+                          {(editing.title || editing.subtitle) && (
+                            <div className="p-4 text-center">
+                              {editing.title && <p className="font-bold text-sm" style={{ color: editing.textColor }}>{editing.title}</p>}
+                              {editing.subtitle && <p className="text-xs text-white/70 mt-1">{editing.subtitle}</p>}
+                              {editing.ctaText && (
+                                <span className="inline-block mt-3 px-4 py-2 rounded-xl bg-emerald-500 text-[#03131f] text-xs font-bold">{editing.ctaText}</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    <p className="mt-2 text-[11px] text-[#2a4a7a]">
+                      On the live site the pop-up appears 1.5s after load and stays hidden for 7 days once a visitor closes it.
+                    </p>
+                  </div>
+                )}
 
                 {/* Live preview */}
                 {editing.title && (
