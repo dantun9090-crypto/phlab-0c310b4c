@@ -75,6 +75,7 @@ export default function AdvertsTab() {
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [showPopupPreview, setShowPopupPreview] = useState(false);
 
   const showToast = (msg: string, ok = true) => {
     setToast({ msg, ok });
