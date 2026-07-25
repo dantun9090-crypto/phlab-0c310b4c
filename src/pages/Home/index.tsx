@@ -17,6 +17,7 @@ const MarketingAdvertSlot = lazy(() => import('@/components/MarketingAdvertSlot'
 
 import { getProductImage } from '@/lib/productImages';
 import type { Product } from '@/lib/firebase';
+import { filterProductsForHost } from '@/lib/domain-visibility';
 // Firebase is dynamically imported below to keep it off the home-route critical chunk.
 const loadFirebase = () => import('@/lib/firebase');
 import { nameToSlug } from '@/lib/seedProducts';
