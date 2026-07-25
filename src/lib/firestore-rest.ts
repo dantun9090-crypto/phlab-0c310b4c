@@ -22,6 +22,15 @@ export interface UnitPricingMeasure {
   unit: "mg" | "g" | "kg" | "ml" | "cl" | "l" | "ct";
 }
 
+export interface ProductVariantLite {
+  name?: string;
+  dosage?: string;
+  sku?: string;
+  price?: number;
+  stock?: number;
+  imageIndex?: number;
+}
+
 export interface SeoProduct {
   id: string;
   name: string;
@@ -52,6 +61,9 @@ export interface SeoProduct {
   isVip?: boolean;
   popular?: boolean;
   requiresResearchGate?: boolean;
+  /** Raw Firestore variants (name, price, stock) — needed by the merchant
+   *  feeds to emit per-variant items. */
+  variants?: ProductVariantLite[];
 
   /** Parsed from variant name/dosage, e.g. "10 mg" → { value: 10, unit: "mg" }. */
   unitPricingMeasure?: UnitPricingMeasure;
@@ -194,6 +206,7 @@ function toProduct(doc: any): SeoProduct | null {
     isVip: f.isVip === true,
     popular: f.popular === true,
     requiresResearchGate: f.requiresResearchGate === true,
+    variants: variants.length ? (variants as ProductVariantLite[]) : undefined,
     unitPricingMeasure,
     weightGrams,
   };
