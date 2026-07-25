@@ -162,6 +162,20 @@ const MERCHANT_CODE_OVERRIDES: Record<string, MerchantOverride> = {
   "nad-research-compound": { code: "PHL-ND7", displayName: "PHL-ND7", cas: "53-84-9" },
 };
 
+/**
+ * Extra per-variant items requested for the feed. Each entry emits an
+ * additional <item> alongside the base product item, priced from the
+ * Firestore variant and grouped via g:item_group_id. The link carries
+ * ?variant=<compact> so the landing page preselects the same variant —
+ * keeps feed price == landing-page price for GMC's page-crawl check.
+ */
+const EXTRA_VARIANT_ITEMS: Array<{ slug: string; variantName: string }> = [
+  { slug: "retatrutide-research-peptide", variantName: "20 mg" },
+  { slug: "nad-research-compound", variantName: "500 mg" },
+  { slug: "nad-research-compound", variantName: "1000 mg" },
+  { slug: "ghk-cu-research-peptide", variantName: "100 mg" },
+];
+
 
 function isAllowedForMerchant(p: {
   name?: string;
@@ -536,6 +550,100 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
           })
           .join("\n");
 
+        // ── Extra per-variant items (NAD+ 500/1000 mg, GHK-Cu 100 mg, Reta 20 mg)
+        // Each becomes its own <item> in the same item_group as the base product,
+        // priced from the Firestore variant; the link carries ?variant=<compact>
+        // so the landing page preselects the matching variant (price parity).
+        const variantItems = merchantProducts
+          .flatMap((p) => {
+            const slug = (p.slug || "").toLowerCase();
+            const wanted = EXTRA_VARIANT_ITEMS.filter((e) => e.slug === slug);
+            if (wanted.length === 0 || !Array.isArray((p as any).variants)) return [];
+            const highRisk = isHighRisk(p.name);
+            const override = MERCHANT_CODE_OVERRIDES[slug];
+            const docId = p.id;
+            const idBase = highRisk && override?.code ? override.code : docId;
+            const linkBase = `${BASE_URL}/products/${idBase}`;
+            const image = p.imageUrl
+              ? p.imageUrl.startsWith("http")
+                ? p.imageUrl
+                : `${BASE_URL}${p.imageUrl.startsWith("/") ? "" : "/"}${p.imageUrl}`
+              : `${BASE_URL}/og-image.jpg`;
+            const clean = cleanCompoundName(p.name);
+            const description = descriptionForCompound(clean, undefined);
+            const isWater = /bacteriostatic\s+water/i.test(p.name);
+            const purityHighlight = isWater
+              ? "HPLC-verified 99% purity"
+              : "HPLC-verified 99%+ purity";
+            const skuBase = (highRisk
+              ? (override?.code || docId)
+              : (p.sku || override?.code || docId)
+            ).trim();
+            const displaySku = override?.displayName || skuBase;
+            return wanted.flatMap((e) => {
+              const compact = e.variantName.replace(/\s+/g, "").toLowerCase();
+              const v = ((p as any).variants as any[]).find(
+                (vv) => String(vv?.name || "").replace(/\s+/g, "").toLowerCase() === compact,
+              );
+              if (!v || typeof v.price !== "number" || v.price <= 0) return [];
+              const availability =
+                typeof v.stock === "number" && v.stock <= 0 ? "out of stock" : "in stock";
+              const title = highRisk
+                ? `${displaySku} ${compact} — Lyophilised Analytical Reference Standard ${e.variantName} (RUO) | PH Labs`
+                : `${clean} ${e.variantName} — Analytical Reference Standard | PH Labs`;
+              const link = `${linkBase}?variant=${compact}`;
+              const itemXml = [
+                `  <item>`,
+                `    <g:id>${xmlEscape(`${idBase}-${compact}`)}</g:id>`,
+                `    <title>${cdata(title)}</title>`,
+                `    <link>${xmlEscape(link)}</link>`,
+                `    <g:mobile_link>${xmlEscape(link)}</g:mobile_link>`,
+                `    <description>${cdata(description)}</description>`,
+                `    <g:image_link>${xmlEscape(image)}</g:image_link>`,
+                `    <g:availability>${availability}</g:availability>`,
+                `    <g:price>${xmlEscape(`${v.price.toFixed(2)} ${CURRENCY}`)}</g:price>`,
+                `    <g:brand>${xmlEscape(BRAND)}</g:brand>`,
+                `    <g:condition>new</g:condition>`,
+                `    <g:mpn>${xmlEscape(`${skuBase}-${compact}`)}</g:mpn>`,
+                `    <g:sku>${xmlEscape(`${skuBase}-${compact}`)}</g:sku>`,
+                `    <g:identifier_exists>false</g:identifier_exists>`,
+                `    <g:item_group_id>${xmlEscape(docId)}</g:item_group_id>`,
+                highRisk
+                  ? `    <g:google_product_category>499954</g:google_product_category>`
+                  : `    <g:google_product_category>6975</g:google_product_category>`,
+                highRisk
+                  ? `    <g:product_type>Business &amp; Industrial &gt; Science &amp; Laboratory &gt; Laboratory Chemicals</g:product_type>`
+                  : `    <g:product_type>Business &amp; Industrial &gt; Science &amp; Laboratory &gt; Biochemicals</g:product_type>`,
+                `    <g:adult>no</g:adult>`,
+                `    <g:age_group>adult</g:age_group>`,
+                `    <g:is_bundle>no</g:is_bundle>`,
+                `    <g:multipack>1</g:multipack>`,
+                `    <g:shipping>`,
+                `      <g:country>GB</g:country>`,
+                `      <g:service>Standard</g:service>`,
+                `      <g:price>3.20 ${CURRENCY}</g:price>`,
+                `    </g:shipping>`,
+                `    <g:shipping_weight>${(p.weightGrams ?? 20)} g</g:shipping_weight>`,
+                `    <g:product_highlight>${xmlEscape(purityHighlight)}</g:product_highlight>`,
+                `    <g:product_highlight>Lyophilised powder format</g:product_highlight>`,
+                `    <g:product_highlight>Certificate of Analysis available on request</g:product_highlight>`,
+                `    <g:product_highlight>Supplied to qualified UK laboratories</g:product_highlight>`,
+                ...MERCHANT_PROMO_IDS.map((pid: string) => `    <g:promotion_id>${xmlEscape(pid)}</g:promotion_id>`),
+                `    <g:custom_label_0>UK-Stock</g:custom_label_0>`,
+                `    <g:custom_label_1>${xmlEscape(compact)}</g:custom_label_1>`,
+                `    <g:included_destination>Shopping_ads</g:included_destination>`,
+                `    <g:included_destination>Free_listings</g:included_destination>`,
+                `    <g:included_destination>Free_local_listings</g:included_destination>`,
+                `    <g:included_destination>Display_ads</g:included_destination>`,
+                `  </item>`,
+              ].join("\n");
+              return applyOverrideToItem(itemXml, adminOverrides.get(docId));
+            });
+          })
+          .join("\n");
+
+        const allItems = [items, variantItems].filter((s) => s.length > 0).join("\n");
+
         // Reference shared constants to satisfy TS noUnusedLocals after refactor.
         void GOOGLE_CATEGORY_ID; void GOOGLE_CATEGORY_PATH; void toDisplayCategory;
         void CATEGORY_A_ID; void CATEGORY_A_PATH; void CATEGORY_B_ID; void CATEGORY_B_PATH;
@@ -548,7 +656,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
           `    <title>${xmlEscape(`${BRAND} UK — Laboratory Reference Standards`)}</title>`,
           `    <link>${BASE_URL}</link>`,
           `    <description>Analytical reference standards supplied as lyophilised solids for in-vitro laboratory use. Distributed to qualified research professionals and laboratories.</description>`,
-          items,
+          allItems,
           `  </channel>`,
           `</rss>`,
         ].join("\n");
