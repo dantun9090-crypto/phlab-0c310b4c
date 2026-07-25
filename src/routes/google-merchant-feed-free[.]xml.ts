@@ -89,6 +89,20 @@ const SKU_PREFIX_BY_KEYWORD: Array<[string, string]> = [
   ["bacteriostatic", "BAC-001"],
 ];
 
+/**
+ * Extra per-variant items requested for the feed. Each entry emits an
+ * additional <item> alongside the base product item, priced from the
+ * Firestore variant and grouped via g:item_group_id. The link carries
+ * ?variant=<compact> so the landing page preselects the same variant —
+ * keeps feed price == landing-page price for GMC's page-crawl check.
+ */
+const EXTRA_VARIANT_ITEMS: Array<{ slug: string; variantName: string }> = [
+  { slug: "retatrutide-research-peptide", variantName: "20 mg" },
+  { slug: "nad-research-compound", variantName: "500 mg" },
+  { slug: "nad-research-compound", variantName: "1000 mg" },
+  { slug: "ghk-cu-research-peptide", variantName: "100 mg" },
+];
+
 function casFor(name: string): string | null {
   const n = (name || "").toLowerCase();
   for (const [kw, cas] of CAS_BY_KEYWORD) if (n.includes(kw)) return cas;
@@ -285,6 +299,88 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
           })))
           .join("\n");
 
+        // ── Extra per-variant items (NAD+ 500/1000 mg, GHK-Cu 100 mg, Reta 20 mg)
+        // Same shape as base items; grouped via item_group_id; out-of-stock
+        // variants are omitted (free feed never emits OOS items).
+        const variantItems = (
+          await Promise.all(
+            eligible.flatMap((p) => {
+              const slug = (p.slug || "").toLowerCase();
+              const wanted = EXTRA_VARIANT_ITEMS.filter((e) => e.slug === slug);
+              if (wanted.length === 0 || !Array.isArray((p as any).variants)) return [];
+              return wanted.map(async (e) => {
+                const compact = e.variantName.replace(/\s+/g, "").toLowerCase();
+                const v = ((p as any).variants as any[]).find(
+                  (vv) => String(vv?.name || "").replace(/\s+/g, "").toLowerCase() === compact,
+                );
+                if (!v || typeof v.price !== "number" || v.price <= 0) return "";
+                if (typeof v.stock === "number" && v.stock <= 0) return "";
+                const freeToken = await freeTokenFor(p.id);
+                const link = `${linkBase}/products/${freeToken}?variant=${compact}`;
+                const fullName = cleanFullName(p.name);
+                const isLiquid = /bacteriostatic|water/i.test(p.name);
+                const formLabel = isLiquid ? "Sterile Solution" : "Lyophilised Powder";
+                const formLine = isLiquid ? "sterile aqueous solution" : "lyophilised solid powder";
+                const title = `${fullName} ${e.variantName} — ${formLabel} | HPLC 99% Purity | Research Compound | ${BRAND} UK`;
+                const cas = casFor(p.name) ?? "N/A (multi-component reference mixture)";
+                const sku = `${skuFor(p.name, p.id)}-${compact}`;
+                const description =
+                  `${fullName} ${e.variantName} supplied as a ${formLine} for in-vitro laboratory research and analytical reference work in the United Kingdom. ` +
+                  `HPLC-verified ≥99% purity, Certificate of Analysis (CoA) issued per batch with retention sample. ` +
+                  `Strictly for in-vitro scientific testing and reference standards. NOT for human consumption, therapeutic or diagnostic use.`;
+                const image = p.imageUrl
+                  ? p.imageUrl.startsWith("http")
+                    ? p.imageUrl
+                    : `${BASE_URL}${p.imageUrl.startsWith("/") ? "" : "/"}${p.imageUrl}`
+                  : `${BASE_URL}/og-image.jpg`;
+                const itemXml = [
+                  `  <item>`,
+                  `    <g:id>${xmlEscape(`${p.id}-${compact}`)}</g:id>`,
+                  `    <title>${cdata(title)}</title>`,
+                  `    <link>${xmlEscape(link)}</link>`,
+                  `    <g:mobile_link>${xmlEscape(link)}</g:mobile_link>`,
+                  `    <description>${cdata(description)}</description>`,
+                  `    <g:image_link>${xmlEscape(image)}</g:image_link>`,
+                  `    <g:availability>in stock</g:availability>`,
+                  `    <g:price>${xmlEscape(`${v.price.toFixed(2)} ${CURRENCY}`)}</g:price>`,
+                  `    <g:brand>${xmlEscape(BRAND)}</g:brand>`,
+                  `    <g:condition>new</g:condition>`,
+                  `    <g:mpn>${xmlEscape(sku)}</g:mpn>`,
+                  `    <g:sku>${xmlEscape(sku)}</g:sku>`,
+                  `    <g:item_group_id>${xmlEscape(p.id)}</g:item_group_id>`,
+                  `    <g:google_product_category>6975</g:google_product_category>`,
+                  `    <g:product_type>Business &amp; Industrial &gt; Science &amp; Laboratory &gt; Biochemicals${isLiquid ? "" : " &gt; Peptides"}</g:product_type>`,
+                  `    <g:adult>no</g:adult>`,
+                  `    <g:age_group>adult</g:age_group>`,
+                  `    <g:identifier_exists>false</g:identifier_exists>`,
+                  `    <g:is_bundle>no</g:is_bundle>`,
+                  `    <g:multipack>1</g:multipack>`,
+                  `    <g:shipping>`,
+                  `      <g:country>GB</g:country>`,
+                  `      <g:service>Standard</g:service>`,
+                  `      <g:price>3.20 ${CURRENCY}</g:price>`,
+                  `    </g:shipping>`,
+                  `    <g:shipping_weight>${(p.weightGrams ?? 20)} g</g:shipping_weight>`,
+                  `    <g:product_detail><g:section_name>Specification</g:section_name><g:attribute_name>CAS Number</g:attribute_name><g:attribute_value>${xmlEscape(cas)}</g:attribute_value></g:product_detail>`,
+                  `    <g:product_detail><g:section_name>Specification</g:section_name><g:attribute_name>Purity</g:attribute_name><g:attribute_value>≥99% by RP-HPLC</g:attribute_value></g:product_detail>`,
+                  `    <g:product_highlight>HPLC-verified ≥99% purity (CoA per batch)</g:product_highlight>`,
+                  isLiquid ? null : `    <g:product_highlight>Lyophilised powder, stable cold-chain dispatch</g:product_highlight>`,
+                  `    <g:product_highlight>UK fulfilment to qualified laboratories</g:product_highlight>`,
+                  `    <g:custom_label_0>UK-Stock</g:custom_label_0>`,
+                  `    <g:custom_label_1>${xmlEscape(formLabel)}</g:custom_label_1>`,
+                  `    <g:custom_label_2>${xmlEscape(compact)}</g:custom_label_2>`,
+                  `  </item>`,
+                ]
+                  .filter(Boolean)
+                  .join("\n");
+                return applyOverrideToItem(itemXml, adminOverrides.get(p.id));
+              });
+            }),
+          )
+        ).filter((s) => s.length > 0).join("\n");
+
+        const allItems = [items, variantItems].filter((s) => s.length > 0).join("\n");
+
         const xml = [
           `<?xml version="1.0" encoding="UTF-8"?>`,
           `<!-- ${FEED_REVISION}: approved-format feed rendered live for ${linkBase} at ${generatedAt} -->`,
@@ -293,7 +389,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
           `    <title>${xmlEscape(`${BRAND} UK — Research Compounds & Laboratory Reference Standards`)}</title>`,
           `    <link>${linkBase}</link>`,
           `    <description>UK-dispatched research compounds and analytical reference standards — HPLC ≥99% purity, CoA per batch, in-vitro laboratory use only. NOT for human consumption.</description>`,
-          items,
+          allItems,
           `  </channel>`,
           `</rss>`,
         ].join("\n");
