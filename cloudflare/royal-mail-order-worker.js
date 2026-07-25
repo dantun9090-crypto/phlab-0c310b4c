@@ -154,7 +154,10 @@ export default {
         if (!lookup.ok) {
           return jsonResponse(
             request,
-            { error: lookupData?.message || 'Royal Mail lookup failed' },
+            {
+              error: lookupData?.message || 'Royal Mail lookup failed',
+              details: typeof lookupText === 'string' ? lookupText.slice(0, 500) : null,
+            },
             lookup.status,
           );
         }
