@@ -263,33 +263,13 @@ export default function AdminPage() {
     return () => document.getElementById('noindex-admin')?.remove();
   }, []);
 
+  // (admin gating handled by useAdminGuard above)
+
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        navigate('/login');
-        return;
-      }
-      try {
-        // Check 'customers' collection using isAdmin: true flag
-        const customerDoc = await getDoc(doc(db, 'customers', user.uid));
-        if (customerDoc.exists() && customerDoc.data()?.isAdmin === true) {
-          setIsAdmin(true);
-        } else {
-          setIsAdmin(false);
-        }
-      } catch (err: any) {
-        // Firestore unreachable (permission-denied or network) — show error instead of silently denying
-        const code = err?.code || '';
-        if (code === 'permission-denied' || code === 'unavailable' || code.includes('network')) {
-          setFirestoreError(true);
-        } else {
-          setIsAdmin(false);
-        }
-      }
-      setAuthChecked(true);
-    });
-    return () => unsub();
-  }, [navigate]);
+    if (!authChecked && !firestoreError) return;
+    if (typeof window === 'undefined') return;
+  }, [authChecked, firestoreError]);
+
 
   // Listen for quick-action navigation events from DashboardTab
   useEffect(() => {
