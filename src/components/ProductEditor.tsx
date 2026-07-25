@@ -471,6 +471,18 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
     });
   };
 
+  /** Drag-and-drop reorder: move image at `from` into position `to` (list order preserved). */
+  const handleReorderSlots = (from: number, to: number) => {
+    if (from === to) return;
+    setFormData(prev => {
+      const imgs = [...(prev.images || ['', '', '', ''])];
+      while (imgs.length < MAX_IMAGES) imgs.push('');
+      const [moved] = imgs.splice(from, 1);
+      imgs.splice(to, 0, moved);
+      return { ...prev, images: imgs, imageUrl: imgs.find(Boolean) || '' };
+    });
+  };
+
   // ── Banner upload ─────────────────────────────────────────────────────────
   const handleBannerUpload = async (file: File) => {
     setBannerError('');
