@@ -8,6 +8,7 @@ import NextDayCountdown from '@/components/NextDayCountdown';
 import { ProductEditor } from '@/components/ProductEditor';
 import { CoaButton } from '@/components/CoaButton';
 import MarketingAdvertSlot from '@/components/MarketingAdvertSlot';
+import ReviewForm from '@/components/ReviewForm';
 import { auth, db, doc, getDoc, getDocFromServer, collection, query, where, getDocsFromServer, limit, orderBy, onAuthStateChanged } from '@/lib/firebase';
 
 import type { Product } from '@/lib/firebase';
@@ -1314,6 +1315,11 @@ export default function ProductDetail() {
                       Rated Excellent on Trustpilot — read reviews
                     </span>
                   </a>
+
+                  {/* Customer review submission — moderated before publishing */}
+                  <ReviewForm productId={product.id} productName={product.name} />
+
+
 
                 </>
               );

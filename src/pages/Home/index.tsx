@@ -24,6 +24,7 @@ import { nameToSlug } from '@/lib/seedProducts';
 import { markPrerenderPending, markPrerenderReady, flipPrerenderReadyWhenRendered } from '@/lib/prerender-ready';
 import { sendPublicMail } from '@/lib/sendPublicMail';
 import { cfImgProps } from '@/lib/cf-image';
+import Testimonials from '@/components/Testimonials';
 
 
 import { useSEO } from '@/hooks/useSEO';
@@ -1169,6 +1170,11 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Approved customer reviews (Admin → Reviews). Renders nothing when empty. */}
+      <Testimonials />
+
+
 
       {/* ════════════════════════════════
           PROTOCOL LIBRARY CTA
