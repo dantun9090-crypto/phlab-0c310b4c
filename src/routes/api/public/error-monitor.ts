@@ -116,6 +116,19 @@ function isNoisyClientException(ev: z.infer<typeof Body>): boolean {
   return false;
 }
 
+// Automated vulnerability-scanner probes (webshell filenames, phpinfo,
+// exposed-secret/config files). This app serves no PHP and no root-level
+// config/dotfiles, so these paths are never real 404s worth alerting on —
+// they fired the 25/5min threshold daily on pure bot traffic. Kept in sync
+// with SCANNER_PROBE_RE in src/lib/error-monitor.ts (client-side filter
+// stops the beacon entirely; this is the server-side backstop).
+const SCANNER_PROBE_RE =
+  /\.php|\/\.well-known\/|\/\.[A-Za-z]|~$|\.(?:save|bak|old|swp)$|^\/(config\.(?:yaml|yml|json)|service-account\.json|sa\.json|gcp-[^/]*\.json|credentials\.json|phpinfo|server-status|server-info|_profiler|_environment|webroot\/|bootstrap\/|function\/|wk\/)/i;
+
+function isScannerProbe(ev: z.infer<typeof Body>): boolean {
+  return ev.type === "page_not_found" && SCANNER_PROBE_RE.test(ev.path);
+}
+
 const DEFAULT_THRESHOLDS: Record<EventType, number> = {
   page_not_found: 25,
   server_error: 10,
@@ -366,6 +379,13 @@ export const Route = createFileRoute("/api/public/error-monitor")({
         if (isNoisyClientException(ev)) {
           return new Response(
             JSON.stringify({ ok: true, ignored: true, reason: "noisy_cross_origin_client_exception" }),
+            { status: 200, headers: { "content-type": "application/json", ...corsHeaders(origin) } },
+          );
+        }
+
+        if (isScannerProbe(ev)) {
+          return new Response(
+            JSON.stringify({ ok: true, ignored: true, reason: "scanner_probe" }),
             { status: 200, headers: { "content-type": "application/json", ...corsHeaders(origin) } },
           );
         }

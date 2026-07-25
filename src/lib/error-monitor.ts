@@ -38,15 +38,26 @@ function isFirstParty(url: string): boolean {
   }
 }
 
+// Automated vulnerability-scanner noise. Every public domain gets these
+// probes daily (webshell filenames, phpinfo discovery, exposed-secret
+// filenames); they all 404 on this app and were drowning real 404 alerts
+// (25 events/5min threshold fired on pure bot traffic). This app serves no
+// PHP and no root-level config/dotfiles, so matching paths are always noise.
+export const SCANNER_PROBE_RE =
+  /\.php|\/\.well-known\/|\/\.[A-Za-z]|~$|\.(?:save|bak|old|swp)$|^\/(config\.(?:yaml|yml|json)|service-account\.json|sa\.json|gcp-[^/]*\.json|credentials\.json|phpinfo|server-status|server-info|_profiler|_environment|webroot\/|bootstrap\/|function\/|wk\/)/i;
+
 function shouldIgnorePath(path: string): boolean {
   // The monitor endpoint itself + GA / analytics beacons must never be reported
   // (would create an infinite loop).
-  return (
+  if (
     path.startsWith("/api/public/error-monitor") ||
     path.startsWith("/api/public/csp-report") ||
     path.includes("google-analytics.com") ||
     path.includes("googletagmanager.com")
-  );
+  ) {
+    return true;
+  }
+  return SCANNER_PROBE_RE.test(path);
 }
 
 function dedupeKey(input: ReportInput): string {
