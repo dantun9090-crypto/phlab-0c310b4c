@@ -132,6 +132,7 @@ function generateShippingLabelPDF(order: Order): boolean {
   `);
   
   printWindow.document.close();
+  return true;
 }
 
 
