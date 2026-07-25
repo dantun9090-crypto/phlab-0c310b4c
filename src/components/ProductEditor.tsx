@@ -306,6 +306,9 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
   const [slotUploading, setSlotUploading] = useState<boolean[]>([false, false, false, false]);
   const [slotProgress, setSlotProgress] = useState<number[]>([0, 0, 0, 0]);
   const [slotErrors, setSlotErrors] = useState<string[]>(['', '', '', '']);
+  // Drag-and-drop reorder state for the product photo grid
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 
   // Banner upload state
   const [bannerUrl, setBannerUrl] = useState<string>('');
