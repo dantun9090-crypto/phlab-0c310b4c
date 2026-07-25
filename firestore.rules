@@ -85,7 +85,51 @@ service cloud.firestore {
     }
 
 
+    // ---------- customer reviews ----------
+    // Anyone may submit, but ONLY with a locked shape and status == 'pending';
+    // nothing is publicly readable until an admin approves it. Only admins can
+    // change status or delete. Public queries must filter status == 'approved'.
+    match /reviews/{id} {
+      allow read: if isAdmin() || resource.data.status == 'approved';
+      allow create: if request.resource.data.keys().hasOnly(
+                        ['name','email','rating','title','body','productId','productName',
+                         'status','createdAt','reviewedAt','reviewedBy'])
+                    && request.resource.data.keys().hasAll(
+                        ['name','rating','body','status','createdAt'])
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.reviewedAt == null
+                    && request.resource.data.reviewedBy == null
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() >= 2
+                    && request.resource.data.name.size() <= 60
+                    && request.resource.data.rating is int
+                    && request.resource.data.rating >= 1
+                    && request.resource.data.rating <= 5
+                    && request.resource.data.body is string
+                    && request.resource.data.body.size() >= 10
+                    && request.resource.data.body.size() <= 1000
+                    && (!('title' in request.resource.data)
+                        || request.resource.data.title == null
+                        || (request.resource.data.title is string
+                            && request.resource.data.title.size() <= 90))
+                    && (!('email' in request.resource.data)
+                        || request.resource.data.email == null
+                        || (request.resource.data.email is string
+                            && request.resource.data.email.size() <= 200))
+                    && (!('productId' in request.resource.data)
+                        || request.resource.data.productId == null
+                        || (request.resource.data.productId is string
+                            && request.resource.data.productId.size() <= 200))
+                    && (!('productName' in request.resource.data)
+                        || request.resource.data.productName == null
+                        || (request.resource.data.productName is string
+                            && request.resource.data.productName.size() <= 200))
+                    && request.resource.data.createdAt is timestamp;
+      allow update, delete: if isAdmin();
+    }
+
     // ---------- email subscribers (newsletter) ----------
+
     // Locked shape: valid email regex, timestamp required, optional source +
     // discountCode + ISO timestamp (homepage protocol-library flow). Read /
     // update / delete is admin-only so the list can't be enumerated.
