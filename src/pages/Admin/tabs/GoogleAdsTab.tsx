@@ -67,7 +67,11 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
     setPushing(true);
     setPushResult(null);
     try {
-      const r = await pushFn({ data: { campaignId: campaign.id, dryRun } });
+      const user = auth.currentUser;
+      if (!user) throw new Error('Not signed in');
+      const idToken = await user.getIdToken();
+      const r = await pushFn({ data: { idToken, campaignId: campaign.id, dryRun } });
+
       setPushResult(r as Record<string, unknown>);
     } catch (e) {
       setPushResult({ ok: false, error: e instanceof Error ? e.message : String(e) });
