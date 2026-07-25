@@ -45,6 +45,7 @@ import SitemapTab from './tabs/SitemapTab';
 import SitemapAuditTab from './tabs/SitemapAuditTab';
 import PromoCodesTab from './tabs/PromoCodesTab';
 import FreeGiftTab from './tabs/FreeGiftTab';
+import ReviewsTab from './tabs/ReviewsTab';
 import DiagnosticsTab from './tabs/DiagnosticsTab';
 import PrerenderStatusTab from './tabs/PrerenderStatusTab';
 import GSCMonitorTab from './tabs/GSCMonitorTab';
