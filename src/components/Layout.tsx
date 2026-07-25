@@ -48,6 +48,7 @@ import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 import { initVisitorTracking, trackVisitorPageView } from '@/lib/visitor-tracking';
 import { DisclaimerBanner } from './DisclaimerBanner';
 import TopStripe from './TopStripe';
+import { SHIPPING_CONFIG } from '@/lib/shipping/next-day';
 
 interface SiteSettings {
   whatsappNumber?: string;
@@ -562,7 +563,7 @@ export function Layout({ children }: LayoutProps) {
   const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.priceNum * item.quantity, 0), [cart]);
   const getSubtotal = useCallback(() => subtotal, [subtotal]);
 
-  const shippingCost = useMemo(() => subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 4.99, [subtotal]);
+  const shippingCost = useMemo(() => subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_CONFIG.standardPrice, [subtotal]);
   const getTotalPrice = useCallback(() => Math.max(0, subtotal + shippingCost).toFixed(2), [subtotal, shippingCost]);
 
   const addToCart = (item: CartItem) => {

@@ -17,6 +17,7 @@ const MarketingAdvertSlot = lazy(() => import('@/components/MarketingAdvertSlot'
 
 import { getProductImage } from '@/lib/productImages';
 import type { Product } from '@/lib/firebase';
+import { filterProductsForHost } from '@/lib/domain-visibility';
 // Firebase is dynamically imported below to keep it off the home-route critical chunk.
 const loadFirebase = () => import('@/lib/firebase');
 import { nameToSlug } from '@/lib/seedProducts';
@@ -241,7 +242,7 @@ export default function HomePage() {
     const loadProducts = () => {
       loadFirebase().then(({ getAllProducts }) => getAllProducts()).then((prods: Product[]) => {
         if (cancelled) return;
-        setProducts(prods);
+        setProducts(filterProductsForHost(prods));
         // Wait for the first product tiles to render, then flip ready.
         flipPrerenderReadyWhenRendered('[data-product-card], [data-home-product]', Math.min(prods.length, 3));
       }).catch(() => {
