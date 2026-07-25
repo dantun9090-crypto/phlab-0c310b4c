@@ -1213,7 +1213,7 @@ export function Layout({ children }: LayoutProps) {
                   { icon: FlaskConical, label: '≥99% HPLC Purity', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
                   { icon: TestTube, label: 'Third-Party Lab Tested', color: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20' },
                   { icon: Shield, label: 'UK Registered Company', color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20' },
-                ].map(b => (
+                ].filter(b => !(isContactPage && b.label === '≥99% HPLC Purity')).map(b => (
                   <div key={b.label} className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg ${b.bg} border ${b.border} w-fit`}>
                     <b.icon className={`w-3.5 h-3.5 ${b.color}`} />
                     <span className={`text-[11px] font-semibold ${b.color}`}>{b.label}</span>
@@ -1639,7 +1639,7 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* ── Sticky MHRA Disclaimer Bar — hidden on auth/admin pages ── */}
-      {!isCleanPage && <div className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none">
+      {!isCleanPage && !isContactPage && <div className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none">
         <div
           className="px-4 py-2.5 text-center"
           style={{
