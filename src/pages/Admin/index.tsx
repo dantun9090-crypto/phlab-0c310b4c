@@ -181,9 +181,14 @@ class TabErrorBoundary extends Component<{ children: ReactNode; tabName?: string
 
 export default function AdminPage() {
   const navigate = useNavigate();
-  const [authChecked, setAuthChecked] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [firestoreError, setFirestoreError] = useState(false);
+  // Admin gating lives in one shared hook (customers/{uid}.isAdmin).
+  // redirectTo: null → keep the in-place "Access Denied" screen below.
+  const { isAdmin, loading: adminLoading, firestoreError } = useAdminGuard({
+    redirectTo: null,
+    onRedirect: (path) => navigate(path),
+  });
+  const authChecked = !adminLoading;
+
   const [ipChecked, setIpChecked] = useState(false);
   const [ipAllowed, setIpAllowed] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>(() => {
