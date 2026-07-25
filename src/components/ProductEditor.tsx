@@ -577,6 +577,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
         coaPdfUrl: uploaded.url,
         coaPdfName: file.name,
         coaUploadedAt: new Date().toISOString(),
+        coaVisible: (p as any).coaVisible !== false,
       } as any));
     } catch (e: any) {
       const msg = String(e?.message || e?.code || '');
