@@ -148,6 +148,7 @@ export default function RoyalMailTab() {
       }).catch(() => {});
     } catch (e: any) {
       setError(e?.message || 'Failed to create label');
+      showToast('Failed to create label. Please try again.', false);
     } finally {
       setLoading(false);
     }
@@ -164,6 +165,25 @@ export default function RoyalMailTab() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
+      {/* ── Create Label toast ── */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+            role="status"
+            aria-live="polite"
+            className={`fixed top-4 right-4 z-[10000] flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold border shadow-lg ${
+              toast.ok
+                ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-200'
+                : 'bg-red-500/15 border-red-500/40 text-red-200'
+            }`}
+          >
+            {toast.ok ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+            {toast.msg}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
