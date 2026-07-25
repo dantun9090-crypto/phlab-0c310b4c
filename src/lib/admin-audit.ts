@@ -13,6 +13,7 @@ export type AdminAuditAction =
   | 'order.status.update'
   | 'order.dispatch'
   | 'order.royal_mail_create'
+  | 'order.royal_mail_tracking_sync'
   | 'royal_mail.manual_label_create'
   | 'order.refund'
   | 'order.delete'
