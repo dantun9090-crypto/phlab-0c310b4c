@@ -27,6 +27,9 @@ interface Advert {
   isActive: boolean;
   bgColor: string;
   textColor: string;
+  /** Optional schedule window — `null` means "no bound". */
+  startDate?: any;
+  endDate?: any;
   createdAt?: any;
   updatedAt?: any;
 }
@@ -43,7 +46,24 @@ const EMPTY: Advert = {
   title: '', subtitle: '', ctaText: 'Shop Now', ctaUrl: '/products',
   imageUrl: '', placement: 'homepage_hero', isActive: true,
   bgColor: '#0b1a30', textColor: '#e8f0fe',
+  startDate: null, endDate: null,
 };
+
+/** Firestore Timestamp | null → value for `<input type="datetime-local">`. */
+function toLocalInput(value: unknown): string {
+  const ms = toMillis(value);
+  if (ms == null) return '';
+  const d = new Date(ms - new Date(ms).getTimezoneOffset() * 60000);
+  return d.toISOString().slice(0, 16);
+}
+
+/** `<input type="datetime-local">` value → Firestore Timestamp | null. */
+function fromLocalInput(value: string): any {
+  if (!value) return null;
+  const ms = Date.parse(value);
+  return Number.isNaN(ms) ? null : Timestamp.fromMillis(ms);
+}
+
 
 export default function AdvertsTab() {
   const [adverts, setAdverts] = useState<Advert[]>([]);
