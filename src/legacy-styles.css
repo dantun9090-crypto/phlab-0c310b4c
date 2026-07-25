@@ -1418,7 +1418,12 @@ html[data-theme]:not([data-theme="navy-professional"]) .border-blue-500\/30 {
  */
 @font-face {
   font-family: 'Inter Tight Fallback';
-  src: local('Arial');
+  /* Platform coverage: Arial (Windows/macOS), Liberation Sans (Linux — metrically
+   * identical to Arial), Roboto/Noto Sans/Droid Sans (Android). Without these
+   * the face FAILED to resolve on Android/Linux (no Arial installed), the
+   * loading error cascaded text into plain system-ui with no metric overrides,
+   * and the re-layout showed up as layout shift (Lighthouse mobile CLS 0.123). */
+  src: local('Arial'), local('Liberation Sans'), local('Helvetica Neue'), local('Helvetica'), local('Roboto'), local('Noto Sans'), local('Droid Sans'), local('DejaVu Sans');
   ascent-override: 96%;
   descent-override: 24%;
   line-gap-override: 0%;
@@ -1428,7 +1433,9 @@ html[data-theme]:not([data-theme="navy-professional"]) .border-blue-500\/30 {
 
 @font-face {
   font-family: 'Cormorant Garamond Fallback';
-  src: local('Times New Roman'), local('Times');
+  /* Same coverage fix: Liberation Serif = Times metrics on Linux/CI, Noto/Droid
+   * Serif cover Android where no Times face exists. */
+  src: local('Times New Roman'), local('Times'), local('Liberation Serif'), local('Noto Serif'), local('Droid Serif'), local('Georgia');
   ascent-override: 92%;
   descent-override: 28%;
   line-gap-override: 0%;
