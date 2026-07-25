@@ -13,7 +13,7 @@ import { logAdminAction } from '@/lib/admin-audit';
 import PaymentTimeline from '@/components/admin/PaymentTimeline';
 import WebhookRetryCard from '@/components/admin/WebhookRetryCard';
 import { isFenaAutoPaid } from '@/lib/fena-filter';
-import { createRoyalMailOrder } from '@/lib/royal-mail.functions';
+import { createRoyalMailOrder, syncRoyalMailTracking } from '@/lib/royal-mail.functions';
 
 
 import { buildDispatchEmail } from '@/templates/dispatchEmail';
@@ -263,6 +263,8 @@ export default function OrdersTab() {
   const [rmError, setRmError] = useState('');
   const [rmResult, setRmResult] = useState<{ orderIdentifier: string; orderReference?: string; trackingNumber?: string | null } | null>(null);
   const [rmCopied, setRmCopied] = useState(false);
+  const [rmSyncLoading, setRmSyncLoading] = useState(false);
+  const [rmSyncMsg, setRmSyncMsg] = useState('');
 
   // Bank transfer payment state
   const [transferRefInput, setTransferRefInput] = useState('');
@@ -682,6 +684,67 @@ export default function OrdersTab() {
       setRmError(e?.message || 'Failed to create Royal Mail order.');
     } finally {
       setRmLoading(false);
+    }
+  };
+
+  /**
+   * Pulls the tracking number for an EXISTING Click & Drop order and writes it
+   * back to Firestore. Use this after applying postage / printing the label in
+   * Click & Drop — it never creates a second (chargeable) shipment.
+   */
+  const handleSyncRoyalMailTracking = async () => {
+    if (!selected) return;
+    const rmOrderId = String((selected as any).royalMailOrderId || '').trim();
+    setRmError('');
+    setRmSyncMsg('');
+    if (!rmOrderId) {
+      setRmError('This order has no Royal Mail order ID yet — create the Click & Drop order first.');
+      return;
+    }
+    setRmSyncLoading(true);
+    try {
+      const idToken = await getAdminIdToken();
+      if (!idToken) {
+        setRmError('You must be signed in as an admin to sync tracking.');
+        return;
+      }
+      const res = await syncRoyalMailTracking({ data: { idToken, royalMailOrderId: rmOrderId, orderReference: selected.id } });
+      if (!res.ok) throw new Error(res.error || 'Failed to read Royal Mail order.');
+
+      const tracking = res.trackingNumber ? String(res.trackingNumber).trim() : null;
+      if (!tracking) {
+        setRmSyncMsg('No tracking yet — apply postage / print the label in Click & Drop, then sync again.');
+        return;
+      }
+
+      await updateDoc(doc(db, 'orders', selected.id), {
+        trackingNumber: tracking,
+        royalMailTracking: tracking,
+        courier: 'Royal Mail',
+      });
+      await logAdminAction({
+        action: 'order.royal_mail_tracking_sync',
+        target: `orders/${selected.id}`,
+        meta: { royalMailOrderId: rmOrderId, trackingNumber: tracking },
+      });
+
+      setTrackingInput(tracking);
+      setCourierInput('Royal Mail');
+      setRmResult(prev => ({
+        orderIdentifier: prev?.orderIdentifier || rmOrderId,
+        orderReference: selected.id,
+        trackingNumber: tracking,
+      }));
+      setOrders(prev => prev.map(o => o.id === selected.id
+        ? { ...o, trackingNumber: tracking, courier: 'Royal Mail' } as Order
+        : o));
+      setSelected(prev => prev ? { ...prev, trackingNumber: tracking, courier: 'Royal Mail' } as Order : prev);
+      setRmSyncMsg(`Tracking synced: ${tracking}`);
+    } catch (e: any) {
+      console.error('[royal-mail] tracking sync failed', e);
+      setRmError(e?.message || 'Failed to sync tracking.');
+    } finally {
+      setRmSyncLoading(false);
     }
   };
 
@@ -1338,6 +1401,21 @@ export default function OrdersTab() {
                     {rmLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Package className="w-3.5 h-3.5" />}
                     {rmLoading ? 'Creating…' : 'Create Royal Mail Order'}
                   </button>
+
+                  {Boolean((selected as any).royalMailOrderId) && (
+                    <button
+                      onClick={handleSyncRoyalMailTracking}
+                      disabled={rmSyncLoading}
+                      className="mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors"
+                    >
+                      {rmSyncLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Truck className="w-3.5 h-3.5" />}
+                      {rmSyncLoading ? 'Syncing…' : `Sync tracking from RM order ${(selected as any).royalMailOrderId}`}
+                    </button>
+                  )}
+
+                  {rmSyncMsg && (
+                    <p className="mt-2 text-blue-300 text-xs" role="status">{rmSyncMsg}</p>
+                  )}
 
                   {rmResult && (
                     <div className="mt-3 p-2.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20 space-y-2">
