@@ -558,6 +558,73 @@ export default function AdvertsTab() {
                   </button>
                 </div>
 
+                {/* Schedule window (optional) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#9cb8d9] uppercase tracking-wider mb-1.5" htmlFor="advert-start">
+                      Start date (optional)
+                    </label>
+                    <input
+                      id="advert-start"
+                      type="datetime-local"
+                      value={toLocalInput(editing.startDate)}
+                      onChange={e => setEditing(p => p ? { ...p, startDate: fromLocalInput(e.target.value) } : p)}
+                      className="w-full px-4 py-3 bg-[#1e293b] border-2 border-[#475569] rounded-lg text-[#f8fafc] text-base focus:outline-none focus:border-[#3b82f6] transition-all min-h-[48px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#9cb8d9] uppercase tracking-wider mb-1.5" htmlFor="advert-end">
+                      End date (optional)
+                    </label>
+                    <input
+                      id="advert-end"
+                      type="datetime-local"
+                      value={toLocalInput(editing.endDate)}
+                      onChange={e => setEditing(p => p ? { ...p, endDate: fromLocalInput(e.target.value) } : p)}
+                      className="w-full px-4 py-3 bg-[#1e293b] border-2 border-[#475569] rounded-lg text-[#f8fafc] text-base focus:outline-none focus:border-[#3b82f6] transition-all min-h-[48px]"
+                    />
+                  </div>
+                  <p className="sm:col-span-2 text-[11px] text-[#2a4a7a]">
+                    Leave blank for no limit. Outside the window the advert is hidden even when live.
+                  </p>
+                </div>
+
+                {/* Pop-up mock-up */}
+                {editing.placement === 'popup' && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-xs font-semibold text-[#9cb8d9] uppercase tracking-wider">Pop-up preview</label>
+                      <button
+                        type="button"
+                        onClick={() => setShowPopupPreview(v => !v)}
+                        className="text-[11px] px-3 py-1.5 rounded-lg border border-white/[0.12] text-[#cfe2ff] hover:border-blue-500/50 transition-colors min-h-[36px]"
+                      >
+                        {showPopupPreview ? 'Hide mock-up' : 'Show mock-up'}
+                      </button>
+                    </div>
+                    {showPopupPreview && (
+                      <div className="rounded-xl border border-white/[0.08] bg-black/40 p-6 flex items-center justify-center">
+                        <div className="relative w-full max-w-[320px] rounded-2xl overflow-hidden border border-white/[0.12]" style={{ background: editing.bgColor }}>
+                          <span className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white text-xs flex items-center justify-center">✕</span>
+                          {editing.imageUrl && <img src={editing.imageUrl} alt="" className="w-full h-auto block" />}
+                          {(editing.title || editing.subtitle) && (
+                            <div className="p-4 text-center">
+                              {editing.title && <p className="font-bold text-sm" style={{ color: editing.textColor }}>{editing.title}</p>}
+                              {editing.subtitle && <p className="text-xs text-white/70 mt-1">{editing.subtitle}</p>}
+                              {editing.ctaText && (
+                                <span className="inline-block mt-3 px-4 py-2 rounded-xl bg-emerald-500 text-[#03131f] text-xs font-bold">{editing.ctaText}</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    <p className="mt-2 text-[11px] text-[#2a4a7a]">
+                      On the live site the pop-up appears 1.5s after load and stays hidden for 7 days once a visitor closes it.
+                    </p>
+                  </div>
+                )}
+
                 {/* Live preview */}
                 {editing.title && (
                   <div>
