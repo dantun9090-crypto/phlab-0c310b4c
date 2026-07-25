@@ -82,6 +82,7 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as ProductsCategorySlugRouteImport } from './routes/products.category.$slug'
 import { Route as ApiAdminWeeklyBriefingRouteImport } from './routes/api/admin/weekly-briefing'
+import { Route as ApiAdminOrderRemindersRouteImport } from './routes/api/admin/order-reminders'
 import { Route as ApiWebhooksWallidRouteImport } from './routes/api/webhooks/wallid'
 import { Route as ApiPublicWebVitalsRouteImport } from './routes/api/public/web-vitals'
 import { Route as ApiPublicStaleAssetReportRouteImport } from './routes/api/public/stale-asset-report'
@@ -519,6 +520,12 @@ const ApiAdminWeeklyBriefingRoute = ApiAdminWeeklyBriefingRouteImport.update({
   path: '/api/admin/weekly-briefing',
   getParentRoute: () => rootRouteImport,
 } as any)
+
+const ApiAdminOrderRemindersRoute = ApiAdminOrderRemindersRouteImport.update({
+  id: '/api/admin/order-reminders',
+  path: '/api/admin/order-reminders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicWebVitalsRoute = ApiPublicWebVitalsRouteImport.update({
   id: '/api/public/web-vitals',
   path: '/api/public/web-vitals',
@@ -914,6 +921,7 @@ export interface FileRoutesByFullPath {
   '/api/public/stale-asset-log': typeof ApiPublicStaleAssetLogRoute
   '/api/public/stale-asset-report': typeof ApiPublicStaleAssetReportRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
+  '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute,
   '/api/admin/weekly-briefing': typeof ApiAdminWeeklyBriefingRoute,
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/products/category/$slug': typeof ProductsCategorySlugRoute
@@ -1042,6 +1050,7 @@ export interface FileRoutesByTo {
   '/api/public/stale-asset-log': typeof ApiPublicStaleAssetLogRoute
   '/api/public/stale-asset-report': typeof ApiPublicStaleAssetReportRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
+  '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute,
   '/api/admin/weekly-briefing': typeof ApiAdminWeeklyBriefingRoute,
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/products/category/$slug': typeof ProductsCategorySlugRoute
@@ -1173,6 +1182,7 @@ export interface FileRoutesById {
   '/api/public/stale-asset-log': typeof ApiPublicStaleAssetLogRoute
   '/api/public/stale-asset-report': typeof ApiPublicStaleAssetReportRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
+  '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute,
   '/api/admin/weekly-briefing': typeof ApiAdminWeeklyBriefingRoute,
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/products/category/$slug': typeof ProductsCategorySlugRoute
@@ -1300,6 +1310,7 @@ export interface FileRouteTypes {
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
+    | '/api/admin/order-reminders'
     | '/api/admin/weekly-briefing'
     | '/api/public/send-marketing'
     | '/api/public/stale-asset-log'
@@ -1428,6 +1439,7 @@ export interface FileRouteTypes {
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
+    | '/api/admin/order-reminders'
     | '/api/admin/weekly-briefing'
     | '/api/public/send-marketing'
     | '/api/public/stale-asset-log'
@@ -1558,6 +1570,7 @@ export interface FileRouteTypes {
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
+    | '/api/admin/order-reminders'
     | '/api/admin/weekly-briefing'
     | '/api/public/send-marketing'
     | '/api/public/stale-asset-log'
@@ -1676,6 +1689,7 @@ export interface RootRouteChildren {
   ApiPublicStaleAssetLogRoute: typeof ApiPublicStaleAssetLogRoute
   ApiPublicStaleAssetReportRoute: typeof ApiPublicStaleAssetReportRoute
   ApiPublicWebVitalsRoute: typeof ApiPublicWebVitalsRoute
+  ApiAdminOrderRemindersRoute: typeof ApiAdminOrderRemindersRoute,
   ApiAdminWeeklyBriefingRoute: typeof ApiAdminWeeklyBriefingRoute,
   ApiWebhooksWallidRoute: typeof ApiWebhooksWallidRoute
   ApiPublicDiagBuildStateRoute: typeof ApiPublicDiagBuildStateRoute
@@ -2237,6 +2251,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicStaleAssetLogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/order-reminders': {
+      id: '/api/admin/order-reminders'
+      path: '/api/admin/order-reminders'
+      fullPath: '/api/admin/order-reminders'
+      preLoaderRoute: typeof ApiAdminOrderRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    },
     '/api/admin/weekly-briefing': {
       id: '/api/admin/weekly-briefing'
       path: '/api/admin/weekly-briefing'
@@ -2774,6 +2795,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicPublishHoldRoute: ApiPublicPublishHoldRoute,
   ApiPublicPublishStatusRoute: ApiPublicPublishStatusRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
+  ApiAdminOrderRemindersRoute: ApiAdminOrderRemindersRoute,
   ApiAdminWeeklyBriefingRoute: ApiAdminWeeklyBriefingRoute,
   ApiPublicSendMarketingRoute: ApiPublicSendMarketingRoute,
   ApiPublicStaleAssetLogRoute: ApiPublicStaleAssetLogRoute,
