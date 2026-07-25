@@ -48,7 +48,6 @@ import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 import { initVisitorTracking, trackVisitorPageView } from '@/lib/visitor-tracking';
 import { DisclaimerBanner } from './DisclaimerBanner';
 import TopStripe from './TopStripe';
-import { SHIPPING_CONFIG } from '@/lib/shipping/next-day';
 
 interface SiteSettings {
   whatsappNumber?: string;
@@ -563,7 +562,7 @@ export function Layout({ children }: LayoutProps) {
   const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.priceNum * item.quantity, 0), [cart]);
   const getSubtotal = useCallback(() => subtotal, [subtotal]);
 
-  const shippingCost = useMemo(() => subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_CONFIG.standardPrice, [subtotal]);
+  const shippingCost = useMemo(() => subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 4.99, [subtotal]);
   const getTotalPrice = useCallback(() => Math.max(0, subtotal + shippingCost).toFixed(2), [subtotal, shippingCost]);
 
   const addToCart = (item: CartItem) => {
@@ -631,7 +630,7 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col" style={layoutVars}>
       {/* Research confirmation gate + sticky research banner */}
-      {!isCleanPage && !isLandingPage && <ResearchGate />}
+      {!isCleanPage && !isLandingPage && !isContactPage && <ResearchGate />}
 
       {/* Maintenance Mode — admins bypass */}
       {siteSettings.maintenanceMode && !isAdmin && (
@@ -904,7 +903,7 @@ export function Layout({ children }: LayoutProps) {
       {!isCleanPage && <DayNightToggle />}
 
       {/* Professional disclaimer banner — full-width amber strip below header */}
-      {disclaimerVisible && <DisclaimerBanner />}
+      {disclaimerVisible && !isContactPage && <DisclaimerBanner />}
 
       {/* Main content */}
       <main
@@ -1173,7 +1172,7 @@ export function Layout({ children }: LayoutProps) {
               <div>
                 <div className="text-[10px] font-bold tracking-[0.18em] uppercase text-blue-300 mb-1">Research Updates</div>
                 <div className="text-lg font-bold text-white">{isContactPage ? 'Stay at the frontier of laboratory science' : 'Stay at the frontier of peptide science'}</div>
-                <p className="text-[#5a80a6] text-sm mt-1">New arrivals, HPLC reports, and research breakthroughs.</p>
+                <p className="text-[#5a80a6] text-sm mt-1">{isContactPage ? 'New arrivals and research breakthroughs.' : 'New arrivals, HPLC reports, and research breakthroughs.'}</p>
               </div>
               <a
                 href="/contact"
@@ -1202,7 +1201,9 @@ export function Layout({ children }: LayoutProps) {
                 </div>
               </a>
               <p className="text-[#5a80a6] text-sm leading-relaxed mb-4 max-w-[260px]">
-                {siteSettings.footerTagline || 'HPLC-tested, research-grade lyophilised peptides. For laboratory research use only.'}
+                {isContactPage
+                  ? 'UK-registered laboratory supplier supporting qualified research teams.'
+                  : (siteSettings.footerTagline || 'HPLC-tested, research-grade lyophilised peptides. For laboratory research use only.')}
               </p>
 
               {/* Quality badges */}
@@ -1268,10 +1269,10 @@ export function Layout({ children }: LayoutProps) {
                 <li>
                   <a href="/products" className="group flex items-center gap-2 text-[#5a80a6] hover:text-[#8caad4] transition-colors text-sm">
                     <span className="w-1 h-1 rounded-full bg-blue-600/40 group-hover:bg-blue-400 transition-colors flex-shrink-0" />
-                    All Peptides
+                    {isContactPage ? 'All Products' : 'All Peptides'}
                   </a>
                 </li>
-                {(() => {
+                {!isContactPage && (() => {
                   const activeProds = searchProducts.filter(p => p.isActive !== false && p.stock > 0);
                   const cats = Array.from(
                     new Map(
@@ -1314,7 +1315,9 @@ export function Layout({ children }: LayoutProps) {
                   { label: 'About Us', href: '/about' },
                   { label: 'Quality Control', href: '/quality-control' },
                   { label: 'Research Library', href: '/resources' },
-                  { label: 'HPLC Lab Reports', href: '/lab-reports' },
+                  isContactPage
+                    ? { label: 'Lab Reports', href: '/lab-reports' }
+                    : { label: 'HPLC Lab Reports', href: '/lab-reports' },
                   { label: 'FAQ', href: '/#faq' },
                   { label: 'Contact Us', href: '/contact' },
                   { label: 'Storage Guide', href: '/storage-guide' },
@@ -1460,7 +1463,7 @@ export function Layout({ children }: LayoutProps) {
                 { icon: BadgeCheck, label: 'FCA-Regulated Payments', color: 'text-sky-400', bg: 'bg-sky-500/[0.07]', border: 'border-sky-500/15' },
                 { icon: FlaskConical, label: 'HPLC Lab Tested', color: 'text-indigo-400', bg: 'bg-indigo-500/[0.07]', border: 'border-indigo-500/15' },
                 { icon: MapPin, label: 'UK Based & Registered', color: 'text-blue-400', bg: 'bg-blue-500/[0.07]', border: 'border-blue-500/15' },
-              ].map(b => (
+              ].filter(b => !(isContactPage && b.label === 'HPLC Lab Tested')).map(b => (
                 <div key={b.label} className={`flex items-center gap-2 px-3.5 py-2 rounded-xl ${b.bg} border ${b.border}`}>
                   <b.icon className={`w-3.5 h-3.5 ${b.color} shrink-0`} />
                   <span className={`${b.color} text-[10px] font-semibold tracking-wide`}>{b.label}</span>
@@ -1470,7 +1473,7 @@ export function Layout({ children }: LayoutProps) {
           </div>
 
           {/* ── MHRA Disclaimer ── */}
-          {siteSettings.mhraDisclaimerEnabled !== false && (
+          {siteSettings.mhraDisclaimerEnabled !== false && !isContactPage && (
             <div className="border border-amber-500/25 bg-amber-500/[0.06] rounded-2xl px-6 py-5 mb-6">
               <p className="text-[11px] text-amber-300/85 font-semibold text-center leading-relaxed uppercase tracking-[0.06em]">
                 ⚠ All products sold by PH Labs are strictly for laboratory research use only. Not for human or veterinary consumption. Not intended to diagnose, treat, cure or prevent any disease. Products have not been evaluated or approved by the MHRA or FDA. Must be 18+ to purchase.
@@ -1480,12 +1483,10 @@ export function Layout({ children }: LayoutProps) {
 
           {/* Purity badge strip */}
           <div className="flex flex-wrap items-center justify-center gap-4 mb-6">
-            {[
-              '≥99% HPLC Purity',
-              'Third-Party Lab Tested',
-              'UK Registered Company',
-              'CoA With Every Order',
-            ].map(badge => (
+            {(isContactPage
+              ? ['Third-Party Lab Tested', 'UK Registered Company']
+              : ['≥99% HPLC Purity', 'Third-Party Lab Tested', 'UK Registered Company', 'CoA With Every Order']
+            ).map(badge => (
               <span key={badge} className="text-[10px] font-bold tracking-wider uppercase" style={{ color: '#8caad4' }}>
                 {badge}
               </span>
@@ -1534,9 +1535,11 @@ export function Layout({ children }: LayoutProps) {
               {siteSettings.companyRegNumber && <> Company No. {siteSettings.companyRegNumber}.</>}
               {siteSettings.companyAddress && <> {siteSettings.companyAddress}.</>}
             </p>
+            {!isContactPage && (
             <p className="text-[#7a9ec2] text-xs text-center md:text-right">
               For laboratory research use only. Not for human or veterinary consumption.
             </p>
+            )}
 
           </div>
         </div>

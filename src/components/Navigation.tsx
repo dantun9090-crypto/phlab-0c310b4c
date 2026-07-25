@@ -42,6 +42,7 @@ const BASE_NAV: Omit<NavLink, 'dropdown'>[] = [
 
 function useNavLinks(): NavLink[] {
   const [categories, setCategories] = useState<DropdownItem[]>([]);
+  const location = useLocation();
 
   useEffect(() => {
     let cancelled = false;
@@ -79,9 +80,14 @@ function useNavLinks(): NavLink[] {
     return () => { cancelled = true; };
   }, []);
 
-  return BASE_NAV.map(link =>
-    link.name === 'Peptides' ? { ...link, dropdown: categories } : link
-  );
+  // /contact doubles as the Google Ads bridge landing page — keep the
+  // destination neutral for the policy crawler (no catalogue links).
+  const isContactPage = location.pathname === '/contact';
+  return BASE_NAV
+    .filter(link => !(isContactPage && (link.name === 'Peptides' || link.name === 'Lab Reports')))
+    .map(link =>
+      link.name === 'Peptides' ? { ...link, dropdown: categories } : link
+    );
 }
 
 function MobileNavItem({

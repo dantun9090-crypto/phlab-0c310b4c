@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { X, Truck, ShieldCheck, FlaskConical } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { X, Truck, ShieldCheck, FlaskConical, Headset } from 'lucide-react';
 
 /**
  * Unified 36px top stripe replacing the legacy trio
@@ -10,6 +11,13 @@ const MESSAGES = [
   { Icon: Truck,       label: 'Free UK Shipping over £50' },
   { Icon: ShieldCheck, label: '≥99% HPLC Purity · CoA per batch' },
   { Icon: FlaskConical, label: 'For Laboratory Research Use Only' },
+] as const;
+
+// Ads-landing safe set for /contact: the Google Ads destination bot lands
+// here from the bridge page, so keep the stripe free of lab/purity wording.
+const CONTACT_MESSAGES = [
+  { Icon: Truck,  label: 'Free UK Shipping over £50' },
+  { Icon: Headset, label: 'Support replies within one business day' },
 ] as const;
 
 const STORAGE_KEY = 'phl_top_stripe_dismissed_v1';
@@ -26,14 +34,16 @@ function initialDismissed(): boolean {
 export default function TopStripe() {
   const [idx, setIdx] = useState(0);
   const [dismissed, setDismissed] = useState<boolean>(initialDismissed);
+  const location = useLocation();
+  const messages = location.pathname === '/contact' ? CONTACT_MESSAGES : MESSAGES;
 
   useEffect(() => {
     if (dismissed) return;
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (reduce) return;
-    const id = window.setInterval(() => setIdx(i => (i + 1) % MESSAGES.length), 4500);
+    const id = window.setInterval(() => setIdx(i => (i + 1) % messages.length), 4500);
     return () => window.clearInterval(id);
-  }, [dismissed]);
+  }, [dismissed, messages.length]);
 
   if (dismissed) return null;
 
@@ -60,7 +70,7 @@ export default function TopStripe() {
         className="relative w-full max-w-3xl h-full flex items-center justify-center"
         aria-live="polite"
       >
-        {MESSAGES.map(({ Icon, label }, i) => {
+        {messages.map(({ Icon, label }, i) => {
           const active = i === idx;
           return (
             <div

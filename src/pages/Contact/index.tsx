@@ -309,11 +309,11 @@ export default function Contact() {
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-5">
               <span className="text-[#f0f6ff]">Premium Research</span>
               <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Compounds — Talk to the Team</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Supplies — Talk to the Team</span>
             </h1>
 
             <p className="text-[#8aabcf] text-lg leading-relaxed">
-              {settings.contactSubheading || 'Documentation, batch CoAs and HPLC reports for qualified researchers and UK laboratories. Our team typically replies within one business day.'}
+              {settings.contactSubheading || 'Documentation and batch reports for qualified researchers and UK laboratories. Our team typically replies within one business day.'}
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <a
@@ -548,8 +548,7 @@ export default function Contact() {
                         />
                         <span className="text-xs sm:text-sm text-[#cde0ff] leading-[1.65]">
                           I confirm I'm a qualified researcher or lab representative and that any
-                          materials supplied are for <strong className="text-amber-300">research use only</strong> —
-                          not for human consumption or any non-research application.
+                          materials supplied are for <strong className="text-amber-300">research use only</strong>.
                         </span>
                       </label>
 
