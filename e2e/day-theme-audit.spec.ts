@@ -491,7 +491,7 @@ test.describe("Day theme — unified audit", () => {
         // injected stylesheet so late renders never appear in screenshots.
         // Also strip the cookie dialog (WebKit flake).
         await page.addStyleTag({
-          content: "[data-advert-placement]{display:none!important}[data-advert-reserve]{display:none!important;min-height:0!important}",
+          content: "[data-advert-placement]{display:none!important}[data-advert-reserve]{display:none!important;min-height:0!important}[data-home-promo-banner]{display:none!important;min-height:0!important}",
         });
         await page.evaluate(() => {
           document

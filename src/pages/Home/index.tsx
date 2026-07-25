@@ -551,7 +551,7 @@ export default function HomePage() {
         const mobileMin = Math.round(baseH * 0.7);
         const responsiveHeight = `clamp(${mobileMin}px, 22vw, ${desktopCap}px)`;
         return (
-        <div className="relative w-full overflow-hidden" style={{ minHeight: responsiveHeight }}>
+        <div className="relative w-full overflow-hidden" style={{ minHeight: responsiveHeight }} data-home-promo-banner>
           {banner.overlayEnabled && (
             <div className="absolute inset-0 pointer-events-none z-[6]"
               style={{ backgroundColor: banner.overlayColor ?? '#000000', opacity: (banner.overlayOpacity ?? 30) / 100 }} />
@@ -641,7 +641,7 @@ export default function HomePage() {
         // the banner the reserve collapses once on resolve (one shift, bounded
         // by 280px), which is strictly better than an unbounded insert.
         !bannerResolved ? (
-          <div aria-hidden="true" style={{ minHeight: 'clamp(224px, 22vw, 280px)' }} />
+          <div aria-hidden="true" style={{ minHeight: 'clamp(224px, 22vw, 280px)' }} data-home-promo-banner />
         ) : null
       )}
 
