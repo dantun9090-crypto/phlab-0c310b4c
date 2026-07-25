@@ -51,12 +51,12 @@ function esc(s: unknown): string {
     .replace(/'/g, '&#39;');
 }
 
-function generateShippingLabelPDF(order: Order) {
+function generateShippingLabelPDF(order: Order): boolean {
   // Generate printable shipping label using browser print - no dependencies needed
   const printWindow = window.open('', '_blank');
   if (!printWindow) {
     alert('Please allow popups to print shipping labels');
-    return;
+    return false;
   }
 
   const rawName = `${(order as any).customer?.firstName || ''} ${(order as any).customer?.lastName || ''}`.trim();
