@@ -241,7 +241,7 @@ export default function HomePage() {
     const loadProducts = () => {
       loadFirebase().then(({ getAllProducts }) => getAllProducts()).then((prods: Product[]) => {
         if (cancelled) return;
-        setProducts(prods);
+        setProducts(filterProductsForHost(prods));
         // Wait for the first product tiles to render, then flip ready.
         flipPrerenderReadyWhenRendered('[data-product-card], [data-home-product]', Math.min(prods.length, 3));
       }).catch(() => {
