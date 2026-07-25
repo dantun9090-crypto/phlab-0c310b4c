@@ -131,37 +131,63 @@ export default {
       // write the tracking number back without creating a duplicate order.
       if (order && order.action === 'trackingStatus') {
         const identifier = String(order.royalMailOrderId || '').replace(/[^0-9A-Za-z-]/g, '').slice(0, 40);
-        if (!identifier) {
-          return jsonResponse(request, { error: 'Missing royalMailOrderId' }, 400);
+        const reference = String(order.orderReference || '').replace(/[^0-9A-Za-z_-]/g, '').slice(0, 40);
+        if (!identifier && !reference) {
+          return jsonResponse(request, { error: 'Missing royalMailOrderId or orderReference' }, 400);
         }
-        const lookup = await fetch(
-          `https://api.parcel.royalmail.com/api/v1/orders/${encodeURIComponent(identifier)}`,
-          {
-            method: 'GET',
-            headers: {
-              'Authorization': env.ROYAL_MAIL_API_KEY,
-              'Accept': 'application/json',
+
+        // Click & Drop accepts either an order identifier (numeric) or a
+        // channel reference wrapped in double quotes. Try the identifier
+        // first, then fall back to the quoted reference.
+        const candidates = [];
+        if (identifier) candidates.push(identifier);
+        if (reference) candidates.push(`"${reference}"`);
+
+        let found = null;
+        let lastDetails = null;
+        let lastStatus = 404;
+        for (const candidate of candidates) {
+          const lookup = await fetch(
+            `https://api.parcel.royalmail.com/api/v1/orders/${encodeURIComponent(candidate)}`,
+            {
+              method: 'GET',
+              headers: {
+                'Authorization': env.ROYAL_MAIL_API_KEY,
+                'Accept': 'application/json',
+              },
             },
-          },
-        );
-        const lookupText = await lookup.text();
-        let lookupData;
-        try {
-          lookupData = lookupText ? JSON.parse(lookupText) : {};
-        } catch {
-          lookupData = { message: lookupText || 'Royal Mail returned a non-JSON response' };
+          );
+          const lookupText = await lookup.text();
+          let lookupData;
+          try {
+            lookupData = lookupText ? JSON.parse(lookupText) : {};
+          } catch {
+            lookupData = { message: lookupText || 'Royal Mail returned a non-JSON response' };
+          }
+          if (!lookup.ok) {
+            lastStatus = lookup.status;
+            lastDetails = typeof lookupText === 'string' ? lookupText.slice(0, 500) : null;
+            continue;
+          }
+          const orders = Array.isArray(lookupData)
+            ? lookupData
+            : Array.isArray(lookupData?.orders)
+              ? lookupData.orders
+              : [lookupData];
+          if (orders.length && orders[0]) {
+            found = orders[0];
+            break;
+          }
         }
-        if (!lookup.ok) {
+
+        if (!found) {
           return jsonResponse(
             request,
-            {
-              error: lookupData?.message || 'Royal Mail lookup failed',
-              details: typeof lookupText === 'string' ? lookupText.slice(0, 500) : null,
-            },
-            lookup.status,
+            { error: 'Royal Mail lookup failed', details: lastDetails },
+            lastStatus,
           );
         }
-        const found = Array.isArray(lookupData) ? lookupData[0] || {} : lookupData || {};
+
         const tracking =
           found.trackingNumber ||
           found.packages?.[0]?.trackingNumber ||
@@ -169,9 +195,9 @@ export default {
           null;
         return jsonResponse(request, {
           success: true,
-          royalMailOrderId: identifier,
+          royalMailOrderId: String(found.orderIdentifier || found.accountOrderNumber || identifier || ''),
           trackingNumber: tracking,
-          orderReference: found.orderReference || null,
+          orderReference: found.orderReference || reference || null,
           status: found.orderStatus || found.status || null,
           labelGenerated: Boolean(found.labelGeneratedDate || tracking),
         });
