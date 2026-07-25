@@ -17,7 +17,21 @@ import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 // layer (src/server.ts). Running it again as a TanStack middleware caused a
 // double-fetch on the Worker's loop-guard fallback path.
 
-const errorMiddleware = createMiddleware().server(async ({ next }) => {
+/**
+ * Lovable email/webhook routes (`/lovable/*`) authenticate themselves via API
+ * key, signed webhook, or JWT. They must bypass every request middleware so
+ * rate limits and error rewrites can never block queue drains or previews.
+ */
+function isLovableRoute(request: Request): boolean {
+  try {
+    return new URL(request.url).pathname.startsWith("/lovable/");
+  } catch {
+    return false;
+  }
+}
+
+const errorMiddleware = createMiddleware().server(async ({ next, request }) => {
+  if (isLovableRoute(request)) return next();
   try {
     return await next();
   } catch (error) {
@@ -48,6 +62,7 @@ const PUBLIC_API_RATE_LIMIT_EXCLUDED = new Set<string>([
 ]);
 
 const publicApiRateLimitMiddleware = createMiddleware().server(async ({ next, request }) => {
+  if (isLovableRoute(request)) return next();
   try {
     const url = new URL(request.url);
     if (url.pathname.startsWith("/api/public/")) {
