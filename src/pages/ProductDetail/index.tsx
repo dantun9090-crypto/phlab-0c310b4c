@@ -462,6 +462,7 @@ export default function ProductDetail() {
             coaPdfName: toText(data.coaPdfName),
             coaBatch: toText(data.coaBatch),
             coaUploadedAt: toText(data.coaUploadedAt),
+            coaVisible: data.coaVisible !== false,
             specs: data.specs && typeof data.specs === 'object'
               ? {
                   casNumber: toText(data.specs.casNumber, 'N/A'),
