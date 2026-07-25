@@ -23,6 +23,8 @@ import { PRODUCT_SEO_OVERRIDES } from '@/lib/product-seo-overrides';
 import { getCategoryHub } from '@/lib/product-category-hubs';
 import { getDualEntryAliasInfo } from '@/lib/merchant-dual-entries';
 import { PRODUCT_ID_TO_SLUG } from '@/lib/product-id-slug-map';
+import { isFreeTokenShape, resolveFreeTokenToDocId } from '@/lib/merchant-free-tokens';
+import { merchantCodeToSlug } from '@/lib/merchant-code-aliases';
 
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
@@ -331,6 +333,39 @@ export default function ProductDetail() {
                 limit(1)
               ));
               if (!aliasSnap.empty) productDoc = aliasSnap.docs[0];
+            }
+          }
+        }
+
+        if (!productDoc && isFreeTokenShape(id)) {
+          // 1b. Free-Listings opaque token (x-xxxxxxxx) → reverse by hashing
+          //     candidate doc ids with the shared salt, then fetch the doc.
+          //     Free-feed links (/products/x-…) land here.
+          const tokenSnap = await getDocsFromServer(collection(db, 'product_stock'));
+          const tokenDocId = await resolveFreeTokenToDocId(id, tokenSnap.docs.map((d: any) => ({ id: d.id })));
+          if (tokenDocId) {
+            const tokenDoc = await getDocFromServer(doc(db, 'product_stock', tokenDocId));
+            if (tokenDoc.exists()) productDoc = tokenDoc;
+          }
+        }
+
+        if (!productDoc) {
+          // 1c. Masked Merchant codes (Reta-PHL, PHL-RP09, PHL-RP02, …) →
+          //     canonical product. Paid-feed links land here.
+          const merchantSlug = merchantCodeToSlug(id);
+          if (merchantSlug) {
+            const codeDocId = SLUG_TO_DOC_ID[merchantSlug] || knownDocIdForSlug(merchantSlug);
+            if (codeDocId) {
+              const codeDoc = await getDocFromServer(doc(db, 'product_stock', codeDocId));
+              if (codeDoc.exists()) productDoc = codeDoc;
+            }
+            if (!productDoc) {
+              const codeSnap = await getDocsFromServer(query(
+                collection(db, 'product_stock'),
+                where('slug', '==', merchantSlug),
+                limit(1)
+              ));
+              if (!codeSnap.empty) productDoc = codeSnap.docs[0];
             }
           }
         }
