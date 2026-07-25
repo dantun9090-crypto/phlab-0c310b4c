@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, Component, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { auth, db, doc, getDoc, onAuthStateChanged, logoutUser } from '@/lib/firebase';
+import { logoutUser } from '@/lib/firebase';
 import { useAdminGuard } from '@/hooks/useAdminGuard';
 
 import { checkAdminIpAllowed } from '@/lib/admin-ip-gate.functions';
