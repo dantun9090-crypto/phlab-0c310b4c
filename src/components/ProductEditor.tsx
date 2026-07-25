@@ -1124,6 +1124,12 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                       onMoveLeft={(idx) => handleMoveSlot(idx, 'left')}
                       onMoveRight={(idx) => handleMoveSlot(idx, 'right')}
                       onSetUrl={handleSetUrl}
+                      isDragging={dragIdx === i}
+                      isDropTarget={dragOverIdx === i && dragIdx !== null}
+                      onDragStartSlot={setDragIdx}
+                      onDragOverSlot={setDragOverIdx}
+                      onDropSlot={(to) => { if (dragIdx !== null) handleReorderSlots(dragIdx, to); setDragIdx(null); setDragOverIdx(null); }}
+                      onDragEndSlot={() => { setDragIdx(null); setDragOverIdx(null); }}
                     />
                   ))}
                 </div>
