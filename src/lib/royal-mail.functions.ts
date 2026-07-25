@@ -91,3 +91,68 @@ export const createRoyalMailOrder = createServerFn({ method: 'POST' })
       serviceCodeUsed: body?.serviceCodeUsed ? String(body.serviceCodeUsed) : null,
     };
   });
+
+/* -------------------------------------------------------------------------
+ * Tracking sync
+ * -----------------------------------------------------------------------*/
+
+const StatusInput = z.object({
+  idToken: z.string().min(10).max(4096),
+  royalMailOrderId: z.string().min(1).max(40),
+});
+
+export interface RoyalMailTrackingResult {
+  ok: boolean;
+  royalMailOrderId?: string;
+  trackingNumber?: string | null;
+  status?: string | null;
+  labelGenerated?: boolean;
+  error?: string;
+}
+
+/**
+ * Re-reads an EXISTING Click & Drop order and returns its tracking number.
+ *
+ * Click & Drop returns `trackingNumber: null` when an order is first created
+ * because postage has not been applied yet. Once the operator applies postage
+ * / prints the label, the tracking number appears on the order. This lets the
+ * admin panel pull it back WITHOUT creating a duplicate (chargeable) order.
+ */
+export const syncRoyalMailTracking = createServerFn({ method: 'POST' })
+  .validator((d) => StatusInput.parse(d))
+  .handler(async ({ data }): Promise<RoyalMailTrackingResult> => {
+    await requireFirebaseAdmin(data.idToken);
+
+    const token = process.env.ROYAL_MAIL_WORKER_TOKEN;
+    if (!token) return { ok: false, error: 'royal_mail_worker_token_missing' };
+
+    let res: Response;
+    try {
+      res = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-phlabs-auth': token },
+        body: JSON.stringify({
+          action: 'trackingStatus',
+          royalMailOrderId: data.royalMailOrderId,
+        }),
+      });
+    } catch (e) {
+      return { ok: false, error: `worker_unreachable: ${(e as Error).message}` };
+    }
+
+    const body = await res.json().catch(() => ({} as any));
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: typeof body?.error === 'string' ? body.error : `worker_status_${res.status}`,
+      };
+    }
+
+    return {
+      ok: true,
+      royalMailOrderId: String(body?.royalMailOrderId ?? data.royalMailOrderId),
+      trackingNumber: body?.trackingNumber ? String(body.trackingNumber) : null,
+      status: body?.status ? String(body.status) : null,
+      labelGenerated: Boolean(body?.labelGenerated),
+    };
+  });
