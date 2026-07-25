@@ -265,10 +265,6 @@ export default function AdminPage() {
 
   // (admin gating handled by useAdminGuard above)
 
-  useEffect(() => {
-    if (!authChecked && !firestoreError) return;
-    if (typeof window === 'undefined') return;
-  }, [authChecked, firestoreError]);
 
 
   // Listen for quick-action navigation events from DashboardTab
