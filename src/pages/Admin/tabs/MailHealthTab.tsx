@@ -113,7 +113,33 @@ export default function MailHealthTab() {
         </button>
       </div>
 
+      {/* Platform email infrastructure (queue-based sender, separate from the
+          cPanel SMTP path used by the Firebase Trigger Email extension). */}
+      <div className="bg-[#0b1a30]/60 border border-white/[0.07] rounded-xl p-4">
+        <h2 className="text-white text-sm font-semibold mb-2">Platform sender domain</h2>
+        <dl className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div>
+            <dt className="text-[#9cb8d9] uppercase tracking-wide text-[10px]">Sender domain</dt>
+            <dd className="text-white font-mono">admin.phlabs.co.uk</dd>
+          </div>
+          <div>
+            <dt className="text-[#9cb8d9] uppercase tracking-wide text-[10px]">Status</dt>
+            <dd className="text-amber-300">Verifying DNS (NS + TXT records live in Cloudflare)</dd>
+          </div>
+          <div>
+            <dt className="text-[#9cb8d9] uppercase tracking-wide text-[10px]">Delivery path</dt>
+            <dd className="text-white">Queued sender, drained every ~5s</dd>
+          </div>
+        </dl>
+        <p className="text-[#9cb8d9] text-[11px] mt-3">
+          Transactional and auth email for the storefront runs through this queued sender.
+          The cPanel SMTP path below stays in place for the Firebase Trigger Email extension —
+          the two are independent, so neither one can break the other.
+        </p>
+      </div>
+
       {err && (
+
         <div className="bg-red-500/10 border border-red-500/30 text-red-300 rounded-xl p-4 text-sm">
           {err}
         </div>
