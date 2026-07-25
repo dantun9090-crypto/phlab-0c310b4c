@@ -138,8 +138,18 @@ const SCANNER_PATH_PREFIXES = [
   "/wp-",          // /wp-admin, /wp-login.php, /wp-content, /wp-includes
   "/phpmyadmin",
   "/phpMyAdmin",
-  "/xmlrpc.php",
+  "/xmlrpc",       // /xmlrpc.php and variants
+  "/.svn",
+  "/.hg",
+  "/.DS_Store",
+  "/vendor/phpunit",
+  "/cgi-bin",
 ];
+
+// Scanner file extensions (.php, backups, archives, dumps). These never exist
+// on this site: 404 at the edge so they cost neither an origin hop nor a
+// Prerender.io render.
+const SCANNER_EXT_RX = /\.(php\d?|phtml|asp|aspx|jsp|cgi|pl|sql|bak|old|swp|ini|zip|tar|tgz|gz|rar|7z)$/i;
 
 function isMonitoringUA(ua) {
   return MONITORING_UA_RX.test(ua || "");
@@ -157,6 +167,9 @@ function isNonHtmlPath(path) {
 }
 
 function isScannerPath(path) {
+  // Legit asset/download namespaces are never scanner traffic.
+  const exempt = path.startsWith("/downloads/") || path.startsWith("/assets/") || path.startsWith("/_build/");
+  if (!exempt && SCANNER_EXT_RX.test(path)) return true;
   return SCANNER_PATH_PREFIXES.some((p) => path.startsWith(p));
 }
 

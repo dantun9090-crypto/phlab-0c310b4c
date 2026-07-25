@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, Component, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { auth, db, doc, getDoc, onAuthStateChanged, logoutUser } from '@/lib/firebase';
+import { logoutUser } from '@/lib/firebase';
+import { useAdminGuard } from '@/hooks/useAdminGuard';
+
 import { checkAdminIpAllowed } from '@/lib/admin-ip-gate.functions';
 import { logSecurityEvent } from '@/lib/security-events';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -181,9 +183,14 @@ class TabErrorBoundary extends Component<{ children: ReactNode; tabName?: string
 
 export default function AdminPage() {
   const navigate = useNavigate();
-  const [authChecked, setAuthChecked] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [firestoreError, setFirestoreError] = useState(false);
+  // Admin gating lives in one shared hook (customers/{uid}.isAdmin).
+  // redirectTo: null → keep the in-place "Access Denied" screen below.
+  const { isAdmin, loading: adminLoading, firestoreError } = useAdminGuard({
+    redirectTo: null,
+    onRedirect: (path) => navigate(path),
+  });
+  const authChecked = !adminLoading;
+
   const [ipChecked, setIpChecked] = useState(false);
   const [ipAllowed, setIpAllowed] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>(() => {
@@ -258,33 +265,9 @@ export default function AdminPage() {
     return () => document.getElementById('noindex-admin')?.remove();
   }, []);
 
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        navigate('/login');
-        return;
-      }
-      try {
-        // Check 'customers' collection using isAdmin: true flag
-        const customerDoc = await getDoc(doc(db, 'customers', user.uid));
-        if (customerDoc.exists() && customerDoc.data()?.isAdmin === true) {
-          setIsAdmin(true);
-        } else {
-          setIsAdmin(false);
-        }
-      } catch (err: any) {
-        // Firestore unreachable (permission-denied or network) — show error instead of silently denying
-        const code = err?.code || '';
-        if (code === 'permission-denied' || code === 'unavailable' || code.includes('network')) {
-          setFirestoreError(true);
-        } else {
-          setIsAdmin(false);
-        }
-      }
-      setAuthChecked(true);
-    });
-    return () => unsub();
-  }, [navigate]);
+  // (admin gating handled by useAdminGuard above)
+
+
 
   // Listen for quick-action navigation events from DashboardTab
   useEffect(() => {

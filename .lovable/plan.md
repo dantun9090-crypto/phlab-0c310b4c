@@ -1,39 +1,43 @@
-Before I start editing, I want to confirm scope — several items in this request either conflict with existing decisions in the codebase or need a clarification, and I don't want to break working flows in an emergency fix.
 
-## What I'll do (safe, confirmed)
+# Stage 1 — Foundation (Firebase, Admin Access, Prerender Cleanup)
 
-1. **Sticky banner vs menu z-index**
-   - Audit banner component (`src/config/banner.config.ts` + wherever it renders) and confirm the header/nav sit above it. Header is already `z-[10020]`, mobile drawer at max int. If the banner is stealing clicks, add `pointer-events-none` to its decorative wrapper and keep only the CTA interactive, and cap banner at `z-30`.
+Only Stage 1 is planned here; Stages 2-4 follow after this one is accepted.
 
-2. **Manual Bank Transfer "infinite scroll"**
-   - In `src/components/PaymentMethodOptions.tsx` remove any `scrollIntoView` / focus-scroll on selection. Render bank details inline in the accordion (already partially done in an earlier turn). Verify no `useEffect` re-scrolls when `selected` changes.
+## Important corrections found while inspecting the project
 
-3. **Wallid "Pay by Bank" button not firing**
-   - Add `[WALLID]` console logs at click / fetch / response.
-   - Verify the button isn't disabled by form validation when Wallid is selected.
-   - Confirm the `/api/payments/create` call path (which we hardened last turn) still returns 200 and redirects. If it fails, surface the server error to the toast instead of silently doing nothing.
-   - No Wallid client-side SDK is used here — it's a server-created redirect link, so "missing Wallid script / merchant ID" doesn't apply. I'll note this in the fix.
+Two parts of the brief would **break** the live admin panel if applied verbatim:
 
-4. **Typecheck + build verification** at the end.
+1. **Admin identity.** This project decides admin from Firestore `customers/{uid}.isAdmin === true` (see `src/pages/Admin/index.tsx` and the existing hardened `storage.rules`). There is **no** `users/{uid}` doc and **no** `request.auth.token.admin` custom claim. Deploying the proposed rules (`request.auth.token.admin == true`) would lock every admin out of Storage and cause exactly the "Permission Denied" the stage is meant to fix. Plan keeps the existing `customers/isAdmin` check.
+2. **Blanket Firestore rule.** `match /{document=**} { allow read, write: if ... }` placed in `firestore.rules` would sit alongside the hardened per-collection rules and cannot be reconciled with public product reads / anonymous order creation. It also removes the deliberate guard that blocks client-side `isAdmin`/`role`/`isVip` escalation. Not adding it; admin-wide access is already granted per collection via `isAdmin()`.
 
-## What I need to check with you before touching
+## 1A. Storage rules — fix "Permission Denied"
 
-5. **Admin gating by hard-coded email `dantun90@hotmail.com`**
-   - Project rules (workspace knowledge, memory, Firestore rules) are explicit: **never gate admin by client-side checks, never trust client `isAdmin`, always enforce server-side via `customers/{uid}.isAdmin === true` + `has_role`**. Hard-coding an email in the client bundle is exactly the anti-pattern those rules forbid, and it will also fail server-side (Firestore rules check `isAdmin`, not email).
-   - The correct fix is: ensure your `customers/{uid}` doc has `isAdmin: true` (it already does — you use it everywhere), and admin buttons render behind the existing `useIsAdmin()` / server `requireFirebaseAdmin` guard. If some admin button today renders for everyone, I'll wrap it in that existing guard.
-   - **Please confirm:** proceed with the existing `isAdmin` guard (recommended, matches project rules) rather than an email hard-code?
+- Keep the existing deny-by-default structure and `isAdmin()` (Firestore `customers` lookup).
+- Add the two missing paths from the brief:
+  - `/adverts/{allPaths=**}` — public read, admin-only image write (max 10 MB).
+  - `/coa/{allPaths=**}` — authenticated read, admin-only write.
+- Deploy with the existing `scripts/deploy-storage-rules.mjs` (uses `FIREBASE_SERVICE_ACCOUNT_JSON`, already wired for both buckets). No Firebase CLI needed.
+- Verify admin uploads currently in use (`src/components/admin/ImageUploader.tsx`, product editor) run under an authenticated Firebase session — report any that don't rather than silently changing upload logic.
 
-6. **`/basket` route + Safari basket bug**
-   - The site currently uses a slide-in cart drawer, not a dedicated page — that's an intentional UX choice, not a missing route. Adding a `/basket` page is a **new feature**, not a bug fix, and it touches routing, SEO (robots blocks `/cart`), and checkout flow. That's outside the "don't break working checkout" guardrail in your own prompt.
-   - The Safari "variant errors / stuck basket" is a separate bug I can investigate against the drawer — likely a `localStorage` access under ITP/private mode or a stale variant slug in the persisted cart.
-   - **Please pick one:**
-     - (a) I only fix the Safari drawer bug (recommended, minimal risk), or
-     - (b) I also add a new `/basket` route as an additional surface (bigger change, needs SEO + robots update).
+## 1B. Admin guard
 
-## Not doing
+- Add `src/hooks/useAdminGuard.ts` returning `{ isAdmin, loading }`:
+  - waits for `onAuthStateChanged`,
+  - reads `customers/{uid}` and accepts `isAdmin === true` **or** `role === 'admin'`,
+  - redirects to `/` when resolved and not admin.
+- Refactor `src/pages/Admin/index.tsx` to consume the hook instead of its inline copy of this logic (behaviour unchanged), and apply it to the standalone admin routes: `src/routes/admin.health.tsx`, `admin.newsletter.tsx`, `admin.purge.tsx`, `admin.audit-report.tsx`, `admin.publish-status.tsx`, `admin.merchant-feed-preview.tsx`.
+- Confirm the admin sidebar renders all tab entries for an admin user; fix any conditional hiding found. No visual/layout redesign.
 
-- No product data, price, or Firestore collection changes.
-- No redesign, no header/logo/nav reordering.
-- No changes to Wallid webhook / signature / server secrets.
+## 1C. Prerender + robots hygiene
 
-Reply with **"go, use isAdmin guard, Safari drawer only"** (default safe path) or tell me which of 5/6 you want done differently, and I'll ship 1–4 immediately plus your choice on 5–6.
+- `cloudflare/phlabs-prerender.mjs`: extend the existing non-HTML/bypass lists with junk-scanner patterns — `*.php`, `/wp-*`, `/xmlrpc*`, `/.env*`, `/.git*`, `*.sql`, `*.bak`, `*.zip`, plus `/admin*` and `/api/*` (already partly covered). These return origin passthrough and never consume a Prerender.io render.
+- `src/assets/robots.txt` (the real source; there is no `public/robots.txt`): add the `Disallow` lines for `/*.php$`, `/*.env$`, `/wp-`, `/xmlrpc`, `/.git` while preserving all existing blocks and AI-scraper rules.
+- Sitemap: `scripts/check-sitemap-routes.ts` already gates drift; run it to confirm no junk entries — no sitemap content changes expected.
+
+## Verification
+
+- `bunx tsc` typecheck + production build, both 0 errors.
+- Existing test gates: `e2e/prerender-quota-guards.spec.ts`, `scripts/check-decommissioned-routes.ts`, `tests/compound-robots-sitemap-hardened.test.ts`.
+- Admin panel sync: note the new Storage-rule paths in the relevant admin tab per project convention.
+
+Untouched: checkout, payments, CSP, worker cache/SWR logic, product data.

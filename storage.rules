@@ -42,6 +42,18 @@ service firebase.storage {
       allow write: if isAdmin() && isUnder10MB();
     }
 
+    // Certificates of Analysis — signed-in customers may view, admins upload
+    match /coa/{allPaths=**} {
+      allow read: if isAuthed();
+      allow write: if isAdmin() && isUnder10MB();
+    }
+
+    // Marketing advert creatives (popup module) — public read, admin write
+    match /adverts/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin() && isImage() && isUnder10MB();
+    }
+
     // Per-user private uploads (avatars / order docs). Only owner reads/writes.
     match /users/{userId}/{allPaths=**} {
       allow read, write: if isAuthed() && request.auth.uid == userId && isUnder10MB();
