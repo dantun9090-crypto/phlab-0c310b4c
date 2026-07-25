@@ -1170,6 +1170,11 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Approved customer reviews (Admin → Reviews). Renders nothing when empty. */}
+      <Testimonials />
+
+
+
       {/* ════════════════════════════════
           PROTOCOL LIBRARY CTA
       ════════════════════════════════ */}
