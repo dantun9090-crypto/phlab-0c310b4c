@@ -244,6 +244,13 @@ export default function AdvertsTab() {
                   <LinkIcon className="w-3 h-3" /> {advert.ctaText}
                 </span>
               ) : null}
+              {(toMillis(advert.startDate) != null || toMillis(advert.endDate) != null) ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/25 text-[10px]">
+                  {toMillis(advert.startDate) != null ? new Date(toMillis(advert.startDate)!).toLocaleDateString('en-GB') : '—'}
+                  {' → '}
+                  {toMillis(advert.endDate) != null ? new Date(toMillis(advert.endDate)!).toLocaleDateString('en-GB') : '—'}
+                </span>
+              ) : null}
             </div>
           </div>
 
