@@ -17,7 +17,7 @@ test.describe('advert pop-up', () => {
     const confirm = page.getByRole('button', { name: /I Confirm/i });
     if (await confirm.count()) await confirm.first().click();
 
-    const dialog = page.getByRole('dialog', { name: /special offer|advert/i });
+    const dialog = page.locator('[role="dialog"][aria-modal="true"]');
     // Give the client-only pop-up its post-hydration delay.
     await page.waitForTimeout(3000);
 
@@ -43,6 +43,6 @@ test.describe('advert pop-up', () => {
     // Does not return on the next visit.
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(3000);
-    await expect(page.getByRole('dialog', { name: /special offer|advert/i })).toHaveCount(0);
+    await expect(page.locator('[role="dialog"][aria-modal="true"]')).toHaveCount(0);
   });
 });
