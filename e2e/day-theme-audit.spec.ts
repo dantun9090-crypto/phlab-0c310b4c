@@ -474,6 +474,18 @@ test.describe("Day theme — unified audit", () => {
         await waitForTheme(page, "light");
         await stabilise(page);
 
+        // Catalogue tiles are Firestore-driven — on slow WebKit runs the
+        // capture races the fetch and screenshots the "Loading is taking
+        // longer than usual…" state (observed as a 15% pixel diff on
+        // tablet light @ /products). Wait for real card markup.
+        if (path === "/products") {
+          await page
+            .locator("[data-product-card]")
+            .first()
+            .waitFor({ state: "visible", timeout: 45_000 })
+            .catch(() => {});
+        }
+
         // Toggle visibility check — must be reachable on every viewport.
         const btn = page
           .getByRole("button", { name: /switch to night mode/i })
