@@ -224,6 +224,27 @@ export default function OrdersTab() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selected, setSelected] = useState<Order | null>(null);
+  // "Create Label" UX — brief button lock + success/error toast.
+  const [labelBusy, setLabelBusy] = useState(false);
+  const [labelToast, setLabelToast] = useState<{ msg: string; ok: boolean } | null>(null);
+
+  const handleCreateLabel = (order: Order) => {
+    if (labelBusy) return;
+    setLabelBusy(true);
+    let ok = false;
+    try {
+      ok = generateShippingLabelPDF(order);
+    } catch {
+      ok = false;
+    }
+    setLabelToast(
+      ok
+        ? { msg: 'Label created successfully', ok: true }
+        : { msg: 'Failed to create label. Please try again.', ok: false },
+    );
+    window.setTimeout(() => setLabelToast(null), 3000);
+    window.setTimeout(() => setLabelBusy(false), 2000);
+  };
   const [updating, setUpdating] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
 
