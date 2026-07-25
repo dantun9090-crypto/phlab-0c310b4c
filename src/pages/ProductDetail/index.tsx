@@ -1315,6 +1315,11 @@ export default function ProductDetail() {
                     </span>
                   </a>
 
+                  {/* Customer review submission — moderated before publishing */}
+                  <ReviewForm productId={product.id} productName={product.name} />
+
+
+
                 </>
               );
             })()}
