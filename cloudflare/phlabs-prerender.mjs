@@ -167,7 +167,9 @@ function isNonHtmlPath(path) {
 }
 
 function isScannerPath(path) {
-  if (SCANNER_EXT_RX.test(path)) return true;
+  // Legit asset/download namespaces are never scanner traffic.
+  const exempt = path.startsWith("/downloads/") || path.startsWith("/assets/") || path.startsWith("/_build/");
+  if (!exempt && SCANNER_EXT_RX.test(path)) return true;
   return SCANNER_PATH_PREFIXES.some((p) => path.startsWith(p));
 }
 
