@@ -7,6 +7,8 @@ import {
   type Campaign,
 } from '@/lib/google-ads-campaign';
 import { pushCampaignToGoogleAds } from '@/lib/google-ads-push.functions';
+import { auth } from '@/lib/firebase';
+
 
 function download(filename: string, content: string, mime = 'text/csv') {
   const blob = new Blob([content], { type: `${mime};charset=utf-8` });
