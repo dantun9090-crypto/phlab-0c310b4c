@@ -480,6 +480,18 @@ export default function ProductDetail() {
           } as any;
           setProduct(loadedProduct);
 
+          // Preselect the variant named in ?variant= (feed variant links carry
+          // e.g. ?variant=20mg — keeps the visible price equal to the feed price
+          // for GMC's landing-page price check).
+          try {
+            const vp = new URLSearchParams(window.location.search).get('variant');
+            if (vp) {
+              const norm = (s: string) => s.replace(/\s+/g, '').toLowerCase();
+              const vIdx = variants.findIndex((vv: any) => norm(vv.name) === norm(vp));
+              if (vIdx >= 0) setSelectedVariantIdx(vIdx);
+            }
+          } catch { /* ignore */ }
+
           // Track this product as recently viewed
           const slug = data.slug || nameToSlug(data.name || '');
           addRecentlyViewed({
