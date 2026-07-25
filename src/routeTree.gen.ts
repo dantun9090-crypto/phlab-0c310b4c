@@ -81,8 +81,6 @@ import { Route as MarketingCompoundRouteImport } from './routes/_marketing.compo
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as ProductsCategorySlugRouteImport } from './routes/products.category.$slug'
-import { Route as ApiAdminWeeklyBriefingRouteImport } from './routes/api/admin/weekly-briefing'
-import { Route as ApiAdminOrderRemindersRouteImport } from './routes/api/admin/order-reminders'
 import { Route as ApiWebhooksWallidRouteImport } from './routes/api/webhooks/wallid'
 import { Route as ApiPublicWebVitalsRouteImport } from './routes/api/public/web-vitals'
 import { Route as ApiPublicStaleAssetReportRouteImport } from './routes/api/public/stale-asset-report'
@@ -113,6 +111,8 @@ import { Route as ApiPaymentsCreateRouteImport } from './routes/api/payments/cre
 import { Route as ApiPaymentsCancelRouteImport } from './routes/api/payments/cancel'
 import { Route as ApiDsrProcessRouteImport } from './routes/api/dsr/process'
 import { Route as ApiConfigPaymentsRouteImport } from './routes/api/config/payments'
+import { Route as ApiAdminWeeklyBriefingRouteImport } from './routes/api/admin/weekly-briefing'
+import { Route as ApiAdminOrderRemindersRouteImport } from './routes/api/admin/order-reminders'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicHooksWatchdogRouteImport } from './routes/api/public/hooks/watchdog'
@@ -514,18 +514,6 @@ const ApiWebhooksWallidRoute = ApiWebhooksWallidRouteImport.update({
   path: '/api/webhooks/wallid',
   getParentRoute: () => rootRouteImport,
 } as any)
-
-const ApiAdminWeeklyBriefingRoute = ApiAdminWeeklyBriefingRouteImport.update({
-  id: '/api/admin/weekly-briefing',
-  path: '/api/admin/weekly-briefing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-
-const ApiAdminOrderRemindersRoute = ApiAdminOrderRemindersRouteImport.update({
-  id: '/api/admin/order-reminders',
-  path: '/api/admin/order-reminders',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicWebVitalsRoute = ApiPublicWebVitalsRouteImport.update({
   id: '/api/public/web-vitals',
   path: '/api/public/web-vitals',
@@ -674,6 +662,16 @@ const ApiDsrProcessRoute = ApiDsrProcessRouteImport.update({
 const ApiConfigPaymentsRoute = ApiConfigPaymentsRouteImport.update({
   id: '/api/config/payments',
   path: '/api/config/payments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminWeeklyBriefingRoute = ApiAdminWeeklyBriefingRouteImport.update({
+  id: '/api/admin/weekly-briefing',
+  path: '/api/admin/weekly-briefing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminOrderRemindersRoute = ApiAdminOrderRemindersRouteImport.update({
+  id: '/api/admin/order-reminders',
+  path: '/api/admin/order-reminders',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
@@ -892,6 +890,8 @@ export interface FileRoutesByFullPath {
   '/research/': typeof ResearchIndexRoute
   '/resources/': typeof ResourcesIndexRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute
+  '/api/admin/weekly-briefing': typeof ApiAdminWeeklyBriefingRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
@@ -921,8 +921,6 @@ export interface FileRoutesByFullPath {
   '/api/public/stale-asset-log': typeof ApiPublicStaleAssetLogRoute
   '/api/public/stale-asset-report': typeof ApiPublicStaleAssetReportRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
-  '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute,
-  '/api/admin/weekly-briefing': typeof ApiAdminWeeklyBriefingRoute,
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/products/category/$slug': typeof ProductsCategorySlugRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
@@ -1021,6 +1019,8 @@ export interface FileRoutesByTo {
   '/research': typeof ResearchIndexRoute
   '/resources': typeof ResourcesIndexRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute
+  '/api/admin/weekly-briefing': typeof ApiAdminWeeklyBriefingRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
@@ -1050,8 +1050,6 @@ export interface FileRoutesByTo {
   '/api/public/stale-asset-log': typeof ApiPublicStaleAssetLogRoute
   '/api/public/stale-asset-report': typeof ApiPublicStaleAssetReportRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
-  '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute,
-  '/api/admin/weekly-briefing': typeof ApiAdminWeeklyBriefingRoute,
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/products/category/$slug': typeof ProductsCategorySlugRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
@@ -1153,6 +1151,8 @@ export interface FileRoutesById {
   '/research/': typeof ResearchIndexRoute
   '/resources/': typeof ResourcesIndexRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute
+  '/api/admin/weekly-briefing': typeof ApiAdminWeeklyBriefingRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
@@ -1182,8 +1182,6 @@ export interface FileRoutesById {
   '/api/public/stale-asset-log': typeof ApiPublicStaleAssetLogRoute
   '/api/public/stale-asset-report': typeof ApiPublicStaleAssetReportRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
-  '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute,
-  '/api/admin/weekly-briefing': typeof ApiAdminWeeklyBriefingRoute,
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/products/category/$slug': typeof ProductsCategorySlugRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
@@ -1285,6 +1283,8 @@ export interface FileRouteTypes {
     | '/research/'
     | '/resources/'
     | '/.mcp/invoke-tool/$tool'
+    | '/api/admin/order-reminders'
+    | '/api/admin/weekly-briefing'
     | '/api/config/payments'
     | '/api/dsr/process'
     | '/api/payments/cancel'
@@ -1310,8 +1310,6 @@ export interface FileRouteTypes {
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
-    | '/api/admin/order-reminders'
-    | '/api/admin/weekly-briefing'
     | '/api/public/send-marketing'
     | '/api/public/stale-asset-log'
     | '/api/public/stale-asset-report'
@@ -1414,6 +1412,8 @@ export interface FileRouteTypes {
     | '/research'
     | '/resources'
     | '/.mcp/invoke-tool/$tool'
+    | '/api/admin/order-reminders'
+    | '/api/admin/weekly-briefing'
     | '/api/config/payments'
     | '/api/dsr/process'
     | '/api/payments/cancel'
@@ -1439,8 +1439,6 @@ export interface FileRouteTypes {
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
-    | '/api/admin/order-reminders'
-    | '/api/admin/weekly-briefing'
     | '/api/public/send-marketing'
     | '/api/public/stale-asset-log'
     | '/api/public/stale-asset-report'
@@ -1545,6 +1543,8 @@ export interface FileRouteTypes {
     | '/research/'
     | '/resources/'
     | '/.mcp/invoke-tool/$tool'
+    | '/api/admin/order-reminders'
+    | '/api/admin/weekly-briefing'
     | '/api/config/payments'
     | '/api/dsr/process'
     | '/api/payments/cancel'
@@ -1570,8 +1570,6 @@ export interface FileRouteTypes {
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
-    | '/api/admin/order-reminders'
-    | '/api/admin/weekly-briefing'
     | '/api/public/send-marketing'
     | '/api/public/stale-asset-log'
     | '/api/public/stale-asset-report'
@@ -1660,6 +1658,8 @@ export interface RootRouteChildren {
   DownloadsIndexRoute: typeof DownloadsIndexRoute
   ResourcesIndexRoute: typeof ResourcesIndexRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
+  ApiAdminOrderRemindersRoute: typeof ApiAdminOrderRemindersRoute
+  ApiAdminWeeklyBriefingRoute: typeof ApiAdminWeeklyBriefingRoute
   ApiConfigPaymentsRoute: typeof ApiConfigPaymentsRoute
   ApiDsrProcessRoute: typeof ApiDsrProcessRoute
   ApiPaymentsCancelRoute: typeof ApiPaymentsCancelRoute
@@ -1689,8 +1689,6 @@ export interface RootRouteChildren {
   ApiPublicStaleAssetLogRoute: typeof ApiPublicStaleAssetLogRoute
   ApiPublicStaleAssetReportRoute: typeof ApiPublicStaleAssetReportRoute
   ApiPublicWebVitalsRoute: typeof ApiPublicWebVitalsRoute
-  ApiAdminOrderRemindersRoute: typeof ApiAdminOrderRemindersRoute,
-  ApiAdminWeeklyBriefingRoute: typeof ApiAdminWeeklyBriefingRoute,
   ApiWebhooksWallidRoute: typeof ApiWebhooksWallidRoute
   ApiPublicDiagBuildStateRoute: typeof ApiPublicDiagBuildStateRoute
   ApiPublicDiagCacheHeadersRoute: typeof ApiPublicDiagCacheHeadersRoute
@@ -2251,20 +2249,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicStaleAssetLogRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/order-reminders': {
-      id: '/api/admin/order-reminders'
-      path: '/api/admin/order-reminders'
-      fullPath: '/api/admin/order-reminders'
-      preLoaderRoute: typeof ApiAdminOrderRemindersRouteImport
-      parentRoute: typeof rootRouteImport
-    },
-    '/api/admin/weekly-briefing': {
-      id: '/api/admin/weekly-briefing'
-      path: '/api/admin/weekly-briefing'
-      fullPath: '/api/admin/weekly-briefing'
-      preLoaderRoute: typeof ApiAdminWeeklyBriefingRouteImport
-      parentRoute: typeof rootRouteImport
-    },
     '/api/public/send-marketing': {
       id: '/api/public/send-marketing'
       path: '/api/public/send-marketing'
@@ -2445,6 +2429,20 @@ declare module '@tanstack/react-router' {
       path: '/api/config/payments'
       fullPath: '/api/config/payments'
       preLoaderRoute: typeof ApiConfigPaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/weekly-briefing': {
+      id: '/api/admin/weekly-briefing'
+      path: '/api/admin/weekly-briefing'
+      fullPath: '/api/admin/weekly-briefing'
+      preLoaderRoute: typeof ApiAdminWeeklyBriefingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/order-reminders': {
+      id: '/api/admin/order-reminders'
+      path: '/api/admin/order-reminders'
+      fullPath: '/api/admin/order-reminders'
+      preLoaderRoute: typeof ApiAdminOrderRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.mcp/invoke-tool/$tool': {
@@ -2770,6 +2768,8 @@ const rootRouteChildren: RootRouteChildren = {
   DownloadsIndexRoute: DownloadsIndexRoute,
   ResourcesIndexRoute: ResourcesIndexRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
+  ApiAdminOrderRemindersRoute: ApiAdminOrderRemindersRoute,
+  ApiAdminWeeklyBriefingRoute: ApiAdminWeeklyBriefingRoute,
   ApiConfigPaymentsRoute: ApiConfigPaymentsRoute,
   ApiDsrProcessRoute: ApiDsrProcessRoute,
   ApiPaymentsCancelRoute: ApiPaymentsCancelRoute,
@@ -2795,8 +2795,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicPublishHoldRoute: ApiPublicPublishHoldRoute,
   ApiPublicPublishStatusRoute: ApiPublicPublishStatusRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
-  ApiAdminOrderRemindersRoute: ApiAdminOrderRemindersRoute,
-  ApiAdminWeeklyBriefingRoute: ApiAdminWeeklyBriefingRoute,
   ApiPublicSendMarketingRoute: ApiPublicSendMarketingRoute,
   ApiPublicStaleAssetLogRoute: ApiPublicStaleAssetLogRoute,
   ApiPublicStaleAssetReportRoute: ApiPublicStaleAssetReportRoute,
