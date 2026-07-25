@@ -123,9 +123,61 @@ export default {
     try {
       const order = await request.json();
 
+      // ---- Action: tracking status lookup -------------------------------
+      // Click & Drop returns `trackingNumber: null` at creation time because
+      // postage hasn't been applied yet. Once the operator applies postage /
+      // generates the label in Click & Drop, the tracking number appears on
+      // the order. This action re-reads an existing order so the app can
+      // write the tracking number back without creating a duplicate order.
+      if (order && order.action === 'trackingStatus') {
+        const identifier = String(order.royalMailOrderId || '').replace(/[^0-9A-Za-z-]/g, '').slice(0, 40);
+        if (!identifier) {
+          return jsonResponse(request, { error: 'Missing royalMailOrderId' }, 400);
+        }
+        const lookup = await fetch(
+          `https://api.parcel.royalmail.com/api/v1/orders/${encodeURIComponent(identifier)}`,
+          {
+            method: 'GET',
+            headers: {
+              'Authorization': env.ROYAL_MAIL_API_KEY,
+              'Accept': 'application/json',
+            },
+          },
+        );
+        const lookupText = await lookup.text();
+        let lookupData;
+        try {
+          lookupData = lookupText ? JSON.parse(lookupText) : {};
+        } catch {
+          lookupData = { message: lookupText || 'Royal Mail returned a non-JSON response' };
+        }
+        if (!lookup.ok) {
+          return jsonResponse(
+            request,
+            { error: lookupData?.message || 'Royal Mail lookup failed' },
+            lookup.status,
+          );
+        }
+        const found = Array.isArray(lookupData) ? lookupData[0] || {} : lookupData || {};
+        const tracking =
+          found.trackingNumber ||
+          found.packages?.[0]?.trackingNumber ||
+          found.postageDetails?.trackingNumber ||
+          null;
+        return jsonResponse(request, {
+          success: true,
+          royalMailOrderId: identifier,
+          trackingNumber: tracking,
+          orderReference: found.orderReference || null,
+          status: found.orderStatus || found.status || null,
+          labelGenerated: Boolean(found.labelGeneratedDate || tracking),
+        });
+      }
+
       if (!order.postcode || !order.addressLine1 || !order.orderId) {
         return jsonResponse(request, { error: 'Missing required fields' }, 400);
       }
+
 
       const nowIso = new Date().toISOString();
       const clean = (value, maxLength) => {
