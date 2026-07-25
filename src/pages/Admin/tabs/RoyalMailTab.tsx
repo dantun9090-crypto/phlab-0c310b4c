@@ -67,6 +67,12 @@ export default function RoyalMailTab() {
   const [error, setError] = useState<string>('');
   const [result, setResult] = useState<{ orderId: string; trackingNumber: string | null } | null>(null);
   const [copied, setCopied] = useState<string>('');
+  // Transient toast for the Create Label action (success green / error red).
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  const showToast = (msg: string, ok: boolean) => {
+    setToast({ msg, ok });
+    window.setTimeout(() => setToast(null), 3000);
+  };
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => {
     setForm((f) => ({ ...f, [k]: v }));
