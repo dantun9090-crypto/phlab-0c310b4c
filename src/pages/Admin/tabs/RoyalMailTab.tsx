@@ -133,6 +133,7 @@ export default function RoyalMailTab() {
       if (!orderId) throw new Error('Worker did not return an orderId');
 
       setResult({ orderId, trackingNumber: tracking });
+      showToast('Label created successfully', true);
 
       logAdminAction({
         action: 'royal_mail.manual_label_create',
