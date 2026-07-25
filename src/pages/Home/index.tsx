@@ -893,6 +893,13 @@ export default function HomePage() {
 
 
 
+      {/* Advert pop-up — never rendered during prerender (client-only pick). */}
+      {advertsResolved && adverts.length > 0 && (
+        <Suspense fallback={null}>
+          <AdvertPopup adverts={adverts} />
+        </Suspense>
+      )}
+
       {/* Mid advert slot — reserves card banner height (h-64 + py-6) to prevent CLS. */}
       <div
         className="container mx-auto px-6 py-6"
