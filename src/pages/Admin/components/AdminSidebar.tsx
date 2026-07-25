@@ -68,6 +68,7 @@ const navGroups = [
       { id: 'landing', label: 'Landing Pages', icon: Rocket },
       { id: 'adsdomains', label: 'Ads & Domains', icon: Megaphone },
       { id: 'policies', label: 'Policies', icon: Scale },
+      { id: 'reviews', label: 'Reviews', icon: Star },
     ],
   },
   {
