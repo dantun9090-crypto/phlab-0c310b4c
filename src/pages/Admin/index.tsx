@@ -527,6 +527,7 @@ export default function AdminPage() {
         case 'qc': return <QCDashboardTab />;
         case 'promocodes': return <PromoCodesTab />;
         case 'freegift': return <FreeGiftTab />;
+        case 'reviews': return <ReviewsTab />;
         case 'diagnostics': return <DiagnosticsTab />;
         case 'prerenderstatus': return <PrerenderStatusTab />;
         case 'cacherecache': return <CacheRecacheTab />;
