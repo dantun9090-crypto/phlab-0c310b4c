@@ -154,7 +154,7 @@ function HydrationRecoveryScreen() {
           </button>
           <a
             href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            className="w-full py-2.5 bg-[#0f2640] hover:bg-[#1a3a5c] text-white rounded-xl text-sm font-medium transition-colors"
           >
             Go home
           </a>
@@ -1449,7 +1449,7 @@ function RootComponent() {
     if ((window as unknown as { __phlGaBootstrapped?: boolean }).__phlGaBootstrapped) return;
     const inline = document.createElement('script');
     inline.text =
-      "(function(){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;var c={a:false,m:false};try{var r=localStorage.getItem('php_cookie_consent');if(r){var p=JSON.parse(r);c.a=!!p.analytics;c.m=!!p.marketing;}}catch(e){}gtag('consent','default',{ad_storage:c.m?'granted':'denied',ad_user_data:c.m?'granted':'denied',ad_personalization:c.m?'granted':'denied',analytics_storage:c.a?'granted':'denied',functionality_storage:'granted',security_storage:'granted',wait_for_update:500});gtag('js',new Date());gtag('config','G-5HM4YT7HDW',{cookie_domain:'auto',cookie_flags:'SameSite=None;Secure',cookie_expires:63072000,cookie_update:true,send_page_view:true,anonymize_ip:true,allow_google_signals:c.m,allow_ad_personalization_signals:c.m});gtag('config','GT-P3HVF8R5',{send_page_view:false,cookie_domain:'auto'});gtag('config','GT-WRHD4Q69',{send_page_view:false,cookie_domain:'auto'});gtag('config','MC-KJMB7MKB29',{send_page_view:false,cookie_domain:'auto'});window.__phlGaBootstrapped=true;})();";
+      "(function(){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;var c={a:false,m:false};try{var r=localStorage.getItem('php_cookie_consent');if(r){var p=JSON.parse(r);c.a=!!p.analytics;c.m=!!p.marketing;}}catch(e){}gtag('consent','default',{ad_storage:c.m?'granted':'denied',ad_user_data:c.m?'granted':'denied',ad_personalization:c.m?'granted':'denied',analytics_storage:c.a?'granted':'denied',functionality_storage:'granted',security_storage:'granted',wait_for_update:500});gtag('js',new Date());gtag('set',{'transport_url':'https://phlabs.co.uk/metrics'});gtag('config','G-5HM4YT7HDW',{cookie_domain:'auto',cookie_flags:'SameSite=None;Secure',cookie_expires:63072000,cookie_update:true,send_page_view:true,anonymize_ip:true,allow_google_signals:c.m,allow_ad_personalization_signals:c.m});gtag('config','GT-P3HVF8R5',{send_page_view:false,cookie_domain:'auto'});gtag('config','GT-WRHD4Q69',{send_page_view:false,cookie_domain:'auto'});gtag('config','MC-KJMB7MKB29',{send_page_view:false,cookie_domain:'auto'});window.__phlGaBootstrapped=true;})();";
     document.body.appendChild(inline);
     let loaded = false;
     const loadExt = () => {
@@ -1457,7 +1457,7 @@ function RootComponent() {
       loaded = true;
       const ext = document.createElement('script');
       ext.async = true;
-      ext.src = 'https://www.googletagmanager.com/gtag/js?id=G-5HM4YT7HDW';
+      ext.src = '/metrics/gtag/js?id=G-5HM4YT7HDW';
       document.body.appendChild(ext);
     };
     // Interaction (excluding scroll — fires from restoration on Firefox/iOS
