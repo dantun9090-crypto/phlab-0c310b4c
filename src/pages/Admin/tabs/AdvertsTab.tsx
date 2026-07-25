@@ -7,6 +7,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { db, storage, collection, getDocs, addDoc, doc, updateDoc, deleteDoc, Timestamp, orderBy, query, storageRef, uploadBytesResumable, getDownloadURL, triggerContentCdnInvalidation, bumpMarketingVersion } from '@/lib/firebase';
+import { toMillis } from '@/lib/advert-popup';
 
 const PLACEMENT_ICONS: Record<string, typeof Home> = {
   homepage_hero: Home,
