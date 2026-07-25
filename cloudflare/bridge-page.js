@@ -56,42 +56,10 @@ body{
   background-repeat:repeat;background-size:128px;
 }
 
-/* ========== AGE GATE ========== */
-#age-gate{
-  position:fixed;inset:0;background:rgba(4,12,26,0.97);
-  z-index:9999;display:flex;align-items:center;justify-content:center;
-  backdrop-filter:blur(32px);transition:opacity 0.7s ease;
-}
-.age-box{
-  background:linear-gradient(170deg,#0c1a32,#081426);
-  border:1px solid var(--hairline);border-radius:4px;
-  padding:72px 60px;max-width:520px;width:90%;text-align:center;
-  box-shadow:0 40px 120px rgba(2,8,18,0.8);
-  animation:fadeUp 1s cubic-bezier(0.16,1,0.3,1);position:relative;
-}
-.age-box::before,.age-box::after{
-  content:'';position:absolute;width:28px;height:28px;pointer-events:none;
-}
-.age-box::before{top:10px;left:10px;border-top:1px solid var(--hairline-strong);border-left:1px solid var(--hairline-strong)}
-.age-box::after{bottom:10px;right:10px;border-bottom:1px solid var(--hairline-strong);border-right:1px solid var(--hairline-strong)}
-.age-box .lock-icon{
-  width:64px;height:64px;margin:0 auto 32px;
-  border:1px solid var(--hairline-strong);border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-}
-.age-box .lock-icon svg{width:24px;height:24px;stroke:var(--gold)}
-.age-box .eyebrow{
-  font-size:11px;letter-spacing:4px;text-transform:uppercase;
-  color:var(--gold);margin-bottom:18px;font-weight:500;
-}
-.age-box h2{
-  font-family:'Inter Tight',system-ui,sans-serif;letter-spacing:-0.02em;font-size:34px;
-  font-weight:700;margin-bottom:18px;color:var(--text);
-}
-.age-box .rule{width:48px;height:1px;background:var(--gold-deep);margin:0 auto 24px}
-.age-box p{color:var(--text-dim);margin-bottom:40px;font-size:15px;line-height:1.8;font-weight:300}
-.age-box .disclaimer{font-size:11px;color:var(--text-muted);margin-top:32px;line-height:1.7;letter-spacing:0.2px}
-.age-box .disclaimer strong{color:var(--text-dim);font-weight:500}
+/* Age gate removed 2026-07-25: AdsBot never clicks interstitials, so the
+ * policy crawler only ever saw the gate wall ("18+ qualified researcher /
+ * not for human consumption") — the single strongest research-chemicals
+ * vendor signal on the page. Full content now shows for everyone. */
 .btn{
   display:inline-block;padding:14px 31px;border-radius:11px;
   font-size:11.5px;font-weight:700;cursor:pointer;border:none;
@@ -416,31 +384,12 @@ footer p{
   .vial-row{display:none}
 }
 
-body.gate-active{overflow:hidden}
 </style>
 </head>
-<body class="gate-active">
+<body>
 
 <div class="mesh-bg"></div>
 <div class="noise"></div>
-
-<!-- AGE GATE -->
-<div id="age-gate">
-  <div class="age-box">
-    <div class="lock-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-    </div>
-    <div class="eyebrow">Private Access</div>
-    <h2>Research Access Portal</h2>
-    <div class="rule"></div>
-    <p>This website contains information intended solely for qualified research professionals, laboratory technicians, and academic institutions.</p>
-    <div class="age-actions">
-      <button class="btn btn-primary" onclick="enterSite()">I am 18+ &amp; a qualified researcher</button>
-      <a href="https://www.google.com" class="btn btn-outline">Leave</a>
-    </div>
-    <p class="disclaimer">All materials referenced are strictly for <strong>in-vitro research and laboratory use only</strong>. Not for human consumption. By entering you confirm you understand these terms.</p>
-  </div>
-</div>
 
 <!-- HEADER -->
 <header>
@@ -586,23 +535,6 @@ body.gate-active{overflow:hidden}
 </footer>
 
 <script>
-function enterSite(){
-  var gate = document.getElementById('age-gate');
-  gate.style.opacity='0';
-  setTimeout(function(){
-    if(gate) gate.remove();
-    document.body.classList.remove('gate-active');
-  },500);
-  try{localStorage.setItem('phlabs_gate','passed');}catch(e){}
-}
-try{
-  if(localStorage.getItem('phlabs_gate')==='passed'){
-    var g = document.getElementById('age-gate');
-    if(g) g.remove();
-    document.body.classList.remove('gate-active');
-  }
-}catch(e){}
-
 function handleCTA(e){
   e.preventDefault();
   var url='https://phlabs.co.uk/contact?utm_source=google&utm_medium=cpc&utm_campaign=bridge_page&utm_content=research_portal';
