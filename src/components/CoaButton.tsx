@@ -4,7 +4,7 @@ import { CoaModal } from './CoaModal';
 import type { Product } from '@/lib/firebase';
 
 interface CoaButtonProps {
-  product: Pick<Product, 'name' | 'coaPdfUrl' | 'coaPdfName' | 'coaBatch' | 'coaUploadedAt'>;
+  product: Pick<Product, 'name' | 'coaPdfUrl' | 'coaPdfName' | 'coaBatch' | 'coaUploadedAt' | 'coaVisible'>;
   className?: string;
 }
 
@@ -15,7 +15,8 @@ interface CoaButtonProps {
  */
 export function CoaButton({ product, className = '' }: CoaButtonProps) {
   const [open, setOpen] = useState(false);
-  const hasCertificate = !!product.coaPdfUrl;
+  // Admins can hide the certificate per product (coaVisible === false) without deleting the PDF.
+  const hasCertificate = !!product.coaPdfUrl && product.coaVisible !== false;
 
   return (
     <>

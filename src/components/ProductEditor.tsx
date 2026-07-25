@@ -82,15 +82,21 @@ interface ImageSlotProps {
   uploadError: string;
   canMoveLeft: boolean;
   canMoveRight: boolean;
+  isDragging: boolean;
+  isDropTarget: boolean;
   onUpload: (file: File, index: number) => void;
   onRemove: (index: number) => void;
   onSetPrimary: (index: number) => void;
   onMoveLeft: (index: number) => void;
   onMoveRight: (index: number) => void;
   onSetUrl: (url: string, index: number) => void;
+  onDragStartSlot: (index: number) => void;
+  onDragOverSlot: (index: number) => void;
+  onDropSlot: (index: number) => void;
+  onDragEndSlot: () => void;
 }
 
-function ImageSlot({ url, index, isPrimary, uploading, uploadProgress, uploadError, canMoveLeft, canMoveRight, onUpload, onRemove, onSetPrimary, onMoveLeft, onMoveRight, onSetUrl }: ImageSlotProps) {
+function ImageSlot({ url, index, isPrimary, uploading, uploadProgress, uploadError, canMoveLeft, canMoveRight, isDragging, isDropTarget, onUpload, onRemove, onSetPrimary, onMoveLeft, onMoveRight, onSetUrl, onDragStartSlot, onDragOverSlot, onDropSlot, onDragEndSlot }: ImageSlotProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [urlDraft, setUrlDraft] = useState('');
@@ -121,7 +127,15 @@ function ImageSlot({ url, index, isPrimary, uploading, uploadProgress, uploadErr
   const openUrlInput = () => { setShowUrlInput(true); setUrlDraft(''); setUrlPreviewOk(null); };
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div
+      className="flex flex-col gap-1.5"
+      draggable={!!url && !uploading}
+      onDragStart={(e) => { if (!url) return; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(index)); onDragStartSlot(index); }}
+      onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; onDragOverSlot(index); }}
+      onDrop={(e) => { e.preventDefault(); onDropSlot(index); }}
+      onDragEnd={onDragEndSlot}
+      style={{ opacity: isDragging ? 0.4 : 1, outline: isDropTarget && !isDragging ? '2px dashed #2563eb' : 'none', outlineOffset: '3px', borderRadius: '0.75rem' }}
+    >
       <div className="relative group aspect-square rounded-xl overflow-hidden border-2 transition-all duration-200"
         style={{ borderColor: isPrimary ? '#2563eb' : url ? 'rgba(255,255,255,0.1)' : uploadError ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.05)' }}>
         <input ref={inputRef} type="file" accept="image/*" className="hidden"
@@ -292,6 +306,9 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
   const [slotUploading, setSlotUploading] = useState<boolean[]>([false, false, false, false]);
   const [slotProgress, setSlotProgress] = useState<number[]>([0, 0, 0, 0]);
   const [slotErrors, setSlotErrors] = useState<string[]>(['', '', '', '']);
+  // Drag-and-drop reorder state for the product photo grid
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 
   // Banner upload state
   const [bannerUrl, setBannerUrl] = useState<string>('');
@@ -457,6 +474,18 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
     });
   };
 
+  /** Drag-and-drop reorder: move image at `from` into position `to` (list order preserved). */
+  const handleReorderSlots = (from: number, to: number) => {
+    if (from === to) return;
+    setFormData(prev => {
+      const imgs = [...(prev.images || ['', '', '', ''])];
+      while (imgs.length < MAX_IMAGES) imgs.push('');
+      const [moved] = imgs.splice(from, 1);
+      imgs.splice(to, 0, moved);
+      return { ...prev, images: imgs, imageUrl: imgs.find(Boolean) || '' };
+    });
+  };
+
   // ── Banner upload ─────────────────────────────────────────────────────────
   const handleBannerUpload = async (file: File) => {
     setBannerError('');
@@ -548,6 +577,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
         coaPdfUrl: uploaded.url,
         coaPdfName: file.name,
         coaUploadedAt: new Date().toISOString(),
+        coaVisible: (p as any).coaVisible !== false,
       } as any));
     } catch (e: any) {
       const msg = String(e?.message || e?.code || '');
@@ -976,6 +1006,24 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                       className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
                     />
                   </div>
+
+                  {/* Show COA on product page toggle */}
+                  <div className="flex items-center justify-between p-3 bg-white/[0.03] border border-white/10 rounded-lg">
+                    <div>
+                      <p className="text-white text-sm font-medium">Show COA on product page</p>
+                      <p className="text-[#9cb8d9] text-xs">Off hides the certificate button from customers (PDF stays saved)</p>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={(formData as any).coaVisible !== false}
+                      aria-label="Show COA on product page"
+                      onClick={() => setFormData(p => ({ ...p, coaVisible: (p as any).coaVisible === false } as any))}
+                      className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${(formData as any).coaVisible !== false ? 'bg-blue-500' : 'bg-gray-700'}`}
+                    >
+                      <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${(formData as any).coaVisible !== false ? 'translate-x-5' : ''}`} />
+                    </button>
+                  </div>
                   {coaError && (
                     <p className="text-red-400 text-xs flex items-center gap-1.5">
                       <AlertCircle className="w-3.5 h-3.5" /> {coaError}
@@ -1058,7 +1106,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <h3 className="text-sm font-semibold text-white/70 uppercase tracking-wider">Product Photos</h3>
-                    <p className="text-gray-600 text-xs mt-0.5">Up to 4 images · hover to move/remove · or paste a URL</p>
+                    <p className="text-gray-600 text-xs mt-0.5">Up to 4 images · drag a photo onto another slot to reorder · hover to move/remove · or paste a URL</p>
                   </div>
                   <span className="text-gray-500 text-xs font-mono bg-gray-900/60 px-2 py-1 rounded-lg">
                     {imageSlots.filter(Boolean).length}/{MAX_IMAGES}
@@ -1095,6 +1143,12 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                       onMoveLeft={(idx) => handleMoveSlot(idx, 'left')}
                       onMoveRight={(idx) => handleMoveSlot(idx, 'right')}
                       onSetUrl={handleSetUrl}
+                      isDragging={dragIdx === i}
+                      isDropTarget={dragOverIdx === i && dragIdx !== null}
+                      onDragStartSlot={setDragIdx}
+                      onDragOverSlot={setDragOverIdx}
+                      onDropSlot={(to) => { if (dragIdx !== null) handleReorderSlots(dragIdx, to); setDragIdx(null); setDragOverIdx(null); }}
+                      onDragEndSlot={() => { setDragIdx(null); setDragOverIdx(null); }}
                     />
                   ))}
                 </div>
