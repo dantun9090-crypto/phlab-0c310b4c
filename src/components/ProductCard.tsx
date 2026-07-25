@@ -79,7 +79,7 @@ export function ProductCard({
   // First 3 cards are likely above-fold — reveal immediately to avoid LCP/CLS penalty
   const isAboveFold = (index ?? 0) < 3;
   const [coaOpen, setCoaOpen] = useState(false);
-  const hasCoa = !!product.coaPdfUrl;
+  const hasCoa = !!product.coaPdfUrl && product.coaVisible !== false;
 
   const getProductAlt = (n: string, cat?: string) => {
     const c = cat?.replace(/-/g, ' ') || 'research peptide';
