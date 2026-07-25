@@ -48,6 +48,7 @@ import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 import { initVisitorTracking, trackVisitorPageView } from '@/lib/visitor-tracking';
 import { DisclaimerBanner } from './DisclaimerBanner';
 import TopStripe from './TopStripe';
+import { SHIPPING_CONFIG } from '@/lib/shipping/next-day';
 
 interface SiteSettings {
   whatsappNumber?: string;
