@@ -33,17 +33,22 @@ const GOOGLE_DESTINATION_IDS = [
 ];
 // gtag.js loader.
 //
-// Preferred: Cloudflare "Google Tag Gateway" first-party endpoint
-// (`https://phlabs.co.uk/60z6`) — bypasses ad-blockers and hides visitor IP.
-// That gateway is a per-zone Cloudflare feature; if it is not provisioned,
-// the request 404s and gtag never loads (observed 2026-07-06).
+// Preferred: our first-party Cloudflare Google Tag Gateway worker
+// (`/metrics/gtag/js` on this origin → www.googletagmanager.com). Bypasses
+// ad-blockers and keeps visitor IPs off Google's script CDN.
 //
-// Fallback: load directly from `www.googletagmanager.com` (already allowed
-// by our CSP `script-src`). Override via `VITE_GTAG_GATEWAY_BASE` if/when
-// the CF Google Tag Gateway is re-enabled on the zone.
+// Fallback: if the gateway route is missing on this origin (e.g. a mirror
+// domain without the /metrics worker route), injectScript retries once
+// against `www.googletagmanager.com` (already allowed by CSP `script-src`).
+// Override the gateway base via `VITE_GTAG_GATEWAY_BASE`.
 const GTAG_GATEWAY_BASE =
   (import.meta.env.VITE_GTAG_GATEWAY_BASE as string | undefined)?.trim() ||
-  'https://www.googletagmanager.com';
+  '/metrics';
+const GTAG_DIRECT_BASE = 'https://www.googletagmanager.com';
+// First-party endpoint for gtag hits (/g/collect etc.). Always the
+// canonical gateway origin so mirrored domains without a local /metrics
+// route still deliver events first-party (worker sets ACAO:*).
+const GTAG_TRANSPORT_URL = 'https://phlabs.co.uk/metrics';
 const STORAGE_KEY = 'php_cookie_consent';
 const DEBUG_FLAG_KEY = 'php_ga_debug';
 
@@ -143,7 +148,25 @@ function injectScript(id: string): Promise<void> {
     s.src = `${GTAG_GATEWAY_BASE}/gtag/js?id=${id}`;
     s.dataset.gaId = id;
     s.onload = () => resolve();
-    s.onerror = () => reject(new Error('Failed to load gtag.js'));
+    s.onerror = () => {
+      // Gateway route unavailable on this origin — retry once against
+      // Google's CDN so analytics never silently dies on mirror domains.
+      if (
+        GTAG_GATEWAY_BASE !== GTAG_DIRECT_BASE &&
+        !document.querySelector(`script[data-ga-id="${id}"][data-direct="1"]`)
+      ) {
+        const f = document.createElement('script');
+        f.async = true;
+        f.src = `${GTAG_DIRECT_BASE}/gtag/js?id=${id}`;
+        f.dataset.gaId = id;
+        f.dataset.direct = '1';
+        f.onload = () => resolve();
+        f.onerror = () => reject(new Error('Failed to load gtag.js'));
+        document.head.appendChild(f);
+        return;
+      }
+      reject(new Error('Failed to load gtag.js'));
+    };
     document.head.appendChild(s);
   });
 }
@@ -180,6 +203,11 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
     wait_for_update: 500,
   });
   log('consent default', consent);
+
+  // Route all gtag hits (/g/collect) through the first-party gateway — the
+  // same worker that serves /metrics/gtag/js. Queued in dataLayer before
+  // gtag.js loads; applies to every subsequent config/event.
+  gtag('set', { transport_url: GTAG_TRANSPORT_URL });
 
   try {
     await injectScript(id);
