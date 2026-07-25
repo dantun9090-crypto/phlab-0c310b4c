@@ -134,7 +134,7 @@ function ImageSlot({ url, index, isPrimary, uploading, uploadProgress, uploadErr
       onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; onDragOverSlot(index); }}
       onDrop={(e) => { e.preventDefault(); onDropSlot(index); }}
       onDragEnd={onDragEndSlot}
-      style={{ opacity: isDragging ? 0.4 : 1 }}
+      style={{ opacity: isDragging ? 0.4 : 1, outline: isDropTarget && !isDragging ? '2px dashed #2563eb' : 'none', outlineOffset: '3px', borderRadius: '0.75rem' }}
     >
       <div className="relative group aspect-square rounded-xl overflow-hidden border-2 transition-all duration-200"
         style={{ borderColor: isPrimary ? '#2563eb' : url ? 'rgba(255,255,255,0.1)' : uploadError ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.05)' }}>
