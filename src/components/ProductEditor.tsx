@@ -1005,6 +1005,24 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                       className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
                     />
                   </div>
+
+                  {/* Show COA on product page toggle */}
+                  <div className="flex items-center justify-between p-3 bg-white/[0.03] border border-white/10 rounded-lg">
+                    <div>
+                      <p className="text-white text-sm font-medium">Show COA on product page</p>
+                      <p className="text-[#9cb8d9] text-xs">Off hides the certificate button from customers (PDF stays saved)</p>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={(formData as any).coaVisible !== false}
+                      aria-label="Show COA on product page"
+                      onClick={() => setFormData(p => ({ ...p, coaVisible: (p as any).coaVisible === false } as any))}
+                      className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${(formData as any).coaVisible !== false ? 'bg-blue-500' : 'bg-gray-700'}`}
+                    >
+                      <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${(formData as any).coaVisible !== false ? 'translate-x-5' : ''}`} />
+                    </button>
+                  </div>
                   {coaError && (
                     <p className="text-red-400 text-xs flex items-center gap-1.5">
                       <AlertCircle className="w-3.5 h-3.5" /> {coaError}
