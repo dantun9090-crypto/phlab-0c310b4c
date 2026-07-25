@@ -1087,7 +1087,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <h3 className="text-sm font-semibold text-white/70 uppercase tracking-wider">Product Photos</h3>
-                    <p className="text-gray-600 text-xs mt-0.5">Up to 4 images · hover to move/remove · or paste a URL</p>
+                    <p className="text-gray-600 text-xs mt-0.5">Up to 4 images · drag a photo onto another slot to reorder · hover to move/remove · or paste a URL</p>
                   </div>
                   <span className="text-gray-500 text-xs font-mono bg-gray-900/60 px-2 py-1 rounded-lg">
                     {imageSlots.filter(Boolean).length}/{MAX_IMAGES}
