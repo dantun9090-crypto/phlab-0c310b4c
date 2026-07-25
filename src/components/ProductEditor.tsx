@@ -82,15 +82,21 @@ interface ImageSlotProps {
   uploadError: string;
   canMoveLeft: boolean;
   canMoveRight: boolean;
+  isDragging: boolean;
+  isDropTarget: boolean;
   onUpload: (file: File, index: number) => void;
   onRemove: (index: number) => void;
   onSetPrimary: (index: number) => void;
   onMoveLeft: (index: number) => void;
   onMoveRight: (index: number) => void;
   onSetUrl: (url: string, index: number) => void;
+  onDragStartSlot: (index: number) => void;
+  onDragOverSlot: (index: number) => void;
+  onDropSlot: (index: number) => void;
+  onDragEndSlot: () => void;
 }
 
-function ImageSlot({ url, index, isPrimary, uploading, uploadProgress, uploadError, canMoveLeft, canMoveRight, onUpload, onRemove, onSetPrimary, onMoveLeft, onMoveRight, onSetUrl }: ImageSlotProps) {
+function ImageSlot({ url, index, isPrimary, uploading, uploadProgress, uploadError, canMoveLeft, canMoveRight, isDragging, isDropTarget, onUpload, onRemove, onSetPrimary, onMoveLeft, onMoveRight, onSetUrl, onDragStartSlot, onDragOverSlot, onDropSlot, onDragEndSlot }: ImageSlotProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [urlDraft, setUrlDraft] = useState('');
