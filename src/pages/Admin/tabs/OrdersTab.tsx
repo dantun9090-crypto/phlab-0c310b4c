@@ -708,7 +708,7 @@ export default function OrdersTab() {
         setRmError('You must be signed in as an admin to sync tracking.');
         return;
       }
-      const res = await syncRoyalMailTracking({ data: { idToken, royalMailOrderId: rmOrderId } });
+      const res = await syncRoyalMailTracking({ data: { idToken, royalMailOrderId: rmOrderId, orderReference: selected.id } });
       if (!res.ok) throw new Error(res.error || 'Failed to read Royal Mail order.');
 
       const tracking = res.trackingNumber ? String(res.trackingNumber).trim() : null;

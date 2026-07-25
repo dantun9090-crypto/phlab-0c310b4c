@@ -99,6 +99,8 @@ export const createRoyalMailOrder = createServerFn({ method: 'POST' })
 const StatusInput = z.object({
   idToken: z.string().min(10).max(4096),
   royalMailOrderId: z.string().min(1).max(40),
+  /** Channel reference (our order id) — used as a fallback lookup key. */
+  orderReference: z.string().max(40).optional(),
 });
 
 export interface RoyalMailTrackingResult {
@@ -134,6 +136,7 @@ export const syncRoyalMailTracking = createServerFn({ method: 'POST' })
         body: JSON.stringify({
           action: 'trackingStatus',
           royalMailOrderId: data.royalMailOrderId,
+          ...(data.orderReference ? { orderReference: data.orderReference } : {}),
         }),
       });
     } catch (e) {
