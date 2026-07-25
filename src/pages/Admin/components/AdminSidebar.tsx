@@ -140,6 +140,7 @@ const navGroups = [
       { id: 'staleassets', label: 'Stale Asset 404s', icon: AlertTriangle },
       { id: 'sentryissues', label: 'Sentry Issues', icon: AlertTriangle },
       { id: 'cloudflarestatus', label: 'Cloudflare Status', icon: Cloud },
+      { id: 'taggateway', label: 'Google Tag Gateway (Ads)', icon: Cloud },
       { id: 'emergencypurge', label: 'Emergency Purge', icon: Cloud },
     ],
   },
