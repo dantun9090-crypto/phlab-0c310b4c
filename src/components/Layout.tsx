@@ -46,7 +46,6 @@ import { UnderConstruction } from './UnderConstruction';
 import ResearchGate from './ResearchGate';
 import { Navigation } from './Navigation';
 import LiveSalesPopup from './LiveSalesPopup';
-import DayNightToggle from './DayNightToggle';
 import { WhatsAppIcon, FacebookIcon, InstagramIcon, TwitterXIcon, YoutubeIcon } from './SocialIcons';
 import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 import { initVisitorTracking, trackVisitorPageView } from '@/lib/visitor-tracking';
@@ -910,11 +909,6 @@ export function Layout({ children }: LayoutProps) {
         </div>
 
       </header>}
-
-      {/* Day/night palette toggle (floating pill, self-positioned).
-          Legacy routes bypass __root.tsx (separate react-router tree under
-          LegacyApp), so the toggle must live here as well as in __root. */}
-      {!isCleanPage && <DayNightToggle />}
 
       {/* Professional disclaimer banner — full-width amber strip below header */}
       {disclaimerVisible && !isContactPage && <DisclaimerBanner />}

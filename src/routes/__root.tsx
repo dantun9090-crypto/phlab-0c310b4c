@@ -1350,7 +1350,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
           suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var s=localStorage.getItem('phlabs-theme-mode');var m=(s==='light')?'light':'dark';var d=document.documentElement;if(m==='light'){d.classList.add('light');d.classList.remove('dark');d.setAttribute('data-theme-mode','light');d.style.backgroundColor='#ffffff';}else{d.classList.remove('light');d.classList.add('dark');d.setAttribute('data-theme-mode','dark');}}catch(e){}})();",
+              "(function(){try{try{localStorage.setItem('phlabs-theme-mode','dark');}catch(e2){}var d=document.documentElement;d.classList.remove('light');d.classList.add('dark');d.setAttribute('data-theme-mode','dark');d.style.backgroundColor='#060f1e';if(document.body)document.body.style.backgroundColor='#060f1e';}catch(e){}})();",
 
           }}
         />
@@ -1575,8 +1575,7 @@ function RootComponent() {
         <PageviewBeacon />
         <PageTransition />
         <ViewTransitions />
-        {/* DayNightToggle: legacy routes get it via Layout; /compound via
-            PremiumLanding (CSR boots LegacyApp, never this tree). */}
+
       </QueryClientProvider>
     </RootHydrationBoundary>
   );
