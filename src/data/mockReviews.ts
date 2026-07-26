@@ -1,4 +1,4 @@
-// 100 mock reviews for PH Labs product cards / PDP.
+// 128 mock reviews for PH Labs product cards / PDP.
 // Static data only — no API. Used with useDeterministicReviews for
 // pre-render-stable selection per product.
 
@@ -111,6 +111,35 @@ export const MOCK_REVIEWS: MockReview[] = [
   { id: 98, name: "Lily Foster", rating: 5, review: "Been using this for my research and the purity is excellent. Five stars.", date: "5-4-2025" },
   { id: 99, name: "Kieran Hall", rating: 5, review: "Very pleased with the fast delivery and the product's performance.", date: "3-7-2025" },
   { id: 100, name: "Chloe Foster", rating: 5, review: "Secure payment process and discreet packaging. Very professional outfit.", date: "2-4-2025" },
+  // 28 additional reviews (Polish, Greek, Spanish names) — appended 2026-07-26
+  { id: 101, name: "Tomasz", rating: 4, review: "Excellent purity, fast UK delivery.", date: "1-6-2026" },
+  { id: 102, name: "Michał", rating: 5, review: "Lab-tested and verified. Top quality.", date: "4-1-2024" },
+  { id: 103, name: "Eleni", rating: 5, review: "Quick dispatch, professional packaging.", date: "5-1-2025" },
+  { id: 104, name: "Magdalena", rating: 5, review: "Very satisfied with the compound quality.", date: "19-8-2025" },
+  { id: 105, name: "Katarzyna", rating: 5, review: "Fast shipping, discreet and secure.", date: "27-1-2025" },
+  { id: 106, name: "Nikos", rating: 5, review: "HPLC results confirm high purity. Great.", date: "17-8-2024" },
+  { id: 107, name: "Sofia", rating: 5, review: "Reliable supplier, consistent batch quality.", date: "21-9-2026" },
+  { id: 108, name: "Javier", rating: 5, review: "Arrived next day. Product as described.", date: "1-7-2026" },
+  { id: 109, name: "Katerina", rating: 5, review: "Clean vials, proper labelling. Recommended.", date: "14-11-2026" },
+  { id: 110, name: "Isabella", rating: 5, review: "Outstanding research grade compound.", date: "27-8-2026" },
+  { id: 111, name: "Agnieszka", rating: 5, review: "Smooth ordering, no issues at all.", date: "12-9-2024" },
+  { id: 112, name: "Carlos", rating: 5, review: "Certificate of Analysis included. Trustworthy.", date: "24-2-2025" },
+  { id: 113, name: "Antonio", rating: 5, review: "Purity exceeded expectations. Will reorder.", date: "6-6-2025" },
+  { id: 114, name: "Krzysztof", rating: 5, review: "Fast and professional. Five stars.", date: "13-2-2026" },
+  { id: 115, name: "Miguel", rating: 5, review: "Great value for lab-grade quality.", date: "13-10-2025" },
+  { id: 116, name: "Kostas", rating: 4, review: "Secure payment, discreet delivery. Perfect.", date: "7-10-2024" },
+  { id: 117, name: "Dimitris", rating: 5, review: "Batch consistency is excellent. Reliable.", date: "1-6-2024" },
+  { id: 118, name: "Yannis", rating: 5, review: "Product dissolved cleanly. Very pure.", date: "18-9-2026" },
+  { id: 119, name: "Sophia", rating: 4, review: "UK-based, fast dispatch. Highly recommend.", date: "21-5-2025" },
+  { id: 120, name: "Giorgos", rating: 5, review: "Well packaged, no damage. Quality assured.", date: "18-8-2024" },
+  { id: 121, name: "Jose", rating: 5, review: "COA matches product perfectly. Legit.", date: "18-8-2025" },
+  { id: 122, name: "Maria", rating: 5, review: "Third order, same great quality every time.", date: "2-1-2024" },
+  { id: 123, name: "Valentina", rating: 5, review: "Research results are consistent and clean.", date: "7-1-2025" },
+  { id: 124, name: "Maria", rating: 5, review: "Customer service was helpful and quick.", date: "22-5-2025" },
+  { id: 125, name: "Lucia", rating: 5, review: "Best price-to-quality ratio in the UK.", date: "1-2-2026" },
+  { id: 126, name: "Piotr", rating: 4, review: "Tamper-evident seal, professional look.", date: "17-6-2026" },
+  { id: 127, name: "Andrzej", rating: 4, review: "Compound potency is exactly as stated.", date: "3-7-2024" },
+  { id: 128, name: "Anna", rating: 5, review: "Fast response, fast delivery. Impressed.", date: "13-2-2026" },
 ];
 
 export function getAllReviews(): MockReview[] {
