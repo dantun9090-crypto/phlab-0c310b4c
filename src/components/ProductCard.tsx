@@ -213,6 +213,20 @@ export function ProductCard({
 
       {/* Content */}
       <div className="p-5 flex flex-col gap-3 flex-1">
+        {/* Star Rating + Reviews */}
+        <div className="flex flex-col gap-1.5">
+          <StarRating
+            rating={averageRating}
+            size="sm"
+            reviewCount={totalCount}
+            onClick={() => setReviewsOpen(true)}
+          />
+          <ReviewPreview
+            reviews={previewReviews}
+            onClick={() => setReviewsOpen(true)}
+          />
+        </div>
+
         <Link to={`/products/${slug}`}>
           <h3 className="font-bold text-base leading-snug mb-1 transition-colors group-hover:text-emerald-400" style={{ color: '#e4f0ff' }}>
             <HighlightText text={name} query={highlight} />
