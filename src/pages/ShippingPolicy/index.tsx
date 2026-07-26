@@ -59,8 +59,8 @@ export default function ShippingPolicy() {
       title: 'Packaging',
       content: (
         <div className="space-y-3 text-[#9cb8d9] leading-relaxed text-sm">
-          <p>All orders are dispatched in <strong className="text-[#c8daf0]">plain, unmarked packaging</strong> with no external branding or product descriptions visible. This protects your privacy and ensures discreet delivery.</p>
-          <p>Research compounds are packed in temperature-appropriate insulated packaging where required. Lyophilised peptides are stable at ambient temperature for transit but should be stored at 2–8°C or −20°C on receipt as indicated on the product label.</p>
+          <p>All orders are dispatched in <strong className="text-[#c8daf0]">plain, unmarked packaging</strong> with no external branding visible. This protects your privacy.</p>
+          <p>Laboratory materials are packed in temperature-appropriate insulated packaging where required. Lyophilised materials are stable at ambient temperature for transit but should be stored at 2–8°C or −20°C on receipt as indicated on the product label.</p>
         </div>
       ),
     },
@@ -124,7 +124,7 @@ export default function ShippingPolicy() {
           <h1 className="text-3xl md:text-4xl font-bold text-[#f0f6ff] mb-3">Shipping Policy</h1>
           <p className="text-[#9cb8d9] text-sm">Last updated: May 2026</p>
           <p className="text-[#8caad4] mt-4 max-w-xl mx-auto text-sm leading-relaxed">
-            All orders are dispatched from the UK to mainland UK, Germany and Poland. Research compounds are shipped for laboratory use only in compliant, discreet packaging.
+            All orders are dispatched from the UK to mainland UK, Germany and Poland. Laboratory materials are shipped in compliant packaging.
           </p>
         </div>
 
@@ -133,7 +133,7 @@ export default function ShippingPolicy() {
           <AlertTriangle className="w-5 h-5 text-red-400 mt-0.5 shrink-0" />
           <p className="text-red-300/80 text-sm leading-relaxed">
             <strong className="text-red-300">Research Use Only.</strong>{' '}
-            All products are for laboratory research purposes only. Not for human or veterinary consumption. By placing an order you confirm you are a qualified researcher aged 18 or over.
+            All products are supplied for laboratory research purposes. By placing an order you confirm you are a qualified researcher aged 18 or over.
           </p>
         </div>
 

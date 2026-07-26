@@ -111,7 +111,10 @@ export function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   // /contact is the Google Ads landing page — keep its chrome free of
   // peptide-named elements (policy bot follows the bridge-page CTA here).
-  const isContactPage = location.pathname === '/contact';
+  // Ads-safe pages: destinations used by Google Ads (bridge CTA + sitelinks).
+  // On these routes the chrome stays policy-neutral (no Peptides nav, no
+  // disclaimers, no HPLC badges) — same content for users and bots.
+  const isContactPage = ['/contact', '/shipping-policy', '/privacy-policy'].includes(location.pathname);
   // Peptide Supermarket badge: self-hosted from /public/images (the remote
   // SVG on peptidesupermarket.co.uk sends Cross-Origin-Resource-Policy, so
   // browsers block it as <img> — it rendered as a blank broken image).

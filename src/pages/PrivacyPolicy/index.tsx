@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 export default function PrivacyPolicy() {
   useSEO('privacy', {
     title: 'Privacy Policy | PH Labs UK',
-    metaDescription: 'Privacy Policy — PH Labs Ltd UK. UK GDPR & Data Protection Act 2018 compliant. How we collect and protect your data when you buy research peptides in the UK.',
+    metaDescription: 'Privacy Policy — PH Labs Ltd UK. UK GDPR & Data Protection Act 2018 compliant. How we collect and protect your data when you buy laboratory supplies in the UK.',
     canonical: 'https://phlabs.co.uk/privacy-policy',
     ogImage: 'https://cdn.wegic.ai/assets/onepage/agent/images/1779306071783_0.jpg',
   });
@@ -414,16 +414,13 @@ export default function PrivacyPolicy() {
             </div>
           </div>
           <div className="rounded-xl p-5 border" style={{ background: '#04101f', borderColor: 'rgba(255,255,255,0.07)' }}>
-            <p className="text-xs font-semibold mb-3" style={{ color: '#9cb8d9' }}>Explore Our Research Peptides</p>
+            <p className="text-xs font-semibold mb-3" style={{ color: '#9cb8d9' }}>Our Laboratory Supplies</p>
             <p className="text-xs mb-3 leading-relaxed" style={{ color: '#3a5a82' }}>
-              All orders are processed in accordance with this Privacy Policy. Your data is used solely to fulfil and manage your purchase of <Link to="/products" className="underline hover:opacity-80 transition-opacity" style={{ color: '#9cb8d9' }}>research peptides</Link> from PH Labs UK.
+              All orders are processed in accordance with this Privacy Policy. Your data is used solely to fulfil and manage your purchase of <Link to="/products" className="underline hover:opacity-80 transition-opacity" style={{ color: '#9cb8d9' }}>laboratory supplies</Link> from PH Labs UK.
             </p>
             <div className="flex flex-wrap gap-3">
               {[
-                { label: 'View All Peptides', to: '/products' },
-                { label: 'Tissue Repair', to: '/products?category=tissue-repair' },
-                { label: 'GLP-1 / Metabolic', to: '/products?category=metabolic-signaling' },
-                { label: 'Longevity', to: '/products?category=cellular-aging' },
+                { label: 'View All Products', to: '/products' },
               ].map(({ label, to }) => (
                 <Link
                   key={to}

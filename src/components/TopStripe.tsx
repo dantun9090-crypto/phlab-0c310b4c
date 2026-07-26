@@ -35,7 +35,7 @@ export default function TopStripe() {
   const [idx, setIdx] = useState(0);
   const [dismissed, setDismissed] = useState<boolean>(initialDismissed);
   const location = useLocation();
-  const messages = location.pathname === '/contact' ? CONTACT_MESSAGES : MESSAGES;
+  const messages = ['/contact', '/shipping-policy', '/privacy-policy'].includes(location.pathname) ? CONTACT_MESSAGES : MESSAGES;
 
   useEffect(() => {
     if (dismissed) return;

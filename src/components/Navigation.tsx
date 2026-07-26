@@ -85,7 +85,7 @@ function useNavLinks(): NavLink[] {
 
   // /contact doubles as the Google Ads bridge landing page — keep the
   // destination neutral for the policy crawler (no catalogue links).
-  const isContactPage = location.pathname === '/contact';
+  const isContactPage = ['/contact', '/shipping-policy', '/privacy-policy'].includes(location.pathname);
   return BASE_NAV
     .filter(link => !(isContactPage && (link.name === 'Peptides' || link.name === 'Lab Reports')))
     .map(link =>
