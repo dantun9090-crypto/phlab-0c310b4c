@@ -6,6 +6,9 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import type { Product } from '@/lib/firebase';
 import InstallAppButton from '@/components/InstallAppButton';
+import TransactionalLink from '@/components/TransactionalLink';
+import LegacyHostNotice from '@/components/LegacyHostNotice';
+
 
 interface DropdownItem {
   name: string;
