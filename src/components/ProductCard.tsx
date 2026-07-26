@@ -83,6 +83,11 @@ export function ProductCard({
   // First 3 cards are likely above-fold — reveal immediately to avoid LCP/CLS penalty
   const isAboveFold = (index ?? 0) < 3;
   const [coaOpen, setCoaOpen] = useState(false);
+  const [reviewsOpen, setReviewsOpen] = useState(false);
+  const { previewReviews, allReviews, averageRating, totalCount } = useDeterministicReviews(
+    product.id || slug || index,
+    2
+  );
   const hasCoa = !!product.coaPdfUrl && product.coaVisible !== false;
 
   const getProductAlt = (n: string, cat?: string) => {
