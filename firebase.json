@@ -71,7 +71,8 @@
     ]
   },
   "storage": {
-    "rules": "storage.rules"
+    "rules": "storage.rules",
+    "bucket": "prohealthpeptides-a0808.firebasestorage.app"
   },
   "firestore": {
     "rules": "firestore.rules",
