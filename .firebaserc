@@ -1,5 +1,14 @@
 {
   "projects": {
     "default": "prohealthpeptides-a0808"
+  },
+  "targets": {
+    "prohealthpeptides-a0808": {
+      "storage": {
+        "main": [
+          "prohealthpeptides-a0808.firebasestorage.app"
+        ]
+      }
+    }
   }
 }
