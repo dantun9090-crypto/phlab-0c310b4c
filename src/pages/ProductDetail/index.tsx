@@ -2203,6 +2203,15 @@ export default function ProductDetail() {
           )}
         </AnimatePresence>
       </div>
+
+      <ReviewsModal
+        isOpen={reviewsOpen}
+        onClose={() => setReviewsOpen(false)}
+        reviews={allReviews}
+        averageRating={averageRating}
+        totalCount={totalCount}
+        productName={product.name}
+      />
     </div>
   );
 }
