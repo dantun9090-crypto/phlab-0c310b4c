@@ -36,6 +36,10 @@ import { migrateStoredCart } from '@/lib/cart-migration';
 import { initAnalytics, trackPageView, trackAddToCart, trackBeginCheckout, renderGoogleMerchantBadge } from '@/lib/analytics';
 import { merchantItemId } from '@/lib/merchant-item-id';
 import { logCartEvent, safeCartWrite, safeCartRead } from '@/lib/cart-telemetry';
+import TransactionalLink from '@/components/TransactionalLink';
+import LegacyHostNotice from '@/components/LegacyHostNotice';
+import { isLegacyHost, transactionalHref } from '@/lib/legacy-host';
+
 
 import { Logo } from './Logo';
 import { UnderConstruction } from './UnderConstruction';
