@@ -255,6 +255,7 @@ export default function ProductDetail() {
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [hplcLightboxSrc, setHplcLightboxSrc] = useState<string | null>(null);
+  const [reviewsOpen, setReviewsOpen] = useState(false);
   const merchantAliasInfo = getDualEntryAliasInfo(id);
 
   // Lock background scroll while any lightbox / overlay is open
