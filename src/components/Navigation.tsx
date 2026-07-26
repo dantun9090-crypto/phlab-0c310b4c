@@ -339,12 +339,12 @@ export function Navigation({
 
           {user ? (
             <>
-              <Link to="/account" onClick={onMobileMenuToggle}
+              <TransactionalLink to="/account" onClick={onMobileMenuToggle}
                 className="flex items-center gap-3 px-4 py-3.5 rounded-2xl font-semibold min-h-[52px]"
                 style={{ background: 'rgba(255,255,255,0.04)', color: '#d8eeff', border: '1px solid rgba(255,255,255,0.07)' }}>
                 <Shield className="w-4 h-4 opacity-60" />
                 <span className="text-[15px]">My Account</span>
-              </Link>
+              </TransactionalLink>
               {isAdmin && (
                 <Link to="/admin" onClick={onMobileMenuToggle}
                   className="flex items-center gap-3 px-4 py-3.5 rounded-2xl font-semibold min-h-[52px]"
@@ -355,13 +355,15 @@ export function Navigation({
               )}
             </>
           ) : (
-            <Link to="/login" onClick={onMobileMenuToggle}
+            <TransactionalLink to="/login" onClick={onMobileMenuToggle}
               className="flex items-center gap-3 px-4 py-3.5 rounded-2xl font-semibold min-h-[52px]"
               style={{ background: 'rgba(255,255,255,0.04)', color: '#d8eeff', border: '1px solid rgba(255,255,255,0.07)' }}>
               <Shield className="w-4 h-4 opacity-60" />
               <span className="text-[15px]">Login / Register</span>
-            </Link>
+            </TransactionalLink>
           )}
+          <LegacyHostNotice className="px-2 pt-1" />
+
 
           <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '8px 0' }} />
           <InstallAppButton onAfter={onMobileMenuToggle} />
