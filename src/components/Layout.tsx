@@ -112,6 +112,11 @@ export function Layout({ children }: LayoutProps) {
   // /contact is the Google Ads landing page — keep its chrome free of
   // peptide-named elements (policy bot follows the bridge-page CTA here).
   const isContactPage = location.pathname === '/contact';
+  // Peptide Supermarket badge: self-hosted from /public/images (the remote
+  // SVG on peptidesupermarket.co.uk sends Cross-Origin-Resource-Policy, so
+  // browsers block it as <img> — it rendered as a blank broken image).
+  // If the file is missing the badge hides instead of showing a broken icon.
+  const [psBadgeOk, setPsBadgeOk] = useState(true);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -1509,7 +1514,7 @@ export function Layout({ children }: LayoutProps) {
           </div>
 
           {/* ── Listed on Peptide Supermarket verification badge ── */}
-          {!isContactPage && (
+          {!isContactPage && psBadgeOk && (
           <div className="flex justify-center mb-6">
             <a
               href="https://peptidesupermarket.co.uk/suppliers/ph-labs?utm_source=supplier_badge&utm_medium=referral&utm_campaign=listed_on"
@@ -1530,11 +1535,12 @@ export function Layout({ children }: LayoutProps) {
               }}
             >
               <img
-                src="https://peptidesupermarket.co.uk/images/badge-logo.svg"
+                src="/images/peptide-supermarket-badge.svg"
                 alt="Peptide Supermarket"
                 width={24}
                 height={24}
                 style={{ verticalAlign: 'middle', marginRight: '8px' }}
+                onError={() => setPsBadgeOk(false)}
               />
               <span>Listed on <strong>Peptide Supermarket</strong></span>
             </a>
