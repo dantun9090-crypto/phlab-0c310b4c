@@ -31,6 +31,10 @@ import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 import { ResearchContentBlock } from '@/components/ResearchContentBlock';
 import PuritySignature from '@/components/PuritySignature';
+import { StarRating } from '@/components/StarRating';
+import { ReviewPreview } from '@/components/ReviewPreview';
+import { ReviewsModal } from '@/components/ReviewsModal';
+import { useDeterministicReviews } from '@/hooks/useDeterministicReviews';
 
 // Maps product name keywords → Resources article slug
 const ARTICLE_MAP: Record<string, { slug: string; title: string; excerpt: string }> = {
