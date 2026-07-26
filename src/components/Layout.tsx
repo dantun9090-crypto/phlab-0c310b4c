@@ -1117,6 +1117,13 @@ export function Layout({ children }: LayoutProps) {
                           );
                         } catch { /* never block checkout */ }
                         closeCart();
+                        // Legacy SEO mirror (prohealthpeptides.co.uk) cannot own
+                        // a checkout session — send the shopper to the canonical
+                        // origin explicitly instead of being 302'd mid-flow.
+                        if (isLegacyHost()) {
+                          window.location.href = transactionalHref('/checkout');
+                          return;
+                        }
                         navigate('/checkout');
                       }}
                       disabled={hasItemsWithoutVariant}
@@ -1130,6 +1137,8 @@ export function Layout({ children }: LayoutProps) {
                       <Lock className="w-4 h-4" />
                       {hasItemsWithoutVariant ? 'Select variant for all items' : 'Continue to Checkout'}
                     </button>
+                    <LegacyHostNotice className="pt-1" />
+
                     {/* Cart trust badges */}
                     <div className="grid grid-cols-3 gap-2 pt-1">
                       {[
