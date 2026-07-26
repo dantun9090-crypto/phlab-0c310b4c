@@ -8,6 +8,10 @@ import { useScrollReveal } from '@/hooks/useScrollReveal';
 import { cfImgProps } from '@/lib/cf-image';
 import { CoaModal } from './CoaModal';
 import PuritySignature from './PuritySignature';
+import { StarRating } from './StarRating';
+import { ReviewPreview } from './ReviewPreview';
+import { ReviewsModal } from './ReviewsModal';
+import { useDeterministicReviews } from '@/hooks/useDeterministicReviews';
 
 
 interface ProductCardProps {
@@ -79,6 +83,11 @@ export function ProductCard({
   // First 3 cards are likely above-fold — reveal immediately to avoid LCP/CLS penalty
   const isAboveFold = (index ?? 0) < 3;
   const [coaOpen, setCoaOpen] = useState(false);
+  const [reviewsOpen, setReviewsOpen] = useState(false);
+  const { previewReviews, allReviews, averageRating, totalCount } = useDeterministicReviews(
+    product.id || slug || index,
+    2
+  );
   const hasCoa = !!product.coaPdfUrl && product.coaVisible !== false;
 
   const getProductAlt = (n: string, cat?: string) => {
@@ -95,6 +104,8 @@ export function ProductCard({
   };
 
   return (
+    <>
+
     <div
       ref={isAboveFold ? undefined : revealRef}
       data-product-card={slug || product.id || 'product'}
@@ -202,6 +213,20 @@ export function ProductCard({
 
       {/* Content */}
       <div className="p-5 flex flex-col gap-3 flex-1">
+        {/* Star Rating + Reviews */}
+        <div className="flex flex-col gap-1.5">
+          <StarRating
+            rating={averageRating}
+            size="sm"
+            reviewCount={totalCount}
+            onClick={() => setReviewsOpen(true)}
+          />
+          <ReviewPreview
+            reviews={previewReviews}
+            onClick={() => setReviewsOpen(true)}
+          />
+        </div>
+
         <Link to={`/products/${slug}`}>
           <h3 className="font-bold text-base leading-snug mb-1 transition-colors group-hover:text-emerald-400" style={{ color: '#e4f0ff' }}>
             <HighlightText text={name} query={highlight} />
@@ -366,5 +391,15 @@ export function ProductCard({
         )}
       </div>
     </div>
+
+    <ReviewsModal
+      isOpen={reviewsOpen}
+      onClose={() => setReviewsOpen(false)}
+      reviews={allReviews}
+      averageRating={averageRating}
+      totalCount={totalCount}
+      productName={name}
+    />
+    </>
   );
 }

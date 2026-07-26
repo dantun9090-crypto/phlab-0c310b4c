@@ -1,0 +1,123 @@
+// 100 mock reviews for PH Labs product cards / PDP.
+// Static data only — no API. Used with useDeterministicReviews for
+// pre-render-stable selection per product.
+
+export interface MockReview {
+  id: number;
+  name: string;
+  rating: number;
+  review: string;
+  date: string;
+}
+
+export const MOCK_REVIEWS: MockReview[] = [
+  { id: 1, name: "Adam Walker", rating: 5, review: "Product arrived quickly and well packaged. Very satisfied with the results.", date: "8-4-2024" },
+  { id: 2, name: "Reece Wright", rating: 5, review: "Received exactly what I ordered, no substitutions or issues. Trustworthy.", date: "3-10-2025" },
+  { id: 3, name: "George Brown", rating: 5, review: "Been using this for my research and the purity is excellent. Five stars.", date: "8-9-2026" },
+  { id: 4, name: "Harry Robertson", rating: 5, review: "Seamless ordering process and arrived within 48 hours. Excellent.", date: "14-4-2025" },
+  { id: 5, name: "Molly King", rating: 5, review: "Fast delivery and excellent quality. Will definitely order again.", date: "23-7-2025" },
+  { id: 6, name: "Emily Hall", rating: 5, review: "The compound tested perfectly in our lab. Very happy with this purchase.", date: "4-2-2025" },
+  { id: 7, name: "Leo Davis", rating: 5, review: "Smooth transaction from start to finish. Product is exactly as advertised.", date: "9-1-2026" },
+  { id: 8, name: "Millie Butler", rating: 5, review: "Very impressed with the product quality and customer service.", date: "3-9-2025" },
+  { id: 9, name: "Benjamin Matthews", rating: 5, review: "Quality is on par with much more expensive suppliers. Great find.", date: "7-12-2024" },
+  { id: 10, name: "William Fisher", rating: 5, review: "Discreet packaging, fast delivery, and top-tier product quality.", date: "3-4-2024" },
+  { id: 11, name: "Daisy King", rating: 5, review: "Secure payment process and discreet packaging. Very professional outfit.", date: "6-6-2025" },
+  { id: 12, name: "Arthur Hudson", rating: 4, review: "Product matched the COA perfectly. Professional and trustworthy.", date: "20-11-2024" },
+  { id: 13, name: "Megan Marshall", rating: 5, review: "Outstanding purity levels. This is now my go-to supplier.", date: "15-7-2025" },
+  { id: 14, name: "Adam Reynolds", rating: 5, review: "Ordered Monday, arrived Tuesday. You can't beat that for speed.", date: "22-6-2024" },
+  { id: 15, name: "Isaac Taylor", rating: 5, review: "Very happy with the consistency across multiple orders. Reliable source.", date: "9-2-2024" },
+  { id: 16, name: "Eleanor Henderson", rating: 5, review: "Very happy with the consistency across multiple orders. Reliable source.", date: "21-8-2025" },
+  { id: 17, name: "Liam Khan", rating: 5, review: "High purity product, well labelled and securely packaged. Recommended.", date: "5-4-2026" },
+  { id: 18, name: "Holly Butler", rating: 5, review: "Great value for money and the customer support is very responsive.", date: "14-10-2025" },
+  { id: 19, name: "Alice Cooper", rating: 5, review: "Exactly what I needed for my lab work. Fast and discreet shipping.", date: "16-2-2024" },
+  { id: 20, name: "Ethan Hall", rating: 5, review: "Packaging was tamper-evident and professional. Felt very secure.", date: "26-11-2025" },
+  { id: 21, name: "Elizabeth Thomas", rating: 5, review: "Arrived in perfect condition with clear batch numbers and expiry dates.", date: "20-8-2026" },
+  { id: 22, name: "Amelia Chapman", rating: 4, review: "Fast delivery and excellent quality. Will definitely order again.", date: "22-9-2025" },
+  { id: 23, name: "Harrison Graham", rating: 4, review: "Lab results confirm high purity. Will recommend to colleagues.", date: "10-7-2024" },
+  { id: 24, name: "Millie Smith", rating: 5, review: "Everything from ordering to delivery was seamless. Quality product.", date: "17-3-2026" },
+  { id: 25, name: "Mason Fox", rating: 5, review: "Excellent research grade compound. Shipping was next day as promised.", date: "20-4-2024" },
+  { id: 26, name: "Charlotte Rose", rating: 5, review: "Quick turnaround from order to delivery. Product is legit and potent.", date: "25-9-2024" },
+  { id: 27, name: "Elizabeth James", rating: 4, review: "The vial was properly labelled with batch info. Shows real professionalism.", date: "4-6-2025" },
+  { id: 28, name: "Sophie Evans", rating: 5, review: "Outstanding purity levels. This is now my go-to supplier.", date: "3-2-2026" },
+  { id: 29, name: "Laura Thomas", rating: 5, review: "Responsive support team and fast resolution when I had a query.", date: "25-3-2024" },
+  { id: 30, name: "Luke Richardson", rating: 5, review: "Ordered Monday, arrived Tuesday. You can't beat that for speed.", date: "9-9-2026" },
+  { id: 31, name: "Sienna Martin", rating: 5, review: "Much better quality than my previous supplier. Glad I switched.", date: "23-5-2025" },
+  { id: 32, name: "Tyler Holmes", rating: 5, review: "Quality is on par with much more expensive suppliers. Great find.", date: "17-8-2024" },
+  { id: 33, name: "Olivia Cooper", rating: 5, review: "Professional packaging and prompt delivery. Quality is outstanding.", date: "1-10-2026" },
+  { id: 34, name: "Isaac Owen", rating: 4, review: "Discreet packaging, fast delivery, and top-tier product quality.", date: "3-12-2026" },
+  { id: 35, name: "Charlie Hill", rating: 4, review: "Professional packaging and prompt delivery. Quality is outstanding.", date: "28-6-2024" },
+  { id: 36, name: "Lauren Ward", rating: 5, review: "Product matched the COA perfectly. Professional and trustworthy.", date: "7-9-2024" },
+  { id: 37, name: "Nathan Webb", rating: 5, review: "The product certificate and lab testing info gave me full confidence.", date: "8-8-2025" },
+  { id: 38, name: "Henry Thompson", rating: 5, review: "Reliable supplier with consistent quality. Fast UK delivery too.", date: "12-7-2025" },
+  { id: 39, name: "Rosie Marshall", rating: 4, review: "Great service and fast shipping. The product exceeded my expectations.", date: "2-7-2026" },
+  { id: 40, name: "Evie Wright", rating: 5, review: "Outstanding purity levels. This is now my go-to supplier.", date: "7-9-2025" },
+  { id: 41, name: "Finley Cook", rating: 5, review: "Best quality I've found in the UK market. Will be a returning customer.", date: "15-4-2024" },
+  { id: 42, name: "Evelyn Chapman", rating: 4, review: "Reliable supplier with consistent quality. Fast UK delivery too.", date: "21-9-2024" },
+  { id: 43, name: "Oscar Gray", rating: 5, review: "Outstanding purity levels. This is now my go-to supplier.", date: "14-8-2025" },
+  { id: 44, name: "Freddie Collins", rating: 5, review: "Great service and fast shipping. The product exceeded my expectations.", date: "13-1-2025" },
+  { id: 45, name: "Isla Khan", rating: 5, review: "Fast dispatch and the vials were properly sealed. No complaints at all.", date: "23-12-2026" },
+  { id: 46, name: "Luke Henderson", rating: 5, review: "The vial was properly labelled with batch info. Shows real professionalism.", date: "7-5-2024" },
+  { id: 47, name: "Charlie Powell", rating: 5, review: "The compound is clearly pure and properly synthesized. Professional grade.", date: "2-12-2025" },
+  { id: 48, name: "Charlie Wilson", rating: 5, review: "Clean dissolution, no particulates, and potency is spot on. Excellent.", date: "17-9-2024" },
+  { id: 49, name: "Charlie Ellis", rating: 5, review: "Been using this for my research and the purity is excellent. Five stars.", date: "3-10-2024" },
+  { id: 50, name: "Harvey Ward", rating: 4, review: "Impressed by the professionalism and speed of service. Top marks.", date: "19-4-2026" },
+  { id: 51, name: "Elizabeth Davies", rating: 4, review: "This is the third time I've ordered and quality remains consistently high.", date: "14-11-2026" },
+  { id: 52, name: "Eleanor Harrison", rating: 5, review: "Very happy with the consistency across multiple orders. Reliable source.", date: "7-11-2026" },
+  { id: 53, name: "Lily Ward", rating: 5, review: "Great value for money and the customer support is very responsive.", date: "5-11-2026" },
+  { id: 54, name: "Poppy Khan", rating: 4, review: "Very happy with the consistency across multiple orders. Reliable source.", date: "1-8-2026" },
+  { id: 55, name: "Eleanor Thompson", rating: 5, review: "Professional packaging and prompt delivery. Quality is outstanding.", date: "7-9-2025" },
+  { id: 56, name: "Lucas Watson", rating: 5, review: "Professional packaging and prompt delivery. Quality is outstanding.", date: "12-5-2024" },
+  { id: 57, name: "Evelyn Foster", rating: 5, review: "Very pleased with the fast delivery and the product's performance.", date: "20-11-2026" },
+  { id: 58, name: "Oliver Hudson", rating: 5, review: "Ordered Monday, arrived Tuesday. You can't beat that for speed.", date: "22-2-2024" },
+  { id: 59, name: "Isla Walker", rating: 5, review: "Reliable supplier with consistent quality. Fast UK delivery too.", date: "5-5-2025" },
+  { id: 60, name: "Jade Turner", rating: 5, review: "Very pleased with the fast delivery and the product's performance.", date: "7-11-2026" },
+  { id: 61, name: "Isla Marshall", rating: 5, review: "The vial was properly labelled with batch info. Shows real professionalism.", date: "28-1-2024" },
+  { id: 62, name: "Adam Cook", rating: 4, review: "Product matched the COA perfectly. Professional and trustworthy.", date: "1-6-2024" },
+  { id: 63, name: "Adam Clark", rating: 5, review: "Quick turnaround from order to delivery. Product is legit and potent.", date: "18-12-2025" },
+  { id: 64, name: "Holly Jones", rating: 4, review: "Very impressed with the product quality and customer service.", date: "23-3-2026" },
+  { id: 65, name: "George Price", rating: 5, review: "Clean dissolution, no particulates, and potency is spot on. Excellent.", date: "5-7-2024" },
+  { id: 66, name: "William Allen", rating: 4, review: "Quality is on par with much more expensive suppliers. Great find.", date: "12-4-2026" },
+  { id: 67, name: "Olivia Hudson", rating: 5, review: "Reliable supplier with consistent quality. Fast UK delivery too.", date: "25-9-2025" },
+  { id: 68, name: "Zoe Bennett", rating: 5, review: "High purity product, well labelled and securely packaged. Recommended.", date: "28-3-2024" },
+  { id: 69, name: "Ruby Brown", rating: 5, review: "Best quality I've found in the UK market. Will be a returning customer.", date: "26-7-2026" },
+  { id: 70, name: "Reece Morris", rating: 5, review: "Product matched the COA perfectly. Professional and trustworthy.", date: "26-12-2024" },
+  { id: 71, name: "Daisy Taylor", rating: 5, review: "Customer service answered all my questions promptly before I ordered.", date: "7-8-2025" },
+  { id: 72, name: "Ella Hill", rating: 4, review: "Discreet packaging, fast delivery, and top-tier product quality.", date: "22-4-2025" },
+  { id: 73, name: "Chloe King", rating: 5, review: "Professional packaging and prompt delivery. Quality is outstanding.", date: "12-11-2026" },
+  { id: 74, name: "Imogen Mills", rating: 5, review: "Much better quality than my previous supplier. Glad I switched.", date: "1-2-2025" },
+  { id: 75, name: "Samuel Powell", rating: 4, review: "Great value for money and the customer support is very responsive.", date: "4-10-2025" },
+  { id: 76, name: "Phoebe Marshall", rating: 5, review: "Very happy with the consistency across multiple orders. Reliable source.", date: "20-9-2024" },
+  { id: 77, name: "Freya Webb", rating: 5, review: "Seamless ordering process and arrived within 48 hours. Excellent.", date: "2-12-2025" },
+  { id: 78, name: "James Harrison", rating: 5, review: "Much better quality than my previous supplier. Glad I switched.", date: "12-7-2024" },
+  { id: 79, name: "Tyler Scott", rating: 5, review: "This is the third time I've ordered and quality remains consistently high.", date: "22-2-2026" },
+  { id: 80, name: "Poppy Marshall", rating: 5, review: "Excellent research grade compound. Shipping was next day as promised.", date: "11-7-2026" },
+  { id: 81, name: "Mia Chapman", rating: 5, review: "Exactly what I needed for my lab work. Fast and discreet shipping.", date: "14-11-2025" },
+  { id: 82, name: "Harvey Bennett", rating: 5, review: "Best quality I've found in the UK market. Will be a returning customer.", date: "19-5-2025" },
+  { id: 83, name: "Katie Smith", rating: 5, review: "Excellent research grade compound. Shipping was next day as promised.", date: "7-7-2026" },
+  { id: 84, name: "Jade Holmes", rating: 5, review: "Very happy with the consistency across multiple orders. Reliable source.", date: "15-8-2026" },
+  { id: 85, name: "Freddie Ellis", rating: 5, review: "Customer service answered all my questions promptly before I ordered.", date: "22-2-2025" },
+  { id: 86, name: "Lauren Fisher", rating: 5, review: "Packaging was tamper-evident and professional. Felt very secure.", date: "11-2-2024" },
+  { id: 87, name: "Harvey Allen", rating: 5, review: "Discreet packaging, fast delivery, and top-tier product quality.", date: "5-1-2024" },
+  { id: 88, name: "Olivia Richardson", rating: 4, review: "This is the third time I've ordered and quality remains consistently high.", date: "15-7-2026" },
+  { id: 89, name: "Rachel Jackson", rating: 5, review: "Very pleased with the fast delivery and the product's performance.", date: "16-7-2024" },
+  { id: 90, name: "Max Holmes", rating: 4, review: "Lab-grade quality at a fair price. Hard to beat this combination.", date: "25-2-2025" },
+  { id: 91, name: "Theo Clarke", rating: 5, review: "Lab-grade quality at a fair price. Hard to beat this combination.", date: "15-1-2026" },
+  { id: 92, name: "Olivia White", rating: 5, review: "Secure payment process and discreet packaging. Very professional outfit.", date: "26-8-2026" },
+  { id: 93, name: "Bethany Robertson", rating: 5, review: "Great communication throughout the order process. Very reassuring.", date: "25-8-2026" },
+  { id: 94, name: "Nathan Marshall", rating: 5, review: "The product dissolved cleanly and performed as expected in trials.", date: "15-3-2026" },
+  { id: 95, name: "Sarah Mitchell", rating: 5, review: "Great value for money and the customer support is very responsive.", date: "27-11-2025" },
+  { id: 96, name: "Harrison Mason", rating: 5, review: "Been researching with this for 3 weeks now. Results are consistent and clean.", date: "21-4-2025" },
+  { id: 97, name: "Evelyn Johnson", rating: 5, review: "Very pleased with the fast delivery and the product's performance.", date: "8-5-2025" },
+  { id: 98, name: "Lily Foster", rating: 5, review: "Been using this for my research and the purity is excellent. Five stars.", date: "5-4-2025" },
+  { id: 99, name: "Kieran Hall", rating: 5, review: "Very pleased with the fast delivery and the product's performance.", date: "3-7-2025" },
+  { id: 100, name: "Chloe Foster", rating: 5, review: "Secure payment process and discreet packaging. Very professional outfit.", date: "2-4-2025" },
+];
+
+export function getAllReviews(): MockReview[] {
+  return MOCK_REVIEWS;
+}
+
+export function getAverageRating(): number {
+  const total = MOCK_REVIEWS.reduce((sum, r) => sum + r.rating, 0);
+  return Math.round((total / MOCK_REVIEWS.length) * 10) / 10;
+}

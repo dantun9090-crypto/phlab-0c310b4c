@@ -31,6 +31,10 @@ import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 import { ResearchContentBlock } from '@/components/ResearchContentBlock';
 import PuritySignature from '@/components/PuritySignature';
+import { StarRating } from '@/components/StarRating';
+import { ReviewPreview } from '@/components/ReviewPreview';
+import { ReviewsModal } from '@/components/ReviewsModal';
+import { useDeterministicReviews } from '@/hooks/useDeterministicReviews';
 
 // Maps product name keywords → Resources article slug
 const ARTICLE_MAP: Record<string, { slug: string; title: string; excerpt: string }> = {
@@ -251,6 +255,11 @@ export default function ProductDetail() {
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [hplcLightboxSrc, setHplcLightboxSrc] = useState<string | null>(null);
+  const [reviewsOpen, setReviewsOpen] = useState(false);
+  const { previewReviews, allReviews, averageRating, totalCount } = useDeterministicReviews(
+    product?.id || product?.slug || id || 'product',
+    4
+  );
   const merchantAliasInfo = getDualEntryAliasInfo(id);
 
   // Lock background scroll while any lightbox / overlay is open
@@ -1300,21 +1309,8 @@ export default function ProductDetail() {
                     ))}
                   </div>
 
-                  {/* Trustpilot link — legacy ProHealthPeptides reviews */}
-                  <a
-                    // check-domains-allow-next-line
-                    href="https://uk.trustpilot.com/review/www.prohealthpeptides.co.uk"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Read our reviews on Trustpilot"
-                    className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl transition-all hover:scale-[1.01] hover:bg-[#0e2240] cursor-pointer"
-                    style={{ background: 'rgba(11,26,48,0.8)', border: '1px solid rgba(0,182,122,0.3)' }}
-                  >
-                    <Star className="w-4 h-4 text-[#00b67a] fill-current" />
-                    <span className="text-[#00b67a] text-xs font-semibold">
-                      Rated Excellent on Trustpilot — read reviews
-                    </span>
-                  </a>
+
+
 
                   {/* Customer review submission — moderated before publishing */}
                   <ReviewForm productId={product.id} productName={product.name} />
@@ -1501,6 +1497,16 @@ export default function ProductDetail() {
                   Research Grade{' '}·{' '}UK Supplier{' '}·{' '}HPLC Verified
                 </span>
               </h1>
+
+              <div className="mb-3">
+                <StarRating
+                  rating={averageRating}
+                  size="md"
+                  reviewCount={totalCount}
+                  onClick={() => setReviewsOpen(true)}
+                />
+              </div>
+
 
               {/* GLOW — 3-peptide blend tag, directly under product name */}
               {/glow/i.test(product.name) && !/klow/i.test(product.name) && (
@@ -1774,6 +1780,19 @@ export default function ProductDetail() {
                 </AnimatePresence>
               </button>
             </div>
+
+            {/* ── Customer reviews (static, deterministic) ── */}
+            <div className="flex flex-col gap-2">
+              <ReviewPreview reviews={previewReviews} onClick={() => setReviewsOpen(true)} />
+              <button
+                type="button"
+                onClick={() => setReviewsOpen(true)}
+                className="self-start text-xs font-semibold text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
+              >
+                Read all {totalCount} reviews
+              </button>
+            </div>
+
 
             {/* ── Next Day delivery countdown ── */}
             <NextDayCountdown />
@@ -2184,6 +2203,15 @@ export default function ProductDetail() {
           )}
         </AnimatePresence>
       </div>
+
+      <ReviewsModal
+        isOpen={reviewsOpen}
+        onClose={() => setReviewsOpen(false)}
+        reviews={allReviews}
+        averageRating={averageRating}
+        totalCount={totalCount}
+        productName={product.name}
+      />
     </div>
   );
 }
