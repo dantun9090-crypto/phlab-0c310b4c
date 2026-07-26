@@ -433,13 +433,46 @@ function ComplianceModule() {
 
 // ---------- Tab ----------
 
+function LegacyHostModule() {
+  return (
+    <section
+      style={{
+        background: '#0f172a',
+        border: '2px solid #334155',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 20,
+      }}
+    >
+      <h3 style={h3Style}>
+        <Globe size={18} color="#60a5fa" /> Legacy host: prohealthpeptides.co.uk {/* check-domains-allow-line */}
+      </h3>
+      <p style={{ color: '#cbd5e1', fontSize: 13, lineHeight: 1.6, margin: '8px 0 0' }}>
+        {/* check-domains-allow-next-line */}
+        prohealthpeptides.co.uk is an SEO / Google Merchant Free-Listings mirror only. Sign-in,
+        account, cart and checkout cannot run there — Firebase Auth, session cookies, CSP nonces and
+
+        Wallid return URLs must stay on one origin (phlabs.co.uk).
+      </p>
+      <ul style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.7, margin: '10px 0 0', paddingLeft: 18 }}>
+        <li>Account / Login / Checkout buttons on the legacy host link directly to https://phlabs.co.uk/… (absolute URLs).</li>
+        <li>A visible notice tells the shopper the hop is intentional before they click.</li>
+        <li>The Worker still 302s any transactional path as a safety net (cloudflare/prohealth-legacy-proxy.js).</li>
+        <li>Do NOT enable Google sign-in on the legacy host — it would create a second, separate session and cart.</li>
+      </ul>
+    </section>
+  );
+}
+
 export default function AdsDomainsTab() {
   return (
     <div>
       <h2 style={{ marginTop: 0, color: '#e4f0ff' }}>Ads & Domains</h2>
+      <LegacyHostModule />
       <VisibilityModule />
       <LandingModule />
       <ComplianceModule />
     </div>
   );
 }
+

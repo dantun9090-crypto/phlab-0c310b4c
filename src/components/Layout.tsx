@@ -36,6 +36,10 @@ import { migrateStoredCart } from '@/lib/cart-migration';
 import { initAnalytics, trackPageView, trackAddToCart, trackBeginCheckout, renderGoogleMerchantBadge } from '@/lib/analytics';
 import { merchantItemId } from '@/lib/merchant-item-id';
 import { logCartEvent, safeCartWrite, safeCartRead } from '@/lib/cart-telemetry';
+import TransactionalLink from '@/components/TransactionalLink';
+import LegacyHostNotice from '@/components/LegacyHostNotice';
+import { isLegacyHost, transactionalHref } from '@/lib/legacy-host';
+
 
 import { Logo } from './Logo';
 import { UnderConstruction } from './UnderConstruction';
@@ -694,22 +698,23 @@ export function Layout({ children }: LayoutProps) {
 
               {/* Account */}
               {firebaseUser ? (
-                <Link
+                <TransactionalLink
                   to="/account"
                   className="group hidden md:flex items-center gap-1.5 px-3 py-2 text-[#7a9ec8] hover:text-white hover:bg-white/[0.06] rounded-xl text-[13px] font-medium transition-all duration-300 border border-transparent hover:border-white/[0.08]"
                 >
                   <UserIcon className="w-4 h-4 text-blue-400/60 group-hover:text-emerald-400 transition-colors" />
                   <span>Account</span>
-                </Link>
+                </TransactionalLink>
               ) : (
-                <Link
+                <TransactionalLink
                   to="/login"
                   className="group hidden md:flex items-center gap-1.5 px-3 py-2 text-[#7a9ec8] hover:text-white hover:bg-white/[0.06] rounded-xl text-[13px] font-medium transition-all duration-300 border border-transparent hover:border-white/[0.08]"
                 >
                   <UserIcon className="w-4 h-4 text-blue-400/60 group-hover:text-emerald-400 transition-colors" />
                   <span>Login</span>
-                </Link>
+                </TransactionalLink>
               )}
+
 
               {/* Day / Night theme toggle disabled per request */}
 
@@ -1112,6 +1117,13 @@ export function Layout({ children }: LayoutProps) {
                           );
                         } catch { /* never block checkout */ }
                         closeCart();
+                        // Legacy SEO mirror (prohealthpeptides.co.uk) cannot own check-domains-allow-line
+                        // a checkout session — send the shopper to the canonical
+                        // origin explicitly instead of being 302'd mid-flow.
+                        if (isLegacyHost()) {
+                          window.location.href = transactionalHref('/checkout');
+                          return;
+                        }
                         navigate('/checkout');
                       }}
                       disabled={hasItemsWithoutVariant}
@@ -1125,6 +1137,8 @@ export function Layout({ children }: LayoutProps) {
                       <Lock className="w-4 h-4" />
                       {hasItemsWithoutVariant ? 'Select variant for all items' : 'Continue to Checkout'}
                     </button>
+                    <LegacyHostNotice className="pt-1" />
+
                     {/* Cart trust badges */}
                     <div className="grid grid-cols-3 gap-2 pt-1">
                       {[
