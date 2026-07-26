@@ -33,6 +33,7 @@ const STORAGE_RULES = `rules_version = '2';
 // Default deny. Public read only for product/marketing assets. Writes admin-only.
 service firebase.storage {
   match /b/{bucket}/o {
+
     function isAuthed() { return request.auth != null; }
 
     function isAdmin() {
@@ -57,9 +58,29 @@ service firebase.storage {
       allow read: if true;
       allow write: if isAdmin() && isImage() && isUnder10MB();
     }
+    match /newsletter/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin() && isImage() && isUnder10MB();
+    }
+    match /email-branding/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin() && isImage() && isUnder10MB();
+    }
     match /public/{allPaths=**} {
       allow read: if true;
       allow write: if isAdmin() && isUnder10MB();
+    }
+
+    // Certificates of Analysis — signed-in customers may view, admins upload
+    match /coa/{allPaths=**} {
+      allow read: if isAuthed();
+      allow write: if isAdmin() && isUnder10MB();
+    }
+
+    // Marketing advert creatives (popup module) — public read, admin write
+    match /adverts/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin() && isImage() && isUnder10MB();
     }
 
     // Per-user private uploads (avatars / order docs). Only owner reads/writes.
