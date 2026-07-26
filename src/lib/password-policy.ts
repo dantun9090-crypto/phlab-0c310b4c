@@ -1,5 +1,8 @@
 /**
- * Password policy: min 12 chars, 1 uppercase, 1 number, 1 symbol.
+ * Password policy: min 6 chars (Firebase Auth floor). Composition rules
+ * relaxed 2026-07-26 on owner request (was min 12 + upper + number +
+ * symbol) — the strength meter still nudges users toward stronger
+ * passwords but no longer blocks simple ones.
  * Used by Register, Reset Password, and Account → Change Password.
  */
 
@@ -15,10 +18,10 @@ export interface PasswordPolicyResult {
 }
 
 export const PASSWORD_RULES = {
-  minLength: 12,
-  requireUpper: true,
-  requireNumber: true,
-  requireSymbol: true,
+  minLength: 6,
+  requireUpper: false,
+  requireNumber: false,
+  requireSymbol: false,
 } as const;
 
 const SYMBOL_RE = /[^A-Za-z0-9]/;
@@ -30,9 +33,9 @@ export function evaluatePassword(password: string): PasswordPolicyResult {
   if (pw.length < PASSWORD_RULES.minLength) {
     errors.push(`At least ${PASSWORD_RULES.minLength} characters`);
   }
-  if (!/[A-Z]/.test(pw)) errors.push('1 uppercase letter');
-  if (!/[0-9]/.test(pw)) errors.push('1 number');
-  if (!SYMBOL_RE.test(pw)) errors.push('1 symbol (e.g. !@#$%)');
+  if (PASSWORD_RULES.requireUpper && !/[A-Z]/.test(pw)) errors.push('1 uppercase letter');
+  if (PASSWORD_RULES.requireNumber && !/[0-9]/.test(pw)) errors.push('1 number');
+  if (PASSWORD_RULES.requireSymbol && !SYMBOL_RE.test(pw)) errors.push('1 symbol (e.g. !@#$%)');
 
   // Score 0..5
   let score = 0;
