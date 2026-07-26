@@ -694,22 +694,23 @@ export function Layout({ children }: LayoutProps) {
 
               {/* Account */}
               {firebaseUser ? (
-                <Link
+                <TransactionalLink
                   to="/account"
                   className="group hidden md:flex items-center gap-1.5 px-3 py-2 text-[#7a9ec8] hover:text-white hover:bg-white/[0.06] rounded-xl text-[13px] font-medium transition-all duration-300 border border-transparent hover:border-white/[0.08]"
                 >
                   <UserIcon className="w-4 h-4 text-blue-400/60 group-hover:text-emerald-400 transition-colors" />
                   <span>Account</span>
-                </Link>
+                </TransactionalLink>
               ) : (
-                <Link
+                <TransactionalLink
                   to="/login"
                   className="group hidden md:flex items-center gap-1.5 px-3 py-2 text-[#7a9ec8] hover:text-white hover:bg-white/[0.06] rounded-xl text-[13px] font-medium transition-all duration-300 border border-transparent hover:border-white/[0.08]"
                 >
                   <UserIcon className="w-4 h-4 text-blue-400/60 group-hover:text-emerald-400 transition-colors" />
                   <span>Login</span>
-                </Link>
+                </TransactionalLink>
               )}
+
 
               {/* Day / Night theme toggle disabled per request */}
 
