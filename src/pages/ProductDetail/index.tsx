@@ -1794,6 +1794,19 @@ export default function ProductDetail() {
               </button>
             </div>
 
+            {/* ── Customer reviews (static, deterministic) ── */}
+            <div className="flex flex-col gap-2">
+              <ReviewPreview reviews={previewReviews} onClick={() => setReviewsOpen(true)} />
+              <button
+                type="button"
+                onClick={() => setReviewsOpen(true)}
+                className="self-start text-xs font-semibold text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
+              >
+                Read all {totalCount} reviews
+              </button>
+            </div>
+
+
             {/* ── Next Day delivery countdown ── */}
             <NextDayCountdown />
 
