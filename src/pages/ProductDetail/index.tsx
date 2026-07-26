@@ -35,6 +35,8 @@ import { StarRating } from '@/components/StarRating';
 import { ReviewPreview } from '@/components/ReviewPreview';
 import { ReviewsModal } from '@/components/ReviewsModal';
 import { useDeterministicReviews } from '@/hooks/useDeterministicReviews';
+import { listApprovedReviewsForProduct } from '@/lib/reviews';
+import type { MockReview } from '@/data/mockReviews';
 
 // Maps product name keywords → Resources article slug
 const ARTICLE_MAP: Record<string, { slug: string; title: string; excerpt: string }> = {
@@ -260,6 +262,45 @@ export default function ProductDetail() {
     product?.id || product?.slug || id || 'product',
     4
   );
+
+  // Customer-submitted reviews (Firestore `reviews`, status 'approved' via
+  // Admin → Reviews) are merged AHEAD of the deterministic mock set, so the
+  // public count grows as real customers post: total = 128 mocks + approved.
+  // Cards stay mock-only (one Firestore read here, not N per catalogue grid).
+  const [approvedReviews, setApprovedReviews] = useState<MockReview[]>([]);
+  useEffect(() => {
+    const pid = product?.id;
+    if (!pid) return;
+    let cancelled = false;
+    listApprovedReviewsForProduct(pid, 20)
+      .then((rows) => {
+        if (cancelled) return;
+        setApprovedReviews(
+          rows.map((r, i) => {
+            const d = r.createdAt?.toDate?.();
+            return {
+              id: 1000 + i,
+              name: r.name,
+              rating: r.rating,
+              review: r.title ? `${r.title} — ${r.body}` : r.body,
+              date: d ? `${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}` : '',
+            };
+          }),
+        );
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [product?.id]);
+
+  const mergedTotalCount = totalCount + approvedReviews.length;
+  const mergedAverageRating = approvedReviews.length
+    ? Math.round(
+        ((averageRating * totalCount + approvedReviews.reduce((s, r) => s + r.rating, 0)) /
+          mergedTotalCount) * 10,
+      ) / 10
+    : averageRating;
+  const mergedAllReviews = [...approvedReviews, ...allReviews];
+  const mergedPreviewReviews = mergedAllReviews.slice(0, previewReviews.length);
   const merchantAliasInfo = getDualEntryAliasInfo(id);
 
   // Lock background scroll while any lightbox / overlay is open
@@ -1500,9 +1541,9 @@ export default function ProductDetail() {
 
               <div className="mb-3">
                 <StarRating
-                  rating={averageRating}
+                  rating={mergedAverageRating}
                   size="md"
-                  reviewCount={totalCount}
+                  reviewCount={mergedTotalCount}
                   onClick={() => setReviewsOpen(true)}
                 />
               </div>
@@ -1783,13 +1824,13 @@ export default function ProductDetail() {
 
             {/* ── Customer reviews (static, deterministic) ── */}
             <div className="flex flex-col gap-2">
-              <ReviewPreview reviews={previewReviews} onClick={() => setReviewsOpen(true)} />
+              <ReviewPreview reviews={mergedPreviewReviews} onClick={() => setReviewsOpen(true)} />
               <button
                 type="button"
                 onClick={() => setReviewsOpen(true)}
                 className="self-start text-xs font-semibold text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
               >
-                Read all {totalCount} reviews
+                Read all {mergedTotalCount} reviews
               </button>
             </div>
 
@@ -2207,9 +2248,9 @@ export default function ProductDetail() {
       <ReviewsModal
         isOpen={reviewsOpen}
         onClose={() => setReviewsOpen(false)}
-        reviews={allReviews}
-        averageRating={averageRating}
-        totalCount={totalCount}
+        reviews={mergedAllReviews}
+        averageRating={mergedAverageRating}
+        totalCount={mergedTotalCount}
         productName={product.name}
       />
     </div>
