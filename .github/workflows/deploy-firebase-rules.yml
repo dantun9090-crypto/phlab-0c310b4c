@@ -1,0 +1,69 @@
+name: Deploy Firebase rules (Storage + Firestore)
+
+# Deploys storage.rules and firestore.rules whenever they change on main,
+# so the Console never drifts from the repo again (the drift was the root
+# cause of the "Firebase Storage permission denied" upload failures).
+#
+# One-time setup (repo secret):
+#   1. Firebase Console → Project Settings → Service Accounts →
+#      "Generate new private key" (JSON).
+#   2. GitHub → Settings → Secrets and variables → Actions → New repository
+#      secret: name FIREBASE_SERVICE_ACCOUNT, value = full JSON contents.
+# Until the secret exists, the push trigger exits early with a notice and
+# stays green; the workflow can always be run manually afterwards.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "storage.rules"
+      - "firestore.rules"
+      - ".github/workflows/deploy-firebase-rules.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-rules:
+    name: firebase deploy --only storage,firestore:rules
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check service account secret
+        id: secret_check
+        run: |
+          if [ -z "${FIREBASE_SERVICE_ACCOUNT}" ]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::FIREBASE_SERVICE_ACCOUNT secret not set — skipping rules deploy (see workflow header for setup)."
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Write service account file
+        if: steps.secret_check.outputs.present == 'true'
+        run: |
+          printf '%s' "${FIREBASE_SERVICE_ACCOUNT}" > "${GITHUB_WORKSPACE}/.sa.json"
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Deploy storage + firestore rules
+        if: steps.secret_check.outputs.present == 'true'
+        run: |
+          set -euo pipefail
+          npm install --no-save firebase-tools@14
+          PROJECT_ID=$(python3 -c "import json;print(json.load(open('${GITHUB_WORKSPACE}/.sa.json'))['project_id'])")
+          npx firebase-tools deploy \
+            --only storage,firestore:rules \
+            --project "$PROJECT_ID" \
+            --non-interactive --force
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/.sa.json
+
+      - name: Remove service account file
+        if: always()
+        run: rm -f "${GITHUB_WORKSPACE}/.sa.json"

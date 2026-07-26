@@ -10,6 +10,8 @@ const VIAL_IMAGES: Record<string, string> = {
   'wegovy':         '/images/vials/1773539068703.jpg',
   'tirzepatide':    '/images/vials/1773539096289.jpg',
   'mounjaro':       '/images/vials/1773539096289.jpg',
+  'retatrutide':    '/images/vials/retatrutide.webp',
+  'reta':           '/images/vials/retatrutide.webp',
   'aod-9604':       '/images/vials/1773539572760.jpg',
   'aod9604':        '/images/vials/1773539572760.jpg',
   '5-amino-1mq':    '/images/vials/1773539597695.jpg',
