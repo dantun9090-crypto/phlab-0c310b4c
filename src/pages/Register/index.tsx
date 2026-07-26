@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Mail, Lock, Eye, EyeOff, CheckCircle2, Loader2, Gift, Phone } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, CheckCircle2, Loader2, Gift, Phone, Calendar } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { registerUser, signInWithGoogle, ensureAppCheck, setAuthPersistence } from '@/lib/firebase';
 import { evaluatePassword, summarisePolicyErrors } from '@/lib/password-policy';
@@ -13,6 +13,7 @@ export default function Register() {
     lastName: '',
     email: '',
     phone: '',
+    dateOfBirth: '',
     password: '',
     confirmPassword: '',
     acceptedTerms: false,
@@ -88,6 +89,25 @@ export default function Register() {
       setError('Passwords do not match');
       return;
     }
+    if (!formData.dateOfBirth) {
+      setError('Please enter your date of birth');
+      return;
+    }
+    {
+      const dob = new Date(formData.dateOfBirth + 'T00:00:00');
+      const now = new Date();
+      if (Number.isNaN(dob.getTime()) || dob > now || dob.getFullYear() < 1900) {
+        setError('Please enter a valid date of birth');
+        return;
+      }
+      let age = now.getFullYear() - dob.getFullYear();
+      const monthDiff = now.getMonth() - dob.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < dob.getDate())) age--;
+      if (age < 18) {
+        setError('You must be 18 or older to create an account');
+        return;
+      }
+    }
     if (!formData.acceptedTerms) {
       setError('You must accept the Terms & Conditions to create an account');
       return;
@@ -105,6 +125,7 @@ export default function Register() {
         referralCode || undefined,
         formData.phone || undefined,
         formData.acceptedTerms,
+        formData.dateOfBirth || undefined,
       );
       setSuccess(true);
       setTimeout(() => {
@@ -339,6 +360,27 @@ export default function Register() {
                   </div>
                 </div>
 
+                {/* Date of birth — age confirmation (18+). Native date picker
+                    is the most accessible option for older customers: tap and
+                    pick, no legal checkbox to decipher. */}
+                <div>
+                  <label htmlFor="reg-dob" className="block text-sm font-medium text-[#9cb8d9] mb-2">Date of birth</label>
+                  <div className="relative">
+                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a5a82] pointer-events-none z-10" />
+                    <input
+                      id="reg-dob" name="bday"
+                      type="date"
+                      required
+                      value={formData.dateOfBirth}
+                      onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                      style={{ background: '#0d1f38', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', width: '100%', borderRadius: '10px', padding: '12px 16px 12px 48px', fontSize: '14px', outline: 'none', display: 'block', boxSizing: 'border-box', colorScheme: 'dark' }}
+                      autoComplete="bday"
+                      max={new Date().toISOString().slice(0, 10)}
+                    />
+                  </div>
+                  <p className="text-xs text-[#3a5a82] mt-1.5">Required — we only use it to confirm you are 18 or older.</p>
+                </div>
+
                 {/* Terms & Conditions checkbox */}
                 <div>
                   <label className="flex items-start gap-3 cursor-pointer group">
@@ -361,7 +403,7 @@ export default function Register() {
                       </div>
                     </div>
                     <span className="text-sm text-[#9cb8d9] leading-snug">
-                      I am 18+ and agree to the{' '}
+                      I agree to the{' '}
                       <Link to="/terms-and-conditions" className="text-blue-400 hover:text-blue-300" target="_blank" rel="noopener">Terms & Conditions</Link>
                       {' '}and{' '}
                       <Link to="/privacy-policy" className="text-blue-400 hover:text-blue-300" target="_blank" rel="noopener">Privacy Policy</Link>.

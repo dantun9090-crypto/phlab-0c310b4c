@@ -552,6 +552,7 @@ export const registerUser = async (
   referredByCode?: string,
   phone?: string,
   tcAccepted?: boolean,
+  dateOfBirth?: string,
 ) => {
   await ensureAppCheckReady();
   const cleanEmail = normaliseAuthEmail(email);
@@ -574,6 +575,7 @@ export const registerUser = async (
     lastName,
     displayName: `${firstName} ${lastName}`,
     ...(phone ? { phone } : {}),
+    ...(dateOfBirth ? { dateOfBirth } : {}),
     termsAccepted: tcAccepted ?? false,
     termsAcceptedAt: tcAccepted ? now : null,
     createdAt: now,
