@@ -570,10 +570,9 @@ export default function OrdersTab() {
            quantity: it.quantity || 1,
            priceNum: it.priceNum || 0,
          }));
-         await addDoc(collection(db, 'mail'), {
-           to: customerEmail,
-           bcc: 'phlabs.co.uk+88474c9b36@invite.trustpilot.com',
-           message: {
+          await addDoc(collection(db, 'mail'), {
+            to: customerEmail,
+            message: {
              subject: `Order #${selected.id?.slice(-8).toUpperCase()} — Your Order Has Shipped!`,
              html: buildDispatchEmail({
                firstName,
