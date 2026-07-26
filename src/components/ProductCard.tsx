@@ -104,6 +104,8 @@ export function ProductCard({
   };
 
   return (
+    <>
+
     <div
       ref={isAboveFold ? undefined : revealRef}
       data-product-card={slug || product.id || 'product'}
