@@ -1,5 +1,5 @@
 import { ExternalLink } from 'lucide-react';
-import { isLegacyHost, LEGACY_TRANSACTION_NOTICE, MAIN_HOST } from '@/lib/legacy-host';
+import { isLegacyHost, MAIN_HOST } from '@/lib/legacy-host';
 
 /**
  * Small inline note rendered ONLY on the legacy SEO mirror host
@@ -16,8 +16,9 @@ export default function LegacyHostNotice({ className = '' }: { className?: strin
     >
       <ExternalLink className="w-3 h-3 mt-[1px] shrink-0 text-emerald-400/70" aria-hidden="true" />
       <span>
-        {LEGACY_TRANSACTION_NOTICE.replace(MAIN_HOST, '')}
-        <strong className="text-slate-300 font-semibold">{MAIN_HOST}</strong>
+        Accounts, sign-in and checkout are handled on{' '}
+        <strong className="text-slate-300 font-semibold">{MAIN_HOST}</strong> — you&apos;ll be taken
+        there securely.
       </span>
     </p>
   );
