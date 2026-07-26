@@ -377,5 +377,15 @@ export function ProductCard({
         )}
       </div>
     </div>
+
+    <ReviewsModal
+      isOpen={reviewsOpen}
+      onClose={() => setReviewsOpen(false)}
+      reviews={allReviews}
+      averageRating={averageRating}
+      totalCount={totalCount}
+      productName={name}
+    />
+    </>
   );
 }
