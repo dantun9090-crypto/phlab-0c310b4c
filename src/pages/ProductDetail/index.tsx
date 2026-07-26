@@ -1511,6 +1511,16 @@ export default function ProductDetail() {
                 </span>
               </h1>
 
+              <div className="mb-3">
+                <StarRating
+                  rating={averageRating}
+                  size="md"
+                  reviewCount={totalCount}
+                  onClick={() => setReviewsOpen(true)}
+                />
+              </div>
+
+
               {/* GLOW — 3-peptide blend tag, directly under product name */}
               {/glow/i.test(product.name) && !/klow/i.test(product.name) && (
                 <div className="inline-flex items-center gap-2 mt-2 mb-1 px-3 py-1.5 rounded-lg border border-yellow-400/25 bg-yellow-400/[0.06]">
