@@ -53,15 +53,25 @@ function getAllowedCoaSource(raw: string | null): URL | null {
 }
 
 function pdfHeaders(upstream: Response, filename: string, download: boolean): Headers {
+  // Chrome's built-in PDF viewer (PDFium) cannot render PDFs served with
+  // Cache-Control: no-store — it needs cacheable responses for its
+  // byte-range fetches, so iframes showed a blank white pane with a
+  // broken-document icon while Firefox rendered fine. Inline views are
+  // cacheable for an hour (content is immutable per CoA filename);
+  // downloads stay uncached.
   const headers = new Headers({
     "content-type": "application/pdf",
     "content-disposition": `${download ? "attachment" : "inline"}; filename="${filename}"`,
-    "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
-    "pragma": "no-cache",
-    "expires": "0",
+    "cache-control": download
+      ? "no-store, no-cache, must-revalidate, max-age=0"
+      : "public, max-age=3600, stale-while-revalidate=86400",
     "x-content-type-options": "nosniff",
     "x-robots-tag": "noindex, nofollow",
   });
+  if (download) {
+    headers.set("pragma", "no-cache");
+    headers.set("expires", "0");
+  }
 
   for (const name of ["accept-ranges", "content-range", "content-length", "last-modified", "etag"]) {
     const value = upstream.headers.get(name);
