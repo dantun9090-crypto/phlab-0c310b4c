@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, ExternalLink, FileText } from 'lucide-react';
+import { X, Download, ExternalLink, FileText, Loader2 } from 'lucide-react';
 
 interface CoaModalProps {
   open: boolean;
@@ -23,6 +23,57 @@ export function CoaModal({ open, onClose, pdfUrl, productName, filename, batch, 
   }, [pdfUrl, filename]);
 
   const downloadUrl = `${proxiedPdfUrl}&download=1`;
+
+  // PDF.js canvas renderer. The previous <iframe> relied on the browser's
+  // built-in PDF plugin — which does NOT exist on Chrome for Android
+  // (PDFium iframes are desktop-only), so mobile Chrome showed a blank
+  // white pane with a broken-document icon. pdf.js renders via canvas and
+  // works in every browser. Lazy-imported so the ~1MB bundle loads only
+  // when someone actually opens a certificate.
+  const viewerRef = useRef<HTMLDivElement>(null);
+  const [renderState, setRenderState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+
+  useEffect(() => {
+    if (!open) return;
+    const host = viewerRef.current;
+    if (!host) return;
+    let cancelled = false;
+    host.innerHTML = '';
+    setRenderState('loading');
+    void (async () => {
+      try {
+        const [{ getDocument, GlobalWorkerOptions }, workerMod] = await Promise.all([
+          import('pdfjs-dist'),
+          import('pdfjs-dist/build/pdf.worker.min.mjs?url'),
+        ]);
+        GlobalWorkerOptions.workerSrc = (workerMod as { default: string }).default;
+        const doc = await getDocument({ url: proxiedPdfUrl }).promise;
+        for (let pageNum = 1; pageNum <= doc.numPages; pageNum++) {
+          if (cancelled) return;
+          const page = await doc.getPage(pageNum);
+          const base = page.getViewport({ scale: 1 });
+          const fitWidth = (host.clientWidth - 32) || 800;
+          const scale = Math.min((fitWidth / base.width) * (window.devicePixelRatio || 1), 3);
+          const viewport = page.getViewport({ scale: Math.max(scale, 1.5) });
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.floor(viewport.width);
+          canvas.height = Math.floor(viewport.height);
+          canvas.style.width = '100%';
+          canvas.style.height = 'auto';
+          canvas.style.display = 'block';
+          canvas.style.background = '#ffffff';
+          canvas.style.borderRadius = '8px';
+          await page.render({ canvas, viewport }).promise;
+          host.appendChild(canvas);
+        }
+        if (!cancelled) setRenderState('done');
+      } catch (err) {
+        console.error('[CoaModal] pdf.js render failed:', err);
+        if (!cancelled) setRenderState('error');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [open, proxiedPdfUrl]);
 
   useEffect(() => {
     if (!open) return;
@@ -129,13 +180,27 @@ export function CoaModal({ open, onClose, pdfUrl, productName, filename, batch, 
               </div>
             </div>
 
-            {/* PDF viewer */}
-            <div className="flex-1 bg-[#1a1a2e]">
-              <iframe
-                src={`${proxiedPdfUrl}#view=FitH&toolbar=1`}
-                title={`Certificate of Analysis — ${productName}`}
-                className="w-full h-full border-0"
-              />
+            {/* PDF viewer (pdf.js canvas — works on Chrome Android too) */}
+            <div className="relative flex-1 bg-[#1a1a2e] overflow-y-auto" data-pdf-viewer>
+              <div ref={viewerRef} className="mx-auto max-w-[900px] p-3 sm:p-4 space-y-3" />
+              {renderState === 'loading' && (
+                <div className="absolute inset-0 flex items-center justify-center gap-2 text-[#8aabcf] text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Rendering certificate…
+                </div>
+              )}
+              {renderState === 'error' && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
+                  <p className="text-[#8aabcf] text-sm">The certificate could not be displayed here.</p>
+                  <a
+                    href={proxiedPdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 transition-colors"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" /> Open in new tab
+                  </a>
+                </div>
+              )}
             </div>
           </motion.div>
         </motion.div>
