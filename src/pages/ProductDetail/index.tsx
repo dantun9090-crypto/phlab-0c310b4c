@@ -1309,21 +1309,8 @@ export default function ProductDetail() {
                     ))}
                   </div>
 
-                  {/* Trustpilot link — legacy ProHealthPeptides reviews */}
-                  <a
-                    // check-domains-allow-next-line
-                    href="https://uk.trustpilot.com/review/www.prohealthpeptides.co.uk"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Read our reviews on Trustpilot"
-                    className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl transition-all hover:scale-[1.01] hover:bg-[#0e2240] cursor-pointer"
-                    style={{ background: 'rgba(11,26,48,0.8)', border: '1px solid rgba(0,182,122,0.3)' }}
-                  >
-                    <Star className="w-4 h-4 text-[#00b67a] fill-current" />
-                    <span className="text-[#00b67a] text-xs font-semibold">
-                      Rated Excellent on Trustpilot — read reviews
-                    </span>
-                  </a>
+
+
 
                   {/* Customer review submission — moderated before publishing */}
                   <ReviewForm productId={product.id} productName={product.name} />
