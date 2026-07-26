@@ -393,7 +393,7 @@ export default function Register() {
                         id="reg-terms"
                       />
                       <div
-                        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${formData.acceptedTerms ? 'bg-emerald-500 border-emerald-500' : 'bg-transparent border-white/30 group-hover:border-white/50'}`}
+                        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${formData.acceptedTerms ? 'bg-emerald-500 border-emerald-500' : 'bg-[#0d1f38] border-white/50 group-hover:border-white/70'}`}
                       >
                         {formData.acceptedTerms && (
                           <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="2.5">
