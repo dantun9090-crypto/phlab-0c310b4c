@@ -8,6 +8,10 @@ import { useScrollReveal } from '@/hooks/useScrollReveal';
 import { cfImgProps } from '@/lib/cf-image';
 import { CoaModal } from './CoaModal';
 import PuritySignature from './PuritySignature';
+import { StarRating } from './StarRating';
+import { ReviewPreview } from './ReviewPreview';
+import { ReviewsModal } from './ReviewsModal';
+import { useDeterministicReviews } from '@/hooks/useDeterministicReviews';
 
 
 interface ProductCardProps {
