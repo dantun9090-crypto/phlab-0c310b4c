@@ -445,10 +445,10 @@ function LegacyHostModule() {
       }}
     >
       <h3 style={h3Style}>
-        <Globe size={18} color="#60a5fa" /> Legacy host: prohealthpeptides.co.uk
+        <Globe size={18} color="#60a5fa" /> Legacy host: prohealthpeptides.co.uk {/* check-domains-allow-line */}
       </h3>
       <p style={{ color: '#cbd5e1', fontSize: 13, lineHeight: 1.6, margin: '8px 0 0' }}>
-        prohealthpeptides.co.uk is an SEO / Google Merchant Free-Listings mirror only. Sign-in,
+        prohealthpeptides.co.uk is an SEO / Google Merchant Free-Listings mirror only. Sign-in,  // check-domains-allow-line
         account, cart and checkout cannot run there — Firebase Auth, session cookies, CSP nonces and
         Wallid return URLs must stay on one origin (phlabs.co.uk).
       </p>

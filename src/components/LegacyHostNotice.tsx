@@ -3,7 +3,7 @@ import { isLegacyHost, MAIN_HOST } from '@/lib/legacy-host';
 
 /**
  * Small inline note rendered ONLY on the legacy SEO mirror host
- * (prohealthpeptides.co.uk) so the hop to phlabs.co.uk for sign-in / checkout
+ * (prohealthpeptides.co.uk) so the hop to phlabs.co.uk for sign-in / checkout check-domains-allow-line
  * is expected rather than surprising. Renders nothing on the canonical host.
  */
 export default function LegacyHostNotice({ className = '' }: { className?: string }) {

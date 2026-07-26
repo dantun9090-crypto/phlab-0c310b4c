@@ -1117,7 +1117,7 @@ export function Layout({ children }: LayoutProps) {
                           );
                         } catch { /* never block checkout */ }
                         closeCart();
-                        // Legacy SEO mirror (prohealthpeptides.co.uk) cannot own
+                        // Legacy SEO mirror (prohealthpeptides.co.uk) cannot own check-domains-allow-line
                         // a checkout session — send the shopper to the canonical
                         // origin explicitly instead of being 302'd mid-flow.
                         if (isLegacyHost()) {

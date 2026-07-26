@@ -6,7 +6,7 @@ import { isLegacyHost, transactionalHref } from '@/lib/legacy-host';
  * Link for transactional destinations (/login, /register, /account, /checkout).
  *
  * On the canonical host it is a normal SPA <Link>. On the legacy SEO mirror
- * (prohealthpeptides.co.uk) it becomes a plain absolute anchor to
+ * (prohealthpeptides.co.uk) it becomes a plain absolute anchor to check-domains-allow-line
  * phlabs.co.uk, so the user lands on the auth/session origin directly instead
  * of being 302'd mid-flow by the Worker (which broke Google sign-in UX).
  */

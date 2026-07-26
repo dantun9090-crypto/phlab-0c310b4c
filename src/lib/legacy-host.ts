@@ -1,7 +1,7 @@
 /**
- * Legacy-host awareness for prohealthpeptides.co.uk.
+ * Legacy-host awareness for prohealthpeptides.co.uk. check-domains-allow-line
  *
- * prohealthpeptides.co.uk is an intentional SEO/GMC-only mirror of the store
+ * prohealthpeptides.co.uk is an intentional SEO/GMC-only mirror of the store check-domains-allow-line
  * (see cloudflare/prohealth-legacy-proxy.js). Its Worker 302s every
  * transactional path (/login, /register, /account, /cart, /checkout, /payment,
  * /orders, /admin, /api) to phlabs.co.uk, because Firebase Auth state, session
@@ -16,7 +16,7 @@
 export const MAIN_ORIGIN = 'https://phlabs.co.uk';
 export const MAIN_HOST = 'phlabs.co.uk';
 
-const LEGACY_HOSTS = ['prohealthpeptides.co.uk'];
+const LEGACY_HOSTS = ['prohealthpeptides.co.uk'];  // check-domains-allow-line
 
 const stripWww = (h: string): string => (h || '').toLowerCase().replace(/^www\./, '').split(':')[0];
 
