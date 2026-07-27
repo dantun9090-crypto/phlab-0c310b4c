@@ -91,7 +91,7 @@ export default function RoyalMailTab() {
       if (!res.ok || data.ok === false) throw new Error(data.error || `HTTP ${res.status}`);
       const parts = [`checked ${data.checked ?? 0}`];
       if (data.delivered?.length) parts.push(`delivered ${data.delivered.length}`);
-      if (data.autoMarked?.length) parts.push(`auto-marked ${data.autoMarked.length}`);
+
 
       if (data.errors?.length) parts.push(`errors ${data.errors.length}`);
       if (!data.delivered?.length) parts.push('nothing new delivered');
