@@ -112,6 +112,9 @@ test.describe("cache stability — page must not auto-refresh", () => {
   test.beforeEach(async ({ context }) => {
     await context.addInitScript(() => {
       try { localStorage.setItem("phlFreshHtmlRecoveryAt", String(Date.now())); } catch { /* ignore */ }
+      // Home content is withheld behind the research gate for unconfirmed
+      // visitors (CLS fix) — seed the confirmation so / renders its h1.
+      try { localStorage.setItem("php_research_confirmed", JSON.stringify({ ok: true, ts: Date.now() })); } catch { /* ignore */ }
     });
   });
 

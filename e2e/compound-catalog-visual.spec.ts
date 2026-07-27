@@ -61,6 +61,9 @@ async function prep(page: Page, opts: { mailStatus?: number } = {}) {
 }
 
 test.describe("visual regression (chromium-only)", () => {
+  // First-compile on the CI dev server can exceed the 30s global
+  // timeout for these heavy landing/catalogue pages.
+  test.setTimeout(90_000);
   test.skip(({ browserName }) => browserName !== "chromium", "snapshots locked to chromium");
 
   test("/compound hero matches snapshot", async ({ page }) => {
@@ -140,6 +143,9 @@ test.describe("visual regression (chromium-only)", () => {
  * the file's contents.
  */
 test.describe("/PH-Labs-Research-Catalogue.pdf consistency", () => {
+  // First-compile on the CI dev server can exceed the 30s global
+  // timeout for these heavy landing/catalogue pages.
+  test.setTimeout(90_000);
   test("success + fallback links point to the same shipped PDF", async ({ page }) => {
     // Success path
     await prep(page, { mailStatus: 200 });

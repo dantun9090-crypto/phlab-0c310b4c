@@ -32,6 +32,9 @@ const KILL_MOTION_CSS = `
 `;
 
 test.describe("/resources/peptide-categories-uk-research", () => {
+  // First-compile on the CI dev server can exceed the 30s global
+  // timeout for these heavy landing/catalogue pages.
+  test.setTimeout(90_000);
   test.use({ viewport: { width: 1280, height: 1800 }, deviceScaleFactor: 1 });
 
   test("renders article with correct SEO head + canonical class headings", async ({

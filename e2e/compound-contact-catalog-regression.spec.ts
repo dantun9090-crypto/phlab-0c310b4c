@@ -64,6 +64,9 @@ function eventsNamed(dl: unknown[][], name: string) {
 }
 
 test.describe("/compound analytics events", () => {
+  // First-compile on the CI dev server can exceed the 30s global
+  // timeout for these heavy landing/catalogue pages.
+  test.setTimeout(90_000);
   test("WhatsApp + Telegram + Contact + Documentation CTAs fire the expected events", async ({ page, context }) => {
     await prep(page);
 
@@ -120,6 +123,9 @@ test.describe("/compound analytics events", () => {
 });
 
 test.describe("/contact qualification gating", () => {
+  // First-compile on the CI dev server can exceed the 30s global
+  // timeout for these heavy landing/catalogue pages.
+  test.setTimeout(90_000);
   test("submit blocked without the qualified checkbox; allowed once ticked", async ({ page }) => {
     const captured: CapturedMail[] = [];
     await prep(page, { capture: captured });
@@ -164,6 +170,9 @@ test.describe("/contact qualification gating", () => {
 });
 
 test.describe("/request-catalog email payload handling", () => {
+  // First-compile on the CI dev server can exceed the 30s global
+  // timeout for these heavy landing/catalogue pages.
+  test.setTimeout(90_000);
   async function fillCatalogForm(page: Page) {
     await page.getByLabel(/full name/i).fill("Dr Jane Smith");
     await page.getByLabel(/institution \/ company/i).fill("Imperial College Research Lab");
