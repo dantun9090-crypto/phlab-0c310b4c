@@ -112,6 +112,7 @@ import { Route as ApiPaymentsCancelRouteImport } from './routes/api/payments/can
 import { Route as ApiDsrProcessRouteImport } from './routes/api/dsr/process'
 import { Route as ApiConfigPaymentsRouteImport } from './routes/api/config/payments'
 import { Route as ApiAdminWeeklyBriefingRouteImport } from './routes/api/admin/weekly-briefing'
+import { Route as ApiAdminSendPaymentLinkRouteImport } from './routes/api/admin/send-payment-link'
 import { Route as ApiAdminRoyalMailDeliveriesRouteImport } from './routes/api/admin/royal-mail-deliveries'
 import { Route as ApiAdminOrderRemindersRouteImport } from './routes/api/admin/order-reminders'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
@@ -671,6 +672,11 @@ const ApiAdminWeeklyBriefingRoute = ApiAdminWeeklyBriefingRouteImport.update({
   path: '/api/admin/weekly-briefing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminSendPaymentLinkRoute = ApiAdminSendPaymentLinkRouteImport.update({
+  id: '/api/admin/send-payment-link',
+  path: '/api/admin/send-payment-link',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminRoyalMailDeliveriesRoute =
   ApiAdminRoyalMailDeliveriesRouteImport.update({
     id: '/api/admin/royal-mail-deliveries',
@@ -906,6 +912,7 @@ export interface FileRoutesByFullPath {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute
   '/api/admin/royal-mail-deliveries': typeof ApiAdminRoyalMailDeliveriesRoute
+  '/api/admin/send-payment-link': typeof ApiAdminSendPaymentLinkRoute
   '/api/admin/weekly-briefing': typeof ApiAdminWeeklyBriefingRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
@@ -1037,6 +1044,7 @@ export interface FileRoutesByTo {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute
   '/api/admin/royal-mail-deliveries': typeof ApiAdminRoyalMailDeliveriesRoute
+  '/api/admin/send-payment-link': typeof ApiAdminSendPaymentLinkRoute
   '/api/admin/weekly-briefing': typeof ApiAdminWeeklyBriefingRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
@@ -1171,6 +1179,7 @@ export interface FileRoutesById {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute
   '/api/admin/royal-mail-deliveries': typeof ApiAdminRoyalMailDeliveriesRoute
+  '/api/admin/send-payment-link': typeof ApiAdminSendPaymentLinkRoute
   '/api/admin/weekly-briefing': typeof ApiAdminWeeklyBriefingRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
@@ -1305,6 +1314,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/api/admin/order-reminders'
     | '/api/admin/royal-mail-deliveries'
+    | '/api/admin/send-payment-link'
     | '/api/admin/weekly-briefing'
     | '/api/config/payments'
     | '/api/dsr/process'
@@ -1436,6 +1446,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/api/admin/order-reminders'
     | '/api/admin/royal-mail-deliveries'
+    | '/api/admin/send-payment-link'
     | '/api/admin/weekly-briefing'
     | '/api/config/payments'
     | '/api/dsr/process'
@@ -1569,6 +1580,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/api/admin/order-reminders'
     | '/api/admin/royal-mail-deliveries'
+    | '/api/admin/send-payment-link'
     | '/api/admin/weekly-briefing'
     | '/api/config/payments'
     | '/api/dsr/process'
@@ -1686,6 +1698,7 @@ export interface RootRouteChildren {
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiAdminOrderRemindersRoute: typeof ApiAdminOrderRemindersRoute
   ApiAdminRoyalMailDeliveriesRoute: typeof ApiAdminRoyalMailDeliveriesRoute
+  ApiAdminSendPaymentLinkRoute: typeof ApiAdminSendPaymentLinkRoute
   ApiAdminWeeklyBriefingRoute: typeof ApiAdminWeeklyBriefingRoute
   ApiConfigPaymentsRoute: typeof ApiConfigPaymentsRoute
   ApiDsrProcessRoute: typeof ApiDsrProcessRoute
@@ -2466,6 +2479,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminWeeklyBriefingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/send-payment-link': {
+      id: '/api/admin/send-payment-link'
+      path: '/api/admin/send-payment-link'
+      fullPath: '/api/admin/send-payment-link'
+      preLoaderRoute: typeof ApiAdminSendPaymentLinkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/royal-mail-deliveries': {
       id: '/api/admin/royal-mail-deliveries'
       path: '/api/admin/royal-mail-deliveries'
@@ -2812,6 +2832,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiAdminOrderRemindersRoute: ApiAdminOrderRemindersRoute,
   ApiAdminRoyalMailDeliveriesRoute: ApiAdminRoyalMailDeliveriesRoute,
+  ApiAdminSendPaymentLinkRoute: ApiAdminSendPaymentLinkRoute,
   ApiAdminWeeklyBriefingRoute: ApiAdminWeeklyBriefingRoute,
   ApiConfigPaymentsRoute: ApiConfigPaymentsRoute,
   ApiDsrProcessRoute: ApiDsrProcessRoute,

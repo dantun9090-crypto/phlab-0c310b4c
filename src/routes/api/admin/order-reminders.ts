@@ -91,12 +91,68 @@ export const Route = createFileRoute("/api/admin/order-reminders")({
           reminder1Sent: 0,
           reminder2Sent: 0,
           cancelled: 0,
+          retryLinksSent: 0,
           skippedNoEmail: 0,
           errors: [] as string[],
         };
 
+        // ── Pay-by-Bank orders that were never confirmed ────────────────
+        // Wallid/Fena payments cancelled at the bank leave the order unpaid
+        // with no follow-up. After 1h, email a one-click retry link plus a
+        // manual bank-transfer fallback. Once per order.
+        const RETRY_AFTER_H = 1;
+        const isPayByBank = (o: any) => {
+          const m = String(o?.paymentMethod ?? "").toLowerCase();
+          const p = String(o?.paymentProvider ?? "").toLowerCase();
+          return m === "pay_by_bank" || m === "fena_ob" || p === "fena" || p === "wallid";
+        };
+        const retryCandidates = [
+          ...(pending as any[]),
+          ...((await listDocsAdmin("orders", {
+            where: { field: "status", value: "failed" },
+            limit: 100,
+          }).catch(() => [])) as any[]),
+        ];
+        for (const order of retryCandidates) {
+          if (!isPayByBank(order)) continue;
+          if (order.paymentRetryEmailAt || order.paymentRetryLinkSentAt) continue;
+          const created = parseDate(order.createdAt);
+          if (!created) continue;
+          if ((now - created.getTime()) / HOUR_MS < RETRY_AFTER_H) continue;
+          const to = orderEmail(order);
+          if (!to) { summary.skippedNoEmail++; continue; }
+          const shortId = String(order.id).slice(-8).toUpperCase();
+          try {
+            const { buildPaymentRetryEmail } = await import("@/templates/paymentRetryEmail");
+            await sendMail(
+              to,
+              `Complete your payment — ${shortId} | PH Labs`,
+              buildPaymentRetryEmail({
+                firstName: String((order.customer as any)?.firstName ?? "there").split(" ")[0] || "there",
+                orderId: order.id,
+                totalAmount: Number(order.totalAmount ?? order.totalPrice ?? order.total ?? 0) || 0,
+                payLink: `https://phlabs.co.uk/payment?orderId=${encodeURIComponent(order.id)}`,
+                reference:
+                  typeof order.bankTransferReference === "string" && order.bankTransferReference.trim()
+                    ? order.bankTransferReference
+                    : `#${shortId}`,
+                bankName,
+                sortCode,
+                accountNumber,
+                iban,
+              }),
+              "order-reminder:pay-again",
+            );
+            await updateDocAdmin("orders", order.id, { paymentRetryEmailAt: new Date() });
+            summary.retryLinksSent++;
+          } catch (e) {
+            summary.errors.push(`${order.id}: ${e instanceof Error ? e.message : String(e)}`.slice(0, 200));
+          }
+        }
+
         for (const order of pending as any[]) {
           if (String(order.paymentMethod ?? "") !== "bank_transfer") continue;
+
           const created = parseDate(order.createdAt);
           if (!created) continue;
           summary.checked++;
