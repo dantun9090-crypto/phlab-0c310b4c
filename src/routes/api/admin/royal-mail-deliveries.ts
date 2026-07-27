@@ -59,31 +59,8 @@ function json(data: unknown, status = 200): Response {
   });
 }
 
-/**
- * Days after dispatch to auto-complete an order when Royal Mail gives us no
- * delivery scan (their Tracking API needs a paid entitlement). 0 disables it.
- */
-function autoDeliverAfterDays(): number {
-  const raw = Number((process.env.AUTO_DELIVER_AFTER_DAYS ?? "5").trim());
-  return Number.isFinite(raw) && raw >= 0 ? raw : 5;
-}
 
-/** Best-effort dispatch timestamp from the order doc. */
-function shippedTimestamp(order: Record<string, unknown>): Date | null {
-  for (const key of ["shippedAt", "dispatchedAt", "labelCreatedAt", "updatedAt", "createdAt"]) {
-    const v = order[key] as unknown;
-    if (!v) continue;
-    if (v instanceof Date) return v;
-    if (typeof v === "string" || typeof v === "number") {
-      const d = new Date(v);
-      if (!Number.isNaN(d.getTime())) return d;
-    }
-    const seconds = (v as { seconds?: number; _seconds?: number })?.seconds
-      ?? (v as { _seconds?: number })?._seconds;
-    if (typeof seconds === "number") return new Date(seconds * 1000);
-  }
-  return null;
-}
+
 
 
 async function isAuthorized(request: Request): Promise<boolean> {
@@ -210,11 +187,10 @@ export const Route = createFileRoute("/api/admin/royal-mail-deliveries")({
         const summary = {
           checked: 0,
           delivered: [] as string[],
-          autoMarked: [] as string[],
-
           skipped: [] as string[],
           errors: [] as Array<{ orderId: string; error: string }>,
         };
+
 
         for (const order of shipped) {
           const tracking = (order.trackingNumber || "").trim();
@@ -225,29 +201,12 @@ export const Route = createFileRoute("/api/admin/royal-mail-deliveries")({
           summary.checked++;
 
           const track = await checkDelivered(tracking);
-          let reason = "royal-mail";
-          let statusText = track.status || "delivered";
-
-          if (!track.delivered) {
-            // Royal Mail's Tracking API requires a paid entitlement; when it is
-            // unavailable (401/403) or the parcel simply has no delivery scan,
-            // fall back to a time-based auto-complete so orders don't sit in
-            // `shipped` forever. Configurable via AUTO_DELIVER_AFTER_DAYS
-            // (set to 0 to disable).
-            const days = autoDeliverAfterDays();
-            const shippedAt = shippedTimestamp(order as Record<string, unknown>);
-            const ageDays = shippedAt ? (Date.now() - shippedAt.getTime()) / 86_400_000 : null;
-
-            if (!days || ageDays === null || ageDays < days) {
-              if (track.error) summary.errors.push({ orderId: order.id, error: track.error });
-              else summary.skipped.push(`${order.id} (${track.status || "in transit"})`);
-              continue;
-            }
-            reason = "auto-timer";
-            statusText = `Assumed delivered after ${days} days (no Royal Mail scan)`;
-            summary.autoMarked.push(order.id);
-          } else if (track.error) {
+          if (track.error) {
             summary.errors.push({ orderId: order.id, error: track.error });
+            continue;
+          }
+          if (!track.delivered) {
+            summary.skipped.push(`${order.id} (${track.status || "in transit"})`);
             continue;
           }
 
@@ -255,14 +214,13 @@ export const Route = createFileRoute("/api/admin/royal-mail-deliveries")({
             await updateDocAdmin("orders", order.id, {
               status: "delivered",
               deliveredAt: new Date(),
-              deliveryStatusText: statusText,
-              deliveryConfirmedBy: reason,
+              deliveryStatusText: track.status || "delivered",
+              deliveryConfirmedBy: "royal-mail",
             });
             await addDocAdmin("activity", {
               type: "order",
-              message: `Order #${order.id.slice(0, 8)} status → delivered (${
-                reason === "auto-timer" ? "auto after delivery window" : "Royal Mail sync"
-              })`,
+              message: `Order #${order.id.slice(0, 8)} status → delivered (Royal Mail sync)`,
+
               orderId: order.id,
               timestamp: new Date(),
             });
