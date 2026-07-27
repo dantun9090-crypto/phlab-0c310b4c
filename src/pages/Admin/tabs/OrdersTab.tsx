@@ -417,6 +417,31 @@ export default function OrdersTab() {
   };
 
   const [reinstating, setReinstating] = useState<string | null>(null);
+  const [payLinkBusy, setPayLinkBusy] = useState<string | null>(null);
+  const [payLinkMsg, setPayLinkMsg] = useState<{ msg: string; ok: boolean } | null>(null);
+
+  /** Email the customer a "Pay Again" link + bank-transfer fallback. */
+  const handleSendPaymentLink = async (orderId: string) => {
+    setPayLinkBusy(orderId);
+    setPayLinkMsg(null);
+    try {
+      const idToken = await getAdminIdToken();
+      const res = await fetch('/api/admin/send-payment-link', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ idToken, orderId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      setPayLinkMsg({ msg: `Payment link emailed to ${data.to}`, ok: true });
+      await logAdminAction({ action: 'order.payment_link_sent', target: `orders/${orderId}` });
+    } catch (e: any) {
+      setPayLinkMsg({ msg: `Failed to send: ${e?.message || 'please try again.'}`, ok: false });
+    } finally {
+      setPayLinkBusy(null);
+    }
+  };
+
 
   const handleReinstateOrder = async (orderId: string) => {
     if (!window.confirm('Reinstate this order? It will be set back to Pending and the customer will receive a new payment reminder.')) return;
