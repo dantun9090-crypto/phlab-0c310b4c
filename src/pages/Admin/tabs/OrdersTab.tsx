@@ -1542,6 +1542,35 @@ export default function OrdersTab() {
                   </p>
                 </div>
 
+                {/* Failed / unpaid bank payment — email a pay-again link */}
+                {['pending', 'pending_payment', 'awaiting_payment', 'processing_payment', 'failed', 'cancelled']
+                  .includes(String(selected.status || '').toLowerCase()) && (
+                  <div className="bg-orange-500/5 border border-orange-500/20 rounded-xl p-4 mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Send className="w-4 h-4 text-orange-400" />
+                      <p className="text-orange-400 text-xs font-semibold uppercase tracking-wide">Payment Not Completed</p>
+                    </div>
+                    <p className="text-[#9cb8d9] text-xs mb-3">
+                      Email the customer a one-click "Pay Again" link for this order, including manual bank-transfer details as an alternative.
+                    </p>
+                    <button
+                      onClick={() => handleSendPaymentLink(selected.id)}
+                      disabled={payLinkBusy === selected.id}
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-orange-600/20 hover:bg-orange-600/30 border border-orange-500/40 hover:border-orange-500/60 text-orange-300 hover:text-orange-200 rounded-lg text-sm font-medium transition-all disabled:opacity-50"
+                    >
+                      {payLinkBusy === selected.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                      Send Payment Link
+                    </button>
+                    {payLinkMsg && (
+                      <p aria-live="polite" className={`mt-2 text-xs ${payLinkMsg.ok ? 'text-green-400' : 'text-red-400'}`}>
+                        {payLinkMsg.msg}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+
+
                 {/* Reinstate Order — shown only for auto-cancelled orders */}
                 {(selected as any).cancelReason === 'auto_72h_no_payment' && (
                   <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 mb-4">
