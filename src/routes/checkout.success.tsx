@@ -35,6 +35,7 @@ async function fireGaPurchaseOnce(orderId: string, snapData?: Record<string, unk
     const items: GaItem[] = rawItems.map((it) => ({
       item_id: merchantItemId(it.id ?? it.productId ?? it.sku ?? it.slug ?? ""),
       item_name: String(it.name ?? it.title ?? "Item"),
+      item_category: String(it.category ?? "Peptides"),
       item_variant: it.variantName ? String(it.variantName) : (it.variant ? String(it.variant) : undefined),
       price: Number(it.priceNum ?? it.price ?? 0), // inc-VAT per unit (UK B2C)
       quantity: Number(it.quantity ?? 1),
