@@ -43,7 +43,7 @@ import { isLegacyHost, transactionalHref } from '@/lib/legacy-host';
 
 import { Logo } from './Logo';
 import { UnderConstruction } from './UnderConstruction';
-import ResearchGate from './ResearchGate';
+import ResearchGate, { isResearchConfirmed } from './ResearchGate';
 import { Navigation } from './Navigation';
 import LiveSalesPopup from './LiveSalesPopup';
 import { WhatsAppIcon, FacebookIcon, InstagramIcon, TwitterXIcon, YoutubeIcon } from './SocialIcons';
@@ -114,6 +114,23 @@ export function Layout({ children }: LayoutProps) {
   // On these routes the chrome stays policy-neutral (no Peptides nav, no
   // disclaimers, no HPLC badges) — same content for users and bots.
   const isContactPage = ['/contact', '/shipping-policy', '/privacy-policy'].includes(location.pathname);
+
+  // Research-gate content hold (CLS): on the homepage, unconfirmed visitors
+  // get ONLY the gate overlay from the first frame — no page content renders
+  // behind it, so the async hero/banner/product-grid renders can't shift the
+  // layout while the modal is open (measured as CLS 0.211 on mobile
+  // Lighthouse; previously 0.123). Confirmed users, search/social bots and
+  // the ads crawler see the full page immediately (bot UA auto-confirms,
+  // so SEO/prerender output is unchanged). Post-confirm renders are excluded
+  // from CLS by the hadRecentInput rule.
+  const isHomePage = location.pathname === '/';
+  const [researchConfirmed, setResearchConfirmed] = useState<boolean>(() => isResearchConfirmed());
+  useEffect(() => {
+    const onCleared = () => setResearchConfirmed(isResearchConfirmed());
+    window.addEventListener('php:research-gate-cleared', onCleared);
+    return () => window.removeEventListener('php:research-gate-cleared', onCleared);
+  }, []);
+  const holdForResearchGate = isHomePage && !researchConfirmed;
   // Peptide Supermarket badge: self-hosted from /public/images (the remote
   // SVG on peptidesupermarket.co.uk sends Cross-Origin-Resource-Policy, so
   // browsers block it as <img> — it rendered as a blank broken image).
@@ -642,7 +659,7 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col" style={layoutVars}>
       {/* Research confirmation gate + sticky research banner */}
-      {!isCleanPage && !isLandingPage && !isContactPage && <ResearchGate />}
+      {!isCleanPage && !isLandingPage && !isContactPage && <ResearchGate forceOpen={holdForResearchGate} />}
 
       {/* Maintenance Mode — admins bypass */}
       {siteSettings.maintenanceMode && !isAdmin && (
@@ -913,7 +930,8 @@ export function Layout({ children }: LayoutProps) {
       {/* Professional disclaimer banner — full-width amber strip below header */}
       {disclaimerVisible && !isContactPage && <DisclaimerBanner />}
 
-      {/* Main content */}
+      {/* Main content (withheld on home until the research gate is confirmed) */}
+      {!holdForResearchGate && (
       <main
         className="flex-1"
         style={isAuthPage
@@ -923,6 +941,7 @@ export function Layout({ children }: LayoutProps) {
       >
         {children}
       </main>
+      )}
 
       <LiveSalesPopup />
 
@@ -1174,7 +1193,7 @@ export function Layout({ children }: LayoutProps) {
       {/* ═══════════════════════════════════════════════════════════════
           PREMIUM FOOTER
       ═══════════════════════════════════════════════════════════════ */}
-      {!isAuthPage && <footer className="relative bg-[#03080f] mt-auto overflow-hidden">
+      {!isAuthPage && !holdForResearchGate && <footer className="relative bg-[#03080f] mt-auto overflow-hidden">
         {/* Background glow */}
 
 

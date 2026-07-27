@@ -27,6 +27,11 @@ function isConfirmed(): boolean {
   } catch { return false; }
 }
 
+/** Public reader so Layout can gate page content behind the modal (CLS fix). */
+export function isResearchConfirmed(): boolean {
+  return isConfirmed();
+}
+
 function saveConfirmation() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ ts: Date.now() })); } catch { /* storage unavailable */ }
 }
@@ -54,7 +59,7 @@ async function fetchProductRequiresGate(slug: string): Promise<boolean | null> {
   } catch { return null; }
 }
 
-export default function ResearchGate() {
+export default function ResearchGate({ forceOpen = false }: { forceOpen?: boolean }) {
   const [showModal, setShowModal]         = useState(false);
   // Start hidden on first render to match SSR (where isConfirmed() returns true).
   // After hydration the effect below flips it based on actual localStorage.
@@ -108,9 +113,17 @@ export default function ResearchGate() {
     const isHome = location.pathname === '/' || location.pathname === '';
     if (!isHome && !isProductPage) return;
 
+    // forceOpen: open in the FIRST frame (Layout already withholds the page
+    // content behind the gate) — no 400ms delayed overlay insertion, which
+    // was a guaranteed layout-shift session on every cold visit.
+    if (forceOpen) {
+      setShowModal(true);
+      return;
+    }
+
     const timer = setTimeout(() => setShowModal(true), 400);
     return () => clearTimeout(timer);
-  }, [location.pathname]);
+  }, [location.pathname, forceOpen]);
 
 
   // Lock body scroll while modal is open so the page behind can't scroll and
