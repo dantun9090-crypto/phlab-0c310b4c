@@ -35,13 +35,20 @@ function filterValid(urls: string[]): string[] {
 }
 
 export const submitToIndexNow = createServerFn({ method: 'POST' })
-  .validator((input: { urls: string[] }) => {
+  .validator((input: { urls: string[]; idToken: string }) => {
     if (!input || !Array.isArray(input.urls)) {
       throw new Error('urls[] required');
     }
-    return { urls: input.urls.slice(0, 10_000) };
+    if (typeof input.idToken !== 'string' || input.idToken.length < 10 || input.idToken.length > 4096) {
+      throw new Error('idToken required');
+    }
+    return { urls: input.urls.slice(0, 10_000), idToken: input.idToken };
   })
   .handler(async ({ data }): Promise<SubmitResult> => {
+    // Admin-only: submitting burns the shared IndexNow quota for the whole site.
+    const { requireFirebaseAdmin } = await import('@/lib/server/firebase-auth-admin');
+    await requireFirebaseAdmin(data.idToken);
+
     const key = process.env.BING_INDEXNOW_API_KEY;
     if (!key) {
       return { ok: false, status: 503, submitted: 0, message: 'BING_INDEXNOW_API_KEY not configured' };
