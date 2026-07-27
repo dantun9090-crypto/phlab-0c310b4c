@@ -236,7 +236,7 @@ export default function RoyalMailTab() {
             onClick={handleSyncDeliveries}
             disabled={syncing}
             className="flex items-center gap-2 px-3 py-2 text-[12px] font-semibold text-emerald-300 hover:text-emerald-200 border border-emerald-600/50 hover:border-emerald-500 rounded-lg transition-colors disabled:opacity-50"
-            title="Check Royal Mail tracking for shipped orders; parcels with no scan are auto-marked delivered after the delivery window (AUTO_DELIVER_AFTER_DAYS, default 5 days)"
+            title="Check Royal Mail tracking for shipped orders and mark delivered parcels as delivered"
           >
             {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Truck className="w-3.5 h-3.5" />}
             {syncing ? 'Syncing…' : 'Sync deliveries'}
