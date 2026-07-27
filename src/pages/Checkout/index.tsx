@@ -642,7 +642,17 @@ export default function CheckoutPage() {
       setSelectedGiftId(null);
     }
   }, [eligibleGiftList, selectedGiftId]);
-  const hasItemsWithoutVariant = cart.some(item => !item.dosage || item.dosage === '');
+  // Keep this rule identical to the cart drawer in Layout.tsx: an item counts
+  // as having a variant if ANY of variantId / variantName / dosage is set.
+  // Legacy carts cached on Safari/iPhone carry variantId + variantName without
+  // a `dosage` string — checking `dosage` alone blocked those customers from
+  // paying even though the cart drawer showed the variant correctly.
+  const hasItemsWithoutVariant = cart.some(item => {
+    const hasVariantId = typeof item.variantId === 'string' && item.variantId.trim() !== '';
+    const hasVariantName = typeof item.variantName === 'string' && item.variantName.trim() !== '';
+    const hasDosage = typeof item.dosage === 'string' && item.dosage.trim() !== '';
+    return !hasVariantId && !hasVariantName && !hasDosage;
+  });
   const activePayByBankName = paymentOptions?.primary?.name ?? 'Open Banking';
   const cartToGaItems = useCallback((): GaItem[] => cart.map(item => ({
     item_id: merchantItemId(item.id),
