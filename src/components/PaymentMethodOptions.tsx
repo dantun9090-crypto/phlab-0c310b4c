@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 
 import UkBankBadges from "@/components/UkBankBadges";
+import InAppBrowserNotice from "@/components/InAppBrowserNotice";
+
 import type { CheckoutPaymentOptions } from "@/lib/payments/types";
 
 export interface PaymentMethodOptionsProps {
