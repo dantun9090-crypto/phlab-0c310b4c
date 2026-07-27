@@ -112,8 +112,8 @@ import { Route as ApiPaymentsCancelRouteImport } from './routes/api/payments/can
 import { Route as ApiDsrProcessRouteImport } from './routes/api/dsr/process'
 import { Route as ApiConfigPaymentsRouteImport } from './routes/api/config/payments'
 import { Route as ApiAdminWeeklyBriefingRouteImport } from './routes/api/admin/weekly-briefing'
-import { Route as ApiAdminOrderRemindersRouteImport } from './routes/api/admin/order-reminders'
 import { Route as ApiAdminRoyalMailDeliveriesRouteImport } from './routes/api/admin/royal-mail-deliveries'
+import { Route as ApiAdminOrderRemindersRouteImport } from './routes/api/admin/order-reminders'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
@@ -671,14 +671,15 @@ const ApiAdminWeeklyBriefingRoute = ApiAdminWeeklyBriefingRouteImport.update({
   path: '/api/admin/weekly-briefing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminRoyalMailDeliveriesRoute =
+  ApiAdminRoyalMailDeliveriesRouteImport.update({
+    id: '/api/admin/royal-mail-deliveries',
+    path: '/api/admin/royal-mail-deliveries',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminOrderRemindersRoute = ApiAdminOrderRemindersRouteImport.update({
   id: '/api/admin/order-reminders',
   path: '/api/admin/order-reminders',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAdminRoyalMailDeliveriesRoute = ApiAdminRoyalMailDeliveriesRouteImport.update({
-  id: '/api/admin/royal-mail-deliveries',
-  path: '/api/admin/royal-mail-deliveries',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
@@ -1684,6 +1685,7 @@ export interface RootRouteChildren {
   ResourcesIndexRoute: typeof ResourcesIndexRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiAdminOrderRemindersRoute: typeof ApiAdminOrderRemindersRoute
+  ApiAdminRoyalMailDeliveriesRoute: typeof ApiAdminRoyalMailDeliveriesRoute
   ApiAdminWeeklyBriefingRoute: typeof ApiAdminWeeklyBriefingRoute
   ApiConfigPaymentsRoute: typeof ApiConfigPaymentsRoute
   ApiDsrProcessRoute: typeof ApiDsrProcessRoute
@@ -2464,18 +2466,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminWeeklyBriefingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/order-reminders': {
-      id: '/api/admin/order-reminders'
-      path: '/api/admin/order-reminders'
-      fullPath: '/api/admin/order-reminders'
-      preLoaderRoute: typeof ApiAdminOrderRemindersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/admin/royal-mail-deliveries': {
       id: '/api/admin/royal-mail-deliveries'
       path: '/api/admin/royal-mail-deliveries'
       fullPath: '/api/admin/royal-mail-deliveries'
       preLoaderRoute: typeof ApiAdminRoyalMailDeliveriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/order-reminders': {
+      id: '/api/admin/order-reminders'
+      path: '/api/admin/order-reminders'
+      fullPath: '/api/admin/order-reminders'
+      preLoaderRoute: typeof ApiAdminOrderRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.mcp/invoke-tool/$tool': {
@@ -2809,6 +2811,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResourcesIndexRoute: ResourcesIndexRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiAdminOrderRemindersRoute: ApiAdminOrderRemindersRoute,
+  ApiAdminRoyalMailDeliveriesRoute: ApiAdminRoyalMailDeliveriesRoute,
   ApiAdminWeeklyBriefingRoute: ApiAdminWeeklyBriefingRoute,
   ApiConfigPaymentsRoute: ApiConfigPaymentsRoute,
   ApiDsrProcessRoute: ApiDsrProcessRoute,

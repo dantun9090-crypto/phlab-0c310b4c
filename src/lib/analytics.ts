@@ -22,7 +22,12 @@ declare global {
 }
 
 const DEFAULT_MEASUREMENT_ID = 'G-5HM4YT7HDW';
-const GOOGLE_ADS_CONVERSION_ID = (import.meta.env.VITE_GOOGLE_ADS_CONVERSION_ID as string | undefined)?.trim() || '';
+// Google Ads account for phlabs.co.uk. Overridable per-environment.
+const DEFAULT_GOOGLE_ADS_CONVERSION_ID = 'AW-18173004380';
+const GOOGLE_ADS_CONVERSION_ID =
+  (import.meta.env.VITE_GOOGLE_ADS_CONVERSION_ID as string | undefined)?.trim() ||
+  DEFAULT_GOOGLE_ADS_CONVERSION_ID;
+// Conversion label issued by Google Ads for the "Purchase" action.
 const GOOGLE_ADS_PURCHASE_LABEL = (import.meta.env.VITE_GOOGLE_ADS_PURCHASE_LABEL as string | undefined)?.trim() || '';
 const GOOGLE_DESTINATION_IDS = [
   DEFAULT_MEASUREMENT_ID,
@@ -521,7 +526,14 @@ export function trackAdsPurchaseConversion(
   value: number,
   userData?: Record<string, string>,
 ): void {
-  if (!GOOGLE_ADS_CONVERSION_ID || !GOOGLE_ADS_PURCHASE_LABEL) return;
+  if (!GOOGLE_ADS_CONVERSION_ID) return;
+  if (!GOOGLE_ADS_PURCHASE_LABEL) {
+    // Without the per-action label Google Ads cannot attribute the sale.
+    console.warn(
+      '[analytics] VITE_GOOGLE_ADS_PURCHASE_LABEL is not set — Google Ads purchase conversion skipped.',
+    );
+    return;
+  }
   if (!ensureAnalyticsReady()) return;
   const ga = window.gtag;
   if (!ga) return;
