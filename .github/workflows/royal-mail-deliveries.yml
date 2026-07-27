@@ -28,8 +28,8 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${CRON_SECRET:-}" ]; then
-            echo "CRON_SECRET is not configured — skipping." >&2
-            exit 0
+            echo "CRON_SECRET is not configured — cannot run sync." >&2
+            exit 1
           fi
           resp=$(curl -sS -o /tmp/resp.json -w "%{http_code}" \
             -X POST "https://phlabs.co.uk/api/admin/royal-mail-deliveries" \
