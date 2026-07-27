@@ -1,0 +1,29 @@
+name: Deploy Royal Mail order worker
+
+# Manual deploy of the royal-mail-order worker
+# (royal-mail-order.dantun9090.workers.dev).
+# Source: cloudflare/royal-mail-order-worker.js +
+#         cloudflare/royal-mail-order-wrangler.toml
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy royal-mail-order
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Deploy to Cloudflare Workers
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_API }}
+        run: |
+          npm install -g wrangler@4
+          cd cloudflare
+          wrangler deploy --config royal-mail-order-wrangler.toml
