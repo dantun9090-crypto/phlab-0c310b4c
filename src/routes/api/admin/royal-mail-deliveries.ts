@@ -79,7 +79,7 @@ async function checkDelivered(trackingNumber: string): Promise<TrackResult> {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-phlabs-auth": (process.env.VITE_ROYAL_MAIL_WORKER_TOKEN || "").trim(),
+        "x-phlabs-auth": (process.env.ROYAL_MAIL_WORKER_TOKEN || "").trim(),
       },
       body: JSON.stringify({ action: "trackByNumber", trackingNumber }),
       signal: AbortSignal.timeout(15_000),
