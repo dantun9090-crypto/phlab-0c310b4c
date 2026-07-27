@@ -401,12 +401,9 @@ export default function PaymentPage() {
             )}
 
             <div className="mt-4 text-center text-[11px]" style={{ color: '#666' }}>
-              Powered by{' '}
-              <a href="https://fena.co" target="_blank" rel="noopener noreferrer" style={{ color: '#e94560', textDecoration: 'none' }}>
-                Fena Open Banking
-              </a>{' '}
-              | FCA-regulated bank transfer
+              Powered by Wallid Pay by Bank | FCA-regulated bank transfer
             </div>
+
           </div>
           )}
         </div>
