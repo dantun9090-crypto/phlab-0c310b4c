@@ -406,8 +406,14 @@ export function Layout({ children }: LayoutProps) {
         const existing = localStorage.getItem('php_cart');
         if (existing && existing !== '[]' && existing !== 'null') return;
       }
-      // Detect an unexpected clear: hydrated, in-memory empty, but persisted non-empty.
-      if (cart.length === 0 && cartHydratedRef.current) {
+      // Detect an *unexpected* clear: hydrated, in-memory empty, persisted
+      // non-empty, and no user/order action explains it. Removing the last
+      // item and finishing an order are normal and must not be reported —
+      // they were the source of the false-positive telemetry noise.
+      const wasIntentional = intentionalClearRef.current;
+      intentionalClearRef.current = false;
+      const onOrderCompletionPage = /^\/(checkout|payment)\/(success|cancel)/.test(location.pathname);
+      if (cart.length === 0 && cartHydratedRef.current && !wasIntentional && !onOrderCompletionPage) {
         try {
           const existing = localStorage.getItem('php_cart');
           if (existing && existing !== '[]' && existing !== 'null') {
