@@ -213,7 +213,10 @@ export default function PaymentMethodOptions({
       aria-label="Choose how you want to pay"
       className="space-y-3"
     >
+      <InAppBrowserNotice />
+
       {noOnline && (
+
         <div
           data-testid="manual-only-notice"
           role="status"
