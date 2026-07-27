@@ -65,6 +65,25 @@ export const Route = createFileRoute("/api/public/hooks/prerender-recache")({
         });
         if (limited) return limited;
 
+        // Auth first: missing header is always 401, even when the server
+        // token isn't configured (a config error must never leak to
+        // unauthenticated callers as a 500 — the reindex-hook contract
+        // test pins this).
+        const provided = request.headers.get("x-recache-secret");
+        const badAuth = async () => {
+          // 2) Separate bad-auth bucket — 10 req/min — so brute-force
+          // attempts get throttled hard without exhausting the default bucket.
+          const badAuthLimited = await enforceRateLimit(request, ENDPOINT, {
+            limit: 10,
+            windowMs: 60_000,
+            retryAfterSec: 120,
+            bucketKind: "bad-auth",
+          });
+          if (badAuthLimited) return badAuthLimited;
+          return new Response("Unauthorized", { status: 401 });
+        };
+        if (!provided) return badAuth();
+
         const token = process.env.PRERENDER_TOKEN;
         if (!token) {
           return Response.json(
@@ -85,20 +104,8 @@ export const Route = createFileRoute("/api/public/hooks/prerender-recache")({
           );
         }
 
-        const provided = request.headers.get("x-recache-secret");
         const url = new URL(request.url);
-        if (!provided || !timingSafeEqualStr(provided, token)) {
-          // 2) Separate bad-auth bucket — 10 req/min — so brute-force
-          // attempts get throttled hard without exhausting the default bucket.
-          const badAuthLimited = await enforceRateLimit(request, ENDPOINT, {
-            limit: 10,
-            windowMs: 60_000,
-            retryAfterSec: 120,
-            bucketKind: "bad-auth",
-          });
-          if (badAuthLimited) return badAuthLimited;
-          return new Response("Unauthorized", { status: 401 });
-        }
+        if (!timingSafeEqualStr(provided, token)) return badAuth();
 
         const force = url.searchParams.get("force") === "1";
         const now = Date.now();
