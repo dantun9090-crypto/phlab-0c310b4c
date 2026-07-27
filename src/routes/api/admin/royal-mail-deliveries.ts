@@ -41,6 +41,8 @@ interface OrderRow {
   userEmail?: string;
   userName?: string;
   userId?: string;
+  [key: string]: unknown;
+
 }
 
 interface TrackResult {
