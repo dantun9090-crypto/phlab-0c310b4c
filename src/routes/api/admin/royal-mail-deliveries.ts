@@ -57,6 +57,33 @@ function json(data: unknown, status = 200): Response {
   });
 }
 
+/**
+ * Days after dispatch to auto-complete an order when Royal Mail gives us no
+ * delivery scan (their Tracking API needs a paid entitlement). 0 disables it.
+ */
+function autoDeliverAfterDays(): number {
+  const raw = Number((process.env.AUTO_DELIVER_AFTER_DAYS ?? "5").trim());
+  return Number.isFinite(raw) && raw >= 0 ? raw : 5;
+}
+
+/** Best-effort dispatch timestamp from the order doc. */
+function shippedTimestamp(order: Record<string, unknown>): Date | null {
+  for (const key of ["shippedAt", "dispatchedAt", "labelCreatedAt", "updatedAt", "createdAt"]) {
+    const v = order[key] as unknown;
+    if (!v) continue;
+    if (v instanceof Date) return v;
+    if (typeof v === "string" || typeof v === "number") {
+      const d = new Date(v);
+      if (!Number.isNaN(d.getTime())) return d;
+    }
+    const seconds = (v as { seconds?: number; _seconds?: number })?.seconds
+      ?? (v as { _seconds?: number })?._seconds;
+    if (typeof seconds === "number") return new Date(seconds * 1000);
+  }
+  return null;
+}
+
+
 async function isAuthorized(request: Request): Promise<boolean> {
   const expected = (process.env.CRON_SECRET || "").trim();
   const provided = (request.headers.get("x-cron-secret") || "").trim();
