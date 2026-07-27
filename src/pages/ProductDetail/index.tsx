@@ -996,9 +996,16 @@ export default function ProductDetail() {
     (v) => v && typeof v.name === 'string' && v.name.trim().length > 0 && Number.isFinite(Number(v.price)) && Number(v.price) >= 0,
   );
   const hasValidVariants = validVariants.length > 0;
+  // Single-SKU products (no variants array) used to render as "Out of Stock"
+  // even with stock > 0 — treat them as one implicit default variant.
   const variant = hasValidVariants
     ? (validVariants[selectedVariantIdx] || validVariants[0])
-    : undefined;
+    : {
+        id: 'default',
+        name: (product as any).size || (product as any).dosage || 'Standard',
+        price: product.price ?? 0,
+        stock: product.stock ?? 0,
+      };
   const isOutOfStock = !variant || variant.stock === 0;
   const variantPrice = Number(variant?.price ?? product.price ?? 0);
   const displayPrice = Number.isFinite(variantPrice) ? variantPrice : 0;

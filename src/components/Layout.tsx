@@ -1009,7 +1009,8 @@ export function Layout({ children }: LayoutProps) {
                           <div>
                             <p className="text-amber-400 font-semibold text-xs mb-0.5">Variant Required</p>
                             <p className="text-amber-400/80 text-[10px] leading-relaxed">
-                              Please select a variant for all items before checkout.
+                              Some items in your cart were added without a variant and can't be checked out.
+                              Remove them (bin icon) and add them again from the product page to pick a variant.
                             </p>
                           </div>
                         </div>

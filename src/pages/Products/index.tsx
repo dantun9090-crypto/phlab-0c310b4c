@@ -329,13 +329,17 @@ export default function Products() {
 
   // — Add to cart
   const handleAddToCart = (product: Product) => {
-    const variantId = selectedVariants[product.id] || product.variants?.[0]?.id;
+    // Products without a variants array (or with variants lacking ids) used to
+    // enter the cart with NO variant data — the checkout "Variant Required"
+    // gate then blocked the customer with no way to proceed. Fall back to a
+    // synthesized default variant for single-SKU products.
+    const variantId = selectedVariants[product.id] || product.variants?.[0]?.id || 'default';
     const variant   = product.variants?.find(v => v.id === variantId);
     const rawPrice  = variant ? variant.price : (product.price ?? 0);
     const priceNum  = Number(rawPrice) || 0;
     const cartKey   = variantId ? `${product.id}-${variantId}` : product.id;
     const slug      = nameToSlug(product.name ?? '');
-    const variantName = (variant as any)?.name || (variant as any)?.dosage || '';
+    const variantName = (variant as any)?.name || (variant as any)?.dosage || 'Standard';
 
     dispatchAddToCart({
       id:          product.id,
