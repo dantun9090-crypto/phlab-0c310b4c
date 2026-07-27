@@ -140,8 +140,10 @@ export default function SitemapTab() {
       // Auto-ping IndexNow for sitemap.xml so Bing/Yandex re-fetch the index.
       try {
         const { submitToIndexNow } = await import('@/lib/indexnow.functions');
+        const { getAdminIdToken } = await import('@/lib/auth-ready');
+        const idToken = await getAdminIdToken();
         submitToIndexNow({
-          data: { urls: ['https://phlabs.co.uk/sitemap.xml', 'https://phlabs.co.uk/'] },
+          data: { urls: ['https://phlabs.co.uk/sitemap.xml', 'https://phlabs.co.uk/'], idToken },
         }).then((r: any) => addLog('info', `IndexNow: ${r?.message || 'submitted'}`)).catch(() => {});
       } catch { /* best-effort */ }
       setMsg({ type: 'success', text: 'Sitemap regenerated successfully!' });

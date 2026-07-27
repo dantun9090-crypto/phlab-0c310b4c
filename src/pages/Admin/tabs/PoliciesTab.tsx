@@ -192,8 +192,10 @@ export default function PoliciesTab() {
       // Auto-ping IndexNow for the updated policy URLs (best-effort, silent).
       try {
         const { submitToIndexNow } = await import('@/lib/indexnow.functions');
+        const { getAdminIdToken } = await import('@/lib/auth-ready');
+        const idToken = await getAdminIdToken();
         const urls = policyPaths.map(p => `https://phlabs.co.uk${p}`);
-        submitToIndexNow({ data: { urls } }).catch(() => {});
+        submitToIndexNow({ data: { urls, idToken } }).catch(() => {});
       } catch { /* best-effort */ }
       showToast('Policies saved successfully!');
     } catch (e: any) {

@@ -202,7 +202,9 @@ export default function LandingPageTab() {
       // Auto-ping IndexNow so Bing/Yandex re-crawl the homepage quickly.
       try {
         const { submitToIndexNow } = await import('@/lib/indexnow.functions');
-        submitToIndexNow({ data: { urls: ['https://phlabs.co.uk/'] } }).catch(() => {});
+        const { getAdminIdToken } = await import('@/lib/auth-ready');
+        const idToken = await getAdminIdToken();
+        submitToIndexNow({ data: { urls: ['https://phlabs.co.uk/'], idToken } }).catch(() => {});
       } catch { /* best-effort */ }
       addToast('Landing page saved successfully!', 'success');
     } catch (error) {

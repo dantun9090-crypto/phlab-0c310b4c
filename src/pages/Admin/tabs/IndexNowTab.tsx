@@ -3,6 +3,7 @@ import { useServerFn } from '@tanstack/react-start';
 import { toast } from 'sonner';
 import { Send, CheckCircle2, XCircle, Loader2, Globe, Clock } from 'lucide-react';
 import { submitToIndexNow } from '@/lib/indexnow.functions';
+import { getAdminIdToken } from '@/lib/auth-ready';
 
 const HOST = 'phlabs.co.uk';
 
@@ -58,7 +59,8 @@ export default function IndexNowTab() {
   }, []);
 
   const doSubmit = async (urls: string[]): Promise<SubmitOutcome> => {
-    const r = (await submit({ data: { urls } })) as SubmitOutcome;
+    const idToken = await getAdminIdToken();
+    const r = (await submit({ data: { urls, idToken } })) as SubmitOutcome;
     return r;
   };
 

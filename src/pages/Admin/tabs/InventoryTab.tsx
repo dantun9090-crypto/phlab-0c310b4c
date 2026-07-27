@@ -310,7 +310,9 @@ export default function InventoryTab() {
   const autoIndexNowProduct = async (slug: string) => {
     try {
       const url = `https://phlabs.co.uk/products/${slug}`;
-      await submitToIndexNow({ data: { urls: [url] } });
+      const { getAdminIdToken } = await import('@/lib/auth-ready');
+      const idToken = await getAdminIdToken();
+      await submitToIndexNow({ data: { urls: [url], idToken } });
     } catch {
       // Silent — IndexNow is best-effort
     }
