@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { User, Mail, Lock, Eye, EyeOff, CheckCircle2, Loader2, Gift, Phone, Calendar } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { registerUser, signInWithGoogle, ensureAppCheck, setAuthPersistence } from '@/lib/firebase';
-import { evaluatePassword, summarisePolicyErrors } from '@/lib/password-policy';
+import { evaluatePassword, summarisePolicyErrors, PASSWORD_RULES } from '@/lib/password-policy';
 
 
 export default function Register() {
@@ -288,7 +288,7 @@ export default function Register() {
                       style={{ background: '#0d1f38', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', width: '100%', borderRadius: '10px', padding: '12px 48px', fontSize: '14px', outline: 'none', display: 'block', boxSizing: 'border-box' }}
                       placeholder="Min. 6 characters"
                       autoComplete="new-password"
-                      minLength={8}
+                      minLength={PASSWORD_RULES.minLength}
                       required
                     />
                     <button
