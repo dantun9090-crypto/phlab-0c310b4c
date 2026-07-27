@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { User, Mail, Lock, Eye, EyeOff, CheckCircle2, Loader2, Gift, Phone, Calendar } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { registerUser, signInWithGoogle, ensureAppCheck, setAuthPersistence } from '@/lib/firebase';
-import { evaluatePassword, summarisePolicyErrors } from '@/lib/password-policy';
+import { evaluatePassword, summarisePolicyErrors, PASSWORD_RULES } from '@/lib/password-policy';
 
 
 export default function Register() {
