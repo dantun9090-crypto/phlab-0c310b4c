@@ -58,7 +58,8 @@ export default function IndexNowTab() {
   }, []);
 
   const doSubmit = async (urls: string[]): Promise<SubmitOutcome> => {
-    const r = (await submit({ data: { urls } })) as SubmitOutcome;
+    const idToken = await getAdminIdToken();
+    const r = (await submit({ data: { urls, idToken } })) as SubmitOutcome;
     return r;
   };
 
