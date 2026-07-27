@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 
 import UkBankBadges from "@/components/UkBankBadges";
+import InAppBrowserNotice from "@/components/InAppBrowserNotice";
+
 import type { CheckoutPaymentOptions } from "@/lib/payments/types";
 
 export interface PaymentMethodOptionsProps {
@@ -211,7 +213,10 @@ export default function PaymentMethodOptions({
       aria-label="Choose how you want to pay"
       className="space-y-3"
     >
+      <InAppBrowserNotice />
+
       {noOnline && (
+
         <div
           data-testid="manual-only-notice"
           role="status"
@@ -257,6 +262,13 @@ export default function PaymentMethodOptions({
             <p className="text-sm text-slate-300 mt-1 ml-8">
               Pay securely from any UK bank app — instant confirmation, no card needed.
             </p>
+
+            <p className="text-xs text-slate-400 mt-1.5 ml-8">
+              Your banking app opens automatically where your bank supports it —
+              otherwise you&rsquo;ll authorise on your bank&rsquo;s secure web login. Both
+              are equally safe.
+            </p>
+
 
             {options?.primary && !wallidEnabled && (
               <p
