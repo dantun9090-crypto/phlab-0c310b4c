@@ -11,7 +11,7 @@ import MarketingAdvertSlot from '@/components/MarketingAdvertSlot';
 import ReviewForm from '@/components/ReviewForm';
 import { auth, db, doc, getDoc, getDocFromServer, collection, query, where, getDocsFromServer, limit, orderBy, onAuthStateChanged } from '@/lib/firebase';
 
-import type { Product } from '@/lib/firebase';
+import type { Product, ProductVariant } from '@/lib/firebase';
 import { getProductImage } from '@/lib/productImages';
 import { cfImg, cfImgProps } from '@/lib/cf-image';
 
@@ -998,14 +998,14 @@ export default function ProductDetail() {
   const hasValidVariants = validVariants.length > 0;
   // Single-SKU products (no variants array) used to render as "Out of Stock"
   // even with stock > 0 — treat them as one implicit default variant.
-  const variant = hasValidVariants
+  const variant: ProductVariant | undefined = hasValidVariants
     ? (validVariants[selectedVariantIdx] || validVariants[0])
-    : {
+    : ({
         id: 'default',
         name: (product as any).size || (product as any).dosage || 'Standard',
         price: product.price ?? 0,
         stock: product.stock ?? 0,
-      };
+      } as ProductVariant);
   const isOutOfStock = !variant || variant.stock === 0;
   const variantPrice = Number(variant?.price ?? product.price ?? 0);
   const displayPrice = Number.isFinite(variantPrice) ? variantPrice : 0;
