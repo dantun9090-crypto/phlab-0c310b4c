@@ -74,6 +74,38 @@ export default function RoyalMailTab() {
     window.setTimeout(() => setToast(null), 3000);
   };
 
+  // Delivery sync: ask the server to mark shipped orders as delivered when
+  // Royal Mail reports delivery (see /api/admin/royal-mail-deliveries).
+  const [syncing, setSyncing] = useState(false);
+  const handleSyncDeliveries = async () => {
+    setSyncing(true);
+    try {
+      const idToken = await getAdminIdToken();
+      if (!idToken) throw new Error('You must be signed in as an admin.');
+      const res = await fetch('/api/admin/royal-mail-deliveries', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.ok === false) throw new Error(data.error || `HTTP ${res.status}`);
+      const parts = [`checked ${data.checked ?? 0}`];
+      if (data.delivered?.length) parts.push(`delivered ${data.delivered.length}`);
+      if (data.errors?.length) parts.push(`errors ${data.errors.length}`);
+      if (!data.delivered?.length) parts.push('nothing new delivered');
+      showToast(`Delivery sync: ${parts.join(' · ')}`, !data.errors?.length);
+      logAdminAction({
+        action: 'royal_mail.delivery_sync',
+        target: 'royal_mail/deliveries',
+        after: { checked: data.checked, delivered: data.delivered, errors: data.errors?.length ?? 0 },
+      }).catch(() => {});
+    } catch (e: any) {
+      showToast(`Delivery sync failed: ${e?.message || 'unknown error'}`, false);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => {
     setForm((f) => ({ ...f, [k]: v }));
     if (error) setError('');
@@ -197,14 +229,25 @@ export default function RoyalMailTab() {
             Create a one-off Click &amp; Drop label — for returns, B2B, or manual fulfilment.
           </p>
         </div>
-        {(result || form.firstName) && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={reset}
-            className="flex items-center gap-2 px-3 py-2 text-[12px] text-slate-300 hover:text-white border border-slate-700 hover:border-slate-500 rounded-lg transition-colors"
+            onClick={handleSyncDeliveries}
+            disabled={syncing}
+            className="flex items-center gap-2 px-3 py-2 text-[12px] font-semibold text-emerald-300 hover:text-emerald-200 border border-emerald-600/50 hover:border-emerald-500 rounded-lg transition-colors disabled:opacity-50"
+            title="Check Royal Mail tracking for shipped orders and mark delivered parcels as delivered"
           >
-            <RotateCcw className="w-3.5 h-3.5" /> Reset
+            {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Truck className="w-3.5 h-3.5" />}
+            {syncing ? 'Syncing…' : 'Sync deliveries'}
           </button>
-        )}
+          {(result || form.firstName) && (
+            <button
+              onClick={reset}
+              className="flex items-center gap-2 px-3 py-2 text-[12px] text-slate-300 hover:text-white border border-slate-700 hover:border-slate-500 rounded-lg transition-colors"
+            >
+              <RotateCcw className="w-3.5 h-3.5" /> Reset
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── Result banner ── */}

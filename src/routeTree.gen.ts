@@ -113,6 +113,7 @@ import { Route as ApiDsrProcessRouteImport } from './routes/api/dsr/process'
 import { Route as ApiConfigPaymentsRouteImport } from './routes/api/config/payments'
 import { Route as ApiAdminWeeklyBriefingRouteImport } from './routes/api/admin/weekly-briefing'
 import { Route as ApiAdminOrderRemindersRouteImport } from './routes/api/admin/order-reminders'
+import { Route as ApiAdminRoyalMailDeliveriesRouteImport } from './routes/api/admin/royal-mail-deliveries'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
@@ -675,6 +676,11 @@ const ApiAdminOrderRemindersRoute = ApiAdminOrderRemindersRouteImport.update({
   path: '/api/admin/order-reminders',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminRoyalMailDeliveriesRoute = ApiAdminRoyalMailDeliveriesRouteImport.update({
+  id: '/api/admin/royal-mail-deliveries',
+  path: '/api/admin/royal-mail-deliveries',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
   Char91DotmcpChar93InvokeToolToolRouteImport.update({
     id: '/.mcp/invoke-tool/$tool',
@@ -898,6 +904,7 @@ export interface FileRoutesByFullPath {
   '/resources/': typeof ResourcesIndexRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute
+  '/api/admin/royal-mail-deliveries': typeof ApiAdminRoyalMailDeliveriesRoute
   '/api/admin/weekly-briefing': typeof ApiAdminWeeklyBriefingRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
@@ -1028,6 +1035,7 @@ export interface FileRoutesByTo {
   '/resources': typeof ResourcesIndexRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute
+  '/api/admin/royal-mail-deliveries': typeof ApiAdminRoyalMailDeliveriesRoute
   '/api/admin/weekly-briefing': typeof ApiAdminWeeklyBriefingRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
@@ -1161,6 +1169,7 @@ export interface FileRoutesById {
   '/resources/': typeof ResourcesIndexRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute
+  '/api/admin/royal-mail-deliveries': typeof ApiAdminRoyalMailDeliveriesRoute
   '/api/admin/weekly-briefing': typeof ApiAdminWeeklyBriefingRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
@@ -1294,6 +1303,7 @@ export interface FileRouteTypes {
     | '/resources/'
     | '/.mcp/invoke-tool/$tool'
     | '/api/admin/order-reminders'
+    | '/api/admin/royal-mail-deliveries'
     | '/api/admin/weekly-briefing'
     | '/api/config/payments'
     | '/api/dsr/process'
@@ -1424,6 +1434,7 @@ export interface FileRouteTypes {
     | '/resources'
     | '/.mcp/invoke-tool/$tool'
     | '/api/admin/order-reminders'
+    | '/api/admin/royal-mail-deliveries'
     | '/api/admin/weekly-briefing'
     | '/api/config/payments'
     | '/api/dsr/process'
@@ -1556,6 +1567,7 @@ export interface FileRouteTypes {
     | '/resources/'
     | '/.mcp/invoke-tool/$tool'
     | '/api/admin/order-reminders'
+    | '/api/admin/royal-mail-deliveries'
     | '/api/admin/weekly-briefing'
     | '/api/config/payments'
     | '/api/dsr/process'
@@ -2457,6 +2469,13 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/order-reminders'
       fullPath: '/api/admin/order-reminders'
       preLoaderRoute: typeof ApiAdminOrderRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/royal-mail-deliveries': {
+      id: '/api/admin/royal-mail-deliveries'
+      path: '/api/admin/royal-mail-deliveries'
+      fullPath: '/api/admin/royal-mail-deliveries'
+      preLoaderRoute: typeof ApiAdminRoyalMailDeliveriesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.mcp/invoke-tool/$tool': {

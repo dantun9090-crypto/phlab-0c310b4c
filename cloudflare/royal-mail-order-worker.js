@@ -203,6 +203,91 @@ export default {
         });
       }
 
+      // ---- Action: delivery status by tracking number -------------------
+      // Used by the delivery-sync route: checks whether Royal Mail reports a
+      // parcel as delivered. Tries the official Tracking API first (works if
+      // the Click & Drop key has the tracking entitlement), then falls back
+      // to a Click & Drop order search by tracking number.
+      if (order && order.action === 'trackByNumber') {
+        const trackingNumber = String(order.trackingNumber || '').replace(/[^0-9A-Za-z]/g, '').slice(0, 40);
+        if (!trackingNumber) {
+          return jsonResponse(request, { error: 'Missing trackingNumber' }, 400);
+        }
+
+        const isDeliveredName = (name) => {
+          const n = String(name || '');
+          return /delivered/i.test(n) && !/out for delivery/i.test(n);
+        };
+        // RM payloads vary across products — walk the JSON and collect every
+        // human-readable event/status string, then decide from the text.
+        const collectEventNames = (value, acc) => {
+          acc = acc || [];
+          if (Array.isArray(value)) {
+            for (const item of value) collectEventNames(item, acc);
+          } else if (value && typeof value === 'object') {
+            for (const key of Object.keys(value)) {
+              if (/^(eventName|eventSummary|summary|status|statusSummary|eventDescription|description|scanMessage|scanSummary)$/i.test(key)) {
+                acc.push(value[key]);
+              } else {
+                collectEventNames(value[key], acc);
+              }
+            }
+          }
+          return acc;
+        };
+        const parseResult = (data, source) => {
+          const names = collectEventNames(data).map((n) => String(n || ''));
+          const deliveredEvent = names.find((n) => isDeliveredName(n));
+          return {
+            success: true,
+            source,
+            delivered: Boolean(deliveredEvent),
+            status: deliveredEvent || names[names.length - 1] || '',
+            recentEvents: names.slice(-5),
+          };
+        };
+
+        // 1) Official Royal Mail Tracking API.
+        try {
+          const res = await fetch(
+            `https://api.royalmail.net/tracking/v2/items/${encodeURIComponent(trackingNumber)}`,
+            { headers: { 'Authorization': env.ROYAL_MAIL_API_KEY, 'Accept': 'application/json' } },
+          );
+          const text = await res.text();
+          if (res.ok) {
+            let data;
+            try { data = text ? JSON.parse(text) : {}; } catch { data = {}; }
+            return jsonResponse(request, parseResult(data, 'tracking-api'));
+          }
+          // 401/403 (no tracking entitlement) and 404 (unknown item) fall
+          // through to the Click & Drop search below.
+          if (![401, 403, 404].includes(res.status)) {
+            return jsonResponse(request, { error: 'Royal Mail tracking lookup failed', details: text.slice(0, 400) }, res.status);
+          }
+        } catch (e) { /* fall through to Click & Drop */ }
+
+        // 2) Click & Drop order search by tracking number (best effort).
+        const cd = await fetch(
+          `https://api.parcel.royalmail.com/api/v1/orders?trackingNumber=${encodeURIComponent(trackingNumber)}`,
+          { headers: { 'Authorization': env.ROYAL_MAIL_API_KEY, 'Accept': 'application/json' } },
+        );
+        const cdText = await cd.text();
+        if (!cd.ok) {
+          return jsonResponse(request, { error: 'Royal Mail lookup failed', details: cdText.slice(0, 400) }, cd.status);
+        }
+        let cdData;
+        try { cdData = cdText ? JSON.parse(cdText) : {}; } catch { cdData = {}; }
+        const orders = Array.isArray(cdData)
+          ? cdData
+          : Array.isArray(cdData?.orders)
+            ? cdData.orders
+            : [cdData];
+        if (!orders.length || !orders[0]) {
+          return jsonResponse(request, { error: 'Tracking number not found', trackingNumber }, 404);
+        }
+        return jsonResponse(request, parseResult(orders[0], 'click-and-drop'));
+      }
+
       if (!order.postcode || !order.addressLine1 || !order.orderId) {
         return jsonResponse(request, { error: 'Missing required fields' }, 400);
       }
