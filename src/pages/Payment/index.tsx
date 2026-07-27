@@ -118,37 +118,53 @@ export default function PaymentPage() {
 
     try {
       const idToken = await user.getIdToken();
-      const result = await createLink({
-        data: { idToken, orderId: loadState.orderId },
-      });
+      let paymentToken: string | null = null;
+      try {
+        paymentToken = localStorage.getItem(`php_pt_${loadState.orderId}`);
+      } catch {
+        paymentToken = null;
+      }
 
-      // SECURITY: validate the redirect URL per gateway before navigating.
+      // Wallid is the only live Pay-by-Bank gateway — same endpoint as checkout.
+      const res = await fetch('/api/payments/create', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          idToken,
+          paymentToken,
+          orderId: loadState.orderId,
+          amount: Number(loadState.amount),
+          currency: 'GBP',
+          customerEmail: loadState.customerEmail || user.email || '',
+          items: [{
+            name: `PH Labs Order ${loadState.reference || loadState.orderId}`,
+            category: 'Research Peptides',
+            price: Number(loadState.amount),
+          }],
+        }),
+      });
+      const result = await res.json().catch(() => ({} as any));
+      if (!res.ok || !result?.payment_link) {
+        throw new Error(result?.error || 'Could not start Pay by Bank.');
+      }
+
+      // SECURITY: only follow an https redirect.
       let parsed: URL;
       try {
-        parsed = new URL(result.hppUrl);
+        parsed = new URL(result.payment_link);
       } catch {
         throw new Error('Invalid payment redirect URL.');
       }
-      const host = parsed.hostname.toLowerCase();
-      const fenaOk =
-        host === 'fena.co' || host === 'fena.io' ||
-        host.endsWith('.fena.co') || host.endsWith('.fena.io');
-      const tlOk =
-        host === 'truelayer.com' ||
-        host.endsWith('.truelayer.com') ||
-        host.endsWith('.truelayer-sandbox.com');
-      const okHost =
-        (result.gateway === 'fena' && fenaOk) ||
-        (result.gateway === 'truelayer' && tlOk);
-      if (parsed.protocol !== 'https:' || !okHost) {
+      if (parsed.protocol !== 'https:') {
         throw new Error('Unexpected payment redirect host.');
       }
-      if (result.gateway === 'truelayer' && result.externalPaymentId) {
-        localStorage.setItem(`php_tl_order_${result.externalPaymentId}`, loadState.orderId);
-      }
+
+      try {
+        localStorage.setItem('php_pending_order', loadState.orderId);
+      } catch { /* ignore */ }
 
       setStatus({ message: 'Redirecting to your bank…', type: 'success' });
-      window.location.href = parsed.toString();
+      window.location.assign(parsed.toString());
     } catch (error: any) {
       console.error('Payment error:', error);
       markFallbackToday();
@@ -157,6 +173,7 @@ export default function PaymentPage() {
       setIsLoading(false);
     }
   };
+
 
   const displayAmount = loadState.kind === 'ready' ? loadState.amount : 0;
   const reference = loadState.kind === 'ready' ? loadState.reference : '';
