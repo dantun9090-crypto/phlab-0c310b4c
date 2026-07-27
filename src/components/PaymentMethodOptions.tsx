@@ -263,6 +263,13 @@ export default function PaymentMethodOptions({
               Pay securely from any UK bank app — instant confirmation, no card needed.
             </p>
 
+            <p className="text-xs text-slate-400 mt-1.5 ml-8">
+              Your banking app opens automatically where your bank supports it —
+              otherwise you&rsquo;ll authorise on your bank&rsquo;s secure web login. Both
+              are equally safe.
+            </p>
+
+
             {options?.primary && !wallidEnabled && (
               <p
                 data-testid="active-gateway-label"
