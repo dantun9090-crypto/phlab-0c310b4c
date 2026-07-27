@@ -526,7 +526,14 @@ export function trackAdsPurchaseConversion(
   value: number,
   userData?: Record<string, string>,
 ): void {
-  if (!GOOGLE_ADS_CONVERSION_ID || !GOOGLE_ADS_PURCHASE_LABEL) return;
+  if (!GOOGLE_ADS_CONVERSION_ID) return;
+  if (!GOOGLE_ADS_PURCHASE_LABEL) {
+    // Without the per-action label Google Ads cannot attribute the sale.
+    console.warn(
+      '[analytics] VITE_GOOGLE_ADS_PURCHASE_LABEL is not set — Google Ads purchase conversion skipped.',
+    );
+    return;
+  }
   if (!ensureAnalyticsReady()) return;
   const ga = window.gtag;
   if (!ga) return;
