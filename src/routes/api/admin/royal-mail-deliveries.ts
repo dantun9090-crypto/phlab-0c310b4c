@@ -210,6 +210,8 @@ export const Route = createFileRoute("/api/admin/royal-mail-deliveries")({
         const summary = {
           checked: 0,
           delivered: [] as string[],
+          autoMarked: [] as string[],
+
           skipped: [] as string[],
           errors: [] as Array<{ orderId: string; error: string }>,
         };
