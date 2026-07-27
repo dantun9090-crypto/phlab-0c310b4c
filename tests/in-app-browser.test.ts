@@ -4,7 +4,7 @@ import {
   detectInAppBrowser,
   isInAppBrowser,
   openExternallyHint,
-} from "@/lib/in-app-browser";
+} from "../src/lib/in-app-browser";
 
 const UA = {
   instagram:
