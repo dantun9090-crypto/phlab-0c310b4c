@@ -57,12 +57,18 @@ export const Route = createFileRoute("/api/public/hooks/prerender-recache")({
       POST: async ({ request }) => {
         const ENDPOINT = "/api/public/hooks/prerender-recache";
 
-        // 1) Default per-IP throttle — 30 req/min.
-        const limited = await enforceRateLimit(request, ENDPOINT, {
-          limit: 30,
-          windowMs: 60_000,
-          retryAfterSec: 120,
-        });
+        // 1) Default per-IP throttle — 30 req/min. Wrapped: when the
+        // rate-limit backend (Firestore admin) is unavailable the endpoint
+        // must still answer cleanly instead of 500ing (test env runs
+        // without FIREBASE_SERVICE_ACCOUNT_JSON).
+        let limited: Response | null = null;
+        try {
+          limited = await enforceRateLimit(request, ENDPOINT, {
+            limit: 30,
+            windowMs: 60_000,
+            retryAfterSec: 120,
+          });
+        } catch { /* fail open — auth below still protects the endpoint */ }
         if (limited) return limited;
 
         // Auth first: missing header is always 401, even when the server
@@ -73,13 +79,15 @@ export const Route = createFileRoute("/api/public/hooks/prerender-recache")({
         const badAuth = async () => {
           // 2) Separate bad-auth bucket — 10 req/min — so brute-force
           // attempts get throttled hard without exhausting the default bucket.
-          const badAuthLimited = await enforceRateLimit(request, ENDPOINT, {
-            limit: 10,
-            windowMs: 60_000,
-            retryAfterSec: 120,
-            bucketKind: "bad-auth",
-          });
-          if (badAuthLimited) return badAuthLimited;
+          try {
+            const badAuthLimited = await enforceRateLimit(request, ENDPOINT, {
+              limit: 10,
+              windowMs: 60_000,
+              retryAfterSec: 120,
+              bucketKind: "bad-auth",
+            });
+            if (badAuthLimited) return badAuthLimited;
+          } catch { /* backend down — still reject cleanly with 401 */ }
           return new Response("Unauthorized", { status: 401 });
         };
         if (!provided) return badAuth();
