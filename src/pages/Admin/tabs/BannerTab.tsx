@@ -177,7 +177,8 @@ export default function BannerTab() {
       // Auto-ping IndexNow (best-effort, silent).
       try {
         const { submitToIndexNow } = await import('@/lib/indexnow.functions');
-        submitToIndexNow({ data: { urls: ['https://phlabs.co.uk/'] } }).catch(() => {});
+        const idToken = await getAdminIdToken();
+        submitToIndexNow({ data: { urls: ['https://phlabs.co.uk/'], idToken } }).catch(() => {});
       } catch { /* best-effort */ }
       window.dispatchEvent(new CustomEvent('admin:save'));
       setOriginal(banner);
