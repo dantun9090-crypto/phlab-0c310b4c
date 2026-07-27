@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Loader } from 'lucide-react';
-import { useServerFn } from '@tanstack/react-start';
 import { db, auth, doc, getDoc, onAuthStateChanged } from '@/lib/firebase';
-import { createGatewayPaymentLink } from '@/lib/payment-gateways.functions';
 
 const DAILY_RESET_KEY = 'php_payment_fallback_date';
 
@@ -29,7 +27,6 @@ type LoadState =
     };
 
 export default function PaymentPage() {
-  const createLink = useServerFn(createGatewayPaymentLink);
   const [loadState, setLoadState] = useState<LoadState>({ kind: 'loading' });
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<{ message: string; type: 'loading' | 'success' | 'error' } | null>(null);
