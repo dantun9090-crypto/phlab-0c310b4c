@@ -639,8 +639,8 @@ export function Layout({ children }: LayoutProps) {
 
 
   const updateQuantity = (cartKey: string, delta: number) => {
-    setCart(prev =>
-      prev
+    setCart(prev => {
+      const next = prev
         .map(item => {
           const key = item.variantId ? `${item.id}-${item.variantId}` : String(item.id);
           if (key !== cartKey) return item;
@@ -648,15 +648,21 @@ export function Layout({ children }: LayoutProps) {
           if (item.stock !== undefined && newQty > item.stock) return item;
           return { ...item, quantity: newQty };
         })
-        .filter(item => item.quantity > 0)
-    );
+        .filter(item => item.quantity > 0);
+      if (next.length === 0 && prev.length > 0) intentionalClearRef.current = true;
+      return next;
+    });
   };
 
   const removeFromCart = (cartKey: string) => {
-    setCart(prev => prev.filter(item => {
-      const key = item.variantId ? `${item.id}-${item.variantId}` : String(item.id);
-      return key !== cartKey;
-    }));
+    setCart(prev => {
+      const next = prev.filter(item => {
+        const key = item.variantId ? `${item.id}-${item.variantId}` : String(item.id);
+        return key !== cartKey;
+      });
+      if (next.length === 0 && prev.length > 0) intentionalClearRef.current = true;
+      return next;
+    });
   };
 
   const closeCart = () => {
