@@ -22,7 +22,12 @@ declare global {
 }
 
 const DEFAULT_MEASUREMENT_ID = 'G-5HM4YT7HDW';
-const GOOGLE_ADS_CONVERSION_ID = (import.meta.env.VITE_GOOGLE_ADS_CONVERSION_ID as string | undefined)?.trim() || '';
+// Google Ads account for phlabs.co.uk. Overridable per-environment.
+const DEFAULT_GOOGLE_ADS_CONVERSION_ID = 'AW-18173004380';
+const GOOGLE_ADS_CONVERSION_ID =
+  (import.meta.env.VITE_GOOGLE_ADS_CONVERSION_ID as string | undefined)?.trim() ||
+  DEFAULT_GOOGLE_ADS_CONVERSION_ID;
+// Conversion label issued by Google Ads for the "Purchase" action.
 const GOOGLE_ADS_PURCHASE_LABEL = (import.meta.env.VITE_GOOGLE_ADS_PURCHASE_LABEL as string | undefined)?.trim() || '';
 const GOOGLE_DESTINATION_IDS = [
   DEFAULT_MEASUREMENT_ID,
