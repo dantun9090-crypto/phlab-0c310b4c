@@ -327,6 +327,11 @@ export function Layout({ children }: LayoutProps) {
   // Until it has, we must NOT persist the empty initial React state — otherwise
   // we'd clobber the stored cart on first paint.
   const cartHydratedRef = useRef(false);
+  // Set to true right before a *user-initiated* emptying of the cart (removing
+  // the last item, decrementing the last unit to zero) so the save effect does
+  // not report it as an unexpected clear. Order-completion pages wipe
+  // `php_cart` themselves, which is also expected — see the save effect.
+  const intentionalClearRef = useRef(false);
 
   // Load cart from localStorage — deferred to avoid blocking paint.
   // Runs `migrateStoredCart` first so legacy carts that stored the variantId
