@@ -412,7 +412,7 @@ export function Layout({ children }: LayoutProps) {
       // they were the source of the false-positive telemetry noise.
       const wasIntentional = intentionalClearRef.current;
       intentionalClearRef.current = false;
-      const onOrderCompletionPage = /^\/(checkout|payment)\/(success|cancel)/.test(location.pathname);
+      const onOrderCompletionPage = /^\/(checkout|payment)\/(success|cancel)/.test((typeof window !== "undefined" ? window.location.pathname : ""));
       if (cart.length === 0 && cartHydratedRef.current && !wasIntentional && !onOrderCompletionPage) {
         try {
           const existing = localStorage.getItem('php_cart');
