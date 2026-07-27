@@ -38,6 +38,7 @@ async function prep(page: Page, opts: { mailStatus?: number } = {}) {
     try {
       localStorage.setItem("php_research_confirmed", JSON.stringify({ ok: true, ts: Date.now() }));
       localStorage.setItem("php_cookie_consent", JSON.stringify({ analytics: false, marketing: false, ts: Date.now() }));
+      localStorage.setItem("phlabs_newsletter_seen", String(Date.now()));
     } catch { /* ignore */ }
     const apply = () => {
       const s = document.createElement("style");

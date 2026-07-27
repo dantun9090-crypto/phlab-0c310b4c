@@ -140,6 +140,11 @@ test.describe("/resources/peptide-categories-uk-research", () => {
       r.abort(),
     );
     await page.addInitScript((css) => {
+      try {
+        localStorage.setItem("php_research_confirmed", JSON.stringify({ ok: true, ts: Date.now() }));
+        localStorage.setItem("phlabs_newsletter_seen", String(Date.now()));
+        localStorage.setItem("php_cookie_consent", JSON.stringify({ analytics: false, marketing: false, ts: Date.now() }));
+      } catch { /* ignore */ }
       const apply = () => {
         const s = document.createElement("style");
         s.setAttribute("data-test", "kill-motion");
