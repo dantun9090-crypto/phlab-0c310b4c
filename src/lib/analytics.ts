@@ -28,7 +28,10 @@ const GOOGLE_ADS_CONVERSION_ID =
   (import.meta.env.VITE_GOOGLE_ADS_CONVERSION_ID as string | undefined)?.trim() ||
   DEFAULT_GOOGLE_ADS_CONVERSION_ID;
 // Conversion label issued by Google Ads for the "Purchase" action.
-const GOOGLE_ADS_PURCHASE_LABEL = (import.meta.env.VITE_GOOGLE_ADS_PURCHASE_LABEL as string | undefined)?.trim() || '';
+const DEFAULT_GOOGLE_ADS_PURCHASE_LABEL = 'YLzWCKDk7MIcENyUyNlD';
+const GOOGLE_ADS_PURCHASE_LABEL =
+  (import.meta.env.VITE_GOOGLE_ADS_PURCHASE_LABEL as string | undefined)?.trim() ||
+  DEFAULT_GOOGLE_ADS_PURCHASE_LABEL;
 const GOOGLE_DESTINATION_IDS = [
   DEFAULT_MEASUREMENT_ID,
   'GT-P3HVF8R5',
