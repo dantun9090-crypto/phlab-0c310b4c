@@ -842,6 +842,7 @@ export default function OrdersTab() {
       address.toLowerCase().includes(s);
     const matchStatus = statusFilter === 'all' || o.status === statusFilter ||
       (statusFilter === 'new' && isNewOrder(o)) ||
+      (statusFilter === 'unpaid' && isUnpaidOrder(o)) ||
       (statusFilter === 'pending' && o.status === 'pending_payment') ||
       (statusFilter === 'fena_paid' && isFenaAutoPaid(o)) ||
       (statusFilter === 'next_day_12' && (o as any).shippingMethod === 'next_day_12') ||
@@ -851,9 +852,11 @@ export default function OrdersTab() {
 
   const counts = {
     new: orders.filter(isNewOrder).length,
+    unpaid: orders.filter(isUnpaidOrder).length,
     all: orders.length,
     pending: orders.filter(o => o.status === 'pending' || o.status === 'pending_payment').length,
     paid: orders.filter(o => o.status === 'paid').length,
+
     processing: orders.filter(o => o.status === 'processing').length,
     shipped: orders.filter(o => o.status === 'shipped').length,
     delivered: orders.filter(o => o.status === 'delivered').length,
