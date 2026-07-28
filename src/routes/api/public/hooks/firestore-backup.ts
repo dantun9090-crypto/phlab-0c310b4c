@@ -145,6 +145,36 @@ async function noteFailureAndMaybeAlert(
   } catch { /* alerts must never throw */ }
 }
 
+/**
+ * Immediate (non-spike) alert. The nightly backup fires ONCE a day, so the
+ * 3-failures-in-15-minutes spike detector never triggers for a real outage —
+ * that is exactly how the 401 loop stayed invisible for weeks. Every 401 with
+ * a *present but wrong* credential and every 502 trigger failure notifies
+ * right away (Slack -> Discord -> Email, deduped hourly by enqueueMailOnce).
+ * Bare "missing credential" probes from the open internet are NOT alerted —
+ * they are noise and are already rate-limited, locked out and audit-logged.
+ */
+async function alertNow(
+  ctx: AuditContext,
+  type: "firestore_backup_unauthorized" | "firestore_backup_trigger_failed",
+  title: string,
+  summary: string,
+  reason: string,
+): Promise<void> {
+  try {
+    console.error(`[firestore-backup] ALERT ${type}: ${reason}`);
+    await sendBackupAlert({
+      type,
+      severity: "critical",
+      title,
+      summary,
+      ip: ctx.ip,
+      userAgent: ctx.userAgent,
+      reason,
+    });
+  } catch { /* alerts must never break the response */ }
+}
+
 export const Route = createFileRoute("/api/public/hooks/firestore-backup")({
   server: {
     handlers: {
@@ -207,6 +237,17 @@ export const Route = createFileRoute("/api/public/hooks/firestore-backup")({
             detail: `bad_auth_count=${lock.recentBadAuth}${lock.justLocked ? ":just_locked" : ""}`,
           });
           await noteFailureAndMaybeAlert(ctx, `unauthorized:${auth.reason}`);
+          if (auth.reason === "invalid") {
+            // A credential WAS supplied and did not match — that is a broken
+            // cron/GitHub secret, not internet noise. Alert on the first hit.
+            await alertNow(
+              ctx,
+              "firestore_backup_unauthorized",
+              "Firestore backup rejected — 401 unauthorized",
+              "A scheduled Firestore backup call was rejected with HTTP 401: the supplied credential did not match CLEANUP_SECRET or the Supabase apikey. Nightly backups are NOT running until this is fixed.",
+              `unauthorized:${auth.reason}`,
+            );
+          }
           if (lock.justLocked) {
             // One-shot alert when an IP first crosses the lockout threshold.
             try {
@@ -298,6 +339,13 @@ export const Route = createFileRoute("/api/public/hooks/firestore-backup")({
             detail: msg,
           });
           await noteFailureAndMaybeAlert(ctx, `trigger_failed:${msg.slice(0, 120)}`);
+          await alertNow(
+            ctx,
+            "firestore_backup_trigger_failed",
+            "Firestore backup failed to start — 502",
+            `The Firestore export could not be started (HTTP 502). No backup was taken. Detail: ${msg.slice(0, 300)}`,
+            `trigger_failed:${msg.slice(0, 200)}`,
+          );
           return json({ error: "trigger_failed", detail: msg, polled }, 502);
         }
 
