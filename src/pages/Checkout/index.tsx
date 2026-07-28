@@ -1144,7 +1144,15 @@ export default function CheckoutPage() {
                 product_url: publicOrigin || undefined,
               }],
             }),
-          });
+            });
+          } catch (fetchErr: any) {
+            if (linkTimeout.signal.aborted && !outerSignal?.aborted) {
+              throw new Error('The bank payment page is taking too long to open. Your order was saved — you can finish paying from the link below.');
+            }
+            throw fetchErr;
+          } finally {
+            window.clearTimeout(linkTimeoutId);
+          }
           if (paymentAttemptRef.current !== paymentAttemptId) return;
           const data = await res.json().catch(() => ({} as any));
           if (paymentAttemptRef.current !== paymentAttemptId) return;
