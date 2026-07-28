@@ -1192,6 +1192,7 @@ export default function CheckoutPage() {
           });
           const failMsg = err?.message || 'Payment could not be started — please try again.';
           setLoginError(failMsg);
+          setStalledOrderId(orderId);
           console.error('[PAYMENT] gateway_fail method=wallid', err);
           try { toast.error(failMsg); } catch { /* toast optional */ }
           setIsPlacing(false);
