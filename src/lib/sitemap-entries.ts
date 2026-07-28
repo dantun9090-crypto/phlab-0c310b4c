@@ -33,6 +33,8 @@ function buildStaticEntries(): SitemapEntry[] {
     { path: "/research/tirzepatide-vs-retatrutide", changefreq: "weekly", priority: "0.9" },
     { path: "/research/cjc-1295-ipamorelin-synergy", changefreq: "weekly", priority: "0.9" },
     { path: "/research/ghk-cu-guide", changefreq: "weekly", priority: "0.9" },
+    { path: "/research/pt-141-uk", changefreq: "weekly", priority: "0.9" },
+
     { path: "/resources/peptide-categories-uk-research", changefreq: "monthly", priority: "0.6" },
     { path: "/compound", changefreq: "weekly", priority: "0.7" },
     { path: "/landing/phlabs", changefreq: "weekly", priority: "0.7" },
