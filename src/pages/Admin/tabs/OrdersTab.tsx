@@ -992,16 +992,18 @@ export default function OrdersTab() {
 
       {/* Status filter tabs */}
       <div className="flex gap-2 flex-wrap">
-        {(['all', 'pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'fena_paid', 'next_day_12', 'next_day_missed'] as const).map(s => {
+        {(['new', 'all', 'pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'fena_paid', 'next_day_12', 'next_day_missed'] as const).map(s => {
           const labelMap: Record<string, string> = {
+            new: '🆕 New Orders',
             fena_paid: '✅ Fena Auto-Paid',
             next_day_12: '🚀 Next Day by 12',
             next_day_missed: '⚠️ Next Day Missed',
           };
           const label = labelMap[s] ?? (s.charAt(0).toUpperCase() + s.slice(1));
           const isFena = s === 'fena_paid';
-          const isNextDay = s === 'next_day_12';
+          const isNextDay = s === 'next_day_12' || s === 'new';
           const isMissed = s === 'next_day_missed';
+
           return (
             <button
               key={s}
