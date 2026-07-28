@@ -146,6 +146,10 @@ export default function CheckoutPage() {
   const [, setSummaryExpanded] = useState(false);
   const [paymentRecoveryVisible, setPaymentRecoveryVisible] = useState(false);
   const [pendingPaymentUrl, setPendingPaymentUrl] = useState<string | null>(null);
+  // Set when the order IS created server-side but the bank link step failed
+  // or timed out. The user must never be left with an endless spinner and no
+  // idea whether they paid — we show them the order ref plus a retry link.
+  const [stalledOrderId, setStalledOrderId] = useState<string | null>(null);
   const stepRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const paymentAttemptRef = useRef(0);
   const paymentAbortRef = useRef<AbortController | null>(null);
