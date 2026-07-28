@@ -827,7 +827,17 @@ export default function OrdersTab() {
 
 
 
+  const orderTimeMs = (o: Order): number => {
+    const raw: any = (o as any).orderDate ?? (o as any).createdAt;
+    if (!raw) return 0;
+    if (typeof raw?.toDate === 'function') return raw.toDate().getTime();
+    if (typeof raw?.seconds === 'number') return raw.seconds * 1000;
+    const t = new Date(raw).getTime();
+    return Number.isFinite(t) ? t : 0;
+  };
+
   const filtered = orders.filter(o => {
+
     const c = (o as any).customer;
     const customerName = c ? `${c.firstName || ''} ${c.lastName || ''}`.trim() : (o.userName || '');
     const customerEmail = c?.email || o.userEmail || '';
@@ -848,7 +858,8 @@ export default function OrdersTab() {
       (statusFilter === 'next_day_12' && (o as any).shippingMethod === 'next_day_12') ||
       (statusFilter === 'next_day_missed' && (o as any).nextDayMissedCutoff === true);
     return matchSearch && matchStatus;
-  });
+  }).sort((a, b) => orderTimeMs(b) - orderTimeMs(a));
+
 
   const counts = {
     new: orders.filter(isNewOrder).length,
