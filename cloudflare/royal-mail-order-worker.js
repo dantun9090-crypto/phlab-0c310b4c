@@ -321,7 +321,10 @@ export default {
             if (res.ok) {
               let data;
               try { data = text ? JSON.parse(text) : {}; } catch { data = {}; }
-              const mp = data?.mailPieces || {};
+              // /events returns an object; /summary returns an array.
+              const rawMp = data?.mailPieces;
+              const mp = (Array.isArray(rawMp) ? rawMp[0] : rawMp) || {};
+
               const summary = mp.summary || {};
               // Trust the structured statusCategory first ("DELIVERED",
               // "IN TRANSIT", ...), fall back to event-name text matching.
