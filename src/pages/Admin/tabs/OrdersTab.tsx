@@ -806,10 +806,24 @@ export default function OrdersTab() {
     setTimeout(() => setCopiedTrackingId(null), 2000);
   };
 
+  /** Statuses that mean "money not received yet". */
+  const UNPAID_STATUSES = [
+    'pending',
+    'pending_payment',
+    'pending_bank_transfer',
+    'awaiting_payment',
+    'processing_payment',
+    'unpaid',
+    'failed',
+    'expired',
+  ];
+  const isUnpaidOrder = (o: Order) => UNPAID_STATUSES.includes(String(o.status));
+
   /** A "new" order = awaiting action and never opened by an admin yet. */
   const isNewOrder = (o: Order) =>
     !seenIds.includes(o.id) &&
-    ['pending', 'pending_payment', 'paid'].includes(String(o.status));
+    (isUnpaidOrder(o) || String(o.status) === 'paid');
+
 
 
 
