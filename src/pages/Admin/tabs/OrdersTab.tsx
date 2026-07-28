@@ -820,6 +820,7 @@ export default function OrdersTab() {
       customerEmail.toLowerCase().includes(s) ||
       address.toLowerCase().includes(s);
     const matchStatus = statusFilter === 'all' || o.status === statusFilter ||
+      (statusFilter === 'new' && isNewOrder(o)) ||
       (statusFilter === 'pending' && o.status === 'pending_payment') ||
       (statusFilter === 'fena_paid' && isFenaAutoPaid(o)) ||
       (statusFilter === 'next_day_12' && (o as any).shippingMethod === 'next_day_12') ||
@@ -828,6 +829,7 @@ export default function OrdersTab() {
   });
 
   const counts = {
+    new: orders.filter(isNewOrder).length,
     all: orders.length,
     pending: orders.filter(o => o.status === 'pending' || o.status === 'pending_payment').length,
     paid: orders.filter(o => o.status === 'paid').length,
@@ -839,6 +841,7 @@ export default function OrdersTab() {
     next_day_12: orders.filter(o => (o as any).shippingMethod === 'next_day_12').length,
     next_day_missed: orders.filter(o => (o as any).nextDayMissedCutoff === true).length,
   };
+
 
   // TrueLayer Open Banking orders still in 'pending' (no bank_transfer)
   const trueLayerPending = orders.filter(o =>
