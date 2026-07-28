@@ -11,35 +11,37 @@ export interface SitemapEntry {
   imageLoc?: string;
 }
 
-function buildStaticEntries(today: string): SitemapEntry[] {
+function buildStaticEntries(): SitemapEntry[] {
   return [
-    { path: "/", lastmod: today, changefreq: "weekly", priority: "1.0" },
-    { path: "/products", lastmod: today, changefreq: "weekly", priority: "0.9" },
-    { path: "/quality-control", lastmod: today, changefreq: "monthly", priority: "0.8" },
-    { path: "/resources", lastmod: today, changefreq: "weekly", priority: "0.7" },
-    { path: "/about", lastmod: today, changefreq: "monthly", priority: "0.6" },
-    { path: "/contact", lastmod: today, changefreq: "monthly", priority: "0.6" },
-    { path: "/shipping-policy", lastmod: today, changefreq: "yearly", priority: "0.4" },
-    { path: "/refund-policy", lastmod: today, changefreq: "yearly", priority: "0.4" },
-    { path: "/terms-and-conditions", lastmod: today, changefreq: "yearly", priority: "0.3" },
-    { path: "/privacy-policy", lastmod: today, changefreq: "yearly", priority: "0.3" },
-    { path: "/cookies", lastmod: today, changefreq: "yearly", priority: "0.3" },
-    { path: "/research", lastmod: today, changefreq: "weekly", priority: "0.7" },
-    { path: "/research/retatrutide-uk", lastmod: today, changefreq: "weekly", priority: "0.9" },
-    { path: "/research/retatrutide-comprehensive-guide", lastmod: today, changefreq: "weekly", priority: "0.9" },
-    { path: "/research/bpc-157-uk", lastmod: today, changefreq: "weekly", priority: "0.9" },
-    { path: "/research/bpc-157-vs-tb-500", lastmod: today, changefreq: "weekly", priority: "0.9" },
-    { path: "/research/bpc-157-tb-500-synergy", lastmod: today, changefreq: "weekly", priority: "0.9" },
-    { path: "/research/tirzepatide-vs-retatrutide", lastmod: today, changefreq: "weekly", priority: "0.9" },
-    { path: "/research/cjc-1295-ipamorelin-synergy", lastmod: today, changefreq: "weekly", priority: "0.9" },
-    { path: "/research/ghk-cu-guide", lastmod: today, changefreq: "weekly", priority: "0.9" },
-    { path: "/resources/peptide-categories-uk-research", lastmod: today, changefreq: "monthly", priority: "0.6" },
-    { path: "/compound", lastmod: today, changefreq: "weekly", priority: "0.7" },
-    { path: "/landing/phlabs", lastmod: today, changefreq: "weekly", priority: "0.7" },
-    { path: "/uk-research-store", lastmod: today, changefreq: "weekly", priority: "0.8" },
-    { path: "/lab-reports", lastmod: today, changefreq: "monthly", priority: "0.6" },
-    { path: "/storage-guide", lastmod: today, changefreq: "monthly", priority: "0.6" },
-    { path: "/downloads", lastmod: today, changefreq: "monthly", priority: "0.5" },
+    { path: "/", changefreq: "weekly", priority: "1.0" },
+    { path: "/products", changefreq: "weekly", priority: "0.9" },
+    { path: "/quality-control", changefreq: "monthly", priority: "0.8" },
+    { path: "/resources", changefreq: "weekly", priority: "0.7" },
+    { path: "/about", changefreq: "monthly", priority: "0.6" },
+    { path: "/contact", changefreq: "monthly", priority: "0.6" },
+    { path: "/shipping-policy", changefreq: "yearly", priority: "0.4" },
+    { path: "/refund-policy", changefreq: "yearly", priority: "0.4" },
+    { path: "/terms-and-conditions", changefreq: "yearly", priority: "0.3" },
+    { path: "/privacy-policy", changefreq: "yearly", priority: "0.3" },
+    { path: "/cookies", changefreq: "yearly", priority: "0.3" },
+    { path: "/research", changefreq: "weekly", priority: "0.7" },
+    { path: "/research/retatrutide-uk", changefreq: "weekly", priority: "0.9" },
+    { path: "/research/retatrutide-comprehensive-guide", changefreq: "weekly", priority: "0.9" },
+    { path: "/research/bpc-157-uk", changefreq: "weekly", priority: "0.9" },
+    { path: "/research/bpc-157-vs-tb-500", changefreq: "weekly", priority: "0.9" },
+    { path: "/research/bpc-157-tb-500-synergy", changefreq: "weekly", priority: "0.9" },
+    { path: "/research/tirzepatide-vs-retatrutide", changefreq: "weekly", priority: "0.9" },
+    { path: "/research/cjc-1295-ipamorelin-synergy", changefreq: "weekly", priority: "0.9" },
+    { path: "/research/ghk-cu-guide", changefreq: "weekly", priority: "0.9" },
+    { path: "/research/pt-141-uk", changefreq: "weekly", priority: "0.9" },
+
+    { path: "/resources/peptide-categories-uk-research", changefreq: "monthly", priority: "0.6" },
+    { path: "/compound", changefreq: "weekly", priority: "0.7" },
+    { path: "/landing/phlabs", changefreq: "weekly", priority: "0.7" },
+    { path: "/uk-research-store", changefreq: "weekly", priority: "0.8" },
+    { path: "/lab-reports", changefreq: "monthly", priority: "0.6" },
+    { path: "/storage-guide", changefreq: "monthly", priority: "0.6" },
+    { path: "/downloads", changefreq: "monthly", priority: "0.5" },
   ];
 }
 
@@ -49,12 +51,10 @@ function buildStaticEntries(today: string): SitemapEntry[] {
  * anywhere else. Filtered through isIndexable() to drop admin/api/feeds/splats.
  */
 export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
-  const today = new Date().toISOString().slice(0, 10);
-  const staticEntries = buildStaticEntries(today);
+  const staticEntries = buildStaticEntries();
 
   const articleEntries: SitemapEntry[] = articles.map((a) => ({
     path: `/resources/${a.slug}`,
-    lastmod: today,
     changefreq: "monthly",
     priority: "0.6",
   }));
@@ -71,7 +71,7 @@ export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
     const products = await fetchAllProducts();
     productEntries = products.map((p) => {
       const raw = p.updatedAt ? p.updatedAt.slice(0, 10) : undefined;
-      const lastmod = raw && raw >= "2000-01-01" ? raw : today;
+      const lastmod = raw && raw >= "2000-01-01" ? raw : undefined;
       return {
         path: `/products/${p.slug}`,
         lastmod,
