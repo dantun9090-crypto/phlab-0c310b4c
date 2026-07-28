@@ -806,6 +806,13 @@ export default function OrdersTab() {
     setTimeout(() => setCopiedTrackingId(null), 2000);
   };
 
+  /** A "new" order = awaiting action and never opened by an admin yet. */
+  const isNewOrder = (o: Order) =>
+    !seenIds.includes(o.id) &&
+    ['pending', 'pending_payment', 'paid'].includes(String(o.status));
+
+
+
   const filtered = orders.filter(o => {
     const c = (o as any).customer;
     const customerName = c ? `${c.firstName || ''} ${c.lastName || ''}`.trim() : (o.userName || '');
