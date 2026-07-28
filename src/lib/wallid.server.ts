@@ -112,10 +112,24 @@ export class WallidError extends Error {
   }
 }
 
+/**
+ * Bank remittance reference. Banks truncate hard and reject most punctuation,
+ * so we emit `PHLABS <ORDERREF>` in A-Z0-9 only, capped at 18 chars — that is
+ * what the customer sees on their statement instead of a Wallid payment id.
+ */
+export function buildBankReference(orderRef: string): string {
+  const clean = String(orderRef || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+  return `PHLABS ${clean}`.slice(0, 18).trim();
+}
+
 export async function createWallidPayment(
   input: CreateWallidPaymentInput,
 ): Promise<WallidCreateResponse> {
-  const payload = {
+  const orderRef = input.reference || input.orderId;
+  const bankRef = buildBankReference(orderRef);
+  const basePayload = {
     order_id: input.orderId,
     amount: toMinor(input.amount),
     currency: input.currency,
@@ -129,16 +143,35 @@ export async function createWallidPayment(
       image_url: i.image_url,
       product_url: i.product_url,
     })),
-    description: `PH LABS Order ${input.orderId}`,
+    description: `PH LABS Order ${orderRef}`,
     locale: "en",
     country: "GB",
-    metadata: { source: "phlabs.co.uk", customer_id: input.customerEmail },
+    metadata: { source: "phlabs.co.uk", customer_id: input.customerEmail, order_reference: orderRef },
   };
 
-  const res = await wallidFetch("/create", {
+  // Wallid exposes the statement narrative under several aliases depending on
+  // the bank rail; send all of them. If the API rejects the extra keys (400)
+  // we fall back to the historical payload so checkout never breaks.
+  const payload = {
+    ...basePayload,
+    reference: bankRef,
+    payment_reference: bankRef,
+    remittance_information: bankRef,
+  };
+
+  let res = await wallidFetch("/create", {
     method: "POST",
     body: JSON.stringify(payload),
   });
+  if (res.status === 400) {
+    console.warn("[Wallid] create rejected reference fields — retrying without them");
+    res = await wallidFetch("/create", {
+      method: "POST",
+      body: JSON.stringify(basePayload),
+    });
+  }
+
+
 
   const text = await res.text();
   if (!res.ok) {
