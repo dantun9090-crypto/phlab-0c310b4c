@@ -146,6 +146,10 @@ export default function CheckoutPage() {
   const [, setSummaryExpanded] = useState(false);
   const [paymentRecoveryVisible, setPaymentRecoveryVisible] = useState(false);
   const [pendingPaymentUrl, setPendingPaymentUrl] = useState<string | null>(null);
+  // Set when the order IS created server-side but the bank link step failed
+  // or timed out. The user must never be left with an endless spinner and no
+  // idea whether they paid — we show them the order ref plus a retry link.
+  const [stalledOrderId, setStalledOrderId] = useState<string | null>(null);
   const stepRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const paymentAttemptRef = useRef(0);
   const paymentAbortRef = useRef<AbortController | null>(null);
@@ -168,6 +172,7 @@ export default function CheckoutPage() {
     if (typeof window === 'undefined') return;
     clearPaymentTimers();
     setPaymentRecoveryVisible(false);
+    setStalledOrderId(null);
     setPendingPaymentUrl(null);
     paymentRecoveryTimerRef.current = window.setTimeout(() => {
       if (paymentAttemptRef.current === attemptId) setPaymentRecoveryVisible(true);
@@ -1106,10 +1111,22 @@ export default function CheckoutPage() {
           const publicOrigin = typeof window !== 'undefined' && window.location.protocol === 'https:'
             ? window.location.origin
             : null;
-          const res = await fetch('/api/payments/create', {
+          // Hard 30s cap: the global watchdog is already retired at this
+          // point (the order exists), so without this a hung gateway call
+          // would spin forever with no feedback to the customer.
+          const linkTimeout = new AbortController();
+          const linkTimeoutId = window.setTimeout(() => linkTimeout.abort(), 30000);
+          const outerSignal = paymentAbortRef.current?.signal;
+          if (outerSignal) {
+            if (outerSignal.aborted) linkTimeout.abort();
+            else outerSignal.addEventListener('abort', () => linkTimeout.abort(), { once: true });
+          }
+          let res: Response;
+          try {
+            res = await fetch('/api/payments/create', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            signal: paymentAbortRef.current?.signal,
+            signal: linkTimeout.signal,
             body: JSON.stringify({
               idToken: wallidIdToken,
               orderId,
@@ -1128,7 +1145,15 @@ export default function CheckoutPage() {
                 product_url: publicOrigin || undefined,
               }],
             }),
-          });
+            });
+          } catch (fetchErr: any) {
+            if (linkTimeout.signal.aborted && !outerSignal?.aborted) {
+              throw new Error('The bank payment page is taking too long to open. Your order was saved — you can finish paying from the link below.');
+            }
+            throw fetchErr;
+          } finally {
+            window.clearTimeout(linkTimeoutId);
+          }
           if (paymentAttemptRef.current !== paymentAttemptId) return;
           const data = await res.json().catch(() => ({} as any));
           if (paymentAttemptRef.current !== paymentAttemptId) return;
@@ -1168,6 +1193,7 @@ export default function CheckoutPage() {
           });
           const failMsg = err?.message || 'Payment could not be started — please try again.';
           setLoginError(failMsg);
+          setStalledOrderId(orderId);
           console.error('[PAYMENT] gateway_fail method=wallid', err);
           try { toast.error(failMsg); } catch { /* toast optional */ }
           setIsPlacing(false);
@@ -1226,6 +1252,7 @@ export default function CheckoutPage() {
           setFenaStep('failed');
           const failMsg = err?.message || 'Payment could not be started — please try again.';
           setLoginError(failMsg);
+          setStalledOrderId(orderId);
           console.error('[PAYMENT] gateway_fail method=pay_by_bank', err);
           try { toast.error(failMsg); } catch { /* toast optional */ }
           setIsPlacing(false);
@@ -1544,6 +1571,29 @@ export default function CheckoutPage() {
                 </p>
               )}
 
+
+              {/* Order created but the bank page never opened — never leave
+                  the customer guessing whether money was taken. */}
+              {stalledOrderId && (
+                <div
+                  data-testid="checkout-stalled-payment"
+                  className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-4"
+                >
+                  <p className="text-yellow-100 text-sm font-semibold">
+                    No payment has been taken yet
+                  </p>
+                  <p className="text-yellow-100/80 text-xs mt-1">
+                    Your order <span className="font-mono">{stalledOrderId}</span> was saved, but the
+                    bank payment page did not open. You can finish paying now — you will not be charged twice.
+                  </p>
+                  <a
+                    href={`/payment?orderId=${encodeURIComponent(stalledOrderId)}`}
+                    className="mt-3 inline-flex min-h-[44px] items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                  >
+                    Continue payment
+                  </a>
+                </div>
+              )}
 
               {/* Stock errors */}
               {errors.stock && (
