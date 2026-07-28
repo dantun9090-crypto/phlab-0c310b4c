@@ -1139,7 +1139,7 @@ export default function OrdersTab() {
 
 
                   <button
-                    onClick={() => setSelected(order)}
+                    onClick={() => openOrder(order)}
                     className="p-1.5 bg-[#0f2640] hover:bg-[#1a3a5c] rounded-lg transition-colors"
                     title="View details"
                   >
