@@ -50,6 +50,7 @@ interface TrackResult {
   source?: string;
   statusCategory?: string;
   recentEvents?: string[];
+  trackingApi?: { secretsPresent?: boolean; httpStatus?: number | null; error?: string | null };
   error?: string;
 }
 
@@ -207,7 +208,13 @@ export const Route = createFileRoute("/api/admin/royal-mail-deliveries")({
             // fallback did, and what RM literally reported.
             const src = track.source ? ` [${track.source}]` : "";
             const cat = track.statusCategory ? ` {${track.statusCategory}}` : "";
-            summary.skipped.push(`${order.id} (${track.status || "in transit"})${cat}${src}`);
+            const api = track.trackingApi;
+            const diag = api
+              ? api.secretsPresent
+                ? ` api:${api.httpStatus ?? "err"}${api.error ? ` ${String(api.error).slice(0, 80)}` : ""}`
+                : " api:NO-SECRETS"
+              : "";
+            summary.skipped.push(`${order.id} (${track.status || "in transit"})${cat}${src}${diag}`);
             continue;
           }
 
