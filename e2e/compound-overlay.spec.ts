@@ -61,15 +61,58 @@ test.describe("/compound = PremiumLanding only", () => {
     await expect(page.locator("h1")).not.toContainText(/Peptide Research\s*&\s*Comparative Science/i);
 
     await page.waitForLoadState("load", { timeout: 10_000 }).catch(() => undefined);
+
+    // --- Stabilisation (mirrors e2e/compound-visual.spec.ts) ---------------
+    // The capture below used to race the app's deferred stylesheet swap,
+    // lazy below-fold sections and cache-guard reloads, so consecutive
+    // screenshots oscillated in height (10235 <-> 7189 <-> 1800px) and the
+    // assertion never converged. Same cure as the sibling suite:
+    // 1. warm second visit (first hit can trigger a cache-guard reload),
+    // 2. wait for the media="print" -> "all" stylesheet swap,
+    // 3. scroll pre-warm so IntersectionObserver sections expand BEFORE the
+    //    fullPage capture resizes the viewport,
+    // 4. iterate viewport height to a fixed point so the capture itself
+    //    never triggers a resize.
+    await page.goto(`${BASE}/compound`, { waitUntil: "domcontentloaded" });
+    await expect(page.locator("h1")).toBeVisible();
+    await page.waitForLoadState("load", { timeout: 10_000 }).catch(() => undefined);
+    await page.waitForFunction(
+      () =>
+        [...document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')].every(
+          (l) => l.media === "all" || l.media === "" || l.disabled,
+        ),
+      undefined,
+      { timeout: 30_000 },
+    );
     await page.waitForTimeout(500);
     await page.evaluate(() => {
       document.querySelectorAll("details[open]").forEach((d) => d.removeAttribute("open"));
     });
+    await page.evaluate(async () => {
+      const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+      const step = Math.max(400, Math.floor(window.innerHeight / 2));
+      for (let y = 0; y <= document.documentElement.scrollHeight; y += step) {
+        window.scrollTo(0, y);
+        await sleep(60);
+      }
+      window.scrollTo(0, 0);
+      await sleep(300);
+    });
+    await page.waitForTimeout(500);
     await page.addStyleTag({ content: KILL_MOTION_CSS });
-    // Dev-server cold compile of /compound (vite on-demand transform + heavy
-    // deps) can exceed the default 10s screenshot budget — the page keeps
-    // painting the boot splash until the LegacyApp chunk lands. Give the
-    // assertion room to converge on the real render.
+    {
+      let lastHeight = 0;
+      for (let i = 0; i < 4; i++) {
+        const h = await page.evaluate(() => document.documentElement.scrollHeight);
+        if (h === lastHeight) break;
+        lastHeight = h;
+        await page.setViewportSize({ width: 1280, height: Math.min(h, 16384) });
+        await page.waitForTimeout(400);
+      }
+      await page.waitForTimeout(300);
+    }
+    // -----------------------------------------------------------------------
+
     await expect(page).toHaveScreenshot("compound-premium-only.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
