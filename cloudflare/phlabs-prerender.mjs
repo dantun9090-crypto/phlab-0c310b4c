@@ -168,6 +168,38 @@ function isNonHtmlPath(path) {
   return NON_HTML_PREFIXES.some((p) => path.startsWith(p));
 }
 
+// Private / noindex namespaces. robots.txt already disallows them, but a
+// crawler (or a rich-link previewer following a pasted checkout URL) still
+// reaches the worker — and used to burn a PAID render on a page that must
+// never be indexed and renders nothing useful (auth-gated shell).
+// Origin-direct + noindex, never prerendered.
+const NO_PRERENDER_PREFIXES = [
+  "/admin", "/auth", "/login", "/logout", "/register", "/account",
+  "/cart", "/checkout", "/payment", "/order-confirmation", "/vip-store",
+  "/privacy-requests", "/search", "/install", "/cache-reset", "/offline",
+];
+
+function isNoPrerenderPath(path) {
+  if (!path) return false;
+  return NO_PRERENDER_PREFIXES.some((p) => path === p || path.startsWith(p + "/"));
+}
+
+// Tracking / campaign params fragment the renderer cache: the SAME page with
+// ?gclid=… is a brand-new paid render at Prerender.io. Strip everything that
+// isn't a param the app actually renders differently for.
+const RENDER_QUERY_ALLOWLIST = ["page", "category", "variant", "size", "sort", "collection"];
+
+function prerenderSearch(url) {
+  const keep = new URLSearchParams();
+  for (const k of RENDER_QUERY_ALLOWLIST) {
+    const v = url.searchParams.get(k);
+    if (v) keep.set(k, v);
+  }
+  const s = keep.toString();
+  return s ? "?" + s : "";
+}
+
+
 function isScannerPath(path) {
   // Legit asset/download namespaces are never scanner traffic.
   const exempt = path.startsWith("/downloads/") || path.startsWith("/assets/") || path.startsWith("/_build/");
