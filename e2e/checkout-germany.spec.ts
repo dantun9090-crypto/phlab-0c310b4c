@@ -59,6 +59,23 @@ async function fillContactStep(page: Page) {
   }
 }
 
+/**
+ * Click "continue" on Step 2 and wait for a validation error. Same
+ * swallowed-click hazard as fillContactStep: on slow-hydrating browsers
+ * (firefox/webkit CI) the first click can be eaten before React attaches
+ * its handlers, so the error never renders. Click, wait, retry once.
+ */
+async function clickAdvanceExpectError(page: Page, pattern: RegExp, timeout = 12_000) {
+  const error = page.getByText(pattern);
+  await page.getByRole('button', { name: /continue|next/i }).first().click();
+  try {
+    await expect(error).toBeVisible({ timeout });
+  } catch {
+    await page.getByRole('button', { name: /continue|next/i }).first().click();
+    await expect(error).toBeVisible({ timeout: timeout * 2 });
+  }
+}
+
 // Webkit needs noticeably longer to boot + hydrate the checkout; the
 // default 30s test cap was eaten before select#country ever appeared.
 test.describe.configure({ timeout: 60_000 });
@@ -156,9 +173,7 @@ test.describe('Checkout — Germany', () => {
     await page.getByLabel(/city/i).fill('Berlin');
     await page.locator('input#postcode').fill('123'); // too short
     // Try to advance — should be blocked with a PLZ error.
-    await page.getByRole('button', { name: /continue|next/i }).first().click();
-
-    await expect(page.getByText(/Enter a valid German postcode/i)).toBeVisible();
+    await clickAdvanceExpectError(page, /Enter a valid German postcode/i);
     // We must NOT have advanced to the review / payment step.
     await expect(page.getByRole('heading', { name: /confirm|review|payment|age/i })).toHaveCount(0);
   });
@@ -371,14 +386,12 @@ test.describe('Checkout — Germany', () => {
     // WebKit on CI can be slow to re-render the validation error — allow a
     // longer window than the default 5s expect timeout.
     await streetInput.fill('Musterstraße');
-    await advance.click();
-    await expect(streetError).toBeVisible({ timeout: 15_000 });
+    await clickAdvanceExpectError(page, /street name and house number|Musterstraße 12/i, 15_000);
     await expect(stepThreeHeading).toHaveCount(0);
 
     // Case B — house number only, no street name ("12").
     await streetInput.fill('12');
-    await advance.click();
-    await expect(streetError).toBeVisible();
+    await clickAdvanceExpectError(page, /street name and house number|Musterstraße 12/i, 15_000);
     await expect(stepThreeHeading).toHaveCount(0);
 
     // Case C — punctuation-only, still no letters and no digits.
