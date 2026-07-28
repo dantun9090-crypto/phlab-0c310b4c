@@ -19,7 +19,12 @@ const ADMIN_LINK = "https://phlabs.co.uk/admin/backupauditlog";
 export type BackupAlertType =
   | "firestore_backup_failure_spike"
   | "firestore_backup_ip_lockout"
-  | "firestore_backup_suspicious_trigger";
+  | "firestore_backup_suspicious_trigger"
+  // Immediate, single-event alerts — the nightly job runs once a day, so a
+  // spike detector (3 failures / 15 min) would never fire for a real outage.
+  | "firestore_backup_unauthorized"
+  | "firestore_backup_trigger_failed";
+
 
 export type BackupAlertSeverity = "info" | "warn" | "critical";
 
