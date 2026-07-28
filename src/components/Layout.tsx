@@ -1243,7 +1243,7 @@ export function Layout({ children }: LayoutProps) {
 
         {/* ── Main footer grid ── */}
         <div className="container mx-auto px-6 pt-16 pb-10">
-          <div className="grid grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr_1fr_1fr] gap-8 mb-14">
+          <div className="grid grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr_1fr] gap-8 mb-14">
 
             {/* Brand column */}
             <div className="col-span-2 lg:col-span-1">
