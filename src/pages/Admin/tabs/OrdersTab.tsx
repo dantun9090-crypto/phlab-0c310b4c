@@ -848,7 +848,8 @@ export default function OrdersTab() {
       (statusFilter === 'next_day_12' && (o as any).shippingMethod === 'next_day_12') ||
       (statusFilter === 'next_day_missed' && (o as any).nextDayMissedCutoff === true);
     return matchSearch && matchStatus;
-  });
+  }).sort((a, b) => orderTimeMs(b) - orderTimeMs(a));
+
 
   const counts = {
     new: orders.filter(isNewOrder).length,
