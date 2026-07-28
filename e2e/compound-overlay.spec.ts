@@ -26,6 +26,8 @@ const KILL_MOTION_CSS = `
 
 test.describe("/compound = PremiumLanding only", () => {
   test.use({ viewport: { width: 1280, height: 1800 }, deviceScaleFactor: 1 });
+  // Cold dev-server compile of the landing route can take well over 30s.
+  test.setTimeout(120_000);
 
   test("PremiumLanding renders, no overlay or article leakage", async ({ page, context }) => {
     await context.route(/(fonts\.googleapis\.com|fonts\.gstatic\.com)/, (r) => r.abort());
@@ -64,10 +66,15 @@ test.describe("/compound = PremiumLanding only", () => {
       document.querySelectorAll("details[open]").forEach((d) => d.removeAttribute("open"));
     });
     await page.addStyleTag({ content: KILL_MOTION_CSS });
+    // Dev-server cold compile of /compound (vite on-demand transform + heavy
+    // deps) can exceed the default 10s screenshot budget — the page keeps
+    // painting the boot splash until the LegacyApp chunk lands. Give the
+    // assertion room to converge on the real render.
     await expect(page).toHaveScreenshot("compound-premium-only.png", {
       fullPage: true,
       maxDiffPixelRatio: 0.02,
       threshold: 0.25,
+      timeout: 60_000,
     });
   });
 });
