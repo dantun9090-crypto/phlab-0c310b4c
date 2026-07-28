@@ -41,14 +41,15 @@ interface OrderRow {
   userEmail?: string;
   userName?: string;
   userId?: string;
-  [key: string]: unknown;
-
 }
 
 interface TrackResult {
   success?: boolean;
   delivered?: boolean;
   status?: string;
+  source?: string;
+  statusCategory?: string;
+  recentEvents?: string[];
   error?: string;
 }
 
@@ -58,10 +59,6 @@ function json(data: unknown, status = 200): Response {
     headers: { "content-type": "application/json" },
   });
 }
-
-
-
-
 
 async function isAuthorized(request: Request): Promise<boolean> {
   const expected = (process.env.CRON_SECRET || "").trim();
@@ -191,7 +188,6 @@ export const Route = createFileRoute("/api/admin/royal-mail-deliveries")({
           errors: [] as Array<{ orderId: string; error: string }>,
         };
 
-
         for (const order of shipped) {
           const tracking = (order.trackingNumber || "").trim();
           if (!tracking) {
@@ -206,7 +202,12 @@ export const Route = createFileRoute("/api/admin/royal-mail-deliveries")({
             continue;
           }
           if (!track.delivered) {
-            summary.skipped.push(`${order.id} (${track.status || "in transit"})`);
+            // Include the lookup source + raw category so we can tell whether
+            // the official Tracking API answered or the Click & Drop
+            // fallback did, and what RM literally reported.
+            const src = track.source ? ` [${track.source}]` : "";
+            const cat = track.statusCategory ? ` {${track.statusCategory}}` : "";
+            summary.skipped.push(`${order.id} (${track.status || "in transit"})${cat}${src}`);
             continue;
           }
 
@@ -215,12 +216,10 @@ export const Route = createFileRoute("/api/admin/royal-mail-deliveries")({
               status: "delivered",
               deliveredAt: new Date(),
               deliveryStatusText: track.status || "delivered",
-              deliveryConfirmedBy: "royal-mail",
             });
             await addDocAdmin("activity", {
               type: "order",
               message: `Order #${order.id.slice(0, 8)} status → delivered (Royal Mail sync)`,
-
               orderId: order.id,
               timestamp: new Date(),
             });
@@ -236,7 +235,6 @@ export const Route = createFileRoute("/api/admin/royal-mail-deliveries")({
             });
           }
         }
-
 
         return json({ ok: true, ...summary });
       },
