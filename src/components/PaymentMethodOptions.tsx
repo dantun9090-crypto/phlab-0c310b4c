@@ -24,8 +24,6 @@ import {
 } from "lucide-react";
 
 import UkBankBadges from "@/components/UkBankBadges";
-import InAppBrowserNotice from "@/components/InAppBrowserNotice";
-
 import type { CheckoutPaymentOptions } from "@/lib/payments/types";
 
 export interface PaymentMethodOptionsProps {
@@ -125,7 +123,7 @@ function WallidCheckoutTrustInline({ className = "" }: { className?: string }) {
       className={`mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-center ${className}`}
     >
       <p className="text-sm font-semibold text-emerald-200">Pay by Bank — Open Banking secure checkout</p>
-      <p className="mt-1 text-[11px] leading-snug text-slate-400">
+      <p className="mt-1 text-[11px] leading-snug text-slate-200">
         Your payment is processed securely via FCA-regulated open banking. No card details stored.
       </p>
     </div>
@@ -213,10 +211,7 @@ export default function PaymentMethodOptions({
       aria-label="Choose how you want to pay"
       className="space-y-3"
     >
-      <InAppBrowserNotice />
-
       {noOnline && (
-
         <div
           data-testid="manual-only-notice"
           role="status"
@@ -262,13 +257,6 @@ export default function PaymentMethodOptions({
             <p className="text-sm text-slate-300 mt-1 ml-8">
               Pay securely from any UK bank app — instant confirmation, no card needed.
             </p>
-
-            <p className="text-xs text-slate-400 mt-1.5 ml-8">
-              Your banking app opens automatically where your bank supports it —
-              otherwise you&rsquo;ll authorise on your bank&rsquo;s secure web login. Both
-              are equally safe.
-            </p>
-
 
             {options?.primary && !wallidEnabled && (
               <p
@@ -324,7 +312,7 @@ export default function PaymentMethodOptions({
           <p className="text-sm text-slate-300 mt-1 ml-8">
             Receive bank details by email and transfer manually within 48 hours.
           </p>
-          <p className="text-xs text-slate-400 mt-2 ml-8">
+          <p className="text-xs text-slate-300 mt-2 ml-8">
             Your order will be reserved for 48 hours. Confirmation email sent immediately.
           </p>
         </button>
@@ -360,7 +348,7 @@ export default function PaymentMethodOptions({
                   Once funds clear, we ship your order and email tracking.
                 </li>
               </ol>
-              <p className="text-[11px] text-slate-400 pt-1">
+              <p className="text-[11px] text-slate-300 pt-1">
                 No card details required. Reference expires after 48 hours if
                 unpaid.
               </p>
