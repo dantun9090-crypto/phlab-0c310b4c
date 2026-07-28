@@ -11,7 +11,12 @@
  *
  * Secrets required on the Worker (set via `wrangler secret put`):
  *   - ROYAL_MAIL_API_KEY   Click & Drop API token (sent as raw Authorization header)
- *   - SHARED_SECRET        random string; must match VITE_ROYAL_MAIL_WORKER_TOKEN
+ *   - SHARED_SECRET        random string; must match ROYAL_MAIL_WORKER_TOKEN (server env)
+ *   - ROYAL_MAIL_CLIENT_ID     (optional) Tracking API V2 X-IBM-Client-Id —
+ *   - ROYAL_MAIL_CLIENT_SECRET (optional) Tracking API V2 X-IBM-Client-Secret.
+ *                              Enables the official /mailpieces/v2 events lookup
+ *                              in trackByNumber; without it only the Click &
+ *                              Drop order search is used.
  *
  * Request:  POST /  JSON body {
  *   orderId, firstName, lastName, addressLine1, addressLine2?, city, postcode,
@@ -247,24 +252,64 @@ export default {
           };
         };
 
-        // 1) Official Royal Mail Tracking API.
-        try {
-          const res = await fetch(
-            `https://api.royalmail.net/tracking/v2/items/${encodeURIComponent(trackingNumber)}`,
-            { headers: { 'Authorization': env.ROYAL_MAIL_API_KEY, 'Accept': 'application/json' } },
-          );
-          const text = await res.text();
-          if (res.ok) {
-            let data;
-            try { data = text ? JSON.parse(text) : {}; } catch { data = {}; }
-            return jsonResponse(request, parseResult(data, 'tracking-api'));
-          }
-          // 401/403 (no tracking entitlement) and 404 (unknown item) fall
-          // through to the Click & Drop search below.
-          if (![401, 403, 404].includes(res.status)) {
-            return jsonResponse(request, { error: 'Royal Mail tracking lookup failed', details: text.slice(0, 400) }, res.status);
-          }
-        } catch (e) { /* fall through to Click & Drop */ }
+        // 1) Official Royal Mail Tracking API V2 (spec v1.0.38):
+        //    GET https://api.royalmail.net/mailpieces/v2/{mailPieceId}/events
+        //    Headers: X-IBM-Client-Id, X-IBM-Client-Secret, X-Accept-RMG-Terms: yes
+        //    Response: { mailPieces: { summary: { statusCategory, lastEventName,
+        //              statusDescription, ... }, events: [{ eventName, ... }] } }
+        //    Requires the Tracking API product enabled on the RM developer
+        //    account (separate Client-Id/Secret from Click & Drop).
+        if (env.ROYAL_MAIL_CLIENT_ID && env.ROYAL_MAIL_CLIENT_SECRET) {
+          try {
+            const res = await fetch(
+              `https://api.royalmail.net/mailpieces/v2/${encodeURIComponent(trackingNumber)}/events`,
+              {
+                headers: {
+                  'X-IBM-Client-Id': env.ROYAL_MAIL_CLIENT_ID,
+                  'X-IBM-Client-Secret': env.ROYAL_MAIL_CLIENT_SECRET,
+                  'X-Accept-RMG-Terms': 'yes',
+                  'Accept': 'application/json',
+                },
+              },
+            );
+            const text = await res.text();
+            if (res.ok) {
+              let data;
+              try { data = text ? JSON.parse(text) : {}; } catch { data = {}; }
+              const mp = data?.mailPieces || {};
+              const summary = mp.summary || {};
+              // Trust the structured statusCategory first ("DELIVERED",
+              // "IN TRANSIT", ...), fall back to event-name text matching.
+              const category = String(summary.statusCategory || '');
+              const structured = {
+                events: (Array.isArray(mp.events) ? mp.events : []).map((ev) => ev?.eventName),
+                names: [category, summary.lastEventName, summary.statusDescription, summary.summaryLine],
+              };
+              const names = [
+                ...structured.names,
+                ...structured.events,
+                ...collectEventNames(data),
+              ].map((n) => String(n || '')).filter(Boolean);
+              const deliveredEvent =
+                (/delivered/i.test(category) && !/out for delivery/i.test(category) && category) ||
+                names.find((n) => isDeliveredName(n));
+              return jsonResponse(request, {
+                success: true,
+                source: 'tracking-api',
+                delivered: Boolean(deliveredEvent),
+                status: String(deliveredEvent || summary.statusDescription || summary.lastEventName || names[names.length - 1] || ''),
+                statusCategory: category || undefined,
+                lastEventDateTime: summary.lastEventDateTime || undefined,
+                recentEvents: names.slice(-5),
+              });
+            }
+            // 401/403 (no tracking entitlement) and 404 (unknown item) fall
+            // through to the Click & Drop search below.
+            if (![401, 403, 404].includes(res.status)) {
+              return jsonResponse(request, { error: 'Royal Mail tracking lookup failed', details: text.slice(0, 400) }, res.status);
+            }
+          } catch (e) { /* fall through to Click & Drop */ }
+        }
 
         // 2) Click & Drop order search by tracking number (best effort).
         const cd = await fetch(
