@@ -1572,6 +1572,29 @@ export default function CheckoutPage() {
               )}
 
 
+              {/* Order created but the bank page never opened — never leave
+                  the customer guessing whether money was taken. */}
+              {stalledOrderId && (
+                <div
+                  data-testid="checkout-stalled-payment"
+                  className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-4"
+                >
+                  <p className="text-yellow-100 text-sm font-semibold">
+                    No payment has been taken yet
+                  </p>
+                  <p className="text-yellow-100/80 text-xs mt-1">
+                    Your order <span className="font-mono">{stalledOrderId}</span> was saved, but the
+                    bank payment page did not open. You can finish paying now — you will not be charged twice.
+                  </p>
+                  <a
+                    href={`/payment?orderId=${encodeURIComponent(stalledOrderId)}`}
+                    className="mt-3 inline-flex min-h-[44px] items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                  >
+                    Continue payment
+                  </a>
+                </div>
+              )}
+
               {/* Stock errors */}
               {errors.stock && (
                 <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-3">
