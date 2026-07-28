@@ -1392,6 +1392,36 @@ export function Layout({ children }: LayoutProps) {
               </ul>
             </div>
 
+            {/* Research guides column — internal linking for indexation */}
+            <div>
+              <h3 className="text-[11px] font-bold tracking-[0.14em] uppercase text-blue-300 mb-5 flex items-center gap-2">
+                <Dna className="w-3.5 h-3.5" /> Research Guides
+              </h3>
+              <ul className="space-y-2.5">
+                {[
+                  { label: 'UK Research Store', href: '/uk-research-store' },
+                  { label: 'BPC-157 UK Guide', href: '/research/bpc-157-uk' },
+                  { label: 'BPC-157 vs TB-500', href: '/research/bpc-157-vs-tb-500' },
+                  { label: 'BPC-157 + TB-500 Synergy', href: '/research/bpc-157-tb-500-synergy' },
+                  { label: 'Retatrutide UK Guide', href: '/research/retatrutide-uk' },
+                  { label: 'Retatrutide Full Guide', href: '/research/retatrutide-comprehensive-guide' },
+                  { label: 'Tirzepatide vs Retatrutide', href: '/research/tirzepatide-vs-retatrutide' },
+                  { label: 'CJC-1295 + Ipamorelin', href: '/research/cjc-1295-ipamorelin-synergy' },
+                  { label: 'GHK-Cu Guide', href: '/research/ghk-cu-guide' },
+                  { label: 'PT-141 UK Guide', href: '/research/pt-141-uk' },
+                  { label: 'Peptide Categories (UK)', href: '/resources/peptide-categories-uk-research' },
+                ].map(l => (
+                  <li key={l.href}>
+                    <a href={l.href} className="group flex items-center gap-2 text-[#5a80a6] hover:text-[#8caad4] transition-colors text-sm">
+                      <span className="w-1 h-1 rounded-full bg-blue-600/40 group-hover:bg-blue-400 transition-colors flex-shrink-0" />
+                      {l.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+
             {/* Legal column */}
             <div>
               <h3 className="text-[11px] font-bold tracking-[0.14em] uppercase text-blue-300 mb-5 flex items-center gap-2">
