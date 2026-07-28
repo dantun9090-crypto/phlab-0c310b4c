@@ -279,29 +279,42 @@ export default {
           error: null,
         };
         if (rmId && rmSecret) {
-          const callTracking = (id, secret) =>
-            fetch(
-              `https://api.royalmail.net/mailpieces/v2/${encodeURIComponent(trackingNumber)}/events`,
-              {
-                headers: {
-                  'X-IBM-Client-Id': id,
-                  'X-IBM-Client-Secret': secret,
-                  'X-Accept-RMG-Terms': 'yes',
-                  'Accept': 'application/json',
-                },
+          // Same contract as the official Royal Mail PHP SDK
+          // (RoyalMail\SDK\V2Tracking): base https://api.royalmail.net with
+          // the three IBM headers. `events` is the richest endpoint; when the
+          // account is only entitled to `summary` (or the item has no event
+          // history yet) we fall back to it before giving up.
+          const endpointsFor = (mp) => [
+            `https://api.royalmail.net/mailpieces/v2/${encodeURIComponent(mp)}/events`,
+            `https://api.royalmail.net/mailpieces/v2/summary?mailPieceId=${encodeURIComponent(mp)}`,
+          ];
+          const callTracking = (url, id, secret) =>
+            fetch(url, {
+              headers: {
+                'X-IBM-Client-Id': id,
+                'X-IBM-Client-Secret': secret,
+                'X-Accept-RMG-Terms': 'yes',
+                'Accept': 'application/json',
               },
-            );
+            });
           try {
-            let res = await callTracking(rmId, rmSecret);
+            const urls = endpointsFor(trackingNumber);
+            let res = await callTracking(urls[0], rmId, rmSecret);
             // Common operator mistake: id and secret pasted the wrong way
             // round. Retry once swapped before declaring the creds invalid.
             if (res.status === 401) {
-              const swapped = await callTracking(rmSecret, rmId);
+              const swapped = await callTracking(urls[0], rmSecret, rmId);
               if (swapped.status !== 401) {
                 res = swapped;
                 trackDiag.error = 'credentials were swapped (id/secret reversed)';
               }
             }
+            // No event history / endpoint not entitled → try summary.
+            if (!res.ok && [400, 404, 403].includes(res.status)) {
+              const alt = await callTracking(urls[1], rmId, rmSecret);
+              if (alt.ok) res = alt;
+            }
+
 
             const text = await res.text();
             trackDiag.httpStatus = res.status;
