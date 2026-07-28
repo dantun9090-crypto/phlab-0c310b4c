@@ -806,10 +806,24 @@ export default function OrdersTab() {
     setTimeout(() => setCopiedTrackingId(null), 2000);
   };
 
+  /** Statuses that mean "money not received yet". */
+  const UNPAID_STATUSES = [
+    'pending',
+    'pending_payment',
+    'pending_bank_transfer',
+    'awaiting_payment',
+    'processing_payment',
+    'unpaid',
+    'failed',
+    'expired',
+  ];
+  const isUnpaidOrder = (o: Order) => UNPAID_STATUSES.includes(String(o.status));
+
   /** A "new" order = awaiting action and never opened by an admin yet. */
   const isNewOrder = (o: Order) =>
     !seenIds.includes(o.id) &&
-    ['pending', 'pending_payment', 'paid'].includes(String(o.status));
+    (isUnpaidOrder(o) || String(o.status) === 'paid');
+
 
 
 
@@ -828,6 +842,7 @@ export default function OrdersTab() {
       address.toLowerCase().includes(s);
     const matchStatus = statusFilter === 'all' || o.status === statusFilter ||
       (statusFilter === 'new' && isNewOrder(o)) ||
+      (statusFilter === 'unpaid' && isUnpaidOrder(o)) ||
       (statusFilter === 'pending' && o.status === 'pending_payment') ||
       (statusFilter === 'fena_paid' && isFenaAutoPaid(o)) ||
       (statusFilter === 'next_day_12' && (o as any).shippingMethod === 'next_day_12') ||
@@ -837,9 +852,11 @@ export default function OrdersTab() {
 
   const counts = {
     new: orders.filter(isNewOrder).length,
+    unpaid: orders.filter(isUnpaidOrder).length,
     all: orders.length,
     pending: orders.filter(o => o.status === 'pending' || o.status === 'pending_payment').length,
     paid: orders.filter(o => o.status === 'paid').length,
+
     processing: orders.filter(o => o.status === 'processing').length,
     shipped: orders.filter(o => o.status === 'shipped').length,
     delivered: orders.filter(o => o.status === 'delivered').length,
@@ -992,14 +1009,16 @@ export default function OrdersTab() {
 
       {/* Status filter tabs */}
       <div className="flex gap-2 flex-wrap">
-        {(['new', 'all', 'pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'fena_paid', 'next_day_12', 'next_day_missed'] as const).map(s => {
+        {(['new', 'unpaid', 'all', 'pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'fena_paid', 'next_day_12', 'next_day_missed'] as const).map(s => {
           const labelMap: Record<string, string> = {
             new: '🆕 New Orders',
+            unpaid: '💷 Unpaid',
             fena_paid: '✅ Fena Auto-Paid',
             next_day_12: '🚀 Next Day by 12',
             next_day_missed: '⚠️ Next Day Missed',
           };
           const label = labelMap[s] ?? (s.charAt(0).toUpperCase() + s.slice(1));
+
           const isFena = s === 'fena_paid';
           const isNextDay = s === 'next_day_12' || s === 'new';
           const isMissed = s === 'next_day_missed';
