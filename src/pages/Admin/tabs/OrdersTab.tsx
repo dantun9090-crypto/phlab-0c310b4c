@@ -222,8 +222,36 @@ export default function OrdersTab() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('new');
   const [selected, setSelected] = useState<Order | null>(null);
+  // Orders the admin has already opened — persisted so "New Orders" only
+  // shows genuinely unhandled orders across sessions.
+  const SEEN_KEY = 'php_admin_seen_orders';
+  const [seenIds, setSeenIds] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const raw = window.localStorage.getItem(SEEN_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const markSeen = (orderId: string) => {
+    setSeenIds(prev => {
+      if (!orderId || prev.includes(orderId)) return prev;
+      const next = [...prev, orderId].slice(-2000);
+      try { window.localStorage.setItem(SEEN_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
+
+  const openOrder = (order: Order) => {
+    markSeen(order.id);
+    setSelected(order);
+  };
+
   // "Create Label" UX — brief button lock + success/error toast.
   const [labelBusy, setLabelBusy] = useState(false);
   const [labelToast, setLabelToast] = useState<{ msg: string; ok: boolean } | null>(null);
