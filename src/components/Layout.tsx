@@ -1378,6 +1378,8 @@ export function Layout({ children }: LayoutProps) {
                   { label: 'FAQ', href: '/#faq' },
                   { label: 'Contact Us', href: '/contact' },
                   { label: 'Storage Guide', href: '/storage-guide' },
+                  { label: 'Downloads', href: '/downloads' },
+                  
                   
                 ].map(l => (
                   <li key={l.label}>
