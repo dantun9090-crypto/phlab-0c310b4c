@@ -259,6 +259,13 @@ export default {
         //              statusDescription, ... }, events: [{ eventName, ... }] } }
         //    Requires the Tracking API product enabled on the RM developer
         //    account (separate Client-Id/Secret from Click & Drop).
+        // Diagnostics surfaced in the Click & Drop fallback response so we
+        // can tell "secrets missing" from "API rejected the credentials".
+        const trackDiag = {
+          secretsPresent: Boolean(env.ROYAL_MAIL_CLIENT_ID && env.ROYAL_MAIL_CLIENT_SECRET),
+          httpStatus: null,
+          error: null,
+        };
         if (env.ROYAL_MAIL_CLIENT_ID && env.ROYAL_MAIL_CLIENT_SECRET) {
           try {
             const res = await fetch(
@@ -273,6 +280,7 @@ export default {
               },
             );
             const text = await res.text();
+            trackDiag.httpStatus = res.status;
             if (res.ok) {
               let data;
               try { data = text ? JSON.parse(text) : {}; } catch { data = {}; }
@@ -305,10 +313,12 @@ export default {
             }
             // 401/403 (no tracking entitlement) and 404 (unknown item) fall
             // through to the Click & Drop search below.
-            if (![401, 403, 404].includes(res.status)) {
+            if ([401, 403, 404].includes(res.status)) {
+              trackDiag.error = text.slice(0, 200);
+            } else {
               return jsonResponse(request, { error: 'Royal Mail tracking lookup failed', details: text.slice(0, 400) }, res.status);
             }
-          } catch (e) { /* fall through to Click & Drop */ }
+          } catch (e) { trackDiag.error = String(e && e.message ? e.message : e); /* fall through */ }
         }
 
         // 2) Click & Drop order search by tracking number (best effort).
@@ -330,7 +340,9 @@ export default {
         if (!orders.length || !orders[0]) {
           return jsonResponse(request, { error: 'Tracking number not found', trackingNumber }, 404);
         }
-        return jsonResponse(request, parseResult(orders[0], 'click-and-drop'));
+        const cdResult = parseResult(orders[0], 'click-and-drop');
+        cdResult.trackingApi = trackDiag;
+        return jsonResponse(request, cdResult);
       }
 
       if (!order.postcode || !order.addressLine1 || !order.orderId) {
