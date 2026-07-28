@@ -126,7 +126,10 @@ export function Layout({ children }: LayoutProps) {
   const isHomePage = location.pathname === '/';
   const [researchConfirmed, setResearchConfirmed] = useState<boolean>(() => isResearchConfirmed());
   useEffect(() => {
-    const onCleared = () => setResearchConfirmed(isResearchConfirmed());
+    // The gate is "cleared" for layout purposes on ANY dismissal path
+    // (confirm, decline, Escape, backdrop) — otherwise declining leaves the
+    // homepage body + footer permanently unmounted with no way to reopen.
+    const onCleared = () => setResearchConfirmed(true);
     window.addEventListener('php:research-gate-cleared', onCleared);
     return () => window.removeEventListener('php:research-gate-cleared', onCleared);
   }, []);
