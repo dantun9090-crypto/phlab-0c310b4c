@@ -311,6 +311,19 @@ export const Route = createFileRoute("/api/public/hooks/wallid")({
                     }
                   }
 
+                  // Payment failed/expired at the bank → email a retry link
+                  // immediately (seconds, not the next hourly cron run).
+                  if (transitioned && (firestoreStatus === "failed" || firestoreStatus === "expired") && prior) {
+                    try {
+                      const { sendPaymentRetryEmailNow } = await import("@/lib/server/send-payment-retry.server");
+                      await sendPaymentRetryEmailNow(orderId, prior as Record<string, unknown>, `wallid:webhook:${firestoreStatus}`);
+                    } catch (retryErr) {
+                      console.warn("[Wallid webhook] Retry-link email failed:", retryErr instanceof Error ? retryErr.message : retryErr);
+                    }
+                  }
+
+
+
                   // Best-effort: mirror to Firestore webhookEvents + append
                   // to orders/{id}/paymentTimeline. Read by admin UI + cron.
                   try {
