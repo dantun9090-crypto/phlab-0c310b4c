@@ -13,7 +13,7 @@
  * Server-only — never import from client code.
  */
 
-const ADMIN_ALERT_EMAIL = "orders@phlabs.co.uk";
+const ADMIN_ALERT_EMAIL = process.env.ADMIN_ALERT_EMAIL?.trim() || "info@phlabs.co.uk";
 const ADMIN_LINK = "https://phlabs.co.uk/admin/backupauditlog";
 
 export type BackupAlertType =

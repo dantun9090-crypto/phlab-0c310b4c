@@ -147,7 +147,7 @@ export default function BackupAuditLogTab() {
         <strong className="block text-amber-200 mb-1">Instant failure alerts are ON</strong>
         A <code className="text-amber-200">401</code> with a wrong (but present) credential and every{' '}
         <code className="text-amber-200">502</code> trigger failure now send an immediate notification
-        (Slack → Discord → e-mail to orders@phlabs.co.uk), deduped hourly. Previously only a spike of
+        (Slack → Discord → e-mail to info@phlabs.co.uk), deduped hourly. Previously only a spike of
         3 failures in 15 minutes alerted — which never fired, because the nightly backup runs once a day.
       </div>
 
