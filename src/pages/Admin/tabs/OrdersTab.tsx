@@ -819,10 +819,13 @@ export default function OrdersTab() {
   ];
   const isUnpaidOrder = (o: Order) => UNPAID_STATUSES.includes(String(o.status));
 
-  /** A "new" order = awaiting action and never opened by an admin yet. */
-  const isNewOrder = (o: Order) =>
-    !seenIds.includes(o.id) &&
-    (isUnpaidOrder(o) || String(o.status) === 'paid');
+  /** A "new" order = awaiting action, never opened by an admin, placed < 24h ago. */
+  const NEW_ORDER_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+  const isNewOrder = (o: Order) => {
+    const ts = orderTimeMs(o);
+    if (!ts || Date.now() - ts > NEW_ORDER_MAX_AGE_MS) return false;
+    return !seenIds.includes(o.id) && (isUnpaidOrder(o) || String(o.status) === 'paid');
+  };
 
 
 
