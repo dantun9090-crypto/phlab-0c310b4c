@@ -1,0 +1,63 @@
+name: RM Tracking API self-test
+
+# Verifies the ROYAL_MAIL_CLIENT_ID / ROYAL_MAIL_CLIENT_SECRET GitHub secrets
+# against the live Tracking API V2, then (on success) pushes them into the
+# royal-mail-order Worker via wrangler so dashboard paste-typos can't recur.
+# Secret VALUES are never printed — only HTTP status codes.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tracking_number:
+        description: "Real tracking number to probe (defaults to spec example)"
+        required: false
+        default: "FQ087430672GB"
+      push_to_worker:
+        description: "Also write the secrets into the Worker when the API answers"
+        type: boolean
+        required: false
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe Tracking API V2 with GitHub-held keys
+        id: probe
+        env:
+          RM_ID: ${{ secrets.ROYAL_MAIL_CLIENT_ID }}
+          RM_SECRET: ${{ secrets.ROYAL_MAIL_CLIENT_SECRET }}
+          TN: ${{ github.event.inputs.tracking_number }}
+        run: |
+          set -euo pipefail
+          if [ -z "${RM_ID:-}" ] || [ -z "${RM_SECRET:-}" ]; then
+            echo "::error::GitHub secrets ROYAL_MAIL_CLIENT_ID / ROYAL_MAIL_CLIENT_SECRET are empty"
+            exit 1
+          fi
+          echo "Client-Id length: ${#RM_ID} | Client-Secret length: ${#RM_SECRET}"
+          code=$(curl -sS -o /tmp/rm.json -w "%{http_code}" \
+            "https://api.royalmail.net/mailpieces/v2/${TN}/events" \
+            -H "X-IBM-Client-Id: ${RM_ID}" \
+            -H "X-IBM-Client-Secret: ${RM_SECRET}" \
+            -H "X-Accept-RMG-Terms: yes" \
+            -H "Accept: application/json" --max-time 30)
+          echo "HTTP $code"
+          # Print a redacted peek at the response (first 300 chars, no auth data)
+          head -c 300 /tmp/rm.json; echo
+          echo "status=$code" >> "$GITHUB_OUTPUT"
+
+      - name: Push keys into the Worker (only when API did not reject them)
+        if: steps.probe.outputs.status != '401' && github.event.inputs.push_to_worker == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_API }}
+          RM_ID: ${{ secrets.ROYAL_MAIL_CLIENT_ID }}
+          RM_SECRET: ${{ secrets.ROYAL_MAIL_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          bunx wrangler@4 secret put ROYAL_MAIL_CLIENT_ID --name royal-mail-order <<< "$RM_ID"
+          bunx wrangler@4 secret put ROYAL_MAIL_CLIENT_SECRET --name royal-mail-order <<< "$RM_SECRET"
+          echo "Secrets written to royal-mail-order worker"
