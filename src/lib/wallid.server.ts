@@ -26,7 +26,10 @@ export interface CreateWallidPaymentInput {
   items: WallidItem[];
   successUrl: string;
   failUrl: string;
+  /** Human order reference shown on the customer's bank statement. */
+  reference?: string;
 }
+
 
 export interface WallidCreateResponse {
   api_payment_id: string;
