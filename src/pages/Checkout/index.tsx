@@ -1251,6 +1251,7 @@ export default function CheckoutPage() {
           setFenaStep('failed');
           const failMsg = err?.message || 'Payment could not be started — please try again.';
           setLoginError(failMsg);
+          setStalledOrderId(orderId);
           console.error('[PAYMENT] gateway_fail method=pay_by_bank', err);
           try { toast.error(failMsg); } catch { /* toast optional */ }
           setIsPlacing(false);
