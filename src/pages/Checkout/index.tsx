@@ -1110,10 +1110,22 @@ export default function CheckoutPage() {
           const publicOrigin = typeof window !== 'undefined' && window.location.protocol === 'https:'
             ? window.location.origin
             : null;
-          const res = await fetch('/api/payments/create', {
+          // Hard 30s cap: the global watchdog is already retired at this
+          // point (the order exists), so without this a hung gateway call
+          // would spin forever with no feedback to the customer.
+          const linkTimeout = new AbortController();
+          const linkTimeoutId = window.setTimeout(() => linkTimeout.abort(), 30000);
+          const outerSignal = paymentAbortRef.current?.signal;
+          if (outerSignal) {
+            if (outerSignal.aborted) linkTimeout.abort();
+            else outerSignal.addEventListener('abort', () => linkTimeout.abort(), { once: true });
+          }
+          let res: Response;
+          try {
+            res = await fetch('/api/payments/create', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            signal: paymentAbortRef.current?.signal,
+            signal: linkTimeout.signal,
             body: JSON.stringify({
               idToken: wallidIdToken,
               orderId,
