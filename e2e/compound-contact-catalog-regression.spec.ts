@@ -86,11 +86,11 @@ test.describe("/compound analytics events", () => {
     for (const name of ["WhatsApp", "Telegram"]) {
       await page.getByRole("link", { name: new RegExp(name, "i") }).first().dispatchEvent("click").catch(() => { /* external */ });
     }
-    for (const name of ["Contact Research Team", "Request Documentation"]) {
-      await page.getByRole("link", { name: new RegExp(name, "i") }).first().dispatchEvent("click").catch(() => { /* navigation may detach */ });
-      // Stop after the first navigation — the page is leaving.
-      break;
-    }
+    // NOTE: the internal CTAs (Contact Research Team / Request Documentation)
+    // are deliberately NOT clicked — they navigate away, which wipes the
+    // dataLayer AND races the evaluate below ("Execution context was
+    // destroyed"). The external WhatsApp/Telegram clicks already produce the
+    // compound_cta_click / cta_click events asserted below.
 
     // Analytics initialises lazily (first interaction or idle) — trigger it
     // and give dataLayer a moment to populate before reading.
