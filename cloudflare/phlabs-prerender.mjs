@@ -664,10 +664,14 @@ export default {
     // (d) Non-HTML paths — prerender can't render them, times out as 504.
     const nonHtml = isNonHtmlPath(path);
 
+    // (e) Private / noindex namespaces — origin-direct, never a paid render.
+    const noPrerender = isNoPrerenderPath(path);
+
     // Only allowlisted crawlers reach the prerender branch, and only for
-    // HTML paths, and only when they aren't one of our probes.
+    // HTML paths, and only when they aren't one of our probes, and never
+    // for private/noindex paths.
     const isBot =
-      !monitoring && !probeParam && !nonHtml && isCrawler(request);
+      !monitoring && !probeParam && !nonHtml && !noPrerender && isCrawler(request);
 
 
     // ── 0. Legacy /cache-reset URL — the in-page popup now clears caches
@@ -829,7 +833,7 @@ export default {
         // its own stale cache to itself — an infinite self-staling loop.
         // Rendering the origin host bypasses the worker entirely and gives
         // prerender.io a fresh cache namespace with the live build.
-        const prerenderTarget = ORIGIN + url.pathname + url.search;
+        const prerenderTarget = ORIGIN + url.pathname + prerenderSearch(url);
         const prerenderUrl = PRERENDER_SERVICE + "/" + encodeURIComponent(prerenderTarget);
         const prerenderRes = await fetch(prerenderUrl, {
           headers: {
@@ -1018,14 +1022,14 @@ export default {
       const prerenderStart = Date.now();
       // Render the origin host directly (see rationale above) — never
       // forward the phlabs.co.uk URL, which would self-loop through the worker.
-      const prerenderTarget = ORIGIN + url.pathname + url.search;
+      const prerenderTarget = ORIGIN + url.pathname + prerenderSearch(url);
       const prerenderUrl = PRERENDER_SERVICE + "/" + encodeURIComponent(prerenderTarget);
       // QUOTA GUARD (2026-07-20): monitoring probes (our own CI checkers,
       // Sentry, Lighthouse) and cache-buster probe params must NEVER trigger
       // a paid prerender render on the browser path either. The bot-branch
       // bypass alone was not enough — they still fell through to this
       // browser MISS path and fired a render anyway (69% of quota burn).
-      const skipPaidRender = monitoring || probeParam;
+      const skipPaidRender = monitoring || probeParam || noPrerender;
       const prerenderPromise = skipPaidRender
         ? Promise.resolve(null)
         : fetch(prerenderUrl, {
