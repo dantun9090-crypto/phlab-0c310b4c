@@ -261,24 +261,48 @@ export default {
         //    account (separate Client-Id/Secret from Click & Drop).
         // Diagnostics surfaced in the Click & Drop fallback response so we
         // can tell "secrets missing" from "API rejected the credentials".
+        // Credentials are trimmed: values pasted into the Cloudflare
+        // dashboard / `wrangler secret put` frequently carry a trailing
+        // newline or space, which makes IBM reply
+        // "401 Invalid client id or secret." even when the value is right.
+        const rmId = String(env.ROYAL_MAIL_CLIENT_ID || '').trim();
+        const rmSecret = String(
+          env.ROYAL_MAIL_CLIENT_SECRET || env.ROLAY_MAIL_CLIENT_SECRET || '',
+        ).trim();
         const trackDiag = {
-          secretsPresent: Boolean(env.ROYAL_MAIL_CLIENT_ID && env.ROYAL_MAIL_CLIENT_SECRET),
+          secretsPresent: Boolean(rmId && rmSecret),
+          // Lengths only — never the values. Lets us spot a truncated or
+          // whitespace-padded paste without leaking the credential.
+          idLength: rmId.length,
+          secretLength: rmSecret.length,
           httpStatus: null,
           error: null,
         };
-        if (env.ROYAL_MAIL_CLIENT_ID && env.ROYAL_MAIL_CLIENT_SECRET) {
-          try {
-            const res = await fetch(
+        if (rmId && rmSecret) {
+          const callTracking = (id, secret) =>
+            fetch(
               `https://api.royalmail.net/mailpieces/v2/${encodeURIComponent(trackingNumber)}/events`,
               {
                 headers: {
-                  'X-IBM-Client-Id': env.ROYAL_MAIL_CLIENT_ID,
-                  'X-IBM-Client-Secret': env.ROYAL_MAIL_CLIENT_SECRET,
+                  'X-IBM-Client-Id': id,
+                  'X-IBM-Client-Secret': secret,
                   'X-Accept-RMG-Terms': 'yes',
                   'Accept': 'application/json',
                 },
               },
             );
+          try {
+            let res = await callTracking(rmId, rmSecret);
+            // Common operator mistake: id and secret pasted the wrong way
+            // round. Retry once swapped before declaring the creds invalid.
+            if (res.status === 401) {
+              const swapped = await callTracking(rmSecret, rmId);
+              if (swapped.status !== 401) {
+                res = swapped;
+                trackDiag.error = 'credentials were swapped (id/secret reversed)';
+              }
+            }
+
             const text = await res.text();
             trackDiag.httpStatus = res.status;
             if (res.ok) {
