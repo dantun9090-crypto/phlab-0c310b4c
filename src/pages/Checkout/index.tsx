@@ -172,6 +172,7 @@ export default function CheckoutPage() {
     if (typeof window === 'undefined') return;
     clearPaymentTimers();
     setPaymentRecoveryVisible(false);
+    setStalledOrderId(null);
     setPendingPaymentUrl(null);
     paymentRecoveryTimerRef.current = window.setTimeout(() => {
       if (paymentAttemptRef.current === attemptId) setPaymentRecoveryVisible(true);
