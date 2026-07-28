@@ -138,6 +138,7 @@ export const Route = createFileRoute("/api/payments/create")({
             items: chargeItems,
             successUrl,
             failUrl,
+            reference: ctx.reference || orderId,
           });
 
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
