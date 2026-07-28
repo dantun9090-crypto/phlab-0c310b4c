@@ -395,9 +395,13 @@ test.describe("/resources/peptide-categories-uk-research", () => {
   }) => {
     await page.goto(PAGE_URL, { waitUntil: "domcontentloaded" });
 
-    const robots = await page
-      .locator('meta[name="robots"]')
-      .getAttribute("content");
+    // NOTE: getAttribute() auto-waits for the element — a missing meta tag
+    // would burn the whole test timeout. Probe with count() first so absent
+    // tags (valid — defaults to index,follow) are handled immediately.
+    const robotsLoc = page.locator('meta[name="robots"]');
+    const robots = (await robotsLoc.count())
+      ? await robotsLoc.first().getAttribute("content")
+      : null;
 
     // A missing robots meta defaults to index,follow — that's acceptable.
     // What we MUST NOT ship is noindex / nofollow / none on this pillar.
@@ -420,9 +424,10 @@ test.describe("/resources/peptide-categories-uk-research", () => {
     }
 
     // googlebot-specific meta, if present, must also not block indexing.
-    const googlebot = await page
-      .locator('meta[name="googlebot"]')
-      .getAttribute("content");
+    const googlebotLoc = page.locator('meta[name="googlebot"]');
+    const googlebot = (await googlebotLoc.count())
+      ? await googlebotLoc.first().getAttribute("content")
+      : null;
     if (googlebot !== null) {
       const tokens = googlebot.toLowerCase().split(",").map((t) => t.trim());
       expect(tokens, `googlebot tokens: ${googlebot}`).not.toContain("noindex");
