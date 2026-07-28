@@ -222,8 +222,36 @@ export default function OrdersTab() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('new');
   const [selected, setSelected] = useState<Order | null>(null);
+  // Orders the admin has already opened — persisted so "New Orders" only
+  // shows genuinely unhandled orders across sessions.
+  const SEEN_KEY = 'php_admin_seen_orders';
+  const [seenIds, setSeenIds] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const raw = window.localStorage.getItem(SEEN_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const markSeen = (orderId: string) => {
+    setSeenIds(prev => {
+      if (!orderId || prev.includes(orderId)) return prev;
+      const next = [...prev, orderId].slice(-2000);
+      try { window.localStorage.setItem(SEEN_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
+
+  const openOrder = (order: Order) => {
+    markSeen(order.id);
+    setSelected(order);
+  };
+
   // "Create Label" UX — brief button lock + success/error toast.
   const [labelBusy, setLabelBusy] = useState(false);
   const [labelToast, setLabelToast] = useState<{ msg: string; ok: boolean } | null>(null);
@@ -778,6 +806,13 @@ export default function OrdersTab() {
     setTimeout(() => setCopiedTrackingId(null), 2000);
   };
 
+  /** A "new" order = awaiting action and never opened by an admin yet. */
+  const isNewOrder = (o: Order) =>
+    !seenIds.includes(o.id) &&
+    ['pending', 'pending_payment', 'paid'].includes(String(o.status));
+
+
+
   const filtered = orders.filter(o => {
     const c = (o as any).customer;
     const customerName = c ? `${c.firstName || ''} ${c.lastName || ''}`.trim() : (o.userName || '');
@@ -792,6 +827,7 @@ export default function OrdersTab() {
       customerEmail.toLowerCase().includes(s) ||
       address.toLowerCase().includes(s);
     const matchStatus = statusFilter === 'all' || o.status === statusFilter ||
+      (statusFilter === 'new' && isNewOrder(o)) ||
       (statusFilter === 'pending' && o.status === 'pending_payment') ||
       (statusFilter === 'fena_paid' && isFenaAutoPaid(o)) ||
       (statusFilter === 'next_day_12' && (o as any).shippingMethod === 'next_day_12') ||
@@ -800,6 +836,7 @@ export default function OrdersTab() {
   });
 
   const counts = {
+    new: orders.filter(isNewOrder).length,
     all: orders.length,
     pending: orders.filter(o => o.status === 'pending' || o.status === 'pending_payment').length,
     paid: orders.filter(o => o.status === 'paid').length,
@@ -811,6 +848,7 @@ export default function OrdersTab() {
     next_day_12: orders.filter(o => (o as any).shippingMethod === 'next_day_12').length,
     next_day_missed: orders.filter(o => (o as any).nextDayMissedCutoff === true).length,
   };
+
 
   // TrueLayer Open Banking orders still in 'pending' (no bank_transfer)
   const trueLayerPending = orders.filter(o =>
@@ -954,16 +992,18 @@ export default function OrdersTab() {
 
       {/* Status filter tabs */}
       <div className="flex gap-2 flex-wrap">
-        {(['all', 'pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'fena_paid', 'next_day_12', 'next_day_missed'] as const).map(s => {
+        {(['new', 'all', 'pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'fena_paid', 'next_day_12', 'next_day_missed'] as const).map(s => {
           const labelMap: Record<string, string> = {
+            new: '🆕 New Orders',
             fena_paid: '✅ Fena Auto-Paid',
             next_day_12: '🚀 Next Day by 12',
             next_day_missed: '⚠️ Next Day Missed',
           };
           const label = labelMap[s] ?? (s.charAt(0).toUpperCase() + s.slice(1));
           const isFena = s === 'fena_paid';
-          const isNextDay = s === 'next_day_12';
+          const isNextDay = s === 'next_day_12' || s === 'new';
           const isMissed = s === 'next_day_missed';
+
           return (
             <button
               key={s}
@@ -1079,7 +1119,8 @@ export default function OrdersTab() {
                       <button
                         onClick={() => {
                           if (needsDispatch) {
-                            setSelected(order);
+                            openOrder(order);
+
                           } else {
                             handleStatusChange(order.id, next);
                           }
@@ -1098,7 +1139,7 @@ export default function OrdersTab() {
 
 
                   <button
-                    onClick={() => setSelected(order)}
+                    onClick={() => openOrder(order)}
                     className="p-1.5 bg-[#0f2640] hover:bg-[#1a3a5c] rounded-lg transition-colors"
                     title="View details"
                   >
