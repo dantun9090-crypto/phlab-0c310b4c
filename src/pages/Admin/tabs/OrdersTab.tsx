@@ -1119,7 +1119,8 @@ export default function OrdersTab() {
                       <button
                         onClick={() => {
                           if (needsDispatch) {
-                            setSelected(order);
+                            openOrder(order);
+
                           } else {
                             handleStatusChange(order.id, next);
                           }
