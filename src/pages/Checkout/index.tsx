@@ -29,6 +29,7 @@ import { callPreflightWithRetry } from '@/lib/checkoutPreflightRetry';
 import { toast, Toaster as SonnerToaster } from 'sonner';
 
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
+import InAppBrowserNotice from '@/components/InAppBrowserNotice';
 import NoCacheHead from '@/components/NoCacheHead';
 
 
@@ -1967,6 +1968,9 @@ export default function CheckoutPage() {
 
                 {currentStep === 3 && (
                   <div className="px-5 pb-5 space-y-4">
+                    {/* Embedded webviews (Instagram/Facebook/TikTok) cannot launch
+                        the customer's banking app — warn before they pick Pay by Bank. */}
+                    <InAppBrowserNotice />
                     {/* Payment method selector — Pay-by-Bank only when an Open Banking gateway is enabled */}
                     <PaymentMethodOptions
                       options={paymentOptions}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Loader } from 'lucide-react';
 import { db, auth, doc, getDoc, onAuthStateChanged } from '@/lib/firebase';
+import InAppBrowserNotice from '@/components/InAppBrowserNotice';
 
 const DAILY_RESET_KEY = 'php_payment_fallback_date';
 
@@ -319,6 +320,12 @@ export default function PaymentPage() {
             >
               🔬 PH LABS Payment
             </h1>
+
+            {/* Embedded webviews can't open banking apps — tell the customer up front. */}
+            <div className="mb-5">
+              <InAppBrowserNotice />
+            </div>
+
 
             <div
               className="text-center p-5 rounded-[14px] mb-6"
