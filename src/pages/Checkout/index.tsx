@@ -13,6 +13,7 @@ import {
 } from '@/lib/firebase';
 import type { Coupon } from '@/lib/firebase';
 import { validateCartPrices } from '@/lib/cart-validation.functions';
+import { parseCartTransferParam } from '@/lib/legacy-host';
 import { createOrder } from '@/lib/create-order.functions';
 import { createGatewayPaymentLink, getCheckoutPaymentOptions } from '@/lib/payment-gateways.functions';
 import type { CheckoutPaymentOptions } from '@/lib/payments/types';
@@ -488,6 +489,17 @@ export default function CheckoutPage() {
   // place. If anything actually changed, raise the "outdated cart" banner.
   useEffect(() => {
     try {
+      // Cross-origin cart handoff from the legacy SEO mirror: the shopper
+      // added items on prohealthpeptides.co.uk (separate localStorage) and
+      // was sent here with the cart serialized in ?cart=. Import it, then
+      // scrub the param so refreshes/shares don't re-import.
+      const transfer = parseCartTransferParam(window.location.search);
+      if (transfer) {
+        try {
+          localStorage.setItem('php_cart', JSON.stringify(transfer));
+        } catch { /* quota — in-memory state below still gets the items */ }
+        window.history.replaceState(null, '', '/checkout');
+      }
       const before = localStorage.getItem('php_cart');
       const migrated = migrateStoredCart<CartItem>();
       const after = localStorage.getItem('php_cart');
@@ -1274,7 +1286,7 @@ export default function CheckoutPage() {
           if (opened) {
             // Desktop: keep this tab on a waiting screen that auto-detects
             // completion — bank apps often never redirect back.
-            setBankWaiting({ orderId, paymentUrl, paymentToken: null });
+            setBankWaiting({ orderId, paymentUrl, paymentToken });
           } else {
             // Mobile / popup blocked: same-tab redirect; the pt-token return
             // URLs cover the bank app reopening a different browser.
