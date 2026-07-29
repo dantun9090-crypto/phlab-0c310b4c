@@ -1286,7 +1286,7 @@ export default function CheckoutPage() {
           if (opened) {
             // Desktop: keep this tab on a waiting screen that auto-detects
             // completion — bank apps often never redirect back.
-            setBankWaiting({ orderId, paymentUrl, paymentToken });
+            setBankWaiting({ orderId, paymentUrl, paymentToken: null });
           } else {
             // Mobile / popup blocked: same-tab redirect; the pt-token return
             // URLs cover the bank app reopening a different browser.
