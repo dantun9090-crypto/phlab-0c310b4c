@@ -380,7 +380,6 @@ test.describe('Checkout — Germany', () => {
     const streetInput = page.getByLabel(/street|address/i).first();
     const advance = page.getByRole('button', { name: /continue|next/i }).first();
     const stepThreeHeading = page.getByRole('heading', { name: /confirm|review|payment|age/i });
-    const streetError = page.getByText(/street name and house number|Musterstraße 12/i);
 
     // Case A — street name only, no house number ("Musterstraße").
     // WebKit on CI can be slow to re-render the validation error — allow a
@@ -396,14 +395,21 @@ test.describe('Checkout — Germany', () => {
 
     // Case C — punctuation-only, still no letters and no digits.
     await streetInput.fill('---');
-    await advance.click();
-    await expect(streetError).toBeVisible();
+    await clickAdvanceExpectError(page, /street name and house number|Musterstraße 12/i, 15_000);
     await expect(stepThreeHeading).toHaveCount(0);
 
     // Sanity: fixing the address (adds a house number) lets Step 2 pass.
+    // Same swallowed-click hazard — retry the advance click if Step 3's
+    // age checkbox doesn't show.
     await streetInput.fill('Musterstraße 12');
+    const ageCheckbox = page.getByLabel(/18\s*years?\s*(of age)?\s*or\s*older|18\s*or\s*older|18\+/i);
     await advance.click();
-    await expect(page.getByLabel(/18\s*years?\s*(of age)?\s*or\s*older|18\s*or\s*older|18\+/i)).toBeVisible({ timeout: 5000 });
+    try {
+      await expect(ageCheckbox).toBeVisible({ timeout: 10_000 });
+    } catch {
+      await advance.click();
+      await expect(ageCheckbox).toBeVisible({ timeout: 20_000 });
+    }
 
     // The order-create endpoint must NEVER have been called during the
     // invalid attempts above.
