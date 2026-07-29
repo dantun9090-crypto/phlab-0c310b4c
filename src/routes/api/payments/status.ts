@@ -167,7 +167,10 @@ export const Route = createFileRoute("/api/payments/status")({
                   updates: {
                     status: firestoreStatus,
                     paymentProvider: "wallid",
-                    paymentRef: row.api_payment_id,
+                    paymentRef: orderId,
+                    apiPaymentId: row.api_payment_id,
+                    wallidApiPaymentId: row.api_payment_id,
+                    wallidPaymentRef: orderId,
                     paymentUpdatedAt: new Date(),
                     ...(firestoreStatus === "paid" ? { paidAt: new Date() } : {}),
                     // Burn the guest paymentToken once the order is terminal so it

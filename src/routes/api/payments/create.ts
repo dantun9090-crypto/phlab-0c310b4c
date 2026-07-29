@@ -139,6 +139,7 @@ export const Route = createFileRoute("/api/payments/create")({
         try {
           const wallid = await createWallidPayment({
             orderId,
+            reference: ctx.reference,
             amount: trustedAmount,
             currency,
             customerEmail: trustedEmail,
@@ -161,7 +162,7 @@ export const Route = createFileRoute("/api/payments/create")({
             // only in the customer's browser). Server-side only — the
             // service-role table is never exposed to clients, and the token
             // grants status-read/cancel on this single order only.
-            metadata: { items: chargeItems, user_uid: user?.uid ?? null, guest_payment_token: Boolean(paymentToken), return_token: paymentToken ?? null, raw: wallid } as never,
+            metadata: { items: chargeItems, user_uid: user?.uid ?? null, order_reference: ctx.reference, guest_payment_token: Boolean(paymentToken), return_token: paymentToken ?? null, raw: wallid } as never,
           });
           if (dbErr) {
             console.error("[Wallid] DB insert failed:", dbErr.message);
@@ -176,6 +177,14 @@ export const Route = createFileRoute("/api/payments/create")({
               paymentTokenUsedAt: new Date(),
             }).catch((err) => console.error("[Wallid] token cleanup failed:", err));
           }
+          await updateDocAdmin("orders", orderId, {
+            paymentProvider: "wallid",
+            paymentRef: ctx.reference,
+            apiPaymentId: wallid.api_payment_id,
+            wallidApiPaymentId: wallid.api_payment_id,
+            wallidPaymentRef: ctx.reference,
+            paymentLinkCreatedAt: new Date(),
+          }).catch((err) => console.error("[Wallid] order payment marker failed:", err));
 
           return json({
             payment_link: wallid.payment_link,

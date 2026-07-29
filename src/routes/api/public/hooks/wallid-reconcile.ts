@@ -128,7 +128,10 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
                 updates: {
                   status: firestoreStatus,
                   paymentProvider: "wallid",
-                  paymentRef: row.api_payment_id,
+                  paymentRef: row.order_id,
+                  apiPaymentId: row.api_payment_id,
+                  wallidApiPaymentId: row.api_payment_id,
+                  wallidPaymentRef: row.order_id,
                   paymentUpdatedAt: new Date(),
                   paymentTokenHash: null,
                   reconciledViaCron: true,

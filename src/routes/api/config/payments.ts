@@ -18,8 +18,8 @@ export const Route = createFileRoute("/api/config/payments")({
           // Other gateways are managed by `/lib/payments/gateway-config.server`
           // and exposed via `getCheckoutPaymentOptions`. Surfaced here as
           // booleans for parity / future use.
-          fena_enabled: true,
-          truelayer_enabled: true,
+          fena_enabled: false,
+          truelayer_enabled: false,
         };
         return new Response(JSON.stringify(body), {
           status: 200,
