@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Loader } from 'lucide-react';
 import { db, auth, doc, getDoc, onAuthStateChanged } from '@/lib/firebase';
+import InAppBrowserNotice from '@/components/InAppBrowserNotice';
 
 const DAILY_RESET_KEY = 'php_payment_fallback_date';
 
