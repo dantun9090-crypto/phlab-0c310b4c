@@ -213,7 +213,7 @@ export const Route = createFileRoute("/api/public/hooks/prerender-recache")({
         // Persist the lastmod we just recached so the next run can dedupe.
         if (desktop.ok) {
           for (const e of capped) {
-            if (e.lastmod) lastmodByUrl.set(e.loc, e.lastmod);
+            lastmodByUrl.set(e.loc, e.lastmod ?? NO_LASTMOD);
           }
         }
 
