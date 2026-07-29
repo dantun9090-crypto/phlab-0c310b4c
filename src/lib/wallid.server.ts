@@ -112,17 +112,8 @@ export class WallidError extends Error {
   }
 }
 
-/**
- * Bank remittance reference. Banks truncate hard and reject most punctuation,
- * so we emit `PHLABS <ORDERREF>` in A-Z0-9 only, capped at 18 chars — that is
- * what the customer sees on their statement instead of a Wallid payment id.
- */
-export function buildBankReference(orderRef: string): string {
-  const clean = String(orderRef || "")
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "");
-  return `PHLABS ${clean}`.slice(0, 18).trim();
-}
+
+
 
 export async function createWallidPayment(
   input: CreateWallidPaymentInput,
