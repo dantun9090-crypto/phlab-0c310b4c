@@ -501,6 +501,29 @@ export function Layout({ children }: LayoutProps) {
 
 
 
+  // Legacy mirror: bulletproof cart handoff. ANY click that would navigate
+  // to /checkout (menu links, promo CTAs, future buttons — not just the
+  // drawer CTA above) is rewritten to carry the cart in the URL, because
+  // localStorage doesn't cross origins. The canonical /checkout imports it.
+  useEffect(() => {
+    if (!isLegacyHost()) return;
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const anchor = (e.target as HTMLElement | null)?.closest?.('a[href]') as HTMLAnchorElement | null;
+      if (!anchor) return;
+      let isCheckout = false;
+      try {
+        const u = new URL(anchor.getAttribute('href') || '', window.location.origin);
+        isCheckout = u.pathname === '/checkout' || u.pathname.startsWith('/checkout/');
+      } catch { return; }
+      if (!isCheckout) return;
+      e.preventDefault();
+      window.location.href = buildTransactionalHrefWithCart('/checkout', cart);
+    };
+    document.addEventListener('click', onClick, true);
+    return () => document.removeEventListener('click', onClick, true);
+  }, [cart]);
+
   // Listen for add-to-cart events
   useEffect(() => {
     const handleAdd = (e: any) => {
