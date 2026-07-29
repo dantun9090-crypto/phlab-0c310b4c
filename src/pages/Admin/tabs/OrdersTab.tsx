@@ -1256,8 +1256,15 @@ export default function OrdersTab() {
                 <div className="sticky top-0 z-20 bg-[#04101f]/95 backdrop-blur supports-[backdrop-filter]:bg-[#04101f]/80 border-b border-white/[0.08] px-4 py-3 flex items-start justify-between gap-2">
                   <div>
                     <h3 className="text-white font-bold text-lg font-mono">
-                      {(selected as any).bankTransferRef || `#${selected.id?.slice(-8).toUpperCase()}`}
+                      {(selected as any).orderId || (selected as any).bankTransferRef || `#${selected.id?.slice(-8).toUpperCase()}`}
+                      {(() => {
+                        const wid = (selected as any).apiPaymentId || (selected as any).wallidApiPaymentId || '';
+                        return wid ? (
+                          <span className="text-emerald-300"> + {String(wid).replace(/-/g, '').slice(0, 10)}</span>
+                        ) : null;
+                      })()}
                     </h3>
+
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <StatusBadge status={selected.status} />
                       {(selected as any).paymentMethod === 'bank_transfer' && (
