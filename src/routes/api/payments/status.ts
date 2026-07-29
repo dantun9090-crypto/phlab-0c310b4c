@@ -220,6 +220,29 @@ export const Route = createFileRoute("/api/payments/status")({
                   }
                 }
               }
+
+              // Failed / expired detected by the poller → retry-link email.
+              if (
+                transitioned &&
+                (firestoreStatus === "failed" || firestoreStatus === "expired") &&
+                prior
+              ) {
+                try {
+                  const { sendPaymentRetryEmailNow } = await import(
+                    "@/lib/server/send-payment-retry.server"
+                  );
+                  await sendPaymentRetryEmailNow(
+                    orderId,
+                    prior as Record<string, unknown>,
+                    `wallid:status-poll:${firestoreStatus}`,
+                  );
+                } catch (mailErr) {
+                  console.warn(
+                    "[Wallid status] retry email failed:",
+                    mailErr instanceof Error ? mailErr.message : mailErr,
+                  );
+                }
+              }
             } catch (e) {
               console.warn(
                 "[Wallid status] Firestore order update skipped:",

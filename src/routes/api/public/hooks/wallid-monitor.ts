@@ -280,6 +280,25 @@ export const Route = createFileRoute("/api/public/hooks/wallid-monitor")({
               }
             }
           }
+
+          // Failed / expired → immediate retry-link email (idempotent).
+          if ((firestoreStatus === "failed" || firestoreStatus === "expired") && prior) {
+            try {
+              const { sendPaymentRetryEmailNow } = await import(
+                "@/lib/server/send-payment-retry.server"
+              );
+              await sendPaymentRetryEmailNow(
+                orderId,
+                prior as Record<string, unknown>,
+                `wallid:monitor:${firestoreStatus}`,
+              );
+            } catch (mailErr) {
+              console.warn(
+                "[Wallid monitor] retry email failed:",
+                mailErr instanceof Error ? mailErr.message : mailErr,
+              );
+            }
+          }
         }
 
         // 4) Admin alert when > threshold orders had to be rescued in the

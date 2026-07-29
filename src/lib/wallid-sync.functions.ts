@@ -172,6 +172,30 @@ export const syncWallidPaymentAdmin = createServerFn({ method: "POST" })
       }
     }
 
+    // Failed / expired confirmed by the admin sync → retry-link email.
+    if (
+      transitioned &&
+      (firestoreStatus === "failed" || firestoreStatus === "expired") &&
+      prior
+    ) {
+      try {
+        const { sendPaymentRetryEmailNow } = await import(
+          "@/lib/server/send-payment-retry.server"
+        );
+        await sendPaymentRetryEmailNow(
+          data.orderId,
+          prior as Record<string, unknown>,
+          `wallid:admin-sync:${firestoreStatus}`,
+        );
+      } catch (mailErr) {
+        console.warn(
+          "[Wallid sync] retry email failed:",
+          mailErr instanceof Error ? mailErr.message : mailErr,
+        );
+      }
+    }
+
+
     const priorStatus = prior ? String(prior.status ?? "").toLowerCase() : null;
     return {
       ok: true,

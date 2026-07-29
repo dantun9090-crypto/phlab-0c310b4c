@@ -214,6 +214,27 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
                 }
               }
             }
+
+            // Failed / expired at the bank → email the customer a retry link.
+            // Idempotent (deterministic mail doc id + order stamp), so the
+            // webhook path and this cron can't double-send.
+            if (firestoreStatus === "failed" || firestoreStatus === "expired") {
+              try {
+                const { sendPaymentRetryEmailNow } = await import(
+                  "@/lib/server/send-payment-retry.server"
+                );
+                await sendPaymentRetryEmailNow(
+                  row.order_id,
+                  prior as Record<string, unknown>,
+                  `wallid:reconcile-cron:${firestoreStatus}`,
+                );
+              } catch (mailErr) {
+                console.warn(
+                  "[Wallid reconcile] retry email failed:",
+                  mailErr instanceof Error ? mailErr.message : mailErr,
+                );
+              }
+            }
           } catch (e) {
             console.warn(
               `[Wallid reconcile] ${row.order_id} Firestore update failed:`,
