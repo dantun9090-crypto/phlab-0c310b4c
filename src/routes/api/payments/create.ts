@@ -126,8 +126,15 @@ export const Route = createFileRoute("/api/payments/create")({
           },
         ];
 
-        const successUrl = `https://phlabs.co.uk/checkout/success?order_id=${encodeURIComponent(orderId)}`;
-        const failUrl = `https://phlabs.co.uk/checkout/cancel?order_id=${encodeURIComponent(orderId)}`;
+        // Carry the guest paymentToken on the return URLs (`pt`) so the
+        // success/cancel pages can verify the payment even when the bank
+        // app reopens the shop in a DIFFERENT browser (token otherwise
+        // lives only in the original browser's localStorage). The token is
+        // the same single-order credential already used for status polling.
+        const withPt = (u: string) =>
+          paymentToken ? `${u}&pt=${encodeURIComponent(paymentToken)}` : u;
+        const successUrl = withPt(`https://phlabs.co.uk/checkout/success?order_id=${encodeURIComponent(orderId)}`);
+        const failUrl = withPt(`https://phlabs.co.uk/checkout/cancel?order_id=${encodeURIComponent(orderId)}`);
 
         try {
           const wallid = await createWallidPayment({
@@ -138,7 +145,6 @@ export const Route = createFileRoute("/api/payments/create")({
             items: chargeItems,
             successUrl,
             failUrl,
-            reference: ctx.reference || orderId,
           });
 
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
