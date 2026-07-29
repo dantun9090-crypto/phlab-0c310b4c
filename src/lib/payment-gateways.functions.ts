@@ -129,17 +129,9 @@ export const testPaymentGateway = createServerFn({ method: "POST" })
 
 export const getCheckoutPaymentOptions = createServerFn({ method: "GET" })
   .handler(async (): Promise<CheckoutPaymentOptions> => {
-    const { primary, backups } = await resolveActiveGateways();
-    const mapOpt = (cfg: PaymentGatewayConfig) => ({
-      id: cfg.id,
-      name: GATEWAY_DISPLAY[cfg.id].name,
-      label: GATEWAY_DISPLAY[cfg.id].label,
-      description: GATEWAY_DISPLAY[cfg.id].description,
-      sandbox: cfg.sandbox,
-    });
     return {
-      primary: primary ? mapOpt(primary) : null,
-      backups: backups.map(mapOpt),
+      primary: null,
+      backups: [],
       manualFallback: true,
     };
   });

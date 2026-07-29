@@ -15,8 +15,6 @@ import type { Coupon } from '@/lib/firebase';
 import { validateCartPrices } from '@/lib/cart-validation.functions';
 import { parseCartTransferParam } from '@/lib/legacy-host';
 import { createOrder } from '@/lib/create-order.functions';
-import { createGatewayPaymentLink, getCheckoutPaymentOptions } from '@/lib/payment-gateways.functions';
-import type { CheckoutPaymentOptions } from '@/lib/payments/types';
 import { migrateStoredCart } from '@/lib/cart-migration';
 import { logCartEvent, safeCartWrite } from '@/lib/cart-telemetry';
 import { sendPublicMail } from '@/lib/sendPublicMail';
@@ -142,7 +140,6 @@ export default function CheckoutPage() {
     | 'failed';
   const [fenaStep, setFenaStep] = useState<FenaStep>('idle');
   const [fenaOrderId, setFenaOrderId] = useState<string>('');
-  const [paymentOptions, setPaymentOptions] = useState<CheckoutPaymentOptions | null>(null);
   const [wallidEnabled, setWallidEnabled] = useState<boolean>(false);
   const [, setSummaryExpanded] = useState(false);
   const [paymentRecoveryVisible, setPaymentRecoveryVisible] = useState(false);
@@ -591,22 +588,6 @@ export default function CheckoutPage() {
     }).catch(() => {});
   }, []);
 
-  // Load active payment gateways (dynamic Pay-by-Bank availability)
-  useEffect(() => {
-    let cancelled = false;
-    getCheckoutPaymentOptions()
-      .then((opts) => {
-        if (cancelled) return;
-        setPaymentOptions(opts);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        // Fail safe: hide Pay-by-Bank, only manual fallback.
-        setPaymentOptions({ primary: null, backups: [], manualFallback: true });
-      });
-    return () => { cancelled = true; };
-  }, []);
-
   // Wallid Pay-by-Bank kill switch — admin toggle from Payment Gateways panel.
   useEffect(() => {
     let cancelled = false;
@@ -623,18 +604,14 @@ export default function CheckoutPage() {
     return () => { cancelled = true; };
   }, []);
 
-  // Default payment method: Wallid first, then dynamic Pay by Bank, then manual fallback.
+  // Default payment method: Wallid first, manual bank transfer only as fallback.
   useEffect(() => {
     if (wallidEnabled) {
       setForm((prev) => ({ ...prev, paymentMethod: 'wallid' }));
       return;
     }
-    if (paymentOptions && (paymentOptions.primary || paymentOptions.backups.length > 0)) {
-      setForm((prev) => ({ ...prev, paymentMethod: 'pay_by_bank' }));
-      return;
-    }
     setForm((prev) => ({ ...prev, paymentMethod: 'bank_transfer' }));
-  }, [paymentOptions, wallidEnabled]);
+  }, [wallidEnabled]);
 
   // Calculations
   const subtotal = cart.reduce((s, i) => s + i.priceNum * i.quantity, 0);
@@ -705,7 +682,6 @@ export default function CheckoutPage() {
     }
   }, [eligibleGiftList, selectedGiftId]);
   const hasItemsWithoutVariant = cart.some(item => !item.dosage || item.dosage === '');
-  const activePayByBankName = paymentOptions?.primary?.name ?? 'Open Banking';
   const cartToGaItems = useCallback((): GaItem[] => cart.map(item => ({
     item_id: merchantItemId(item.id),
     item_name: item.name,
@@ -1006,7 +982,7 @@ export default function CheckoutPage() {
     paymentAbortRef.current = new AbortController();
     startPaymentTimers(paymentAttemptId);
     setLoginError('');
-    if (form.paymentMethod === 'pay_by_bank') {
+    if (form.paymentMethod === 'wallid') {
       setFenaStep('creating-order');
       setFenaOrderId('');
     } else {
@@ -1231,74 +1207,6 @@ export default function CheckoutPage() {
           const failMsg = err?.message || 'Payment could not be started — please try again.';
           setLoginError(failMsg);
           console.error('[PAYMENT] gateway_fail method=wallid', err);
-          try { toast.error(failMsg); } catch { /* toast optional */ }
-          setIsPlacing(false);
-          return;
-        }
-      }
-
-      // Pay by Bank (Open Banking, handled by our in-app server
-      // function — same origin, no external Worker, no CORS).
-      if (form.paymentMethod === 'pay_by_bank') {
-        setFenaOrderId(orderId);
-        setFenaStep('creating-link');
-        try {
-          let current = auth.currentUser;
-          if (!current) {
-            // Dynamic import — see note in create-order block above.
-            const { signInAnonymously } = await import('firebase/auth');
-            const anon = await signInAnonymously(auth);
-            if (paymentAttemptRef.current !== paymentAttemptId) return;
-            current = anon.user;
-          }
-          if (!current) throw new Error('Could not establish user session for payment.');
-          const idTokenForFena = await current.getIdToken();
-          if (paymentAttemptRef.current !== paymentAttemptId) return;
-          const { hppUrl, gateway, externalPaymentId } = await createGatewayPaymentLink({
-            data: { orderId, idToken: idTokenForFena },
-          });
-          if (paymentAttemptRef.current !== paymentAttemptId) return;
-          // Allowlist redirect hosts per gateway — defence-in-depth.
-          let parsed: URL;
-          try { parsed = new URL(hppUrl); } catch { throw new Error('Invalid payment redirect URL.'); }
-          const host = parsed.hostname.toLowerCase();
-          const fenaOk = host === 'fena.co' || host === 'fena.io' || host.endsWith('.fena.co') || host.endsWith('.fena.io');
-          const tlOk = host === 'truelayer.com' || host.endsWith('.truelayer.com') || host.endsWith('.truelayer-sandbox.com');
-          const okHost =
-            (gateway === 'fena' && fenaOk) ||
-            (gateway === 'truelayer' && tlOk);
-          if (parsed.protocol !== 'https:' || !okHost) {
-            throw new Error('Unexpected payment redirect host.');
-          }
-          if (gateway === 'truelayer' && externalPaymentId) {
-            localStorage.setItem(`php_tl_order_${externalPaymentId}`, orderId);
-          }
-          setFenaStep('redirecting');
-          // Persist orderId so the success page can clear the cart only
-          // after the bank confirms payment. If the user cancels/aborts
-          // the redirect, the cart stays intact and they can retry.
-          try { localStorage.setItem('php_pending_order', orderId); } catch { /* ignore */ }
-          const paymentUrl = parsed.toString();
-          setPendingPaymentUrl(paymentUrl);
-          setPaymentRecoveryVisible(true);
-          const isDesktop = window.matchMedia('(pointer: fine)').matches && window.innerWidth >= 1024;
-          const opened = isDesktop ? window.open(paymentUrl, '_blank', 'noopener') : null;
-          if (opened) {
-            // Desktop: keep this tab on a waiting screen that auto-detects
-            // completion — bank apps often never redirect back.
-            setBankWaiting({ orderId, paymentUrl, paymentToken: null });
-          } else {
-            // Mobile / popup blocked: same-tab redirect; the pt-token return
-            // URLs cover the bank app reopening a different browser.
-            window.location.assign(paymentUrl);
-          }
-          return;
-        } catch (err: any) {
-          if (paymentAttemptRef.current !== paymentAttemptId) return;
-          setFenaStep('failed');
-          const failMsg = err?.message || 'Payment could not be started — please try again.';
-          setLoginError(failMsg);
-          console.error('[PAYMENT] gateway_fail method=pay_by_bank', err);
           try { toast.error(failMsg); } catch { /* toast optional */ }
           setIsPlacing(false);
           return;
@@ -1646,7 +1554,7 @@ export default function CheckoutPage() {
                     <p className="text-emerald-300/70 text-xs mt-0.5">
                       {fenaStep === 'creating-order' && 'Reserving stock and locking the total in £.'}
                       {fenaStep === 'creating-link' && (
-                        <>Order ref <span className="font-mono">{fenaOrderId || '…'}</span>. Talking to {activePayByBankName}.</>
+                        <>Order ref <span className="font-mono">{fenaOrderId || '…'}</span>. Talking to Wallid.</>
                       )}
                       {fenaStep === 'redirecting' && (
                         <>After you approve in your banking app, you'll come back to <span className="font-mono">/payment/success</span> and we'll wait for the bank webhook to mark the order as paid.</>
@@ -1991,7 +1899,7 @@ export default function CheckoutPage() {
                   <div className="px-5 pb-5 space-y-4">
                     {/* Payment method selector — Pay-by-Bank only when an Open Banking gateway is enabled */}
                     <PaymentMethodOptions
-                      options={paymentOptions}
+                      options={null}
                       wallidEnabled={wallidEnabled}
                       value={form.paymentMethod}
                       onChange={(v) => setField('paymentMethod', v)}

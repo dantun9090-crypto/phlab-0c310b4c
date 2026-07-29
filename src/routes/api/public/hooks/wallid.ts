@@ -258,7 +258,10 @@ export const Route = createFileRoute("/api/public/hooks/wallid")({
                       updates: {
                         status: firestoreStatus,
                         paymentProvider: "wallid",
-                        paymentRef: ev.payment_ref || ev.paymentRef || apiPaymentId || null,
+                        paymentRef: orderId,
+                        apiPaymentId: apiPaymentId || null,
+                        wallidApiPaymentId: apiPaymentId || null,
+                        wallidPaymentRef: ev.payment_ref || ev.paymentRef || orderId,
                         paymentUpdatedAt: new Date(),
                         ...(firestoreStatus === "paid" ? { paidAt: new Date() } : {}),
                         ...(status === "FAILED" || status === "EXPIRED"

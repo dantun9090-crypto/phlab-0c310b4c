@@ -119,13 +119,14 @@ export async function createWallidPayment(
   input: CreateWallidPaymentInput,
 ): Promise<WallidCreateResponse> {
   const orderRef = input.reference || input.orderId;
-  // Historical payload — verified end-to-end against the live Wallid API.
-  // Wallid silently drops `reference` / `payment_reference` /
-  // `remittance_information`, so sending them changes nothing on the bank
-  // statement; `order_id` + `description` keyed on the PHP- order id is what
-  // reconciles correctly and is what worked before 2026-07-28.
+  // Keep the customer-facing PHP order number in every reference-like field.
+  // Some banks still display Wallid's internal narrative, but our side must
+  // never replace the PH Labs order number with Wallid's api_payment_id.
   const payload = {
     order_id: input.orderId,
+    reference: orderRef,
+    payment_reference: orderRef,
+    remittance_information: orderRef,
     amount: toMinor(input.amount),
     currency: input.currency,
     success_url: input.successUrl,
@@ -138,7 +139,7 @@ export async function createWallidPayment(
       image_url: i.image_url,
       product_url: i.product_url,
     })),
-    description: `PH LABS Order ${input.orderId}`,
+    description: `PH LABS Order ${orderRef}`,
     locale: "en",
     country: "GB",
     metadata: {

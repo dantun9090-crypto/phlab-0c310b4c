@@ -126,7 +126,10 @@ export const syncWallidPaymentAdmin = createServerFn({ method: "POST" })
       updates: {
         status: firestoreStatus,
         paymentProvider: "wallid",
-        paymentRef: row.api_payment_id,
+        paymentRef: data.orderId,
+        apiPaymentId: row.api_payment_id,
+        wallidApiPaymentId: row.api_payment_id,
+        wallidPaymentRef: data.orderId,
         paymentUpdatedAt: new Date(),
         reconciledViaCron: false,
         reconciledManually: true,

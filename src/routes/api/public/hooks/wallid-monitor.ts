@@ -229,7 +229,10 @@ export const Route = createFileRoute("/api/public/hooks/wallid-monitor")({
             updates: {
               status: firestoreStatus,
               paymentProvider: "wallid",
-              paymentRef: apiPaymentId,
+              paymentRef: orderId,
+              apiPaymentId,
+              wallidApiPaymentId: apiPaymentId,
+              wallidPaymentRef: orderId,
               paymentUpdatedAt: new Date(),
               reconciledViaMonitor: true,
               ...(firestoreStatus === "paid" ? { paidAt: new Date() } : {}),

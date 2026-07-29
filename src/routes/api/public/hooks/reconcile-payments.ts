@@ -325,7 +325,10 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
                 updates: {
                   status: firestoreStatus,
                   paymentProvider: "wallid",
-                  paymentRef: apiPaymentId,
+                  paymentRef: orderId,
+                  apiPaymentId,
+                  wallidApiPaymentId: apiPaymentId,
+                  wallidPaymentRef: orderId,
                   paymentUpdatedAt: new Date(),
                   lastReconciledAt: new Date(),
                   ...(firestoreStatus === "paid" ? { paidAt: new Date() } : {}),
@@ -452,7 +455,10 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
               updates: {
                 status: firestoreStatus,
                 paymentProvider: "wallid",
-                paymentRef: apiPaymentId,
+                paymentRef: orderId,
+                apiPaymentId,
+                wallidApiPaymentId: apiPaymentId,
+                wallidPaymentRef: orderId,
                 lastReconciledAt: new Date(),
                 paymentUpdatedAt: new Date(),
                 ...(firestoreStatus === "paid" ? { paidAt: new Date() } : {}),
