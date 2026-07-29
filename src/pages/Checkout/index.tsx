@@ -4,7 +4,7 @@ import {
   User as UserIcon, Mail, Phone, MapPin,
   Lock, AlertTriangle, Check, ChevronLeft, Truck,
   Landmark, BadgeCheck, ShoppingCart, Trash2, Plus, Minus,
-  CheckCircle2, ChevronRight, Tag, X, Package
+  CheckCircle2, ChevronRight, Tag, X, Package, Loader2
 } from 'lucide-react';
 import {
   auth, doc, getDoc,
@@ -29,7 +29,6 @@ import { callPreflightWithRetry } from '@/lib/checkoutPreflightRetry';
 import { toast, Toaster as SonnerToaster } from 'sonner';
 
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
-import InAppBrowserNotice from '@/components/InAppBrowserNotice';
 import NoCacheHead from '@/components/NoCacheHead';
 
 
@@ -147,10 +146,14 @@ export default function CheckoutPage() {
   const [, setSummaryExpanded] = useState(false);
   const [paymentRecoveryVisible, setPaymentRecoveryVisible] = useState(false);
   const [pendingPaymentUrl, setPendingPaymentUrl] = useState<string | null>(null);
-  // Set when the order IS created server-side but the bank link step failed
-  // or timed out. The user must never be left with an endless spinner and no
-  // idea whether they paid — we show them the order ref plus a retry link.
-  const [stalledOrderId, setStalledOrderId] = useState<string | null>(null);
+  // Desktop Pay-by-Bank waiting overlay: bank page opens in a NEW tab while
+  // this tab polls /api/payments/status — bank apps often never redirect
+  // back, so the user simply returns here and sees the confirmation.
+  const [bankWaiting, setBankWaiting] = useState<{
+    orderId: string;
+    paymentUrl: string;
+    paymentToken: string | null;
+  } | null>(null);
   const stepRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const paymentAttemptRef = useRef(0);
   const paymentAbortRef = useRef<AbortController | null>(null);
@@ -173,7 +176,6 @@ export default function CheckoutPage() {
     if (typeof window === 'undefined') return;
     clearPaymentTimers();
     setPaymentRecoveryVisible(false);
-    setStalledOrderId(null);
     setPendingPaymentUrl(null);
     paymentRecoveryTimerRef.current = window.setTimeout(() => {
       if (paymentAttemptRef.current === attemptId) setPaymentRecoveryVisible(true);
@@ -223,6 +225,48 @@ export default function CheckoutPage() {
   // order server-side, and clearing the attempt would strand the order and
   // (on retry) create a duplicate. bfcache is detected explicitly via
   // `pageshow` with `event.persisted === true`.
+  // Poll while the desktop "waiting for bank approval" overlay is open.
+  useEffect(() => {
+    if (!bankWaiting) return;
+    let cancelled = false;
+    const started = Date.now();
+    const timer = window.setInterval(async () => {
+      if (cancelled) return;
+      if (Date.now() - started > 12 * 60_000) {
+        window.clearInterval(timer); // overlay stays; user can retry/open bank again
+        return;
+      }
+      try {
+        const idToken = auth.currentUser
+          ? await auth.currentUser.getIdToken().catch(() => null)
+          : null;
+        const res = await fetch('/api/payments/status', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            orderId: bankWaiting.orderId,
+            idToken,
+            paymentToken: bankWaiting.paymentToken,
+          }),
+        });
+        const data = await res.json().catch(() => ({} as any));
+        const st = String(data?.status || '').toUpperCase();
+        if (st === 'SUCCESS') {
+          window.clearInterval(timer);
+          const pt = bankWaiting.paymentToken ? `&pt=${encodeURIComponent(bankWaiting.paymentToken)}` : '';
+          window.location.assign(`/checkout/success?order_id=${encodeURIComponent(bankWaiting.orderId)}${pt}`);
+        } else if (st === 'FAILED' || st === 'EXPIRED' || st === 'CANCELLED') {
+          window.clearInterval(timer);
+          if (!cancelled) {
+            setBankWaiting(null);
+            setFenaStep('failed');
+          }
+        }
+      } catch { /* keep polling */ }
+    }, 3500);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, [bankWaiting]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const clearInFlight = () => {
@@ -648,17 +692,7 @@ export default function CheckoutPage() {
       setSelectedGiftId(null);
     }
   }, [eligibleGiftList, selectedGiftId]);
-  // Keep this rule identical to the cart drawer in Layout.tsx: an item counts
-  // as having a variant if ANY of variantId / variantName / dosage is set.
-  // Legacy carts cached on Safari/iPhone carry variantId + variantName without
-  // a `dosage` string — checking `dosage` alone blocked those customers from
-  // paying even though the cart drawer showed the variant correctly.
-  const hasItemsWithoutVariant = cart.some(item => {
-    const hasVariantId = typeof item.variantId === 'string' && item.variantId.trim() !== '';
-    const hasVariantName = typeof item.variantName === 'string' && item.variantName.trim() !== '';
-    const hasDosage = typeof item.dosage === 'string' && item.dosage.trim() !== '';
-    return !hasVariantId && !hasVariantName && !hasDosage;
-  });
+  const hasItemsWithoutVariant = cart.some(item => !item.dosage || item.dosage === '');
   const activePayByBankName = paymentOptions?.primary?.name ?? 'Open Banking';
   const cartToGaItems = useCallback((): GaItem[] => cart.map(item => ({
     item_id: merchantItemId(item.id),
@@ -1112,22 +1146,10 @@ export default function CheckoutPage() {
           const publicOrigin = typeof window !== 'undefined' && window.location.protocol === 'https:'
             ? window.location.origin
             : null;
-          // Hard 30s cap: the global watchdog is already retired at this
-          // point (the order exists), so without this a hung gateway call
-          // would spin forever with no feedback to the customer.
-          const linkTimeout = new AbortController();
-          const linkTimeoutId = window.setTimeout(() => linkTimeout.abort(), 30000);
-          const outerSignal = paymentAbortRef.current?.signal;
-          if (outerSignal) {
-            if (outerSignal.aborted) linkTimeout.abort();
-            else outerSignal.addEventListener('abort', () => linkTimeout.abort(), { once: true });
-          }
-          let res: Response;
-          try {
-            res = await fetch('/api/payments/create', {
+          const res = await fetch('/api/payments/create', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            signal: linkTimeout.signal,
+            signal: paymentAbortRef.current?.signal,
             body: JSON.stringify({
               idToken: wallidIdToken,
               orderId,
@@ -1146,15 +1168,7 @@ export default function CheckoutPage() {
                 product_url: publicOrigin || undefined,
               }],
             }),
-            });
-          } catch (fetchErr: any) {
-            if (linkTimeout.signal.aborted && !outerSignal?.aborted) {
-              throw new Error('The bank payment page is taking too long to open. Your order was saved — you can finish paying from the link below.');
-            }
-            throw fetchErr;
-          } finally {
-            window.clearTimeout(linkTimeoutId);
-          }
+          });
           if (paymentAttemptRef.current !== paymentAttemptId) return;
           const data = await res.json().catch(() => ({} as any));
           if (paymentAttemptRef.current !== paymentAttemptId) return;
@@ -1179,7 +1193,17 @@ export default function CheckoutPage() {
           const paymentUrl = parsed.toString();
           setPendingPaymentUrl(paymentUrl);
           setPaymentRecoveryVisible(true);
-          window.location.assign(paymentUrl);
+          const isDesktop = window.matchMedia('(pointer: fine)').matches && window.innerWidth >= 1024;
+          const opened = isDesktop ? window.open(paymentUrl, '_blank', 'noopener') : null;
+          if (opened) {
+            // Desktop: keep this tab on a waiting screen that auto-detects
+            // completion — bank apps often never redirect back.
+            setBankWaiting({ orderId, paymentUrl, paymentToken });
+          } else {
+            // Mobile / popup blocked: same-tab redirect; the pt-token return
+            // URLs cover the bank app reopening a different browser.
+            window.location.assign(paymentUrl);
+          }
           return;
         } catch (err: any) {
           if (paymentAttemptRef.current !== paymentAttemptId) return;
@@ -1194,7 +1218,6 @@ export default function CheckoutPage() {
           });
           const failMsg = err?.message || 'Payment could not be started — please try again.';
           setLoginError(failMsg);
-          setStalledOrderId(orderId);
           console.error('[PAYMENT] gateway_fail method=wallid', err);
           try { toast.error(failMsg); } catch { /* toast optional */ }
           setIsPlacing(false);
@@ -1246,14 +1269,23 @@ export default function CheckoutPage() {
           const paymentUrl = parsed.toString();
           setPendingPaymentUrl(paymentUrl);
           setPaymentRecoveryVisible(true);
-          window.location.assign(paymentUrl);
+          const isDesktop = window.matchMedia('(pointer: fine)').matches && window.innerWidth >= 1024;
+          const opened = isDesktop ? window.open(paymentUrl, '_blank', 'noopener') : null;
+          if (opened) {
+            // Desktop: keep this tab on a waiting screen that auto-detects
+            // completion — bank apps often never redirect back.
+            setBankWaiting({ orderId, paymentUrl, paymentToken });
+          } else {
+            // Mobile / popup blocked: same-tab redirect; the pt-token return
+            // URLs cover the bank app reopening a different browser.
+            window.location.assign(paymentUrl);
+          }
           return;
         } catch (err: any) {
           if (paymentAttemptRef.current !== paymentAttemptId) return;
           setFenaStep('failed');
           const failMsg = err?.message || 'Payment could not be started — please try again.';
           setLoginError(failMsg);
-          setStalledOrderId(orderId);
           console.error('[PAYMENT] gateway_fail method=pay_by_bank', err);
           try { toast.error(failMsg); } catch { /* toast optional */ }
           setIsPlacing(false);
@@ -1572,29 +1604,6 @@ export default function CheckoutPage() {
                 </p>
               )}
 
-
-              {/* Order created but the bank page never opened — never leave
-                  the customer guessing whether money was taken. */}
-              {stalledOrderId && (
-                <div
-                  data-testid="checkout-stalled-payment"
-                  className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-4"
-                >
-                  <p className="text-yellow-100 text-sm font-semibold">
-                    No payment has been taken yet
-                  </p>
-                  <p className="text-yellow-100/80 text-xs mt-1">
-                    Your order <span className="font-mono">{stalledOrderId}</span> was saved, but the
-                    bank payment page did not open. You can finish paying now — you will not be charged twice.
-                  </p>
-                  <a
-                    href={`/payment?orderId=${encodeURIComponent(stalledOrderId)}`}
-                    className="mt-3 inline-flex min-h-[44px] items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
-                  >
-                    Continue payment
-                  </a>
-                </div>
-              )}
 
               {/* Stock errors */}
               {errors.stock && (
@@ -1968,9 +1977,6 @@ export default function CheckoutPage() {
 
                 {currentStep === 3 && (
                   <div className="px-5 pb-5 space-y-4">
-                    {/* Embedded webviews (Instagram/Facebook/TikTok) cannot launch
-                        the customer's banking app — warn before they pick Pay by Bank. */}
-                    <InAppBrowserNotice />
                     {/* Payment method selector — Pay-by-Bank only when an Open Banking gateway is enabled */}
                     <PaymentMethodOptions
                       options={paymentOptions}
@@ -2403,6 +2409,41 @@ export default function CheckoutPage() {
         )}
 
       </div>
+
+      {bankWaiting && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl border border-emerald-500/30 bg-[#0b1a30] p-6 text-center shadow-2xl">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15">
+              <Loader2 className="h-7 w-7 animate-spin text-emerald-400" />
+            </div>
+            <h2 className="text-lg font-bold text-white">Approve the payment in your bank</h2>
+            <p className="mt-2 text-sm text-gray-300">
+              We opened your bank in a new tab. Approve the payment there, then come back to this tab —
+              it updates automatically as soon as the bank confirms.
+            </p>
+            <a
+              href={bankWaiting.paymentUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-500"
+            >
+              <Landmark className="h-4 w-4" />
+              Open bank page again
+            </a>
+            <button
+              type="button"
+              onClick={() => setBankWaiting(null)}
+              className="mt-2 w-full rounded-lg border border-white/15 px-4 py-2 text-xs text-gray-400 hover:bg-white/5"
+            >
+              Hide this window (the payment continues in the background)
+            </button>
+            <p className="mt-3 text-[11px] leading-relaxed text-gray-500">
+              If your bank app never redirects you back — no problem. We confirm the payment
+              automatically and email you a status link for order {bankWaiting.orderId}.
+            </p>
+          </div>
+        </div>
+      )}
     </section>
     </>
   );
