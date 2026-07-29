@@ -1120,7 +1120,13 @@ export default function OrdersTab() {
                   <div className="flex items-center gap-3 flex-wrap">
                     <span className="font-mono text-white font-semibold text-sm">
                       {orderRef}
+                      {wallidApiRef && (
+                        <span className="text-emerald-300">
+                          {' '}+ {String(wallidApiRef).replace(/-/g, '').slice(0, 10)}
+                        </span>
+                      )}
                     </span>
+
                     <StatusBadge status={order.status} />
                     {(order as any).paymentMethod === 'bank_transfer' && (
                       <PaymentStatusBadge paymentStatus={(order as any).paymentStatus || 'pending_bank_transfer'} />
