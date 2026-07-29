@@ -173,9 +173,62 @@ test.describe("/resources/peptide-categories-uk-research", () => {
     });
     await page.addStyleTag({ content: KILL_MOTION_CSS });
 
+    // --- Stabilisation (same cure as compound-visual / compound-overlay) ---
+    // The fullPage capture raced lazy below-fold sections, so consecutive
+    // screenshots oscillated in height (4881/4895/4913px) and never matched
+    // the baseline. Warm second visit, wait for the deferred stylesheet
+    // swap, scroll pre-warm so IntersectionObserver sections expand BEFORE
+    // the capture resizes the viewport, then iterate viewport height to a
+    // fixed point.
+    await page.goto(PAGE_URL, { waitUntil: "domcontentloaded" });
+    await expect(page.locator("h1")).toContainText(/Peptide Categories/i, {
+      timeout: 15_000,
+    });
+    await page
+      .waitForLoadState("load", { timeout: 10_000 })
+      .catch(() => undefined);
+    await page.waitForFunction(
+      () =>
+        [...document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')].every(
+          (l) => l.media === "all" || l.media === "" || l.disabled,
+        ),
+      undefined,
+      { timeout: 30_000 },
+    );
+    await page.waitForTimeout(500);
+    await page.evaluate(async () => {
+      const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+      const step = Math.max(400, Math.floor(window.innerHeight / 2));
+      for (let y = 0; y <= document.documentElement.scrollHeight; y += step) {
+        window.scrollTo(0, y);
+        await sleep(60);
+      }
+      window.scrollTo(0, 0);
+      await sleep(300);
+    });
+    await page.waitForTimeout(500);
+    await page.evaluate(() => {
+      document
+        .querySelectorAll("details[open]")
+        .forEach((d) => d.removeAttribute("open"));
+    });
+    await page.addStyleTag({ content: KILL_MOTION_CSS });
+    {
+      let lastHeight = 0;
+      for (let i = 0; i < 4; i++) {
+        const h = await page.evaluate(() => document.documentElement.scrollHeight);
+        if (h === lastHeight) break;
+        lastHeight = h;
+        await page.setViewportSize({ width: 1280, height: Math.min(h, 16384) });
+        await page.waitForTimeout(400);
+      }
+      await page.waitForTimeout(300);
+    }
+    // -----------------------------------------------------------------------
+
     await expect(page).toHaveScreenshot(
       "resources-peptide-categories-uk-research.png",
-      { fullPage: true, maxDiffPixelRatio: 0.02, threshold: 0.25 },
+      { fullPage: true, maxDiffPixelRatio: 0.02, threshold: 0.25, timeout: 60_000 },
     );
   });
 
