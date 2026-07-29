@@ -177,13 +177,16 @@ export const Route = createFileRoute("/api/public/hooks/prerender-recache")({
         }
 
         // Skip entries whose lastmod matches the previously-seen value.
-        // On first-ever run (empty map), everything is treated as changed.
+        // Entries WITHOUT a <lastmod> (static pages / articles — we refuse to
+        // fabricate a date there) are tracked under a sentinel so they get
+        // recached once per isolate instead of on every 15-min cron run.
+        // Without this they short-circuit to "changed" forever and burn the
+        // paid render quota (see the 2026-07-18 quota-burn incident).
+        const NO_LASTMOD = "__no_lastmod__";
         const changed = force
           ? entries
-          : entries.filter((e) => {
-              const prev = lastmodByUrl.get(e.loc);
-              return !prev || !e.lastmod || prev !== e.lastmod;
-            });
+          : entries.filter((e) => lastmodByUrl.get(e.loc) !== (e.lastmod ?? NO_LASTMOD));
+
 
         // Hard cap — protect quota even if every URL claims to have changed.
         const capped = changed.slice(0, MAX_URLS_PER_RUN);
