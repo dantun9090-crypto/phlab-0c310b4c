@@ -1115,7 +1115,10 @@ export default function OrdersTab() {
             const orderTs = order.orderDate || (order as any).createdAt;
             return (
             <div key={order.id} className="bg-[#0b1a30]/60 border border-white/[0.07] rounded-xl p-4 hover:border-white/[0.12] transition-colors">
-              <div className="flex items-start justify-between gap-4 flex-wrap">
+              {/* Mobile: stack info above actions — the old flex-wrap row let
+                  the price/select column squeeze the info column to a few
+                  characters wide, wrapping text letter-by-letter. */}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 flex-wrap">
                     <span className="font-mono text-white font-semibold text-sm">
@@ -1154,7 +1157,7 @@ export default function OrdersTab() {
                   )}
 
                 </div>
-                <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-3 flex-wrap sm:shrink-0">
                   <span className="text-green-400 font-bold text-lg">£{((order as any).total || order.totalAmount || 0).toFixed(2)}</span>
 
                   {/* Status selector */}
