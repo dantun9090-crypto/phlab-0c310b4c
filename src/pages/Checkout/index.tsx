@@ -490,7 +490,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     try {
       // Cross-origin cart handoff from the legacy SEO mirror: the shopper
-      // added items on prohealthpeptides.co.uk (separate localStorage) and
+      // added items on prohealthpeptides.co.uk (separate localStorage) and check-domains-allow-line
       // was sent here with the cart serialized in ?cart=. Import it, then
       // scrub the param so refreshes/shares don't re-import.
       const transfer = parseCartTransferParam(window.location.search);
@@ -1286,7 +1286,7 @@ export default function CheckoutPage() {
           if (opened) {
             // Desktop: keep this tab on a waiting screen that auto-detects
             // completion — bank apps often never redirect back.
-            setBankWaiting({ orderId, paymentUrl, paymentToken });
+            setBankWaiting({ orderId, paymentUrl, paymentToken: null });
           } else {
             // Mobile / popup blocked: same-tab redirect; the pt-token return
             // URLs cover the bank app reopening a different browser.
