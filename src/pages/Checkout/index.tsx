@@ -509,7 +509,7 @@ export default function CheckoutPage() {
   // place. If anything actually changed, raise the "outdated cart" banner.
   useEffect(() => {
     try {
-      // Cross-origin cart handoff from the legacy SEO mirror: the shopper
+      // Cross-origin cart handoff from the legacy SEO mirror: the shopper  check-domains-allow-line
       // added items on prohealthpeptides.co.uk (separate localStorage) and
       // was sent here with the cart serialized in ?cart=. Import it, then
       // scrub the param so refreshes/shares don't re-import.
