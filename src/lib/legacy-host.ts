@@ -40,3 +40,68 @@ export function transactionalHref(path: string, hostname?: string): string {
 
 /** Copy shown next to account/checkout CTAs on the legacy host. */
 export const LEGACY_TRANSACTION_NOTICE = `Accounts, sign-in and checkout are handled on ${MAIN_HOST}.`;
+
+/**
+ * Cross-origin cart handoff. localStorage is per-origin, so a shopper who
+ * adds items on the legacy mirror and then hops to the canonical checkout
+ * would otherwise arrive with an EMPTY cart ("Your cart is empty"
+ * complaint). We serialize the cart into the URL; /checkout imports it on
+ * load (and scrubs the param). Prices are re-validated server-side at
+ * preflight, so URL-tampering cannot change what gets charged.
+ */
+export interface CartTransferItem {
+  id: string;
+  variantId?: string;
+  variantName?: string;
+  name?: string;
+  dosage?: string;
+  price?: string;
+  priceNum?: number;
+  quantity?: number;
+  image?: string;
+  slug?: string;
+}
+
+export function buildTransactionalHrefWithCart(
+  path: string,
+  items: CartTransferItem[],
+  hostname?: string,
+): string {
+  const base = transactionalHref(path, hostname);
+  if (!isLegacyHost(hostname) || items.length === 0) return base;
+  const payload = items.map((i) => ({
+    id: String(i.id ?? ''),
+    variantId: i.variantId ? String(i.variantId) : undefined,
+    variantName: i.variantName ? String(i.variantName).slice(0, 80) : undefined,
+    name: i.name ? String(i.name).slice(0, 120) : undefined,
+    dosage: i.dosage ? String(i.dosage).slice(0, 40) : undefined,
+    price: i.price ? String(i.price).slice(0, 16) : undefined,
+    priceNum: typeof i.priceNum === 'number' ? i.priceNum : undefined,
+    quantity: typeof i.quantity === 'number' ? Math.max(1, Math.min(99, i.quantity)) : 1,
+    image: i.image ? String(i.image).slice(0, 300) : undefined,
+    slug: i.slug ? String(i.slug).slice(0, 120) : undefined,
+  })).filter((i) => i.id);
+  if (payload.length === 0) return base;
+  const sep = base.includes('?') ? '&' : '?';
+  return `${base}${sep}cart=${encodeURIComponent(JSON.stringify(payload))}`;
+}
+
+/** Parse the `?cart=` transfer payload. Returns null when absent/invalid. */
+export function parseCartTransferParam(search: string): CartTransferItem[] | null {
+  try {
+    const params = new URLSearchParams(search);
+    const raw = params.get('cart');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed) || parsed.length === 0) return null;
+    const items = parsed
+      .filter((i) => i && typeof i === 'object' && typeof i.id === 'string' && i.id)
+      .map((i) => ({
+        ...i,
+        quantity: typeof i.quantity === 'number' && i.quantity > 0 ? Math.min(99, i.quantity) : 1,
+      }));
+    return items.length > 0 ? items : null;
+  } catch {
+    return null;
+  }
+}
