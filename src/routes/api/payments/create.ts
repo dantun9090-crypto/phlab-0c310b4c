@@ -156,7 +156,12 @@ export const Route = createFileRoute("/api/payments/create")({
             currency,
             status: String(wallid.status || "pending"),
             customer_email: trustedEmail,
-            metadata: { items: chargeItems, user_uid: user?.uid ?? null, guest_payment_token: Boolean(paymentToken), raw: wallid } as never,
+            // return_token lets the pending-payment reminder email build a
+            // working status link for GUESTS (the raw token otherwise lives
+            // only in the customer's browser). Server-side only — the
+            // service-role table is never exposed to clients, and the token
+            // grants status-read/cancel on this single order only.
+            metadata: { items: chargeItems, user_uid: user?.uid ?? null, guest_payment_token: Boolean(paymentToken), return_token: paymentToken ?? null, raw: wallid } as never,
           });
           if (dbErr) {
             console.error("[Wallid] DB insert failed:", dbErr.message);
