@@ -35,7 +35,6 @@ async function fireGaPurchaseOnce(orderId: string, snapData?: Record<string, unk
     const items: GaItem[] = rawItems.map((it) => ({
       item_id: merchantItemId(it.id ?? it.productId ?? it.sku ?? it.slug ?? ""),
       item_name: String(it.name ?? it.title ?? "Item"),
-      item_category: String(it.category ?? "Peptides"),
       item_variant: it.variantName ? String(it.variantName) : (it.variant ? String(it.variant) : undefined),
       price: Number(it.priceNum ?? it.price ?? 0), // inc-VAT per unit (UK B2C)
       quantity: Number(it.quantity ?? 1),
@@ -118,6 +117,19 @@ function CheckoutSuccessPage() {
       setPhaseSafe("error");
       setError("Missing order reference.");
       return;
+    }
+
+    // Cross-browser return: the bank app frequently reopens the shop in
+    // the device DEFAULT browser, where the guest paymentToken (kept in
+    // the original browser's localStorage) doesn't exist — the page then
+    // couldn't verify the payment and looked "failed" even when the money
+    // arrived. The Wallid return URLs therefore carry the token as `pt`;
+    // persist it so the existing polling works, then scrub it from the
+    // address bar/history.
+    const urlToken = params.get("pt");
+    if (urlToken) {
+      try { localStorage.setItem(`php_pt_${oid}`, urlToken); } catch { /* ignore */ }
+      window.history.replaceState(null, "", `/checkout/success?order_id=${encodeURIComponent(oid)}`);
     }
 
     startedAtRef.current = Date.now();
