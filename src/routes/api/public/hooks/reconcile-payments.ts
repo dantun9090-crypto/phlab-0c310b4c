@@ -62,21 +62,89 @@ async function queryWallidPaymentStatus(apiPaymentId: string): Promise<string | 
  * when the Firestore order doc has no paymentRef yet (webhook never
  * fired, so we never wrote it back). Returns null if none found.
  */
-async function lookupApiPaymentIdForOrder(orderId: string): Promise<string | null> {
+async function lookupApiPaymentIdForOrder(
+  orderId: string,
+): Promise<{ apiPaymentId: string; returnToken: string | null } | null> {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("wallid_payments")
-      .select("api_payment_id")
+      .select("api_payment_id, metadata")
       .eq("order_id", orderId)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    return data?.api_payment_id ? String(data.api_payment_id) : null;
+    const pid = data?.api_payment_id ? String(data.api_payment_id) : null;
+    if (!pid) return null;
+    const m = data?.metadata as { return_token?: unknown } | null;
+    const returnToken =
+      m && typeof m.return_token === "string" && m.return_token.length >= 32
+        ? m.return_token
+        : null;
+    return { apiPaymentId: pid, returnToken };
   } catch (e) {
     console.warn("[reconcile] wallid_payments lookup failed:", e instanceof Error ? e.message : e);
     return null;
   }
+}
+
+const REMINDER_AFTER_MS = 12 * 60 * 1000;
+
+/**
+ * One-shot "payment still pending" reminder. Bank apps regularly fail to
+ * redirect the customer back after approval; the order then sits in
+ * pending_payment even though the sale is recoverable. We email the
+ * customer a working status link — for guests it carries the raw
+ * paymentToken stored server-side at payment creation (return_token), so
+ * the link works from ANY device/browser.
+ */
+async function maybeSendPendingReminder(
+  order: Record<string, unknown> & { id: string },
+  returnToken: string | null,
+): Promise<void> {
+  if (order.paymentReminderSentAt) return;
+  const createdMs = Date.parse(String(order.createdAt ?? ""));
+  if (Number.isFinite(createdMs) && Date.now() - createdMs < REMINDER_AFTER_MS) return;
+  const email = String(order.customerEmail ?? order.email ?? "").trim();
+  if (!email) return;
+
+  const orderId = String(order.id);
+  const ref = String(order.orderNumber ?? orderId);
+  const firstName = String(order.firstName ?? "there");
+  const link = returnToken
+    ? `https://phlabs.co.uk/checkout/success?order_id=${encodeURIComponent(orderId)}&pt=${encodeURIComponent(returnToken)}`
+    : "https://phlabs.co.uk/account/orders";
+
+  const subject = `Your PH Labs order ${ref} — payment still pending`;
+  const text = [
+    `Hi ${firstName},`,
+    ``,
+    `Your order ${ref} is reserved, but your bank hasn't confirmed the payment yet.`,
+    ``,
+    `If your bank app didn't redirect you back to the shop, that's fine — check the live status here:`,
+    link,
+    ``,
+    `Already paid in the app? The page above confirms automatically within a few minutes.`,
+    `Changed your mind? Just ignore this email — unpaid reservations expire automatically.`,
+    ``,
+    `— PH Labs`,
+  ].join("\n");
+  const html = `<!doctype html><html><body style="margin:0;background:#0b1220;padding:24px;font-family:Arial,Helvetica,sans-serif;color:#e5e7eb">
+  <div style="max-width:520px;margin:0 auto;background:#0f1d33;border:1px solid rgba(16,185,129,.25);border-radius:12px;padding:28px">
+    <h1 style="margin:0 0 12px;font-size:18px;color:#fff">Payment still pending</h1>
+    <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#cbd5e1">Hi ${firstName},</p>
+    <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#cbd5e1">Your order <strong style="color:#fff">${ref}</strong> is reserved, but your bank hasn't confirmed the payment yet.</p>
+    <p style="margin:0 0 18px;font-size:14px;line-height:1.6;color:#cbd5e1">If your bank app didn't redirect you back to the shop, that's fine — check the live status here:</p>
+    <p style="margin:0 0 18px"><a href="${link}" style="display:inline-block;background:#059669;color:#fff;text-decoration:none;font-size:14px;font-weight:bold;padding:12px 22px;border-radius:8px">Check order status</a></p>
+    <p style="margin:0 0 8px;font-size:12px;line-height:1.6;color:#94a3b8">Already paid in the app? The page confirms automatically within a few minutes.<br/>Changed your mind? Just ignore this email — unpaid reservations expire automatically.</p>
+    <p style="margin:16px 0 0;font-size:12px;color:#64748b">— PH Labs</p>
+  </div>
+</body></html>`;
+
+  const { addDocAdmin, updateDocAdmin } = await import("@/lib/server/firestore-admin");
+  await addDocAdmin("mail", { to: email, message: { subject, html, text }, createdAt: new Date() });
+  await updateDocAdmin("orders", orderId, { paymentReminderSentAt: new Date() });
+  console.log(`[reconcile] pending reminder sent for ${orderId}`);
 }
 
 async function sendPaymentConfirmedEmail(
@@ -353,13 +421,21 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
                 (order as { apiPaymentId?: string }).apiPaymentId || "");
             // Order doc may not have paymentRef yet if the webhook
             // never ran — look it up from wallid_payments by order_id.
+            let returnToken: string | null = null;
             if (!apiPaymentId) {
-              apiPaymentId = (await lookupApiPaymentIdForOrder(orderId)) || "";
+              const lookedUp = await lookupApiPaymentIdForOrder(orderId);
+              apiPaymentId = lookedUp?.apiPaymentId || "";
+              returnToken = lookedUp?.returnToken ?? null;
             }
             if (!apiPaymentId) continue;
 
             const providerStatus = await queryWallidPaymentStatus(apiPaymentId);
-            if (!providerStatus || providerStatus.toLowerCase() === "pending") continue;
+            if (!providerStatus || providerStatus.toLowerCase() === "pending") {
+              await maybeSendPendingReminder(order, returnToken).catch((e) =>
+                console.warn(`[reconcile] reminder failed for ${orderId}:`, e instanceof Error ? e.message : e),
+              );
+              continue;
+            }
 
             const newStatus = mapWallidStatusToInternal(providerStatus);
             const firestoreStatus =
