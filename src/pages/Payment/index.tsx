@@ -320,6 +320,12 @@ export default function PaymentPage() {
               🔬 PH LABS Payment
             </h1>
 
+            {/* Embedded webviews can't open banking apps — tell the customer up front. */}
+            <div className="mb-5">
+              <InAppBrowserNotice />
+            </div>
+
+
             <div
               className="text-center p-5 rounded-[14px] mb-6"
               style={{
