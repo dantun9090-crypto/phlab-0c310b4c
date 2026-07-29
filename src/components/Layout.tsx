@@ -38,7 +38,7 @@ import { merchantItemId } from '@/lib/merchant-item-id';
 import { logCartEvent, safeCartWrite, safeCartRead } from '@/lib/cart-telemetry';
 import TransactionalLink from '@/components/TransactionalLink';
 import LegacyHostNotice from '@/components/LegacyHostNotice';
-import { isLegacyHost, transactionalHref } from '@/lib/legacy-host';
+import { isLegacyHost, transactionalHref, buildTransactionalHrefWithCart } from '@/lib/legacy-host';
 
 
 import { Logo } from './Logo';
@@ -126,10 +126,7 @@ export function Layout({ children }: LayoutProps) {
   const isHomePage = location.pathname === '/';
   const [researchConfirmed, setResearchConfirmed] = useState<boolean>(() => isResearchConfirmed());
   useEffect(() => {
-    // The gate is "cleared" for layout purposes on ANY dismissal path
-    // (confirm, decline, Escape, backdrop) — otherwise declining leaves the
-    // homepage body + footer permanently unmounted with no way to reopen.
-    const onCleared = () => setResearchConfirmed(true);
+    const onCleared = () => setResearchConfirmed(isResearchConfirmed());
     window.addEventListener('php:research-gate-cleared', onCleared);
     return () => window.removeEventListener('php:research-gate-cleared', onCleared);
   }, []);
@@ -330,11 +327,6 @@ export function Layout({ children }: LayoutProps) {
   // Until it has, we must NOT persist the empty initial React state — otherwise
   // we'd clobber the stored cart on first paint.
   const cartHydratedRef = useRef(false);
-  // Set to true right before a *user-initiated* emptying of the cart (removing
-  // the last item, decrementing the last unit to zero) so the save effect does
-  // not report it as an unexpected clear. Order-completion pages wipe
-  // `php_cart` themselves, which is also expected — see the save effect.
-  const intentionalClearRef = useRef(false);
 
   // Load cart from localStorage — deferred to avoid blocking paint.
   // Runs `migrateStoredCart` first so legacy carts that stored the variantId
@@ -409,14 +401,8 @@ export function Layout({ children }: LayoutProps) {
         const existing = localStorage.getItem('php_cart');
         if (existing && existing !== '[]' && existing !== 'null') return;
       }
-      // Detect an *unexpected* clear: hydrated, in-memory empty, persisted
-      // non-empty, and no user/order action explains it. Removing the last
-      // item and finishing an order are normal and must not be reported —
-      // they were the source of the false-positive telemetry noise.
-      const wasIntentional = intentionalClearRef.current;
-      intentionalClearRef.current = false;
-      const onOrderCompletionPage = /^\/(checkout|payment)\/(success|cancel)/.test((typeof window !== "undefined" ? window.location.pathname : ""));
-      if (cart.length === 0 && cartHydratedRef.current && !wasIntentional && !onOrderCompletionPage) {
+      // Detect an unexpected clear: hydrated, in-memory empty, but persisted non-empty.
+      if (cart.length === 0 && cartHydratedRef.current) {
         try {
           const existing = localStorage.getItem('php_cart');
           if (existing && existing !== '[]' && existing !== 'null') {
@@ -642,8 +628,8 @@ export function Layout({ children }: LayoutProps) {
 
 
   const updateQuantity = (cartKey: string, delta: number) => {
-    setCart(prev => {
-      const next = prev
+    setCart(prev =>
+      prev
         .map(item => {
           const key = item.variantId ? `${item.id}-${item.variantId}` : String(item.id);
           if (key !== cartKey) return item;
@@ -651,21 +637,15 @@ export function Layout({ children }: LayoutProps) {
           if (item.stock !== undefined && newQty > item.stock) return item;
           return { ...item, quantity: newQty };
         })
-        .filter(item => item.quantity > 0);
-      if (next.length === 0 && prev.length > 0) intentionalClearRef.current = true;
-      return next;
-    });
+        .filter(item => item.quantity > 0)
+    );
   };
 
   const removeFromCart = (cartKey: string) => {
-    setCart(prev => {
-      const next = prev.filter(item => {
-        const key = item.variantId ? `${item.id}-${item.variantId}` : String(item.id);
-        return key !== cartKey;
-      });
-      if (next.length === 0 && prev.length > 0) intentionalClearRef.current = true;
-      return next;
-    });
+    setCart(prev => prev.filter(item => {
+      const key = item.variantId ? `${item.id}-${item.variantId}` : String(item.id);
+      return key !== cartKey;
+    }));
   };
 
   const closeCart = () => {
@@ -1163,7 +1143,10 @@ export function Layout({ children }: LayoutProps) {
                         // a checkout session — send the shopper to the canonical
                         // origin explicitly instead of being 302'd mid-flow.
                         if (isLegacyHost()) {
-                          window.location.href = transactionalHref('/checkout');
+                          // Cross-origin hop: carry the cart in the URL —
+                          // localStorage doesn't cross origins, so without
+                          // this the canonical checkout shows "cart empty".
+                          window.location.href = buildTransactionalHrefWithCart('/checkout', cart);
                           return;
                         }
                         navigate('/checkout');
@@ -1243,7 +1226,7 @@ export function Layout({ children }: LayoutProps) {
 
         {/* ── Main footer grid ── */}
         <div className="container mx-auto px-6 pt-16 pb-10">
-          <div className="grid grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr_1fr] gap-8 mb-14">
+          <div className="grid grid-cols-2 lg:grid-cols-[1.8fr_1fr_1fr_1fr_1fr] gap-8 mb-14">
 
             {/* Brand column */}
             <div className="col-span-2 lg:col-span-1">
@@ -1378,8 +1361,6 @@ export function Layout({ children }: LayoutProps) {
                   { label: 'FAQ', href: '/#faq' },
                   { label: 'Contact Us', href: '/contact' },
                   { label: 'Storage Guide', href: '/storage-guide' },
-                  { label: 'Downloads', href: '/downloads' },
-                  
                   
                 ].map(l => (
                   <li key={l.label}>
@@ -1391,8 +1372,6 @@ export function Layout({ children }: LayoutProps) {
                 ))}
               </ul>
             </div>
-
-
 
             {/* Legal column */}
             <div>
