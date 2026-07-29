@@ -1299,7 +1299,8 @@ export default function CheckoutPage() {
           // linking breaks in popups/new tabs/iframes). First show the
           // pre-redirect interstitial (bank-app + in-app-browser guidance),
           // then window.location.assign — never window.open.
-          setBankWaiting({ orderId, paymentUrl, paymentToken });
+          // (No guest paymentToken in the gateway/fena flow.)
+          setBankWaiting({ orderId, paymentUrl, paymentToken: null });
           return;
         } catch (err: any) {
           if (paymentAttemptRef.current !== paymentAttemptId) return;
