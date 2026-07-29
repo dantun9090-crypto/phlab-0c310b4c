@@ -857,13 +857,20 @@ export default function OrdersTab() {
       (o as any).fenaPaymentId,
     ].filter(Boolean).join(' ');
     const s = search.toLowerCase();
+    // Bank statements show the Wallid id without dashes (e.g. "9b37b618d5"),
+    // so compare an alphanumeric-only version too.
+    const norm = (v: string) => v.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const sNorm = norm(search);
     const matchSearch = !search ||
       orderId.toLowerCase().includes(s) ||
       o.id?.toLowerCase().includes(s) ||
       customerName.toLowerCase().includes(s) ||
       customerEmail.toLowerCase().includes(s) ||
       paymentSearch.toLowerCase().includes(s) ||
+      (sNorm.length >= 4 && norm(paymentSearch).includes(sNorm)) ||
+      (sNorm.length >= 4 && norm(orderId).includes(sNorm)) ||
       address.toLowerCase().includes(s);
+
     const matchStatus = statusFilter === 'all' || o.status === statusFilter ||
       (statusFilter === 'new' && isNewOrder(o)) ||
       (statusFilter === 'unpaid' && isUnpaidOrder(o)) ||
