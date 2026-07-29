@@ -34,73 +34,6 @@ function mapStatus(s: string): "SUCCESS" | "FAILED" | "EXPIRED" | "PENDING" | "O
   return "OTHER";
 }
 
-const REMINDER_AFTER_MS = 12 * 60 * 1000;
-
-/**
- * One-shot "payment still pending" reminder. Bank apps regularly fail to
- * redirect the customer back after approval; the order then sits in
- * pending_payment even though the sale is recoverable. We email the
- * customer a working status link — for guests it carries the raw
- * paymentToken stored server-side at payment creation (return_token), so
- * the link works from ANY device/browser.
- */
-async function maybeSendPendingReminder(row: {
-  order_id: string;
-  api_payment_id: string | null;
-  created_at: string;
-  metadata?: unknown;
-}): Promise<void> {
-  if (!row.order_id || !row.created_at) return;
-  if (Date.now() - new Date(row.created_at).getTime() < REMINDER_AFTER_MS) return;
-  const { getDocAdmin, updateDocAdmin, addDocAdmin } = await import("@/lib/server/firestore-admin");
-  const order = await getDocAdmin("orders", row.order_id);
-  if (!order || order.paymentReminderSentAt) return;
-  const email = String(order.customerEmail ?? order.email ?? "").trim();
-  if (!email) return;
-  const st = String(order.status ?? "").toLowerCase();
-  if (st && !["pending", "pending_payment", "awaiting_payment", "processing_payment"].includes(st)) return;
-
-  const ref = String(order.orderNumber ?? row.order_id);
-  const firstName = String(order.firstName ?? "there");
-  const m = row.metadata as { return_token?: unknown } | null;
-  const token = m && typeof m.return_token === "string" && m.return_token.length >= 32
-    ? m.return_token
-    : null;
-  const link = token
-    ? `https://phlabs.co.uk/checkout/success?order_id=${encodeURIComponent(row.order_id)}&pt=${encodeURIComponent(token)}`
-    : "https://phlabs.co.uk/account/orders";
-
-  const subject = `Your PH Labs order ${ref} — payment still pending`;
-  const text = [
-    `Hi ${firstName},`,
-    ``,
-    `Your order ${ref} is reserved, but your bank hasn't confirmed the payment yet.`,
-    ``,
-    `If your bank app didn't redirect you back to the shop, that's fine — check the live status here:`,
-    link,
-    ``,
-    `Already paid in the app? The page above confirms automatically within a few minutes.`,
-    `Changed your mind? Just ignore this email — unpaid reservations expire automatically.`,
-    ``,
-    `— PH Labs`,
-  ].join("\n");
-  const html = `<!doctype html><html><body style="margin:0;background:#0b1220;padding:24px;font-family:Arial,Helvetica,sans-serif;color:#e5e7eb">
-  <div style="max-width:520px;margin:0 auto;background:#0f1d33;border:1px solid rgba(16,185,129,.25);border-radius:12px;padding:28px">
-    <h1 style="margin:0 0 12px;font-size:18px;color:#fff">Payment still pending</h1>
-    <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#cbd5e1">Hi ${firstName},</p>
-    <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#cbd5e1">Your order <strong style="color:#fff">${ref}</strong> is reserved, but your bank hasn't confirmed the payment yet.</p>
-    <p style="margin:0 0 18px;font-size:14px;line-height:1.6;color:#cbd5e1">If your bank app didn't redirect you back to the shop, that's fine — check the live status here:</p>
-    <p style="margin:0 0 18px"><a href="${link}" style="display:inline-block;background:#059669;color:#fff;text-decoration:none;font-size:14px;font-weight:bold;padding:12px 22px;border-radius:8px">Check order status</a></p>
-    <p style="margin:0 0 8px;font-size:12px;line-height:1.6;color:#94a3b8">Already paid in the app? The page confirms automatically within a few minutes.<br/>Changed your mind? Just ignore this email — unpaid reservations expire automatically.</p>
-    <p style="margin:16px 0 0;font-size:12px;color:#64748b">— PH Labs</p>
-  </div>
-</body></html>`;
-
-  await addDocAdmin("mail", { to: email, message: { subject, html, text }, createdAt: new Date() });
-  await updateDocAdmin("orders", row.order_id, { paymentReminderSentAt: new Date() });
-  console.log(`[Wallid reconcile] pending reminder sent for ${row.order_id}`);
-}
-
 export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
   server: {
     handlers: {
@@ -130,7 +63,7 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
 
         const { data: rows, error } = await supabaseAdmin
           .from("wallid_payments")
-          .select("order_id, api_payment_id, status, created_at, metadata")
+          .select("order_id, api_payment_id, status, created_at")
           .in("status", ["NEW", "PENDING", "PROCESSING"])
           .gte("created_at", cutoff)
           .order("created_at", { ascending: false })
@@ -167,13 +100,7 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
 
           const mapped = mapStatus(remoteStatus);
           if (mapped === "PENDING" || mapped === "OTHER") {
-            // Still pending at Wallid. If the customer has been gone for a
-            // while (bank app never redirected them back), send ONE reminder
-            // email with a working status/return link — the sale is often
-            // recoverable even when the redirect was not.
-            await maybeSendPendingReminder(row).catch((e) =>
-              console.warn(`[Wallid reconcile] reminder failed for ${row.order_id}:`, e),
-            );
+            // Still pending at Wallid — leave alone.
             continue;
           }
 
