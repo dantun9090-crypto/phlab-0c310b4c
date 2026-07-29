@@ -27,6 +27,14 @@ function CheckoutCancelPage() {
     const oid = params.get("order_id") || params.get("orderId") || "";
     setOrderId(oid);
     if (!oid) return;
+    // Cross-browser return (see checkout.success): restore the guest
+    // paymentToken from the `pt` URL param when the bank app reopened us
+    // in a different browser, then scrub it from history.
+    const urlToken = params.get("pt");
+    if (urlToken) {
+      try { localStorage.setItem(`php_pt_${oid}`, urlToken); } catch { /* ignore */ }
+      window.history.replaceState(null, "", `/checkout/cancel?order_id=${encodeURIComponent(oid)}`);
+    }
     // Best-effort: mark the Wallid payment as cancelled in our DB.
     // The server accepts either a Firebase ID token OR the guest
     // paymentToken stored in localStorage, so logged-out guests can also
