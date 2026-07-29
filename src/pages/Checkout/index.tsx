@@ -29,6 +29,7 @@ import { callPreflightWithRetry } from '@/lib/checkoutPreflightRetry';
 import { toast, Toaster as SonnerToaster } from 'sonner';
 
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
+import InAppBrowserNotice from '@/components/InAppBrowserNotice';
 import NoCacheHead from '@/components/NoCacheHead';
 
 
