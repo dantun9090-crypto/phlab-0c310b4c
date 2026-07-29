@@ -219,3 +219,81 @@ export const listStuckWallidPaymentsAdmin = createServerFn({ method: "POST" })
       })),
     };
   });
+
+
+/* ------------------------------------------------------------------ */
+/* Bank-statement reconciliation                                        */
+/*                                                                      */
+/* The merchant bank statement shows "WALLID <ref>" where <ref> is the  */
+/* first ~10 hex chars of the Wallid api_payment_id — NOT the order     */
+/* number. Until Wallid maps our `reference` through to the settlement  */
+/* narrative, this lets the admin match a statement line to the order:  */
+/* paste the ref from the bank app, get the PHP- order number back.     */
+/* ------------------------------------------------------------------ */
+
+const ReconcileInput = z.object({
+  idToken: z.string().min(10).max(4096),
+  days: z.number().int().min(1).max(90).default(45),
+});
+
+export interface WallidReconcileRow {
+  orderId: string;
+  orderNumber: string | null;
+  apiPaymentId: string | null;
+  /** Normalised ref as shown on the bank statement (id minus dashes, first 10). */
+  bankRef: string | null;
+  amountGbp: number | null;
+  currency: string;
+  status: string;
+  customerEmail: string | null;
+  customerName: string | null;
+  createdAt: string;
+}
+
+export const listWallidPaymentsForReconcileAdmin = createServerFn({ method: "POST" })
+  .validator((d) => ReconcileInput.parse(d))
+  .handler(async ({ data }): Promise<{ rows: WallidReconcileRow[] }> => {
+    await requireFirebaseAdmin(data.idToken);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getDocAdmin } = await import("@/lib/server/firestore-admin");
+    const cutoff = new Date(Date.now() - data.days * 86_400_000).toISOString();
+    const { data: rows, error } = await supabaseAdmin
+      .from("wallid_payments")
+      .select("order_id, api_payment_id, amount, currency, status, customer_email, created_at")
+      .gte("created_at", cutoff)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) throw new Error(error.message);
+    const enriched = await Promise.all(
+      (rows || []).map(async (r): Promise<WallidReconcileRow> => {
+        const orderId = String(r.order_id);
+        let orderNumber: string | null = null;
+        let customerName: string | null = null;
+        try {
+          const order = await getDocAdmin("orders", orderId);
+          if (order) {
+            orderNumber = order.orderNumber ? String(order.orderNumber) : null;
+            const nm = `${order.firstName ?? ""} ${order.lastName ?? ""}`.trim();
+            customerName = (order.customerName ? String(order.customerName) : nm) || null;
+          }
+        } catch {
+          /* enrichment is best-effort — the row still matches by bankRef */
+        }
+        const pid = r.api_payment_id ? String(r.api_payment_id) : null;
+        const amountMinor = Number(r.amount);
+        return {
+          orderId,
+          orderNumber,
+          apiPaymentId: pid,
+          bankRef: pid ? pid.replace(/-/g, "").slice(0, 10) : null,
+          amountGbp: Number.isFinite(amountMinor) ? amountMinor / 100 : null,
+          currency: String(r.currency || "GBP"),
+          status: String(r.status || ""),
+          customerEmail: r.customer_email ? String(r.customer_email) : null,
+          customerName,
+          createdAt: String(r.created_at),
+        };
+      }),
+    );
+    return { rows: enriched };
+  });
