@@ -4,7 +4,7 @@ import {
   User as UserIcon, Mail, Phone, MapPin,
   Lock, AlertTriangle, Check, ChevronLeft, Truck,
   Landmark, BadgeCheck, ShoppingCart, Trash2, Plus, Minus,
-  CheckCircle2, ChevronRight, Tag, X, Package, Loader2
+  CheckCircle2, ChevronRight, Tag, X, Package
 } from 'lucide-react';
 import {
   auth, doc, getDoc,
@@ -15,6 +15,8 @@ import type { Coupon } from '@/lib/firebase';
 import { validateCartPrices } from '@/lib/cart-validation.functions';
 import { parseCartTransferParam } from '@/lib/legacy-host';
 import { createOrder } from '@/lib/create-order.functions';
+import { createGatewayPaymentLink, getCheckoutPaymentOptions } from '@/lib/payment-gateways.functions';
+import type { CheckoutPaymentOptions } from '@/lib/payments/types';
 import { migrateStoredCart } from '@/lib/cart-migration';
 import { logCartEvent, safeCartWrite } from '@/lib/cart-telemetry';
 import { sendPublicMail } from '@/lib/sendPublicMail';
@@ -140,6 +142,7 @@ export default function CheckoutPage() {
     | 'failed';
   const [fenaStep, setFenaStep] = useState<FenaStep>('idle');
   const [fenaOrderId, setFenaOrderId] = useState<string>('');
+  const [paymentOptions, setPaymentOptions] = useState<CheckoutPaymentOptions | null>(null);
   const [wallidEnabled, setWallidEnabled] = useState<boolean>(false);
   const [, setSummaryExpanded] = useState(false);
   const [paymentRecoveryVisible, setPaymentRecoveryVisible] = useState(false);
@@ -223,7 +226,27 @@ export default function CheckoutPage() {
   // order server-side, and clearing the attempt would strand the order and
   // (on retry) create a duplicate. bfcache is detected explicitly via
   // `pageshow` with `event.persisted === true`.
-  // Poll while the desktop "waiting for bank approval" overlay is open.
+  // Pre-redirect countdown: the interstitial shows bank-app guidance, then
+  // we full-page redirect to the Wallid authorisation URL. The user can tap
+  // the button to skip the wait. Cancel returns to the checkout form.
+  const [bankRedirectIn, setBankRedirectIn] = useState<number | null>(null);
+  useEffect(() => {
+    if (!bankWaiting) { setBankRedirectIn(null); return; }
+    setBankRedirectIn(6);
+    const timer = window.setInterval(() => {
+      setBankRedirectIn((prev) => {
+        if (prev === null) return prev;
+        if (prev <= 1) {
+          window.clearInterval(timer);
+          window.location.assign(bankWaiting.paymentUrl); // full-page redirect
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [bankWaiting]);
+
   useEffect(() => {
     if (!bankWaiting) return;
     let cancelled = false;
@@ -487,7 +510,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     try {
       // Cross-origin cart handoff from the legacy SEO mirror: the shopper
-      // added items on prohealthpeptides.co.uk (separate localStorage) and check-domains-allow-line
+      // added items on prohealthpeptides.co.uk (separate localStorage) and
       // was sent here with the cart serialized in ?cart=. Import it, then
       // scrub the param so refreshes/shares don't re-import.
       const transfer = parseCartTransferParam(window.location.search);
@@ -588,6 +611,22 @@ export default function CheckoutPage() {
     }).catch(() => {});
   }, []);
 
+  // Load active payment gateways (dynamic Pay-by-Bank availability)
+  useEffect(() => {
+    let cancelled = false;
+    getCheckoutPaymentOptions()
+      .then((opts) => {
+        if (cancelled) return;
+        setPaymentOptions(opts);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        // Fail safe: hide Pay-by-Bank, only manual fallback.
+        setPaymentOptions({ primary: null, backups: [], manualFallback: true });
+      });
+    return () => { cancelled = true; };
+  }, []);
+
   // Wallid Pay-by-Bank kill switch — admin toggle from Payment Gateways panel.
   useEffect(() => {
     let cancelled = false;
@@ -604,14 +643,18 @@ export default function CheckoutPage() {
     return () => { cancelled = true; };
   }, []);
 
-  // Default payment method: Wallid first, manual bank transfer only as fallback.
+  // Default payment method: Wallid first, then dynamic Pay by Bank, then manual fallback.
   useEffect(() => {
     if (wallidEnabled) {
       setForm((prev) => ({ ...prev, paymentMethod: 'wallid' }));
       return;
     }
+    if (paymentOptions && (paymentOptions.primary || paymentOptions.backups.length > 0)) {
+      setForm((prev) => ({ ...prev, paymentMethod: 'pay_by_bank' }));
+      return;
+    }
     setForm((prev) => ({ ...prev, paymentMethod: 'bank_transfer' }));
-  }, [wallidEnabled]);
+  }, [paymentOptions, wallidEnabled]);
 
   // Calculations
   const subtotal = cart.reduce((s, i) => s + i.priceNum * i.quantity, 0);
@@ -682,6 +725,7 @@ export default function CheckoutPage() {
     }
   }, [eligibleGiftList, selectedGiftId]);
   const hasItemsWithoutVariant = cart.some(item => !item.dosage || item.dosage === '');
+  const activePayByBankName = paymentOptions?.primary?.name ?? 'Open Banking';
   const cartToGaItems = useCallback((): GaItem[] => cart.map(item => ({
     item_id: merchantItemId(item.id),
     item_name: item.name,
@@ -982,7 +1026,7 @@ export default function CheckoutPage() {
     paymentAbortRef.current = new AbortController();
     startPaymentTimers(paymentAttemptId);
     setLoginError('');
-    if (form.paymentMethod === 'wallid') {
+    if (form.paymentMethod === 'pay_by_bank') {
       setFenaStep('creating-order');
       setFenaOrderId('');
     } else {
@@ -1181,17 +1225,11 @@ export default function CheckoutPage() {
           const paymentUrl = parsed.toString();
           setPendingPaymentUrl(paymentUrl);
           setPaymentRecoveryVisible(true);
-          const isDesktop = window.matchMedia('(pointer: fine)').matches && window.innerWidth >= 1024;
-          const opened = isDesktop ? window.open(paymentUrl, '_blank', 'noopener') : null;
-          if (opened) {
-            // Desktop: keep this tab on a waiting screen that auto-detects
-            // completion — bank apps often never redirect back.
-            setBankWaiting({ orderId, paymentUrl, paymentToken });
-          } else {
-            // Mobile / popup blocked: same-tab redirect; the pt-token return
-            // URLs cover the bank app reopening a different browser.
-            window.location.assign(paymentUrl);
-          }
+          // ALWAYS full-page redirect to the bank (req: app-to-app deep
+          // linking breaks in popups/new tabs/iframes). First show the
+          // pre-redirect interstitial (bank-app + in-app-browser guidance),
+          // then window.location.assign — never window.open.
+          setBankWaiting({ orderId, paymentUrl, paymentToken });
           return;
         } catch (err: any) {
           if (paymentAttemptRef.current !== paymentAttemptId) return;
@@ -1207,6 +1245,68 @@ export default function CheckoutPage() {
           const failMsg = err?.message || 'Payment could not be started — please try again.';
           setLoginError(failMsg);
           console.error('[PAYMENT] gateway_fail method=wallid', err);
+          try { toast.error(failMsg); } catch { /* toast optional */ }
+          setIsPlacing(false);
+          return;
+        }
+      }
+
+      // Pay by Bank (Open Banking, handled by our in-app server
+      // function — same origin, no external Worker, no CORS).
+      if (form.paymentMethod === 'pay_by_bank') {
+        setFenaOrderId(orderId);
+        setFenaStep('creating-link');
+        try {
+          let current = auth.currentUser;
+          if (!current) {
+            // Dynamic import — see note in create-order block above.
+            const { signInAnonymously } = await import('firebase/auth');
+            const anon = await signInAnonymously(auth);
+            if (paymentAttemptRef.current !== paymentAttemptId) return;
+            current = anon.user;
+          }
+          if (!current) throw new Error('Could not establish user session for payment.');
+          const idTokenForFena = await current.getIdToken();
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
+          const { hppUrl, gateway, externalPaymentId } = await createGatewayPaymentLink({
+            data: { orderId, idToken: idTokenForFena },
+          });
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
+          // Allowlist redirect hosts per gateway — defence-in-depth.
+          let parsed: URL;
+          try { parsed = new URL(hppUrl); } catch { throw new Error('Invalid payment redirect URL.'); }
+          const host = parsed.hostname.toLowerCase();
+          const fenaOk = host === 'fena.co' || host === 'fena.io' || host.endsWith('.fena.co') || host.endsWith('.fena.io');
+          const tlOk = host === 'truelayer.com' || host.endsWith('.truelayer.com') || host.endsWith('.truelayer-sandbox.com');
+          const okHost =
+            (gateway === 'fena' && fenaOk) ||
+            (gateway === 'truelayer' && tlOk);
+          if (parsed.protocol !== 'https:' || !okHost) {
+            throw new Error('Unexpected payment redirect host.');
+          }
+          if (gateway === 'truelayer' && externalPaymentId) {
+            localStorage.setItem(`php_tl_order_${externalPaymentId}`, orderId);
+          }
+          setFenaStep('redirecting');
+          // Persist orderId so the success page can clear the cart only
+          // after the bank confirms payment. If the user cancels/aborts
+          // the redirect, the cart stays intact and they can retry.
+          try { localStorage.setItem('php_pending_order', orderId); } catch { /* ignore */ }
+          const paymentUrl = parsed.toString();
+          setPendingPaymentUrl(paymentUrl);
+          setPaymentRecoveryVisible(true);
+          // ALWAYS full-page redirect to the bank (req: app-to-app deep
+          // linking breaks in popups/new tabs/iframes). First show the
+          // pre-redirect interstitial (bank-app + in-app-browser guidance),
+          // then window.location.assign — never window.open.
+          setBankWaiting({ orderId, paymentUrl, paymentToken });
+          return;
+        } catch (err: any) {
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
+          setFenaStep('failed');
+          const failMsg = err?.message || 'Payment could not be started — please try again.';
+          setLoginError(failMsg);
+          console.error('[PAYMENT] gateway_fail method=pay_by_bank', err);
           try { toast.error(failMsg); } catch { /* toast optional */ }
           setIsPlacing(false);
           return;
@@ -1554,7 +1654,7 @@ export default function CheckoutPage() {
                     <p className="text-emerald-300/70 text-xs mt-0.5">
                       {fenaStep === 'creating-order' && 'Reserving stock and locking the total in £.'}
                       {fenaStep === 'creating-link' && (
-                        <>Order ref <span className="font-mono">{fenaOrderId || '…'}</span>. Talking to Wallid.</>
+                        <>Order ref <span className="font-mono">{fenaOrderId || '…'}</span>. Talking to {activePayByBankName}.</>
                       )}
                       {fenaStep === 'redirecting' && (
                         <>After you approve in your banking app, you'll come back to <span className="font-mono">/payment/success</span> and we'll wait for the bank webhook to mark the order as paid.</>
@@ -1899,7 +1999,7 @@ export default function CheckoutPage() {
                   <div className="px-5 pb-5 space-y-4">
                     {/* Payment method selector — Pay-by-Bank only when an Open Banking gateway is enabled */}
                     <PaymentMethodOptions
-                      options={null}
+                      options={paymentOptions}
                       wallidEnabled={wallidEnabled}
                       value={form.paymentMethod}
                       onChange={(v) => setField('paymentMethod', v)}
@@ -2331,36 +2431,57 @@ export default function CheckoutPage() {
       </div>
 
       {bankWaiting && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-2xl border border-emerald-500/30 bg-[#0b1a30] p-6 text-center shadow-2xl">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15">
-              <Loader2 className="h-7 w-7 animate-spin text-emerald-400" />
+              <Landmark className="h-7 w-7 text-emerald-400" />
             </div>
-            <h2 className="text-lg font-bold text-white">Approve the payment in your bank</h2>
-            <p className="mt-2 text-sm text-gray-300">
-              We opened your bank in a new tab. Approve the payment there, then come back to this tab —
-              it updates automatically as soon as the bank confirms.
+            <h2 className="text-lg font-bold text-white">You're being redirected to your bank</h2>
+
+            {(() => {
+              const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+              const inApp = /FBAN|FBAV|Instagram|TikTok|Snapchat|Line\/|WhatsApp|LinkedInApp|Twitter/i.test(ua);
+              const isMobile = /Android|iPhone|iPad|Mobile/i.test(ua);
+              return (
+                <>
+                  {inApp && (
+                    <div className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-left text-xs leading-relaxed text-amber-200">
+                      <strong className="block text-amber-100">You're in an in-app browser.</strong>
+                      Bank apps often can't open from here. For a smooth payment, tap the
+                      <strong> ⋮ </strong> menu and choose <strong>"Open in Safari/Chrome"</strong>
+                      before continuing.
+                    </div>
+                  )}
+                  {isMobile && !inApp && (
+                    <p className="mt-3 text-sm leading-relaxed text-gray-300">
+                      For the best experience use <strong className="text-white">Safari or Chrome</strong> —
+                      your banking app should open automatically. Make sure it's installed and up to date.
+                    </p>
+                  )}
+                </>
+              );
+            })()}
+
+            <p className="mt-3 text-xs text-gray-400">
+              Order <span className="font-mono text-emerald-300">{bankWaiting.orderId}</span> ·
+              approve the payment in your bank, and you'll be brought back here automatically.
             </p>
-            <a
-              href={bankWaiting.paymentUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+
+            <button
+              type="button"
+              onClick={() => window.location.assign(bankWaiting.paymentUrl)}
               className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-500"
             >
               <Landmark className="h-4 w-4" />
-              Open bank page again
-            </a>
+              Continue to your bank{bankRedirectIn !== null && bankRedirectIn > 0 ? ` (${bankRedirectIn})` : ''}
+            </button>
             <button
               type="button"
               onClick={() => setBankWaiting(null)}
               className="mt-2 w-full rounded-lg border border-white/15 px-4 py-2 text-xs text-gray-400 hover:bg-white/5"
             >
-              Hide this window (the payment continues in the background)
+              Cancel and return to checkout
             </button>
-            <p className="mt-3 text-[11px] leading-relaxed text-gray-500">
-              If your bank app never redirects you back — no problem. We confirm the payment
-              automatically and email you a status link for order {bankWaiting.orderId}.
-            </p>
           </div>
         </div>
       )}
