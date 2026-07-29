@@ -83,6 +83,11 @@ export const Route = createFileRoute("/checkout/success")({
       { property: "og:description", content: "Your research peptide order with PH Labs UK has been received and is being processed." },
       { property: "og:url", content: "https://phlabs.co.uk/checkout/success" },
       { name: "robots", content: "noindex, nofollow, noarchive" },
+      // Dead-JS fallback: if the app bundle fails to load (bank in-app
+      // browsers cache stale HTML aggressively, so chunk/CSS 404s happen
+      // right after a deploy), this reloads the page until it can boot.
+      // Removed on mount once React is alive (see useEffect below).
+      { "http-equiv": "refresh", content: "10" },
     ],
     links: [{ rel: "canonical", href: "https://phlabs.co.uk/checkout/success" }],
   }),
@@ -323,9 +328,22 @@ function CheckoutSuccessPage() {
     }
   }
 
+  // React is alive — cancel the dead-JS meta-refresh fallback.
+  useEffect(() => {
+    document.querySelectorAll('meta[http-equiv="refresh"]').forEach((m) => m.remove());
+  }, []);
+
+  // Inline critical styles mirror the Tailwind classes so the page stays
+  // centered/readable even when the CSS bundle 404s (stale-asset webview).
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-slate-950">
-      <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">
+    <div
+      className="min-h-screen flex items-center justify-center px-4 py-12 bg-slate-950"
+      style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "3rem 1rem", background: "#020617", fontFamily: "system-ui, -apple-system, sans-serif" }}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center"
+        style={{ width: "100%", maxWidth: "28rem", borderRadius: "1rem", border: "1px solid #1e293b", background: "#0f172a", padding: "2rem", textAlign: "center", color: "#fff" }}
+      >
         {phase === "checking" && (
           <>
             <Loader className="w-10 h-10 mx-auto text-emerald-500 animate-spin" />
