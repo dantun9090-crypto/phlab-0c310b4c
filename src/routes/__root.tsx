@@ -1359,6 +1359,17 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: STALE_ASSET_RECOVERY }} />
         <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: BOOT_WATCHDOG }} />
         <HeadContent />
+        {/* Activate the media="print" main stylesheet WITHOUT waiting for
+            React. Routes that skip CSR (checkout/payment return pages,
+            static research articles) never run RootComponent's effect, so
+            relying on hydration left those pages rendering unstyled. */}
+        <script
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){function a(){var l=document.getElementById('appcss');if(!l)return;l.media='all';}var l=document.getElementById('appcss');if(l){if(l.sheet)a();else{l.addEventListener('load',a,{once:true});l.addEventListener('error',a,{once:true});}}document.addEventListener('DOMContentLoaded',a);setTimeout(a,1500);})();",
+          }}
+        />
         {/* No-JS fallback: if scripts are disabled the media=print swap
             never fires, so reload the main sheet as a blocking stylesheet. */}
         <noscript>
