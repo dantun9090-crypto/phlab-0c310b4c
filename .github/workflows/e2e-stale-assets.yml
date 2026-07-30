@@ -41,6 +41,9 @@ jobs:
       # Matches the "Allow PH Labs E2E runner" skip rule on the Cloudflare zone
       # so runner IPs are not rate-limited/403'd by the WAF.
       PHL_E2E_BYPASS_TOKEN: ${{ secrets.PHL_E2E_BYPASS_TOKEN }}
+      E2E_REPORT_DIR: ${{ github.workspace }}/e2e-stale-report
+
+
 
     steps:
       - uses: actions/checkout@v5
