@@ -625,6 +625,12 @@ const EMERGENCY_STALE_RELOAD = `
     var tryAutoReload=function(reason){
       try{
         var p=[];
+        // Fire + await the self-heal purge before navigating — this handler
+        // races the STALE_ASSET_RECOVERY path, so whoever fires first must
+        // still land the purge request (navigation aborts in-flight fetches).
+        try{
+          p.push(fetch('/api/public/post-publish-check',{method:'GET',cache:'no-store',credentials:'omit'}).catch(function(){}));
+        }catch(_e){}
         if(window.caches&&caches.keys){ p.push(caches.keys().then(function(keys){ return Promise.all(keys.map(function(k){ return caches.delete(k).catch(function(){}); })); })); }
         if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){ p.push(navigator.serviceWorker.getRegistrations().then(function(regs){ return Promise.all(regs.map(function(r){ return r.unregister().catch(function(){}); })); })); }
         Promise.race([Promise.all(p),new Promise(function(r){ setTimeout(r,1500); })]).then(function(){
