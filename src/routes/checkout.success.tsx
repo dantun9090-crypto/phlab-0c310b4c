@@ -94,7 +94,7 @@ export const Route = createFileRoute("/checkout/success")({
   component: CheckoutSuccessPage,
 });
 
-type Phase = "checking" | "paid" | "pending" | "error";
+type Phase = "checking" | "paid" | "pending" | "cancelled" | "error";
 
 // Escalation tiers shown while the order stays non-terminal:
 //   pending  → standard "we're confirming" copy (after 8s soft deadline)
