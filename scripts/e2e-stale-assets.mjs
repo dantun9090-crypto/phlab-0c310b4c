@@ -646,6 +646,14 @@ async function withContext(browser, name, fn) {
       const m = replayResponses.find((r) => /post-publish-check/.test(r.url));
       if (m) fixtureBody = m.body;
     }
+    // Recovery navigation now goes THROUGH this endpoint (?next=/), so the
+    // stub must mimic production: 302 home after the "purge". A JSON 200
+    // would strand the page on an API response instead of completing the
+    // recovery.
+    if ((route.request().url()).includes('next=')) {
+      await route.fulfill({ status: 302, headers: { Location: '/' }, body: '' });
+      return;
+    }
     await route.fulfill({
       status: 200, contentType: 'application/json',
       body: fixtureBody || JSON.stringify({ ok: true, changed: true, buildId: 'E2E-NEW', previous: 'E2E-OLD' }),
@@ -706,18 +714,13 @@ function assertNoLoop(reloads, assetReqs, sc, label) {
 // ---------- scenarios registry ----------
 const scenarios = {
   'js-chunk-404': async (browser) => withContext(browser, 'js-chunk-404',
-    async ({ context, page, purgeCalls, autoPurgeLogs, reloads, assetReqs, sc, allConsole }) => {
-    let seen = null;
+    async ({ context, page, purgeCalls, autoPurgeLogs, reloads, assetReqs, sc }) => {
+    let armed = true, seen = null;
     await context.route('**/*', async (route) => {
       const url = route.request().url();
-      if (ASSET_RE.test(url) && /\.(?:js|mjs)(?:[?#]|$)/.test(url)) {
-        // Stay 404 for the SAME asset on every request — the app re-checks
-        // the chunk with a HEAD fetch before purging, so a one-shot 404 is
-        // (correctly) ignored as transient and the scenario never arms.
-        if (!seen) seen = url;
-        if (url.split('?')[0] === seen.split('?')[0]) {
-          return route.fulfill({ status: 404, body: 'Not Found' });
-        }
+      if (armed && ASSET_RE.test(url) && /\.(?:js|mjs)(?:[?#]|$)/.test(url)) {
+        seen = url; armed = false;
+        return route.fulfill({ status: 404, body: 'Not Found' });
       }
       return route.continue();
     });
@@ -726,11 +729,10 @@ const scenarios = {
     record('forced stale chunk observed', !!seen, seen || '', diag({ seen }));
     record('post-publish-check called BEFORE reload',
       purgeCalls.length >= 1 && purgeCalls[0].at <= (reloads[1]?.at ?? Infinity),
-      `calls=${purgeCalls.length} reloads=${reloads.length}`,
-      diag({ purgeCalls, reloads, lastConsole: allConsole.slice(-40) }));
+      `calls=${purgeCalls.length} reloads=${reloads.length}`, diag({ purgeCalls, reloads }));
     assertNoLoop(reloads, assetReqs, sc, 'js');
     record('visible [auto-purge] console log', autoPurgeLogs.length >= 1,
-      autoPurgeLogs[0]?.slice(0, 120) ?? '', diag({ autoPurgeLogs, lastConsole: allConsole.slice(-40) }));
+      autoPurgeLogs[0]?.slice(0, 120) ?? '', diag({ autoPurgeLogs }));
   }),
 
   'sourcemap-404': async (browser) => withContext(browser, 'sourcemap-404',
@@ -749,15 +751,12 @@ const scenarios = {
 
   'css-link-error': async (browser) => withContext(browser, 'css-link-error',
     async ({ context, page, purgeCalls, autoPurgeLogs, reloads, assetReqs, sc }) => {
-    let seen = null;
+    let armed = true, seen = null;
     await context.route('**/*', async (route) => {
       const url = route.request().url();
-      if (ASSET_RE.test(url) && /\.css(?:[?#]|$)/.test(url)) {
-        // Same persistent-404 rationale as the js-chunk scenario above.
-        if (!seen) seen = url;
-        if (url.split('?')[0] === seen.split('?')[0]) {
-          return route.fulfill({ status: 404, body: 'Not Found' });
-        }
+      if (armed && ASSET_RE.test(url) && /\.css(?:[?#]|$)/.test(url)) {
+        seen = url; armed = false;
+        return route.fulfill({ status: 404, body: 'Not Found' });
       }
       return route.continue();
     });
