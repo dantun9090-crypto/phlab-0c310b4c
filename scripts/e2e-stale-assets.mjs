@@ -706,7 +706,7 @@ function assertNoLoop(reloads, assetReqs, sc, label) {
 // ---------- scenarios registry ----------
 const scenarios = {
   'js-chunk-404': async (browser) => withContext(browser, 'js-chunk-404',
-    async ({ context, page, purgeCalls, autoPurgeLogs, reloads, assetReqs, sc }) => {
+    async ({ context, page, purgeCalls, autoPurgeLogs, reloads, assetReqs, sc, allConsole }) => {
     let seen = null;
     await context.route('**/*', async (route) => {
       const url = route.request().url();
