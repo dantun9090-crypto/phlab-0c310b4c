@@ -30,8 +30,6 @@ jobs:
     name: Build, sign, attest, publish SBOM to release
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    outputs:
-      sbom_skipped: ${{ steps.tag.outputs.skip }}
     permissions:
       contents: write    # upload release assets
       id-token: write    # cosign keyless OIDC
@@ -190,6 +188,7 @@ jobs:
 
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
+      sbom_skipped: ${{ steps.tag.outputs.skip }}
 
   # Confirms the release is *actually* verifiable end-to-end by
   # downloading the SBOM bundle from the published GitHub Release (NOT
