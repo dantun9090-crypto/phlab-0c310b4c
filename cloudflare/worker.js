@@ -128,6 +128,43 @@ const PRERENDER_BYPASS_EXACT = new Set([
   "/service-worker.js",
 ]);
 
+// Exploit-scanner probe paths — bots hammer every domain with these looking
+// for leaked configs (.NET appsettings, Rails credentials, Jenkinsfile,
+// .env, wp-*, *.log …). They must NEVER reach Prerender.io (each one would
+// burn paid render quota) and need no origin round-trip either: answer a
+// bare 404 immediately at the edge. Real users never request these paths.
+const SCANNER_PROBE_RX = [
+  /\/\.(env|git|svn|hg|aws|ssh|npm|docker|vscode|idea)(\/|$)/i,
+  /\/(wp-admin|wp-login|wp-content|wp-includes|wordpress)(\/|$)/i,
+  /\/xmlrpc\.php$/i,
+  /\.php$/i,
+  /\.(yml|yaml)$/i,
+  /\.(log|ini|enc|pem|key|sql|sqlite|bak|backup|old|orig|swp|tmp|dist)$/i,
+  /\.(rb|py|sh|pl|cgi|asp|aspx|jsp)$/i,
+  /\/appsettings[^/]*\.json$/i,
+  // Root-level env/config JS probes (the app's real JS lives only in /assets/).
+  /\/(env|config|settings)\.js$/i,
+  // CRA-style /static/js/main.js probes — this app serves bundles from /assets/, never /static/.
+  /\/static\//i,
+  /\/(Jenkinsfile|Dockerfile|docker-compose[^/]*|Makefile|Rakefile|Gemfile|composer\.(json|lock)|package-lock\.json|yarn\.lock)$/i,
+  /\/(config|settings|secrets?|credentials|database|db)(\.|\/|$)/i,
+  /\/(app|mail|error|debug|access|laravel|symfony|production|development)[^/]*\.log$/i,
+  /\/(server-status|server-info|phpinfo|info\.php|elmah|trace\.axd)/i,
+  /\/(actuator|jolokia|metrics\/|_ignition|telescope|horizon)(\/|$)/i,
+  /\/\.well-known\/(?!change-password|security\.txt)/i,
+];
+// Legit root-level *.json that must NOT be blocked by the config probes.
+const SCANNER_PROBE_ALLOW = new Set([
+  "/manifest.json",
+  "/site.webmanifest",
+  "/manifest.webmanifest",
+]);
+
+function isScannerProbe(pathname) {
+  if (SCANNER_PROBE_ALLOW.has(pathname)) return false;
+  return SCANNER_PROBE_RX.some((rx) => rx.test(pathname));
+}
+
 const HOP_BY_HOP = new Set([
   "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
   "te", "trailers", "transfer-encoding", "upgrade", "host",
@@ -513,6 +550,22 @@ export default {
     const origin = null;
     const phlog = makeLogger(request, url);
     phlog.log("phl.request.start", { ua: (request.headers.get("user-agent") || "").slice(0, 120) });
+
+    // -1. Exploit-scanner probes — bare 404 at the edge, before the pageview
+    //     beacon, cache, origin and (most importantly) Prerender.io. These
+    //     are vulnerability scanners hunting leaked configs on every domain;
+    //     proxying them to Prerender burns paid renders (see the
+    //     page_not_found error-monitor bursts: /appsettings.*, /Jenkinsfile…).
+    if (isScannerProbe(url.pathname)) {
+      return new Response("Not Found", {
+        status: 404,
+        headers: {
+          "content-type": "text/plain; charset=utf-8",
+          "cache-control": "public, max-age=3600",
+          "x-phl-via": "scanner-block",
+        },
+      });
+    }
 
 
 
