@@ -38,7 +38,9 @@ export default function UkBankBadges({ className = '' }: UkBankBadgesProps) {
           />
         </span>
       ))}
-      <span className="text-[11px] text-slate-400 px-1 whitespace-nowrap">
+      {/* slate-200, not slate-400 — sits on the emerald selected-card bg
+          (#25373d) where slate-400 renders 3.34:1 (fails WCAG AA 4.5:1). */}
+      <span className="text-[11px] text-slate-200 px-1 whitespace-nowrap">
         + all UK banks
       </span>
     </div>
