@@ -257,7 +257,10 @@ if (typeof window !== "undefined" && !__phlIsMarketing()) {
   // Resource errors don't bubble, so use capture phase. A failed <link>,
   // <script src>, or sourcemap fetch from /assets|/_build is a stale-build
   // signal even when no JS Error fires.
-  const ASSET_PATH_RE = /\/(?:assets|_build)\/[^?#]+\.(?:js|mjs|css|map)(?:[?#]|$)/i;
+  // NOTE: .map (sourcemap) 404s are deliberately excluded — they are
+  // dev-tools aids, never user-facing, and treating them as stale-build
+  // signals caused bogus recovery reloads (e2e-stale-assets sourcemap-404).
+  const ASSET_PATH_RE = /\/(?:assets|_build)\/[^?#]+\.(?:js|mjs|css)(?:[?#]|$)/i;
   window.addEventListener(
     "error",
     (event) => {
