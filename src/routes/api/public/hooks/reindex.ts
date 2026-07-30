@@ -93,6 +93,16 @@ export const Route = createFileRoute("/api/public/hooks/reindex")({
         });
         if (limited) return limited;
 
+        // Auth FIRST: a request without the secret header gets a flat 401
+        // regardless of server config — the "PRERENDER_TOKEN not configured"
+        // 500 is an operator diagnostic and must only be reachable by
+        // callers who present a plausible credential (same hardening as
+        // prerender-recache.ts).
+        const provided = request.headers.get("x-recache-secret") ?? "";
+        if (!provided) {
+          return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
+        }
+
         const sharedSecret = process.env.PRERENDER_TOKEN;
         const indexNowKey = process.env.BING_INDEXNOW_API_KEY;
 
@@ -103,7 +113,6 @@ export const Route = createFileRoute("/api/public/hooks/reindex")({
           );
         }
 
-        const provided = request.headers.get("x-recache-secret") ?? "";
         if (!timingSafeEqualStr(provided, sharedSecret)) {
           return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
         }
