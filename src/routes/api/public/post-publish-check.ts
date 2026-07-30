@@ -428,10 +428,7 @@ async function runInvalidation(buildId: string): Promise<{
 type InvalidationResult = Awaited<ReturnType<typeof runInvalidation>>;
 const inFlight = new Map<string, Promise<InvalidationResult>>();
 
-export const Route = createFileRoute('/api/public/post-publish-check')({
-  server: {
-    handlers: {
-      GET: async ({ request }) => {
+async function runCheck(request: Request): Promise<Response> {
         const requestUrl = new URL(request.url);
         if (requestUrl.hostname !== 'phlabs.co.uk') {
           return Response.json({
@@ -548,6 +545,23 @@ export const Route = createFileRoute('/api/public/post-publish-check')({
           auditOk: result.auditOk,
           durationMs: result.durationMs,
         });
+}
+
+export const Route = createFileRoute('/api/public/post-publish-check')({
+  server: {
+    handlers: {
+      GET: async ({ request }) => {
+        // ?next=/ — used by the stale-asset recovery flow, which NAVIGATES
+        // through this endpoint instead of firing a fetch: a document
+        // navigation always lands the purge request (an in-flight fetch is
+        // aborted the moment the page unloads). Run the full check first,
+        // then bounce the visitor home. Same-origin paths only.
+        const next = new URL(request.url).searchParams.get('next');
+        const res = await runCheck(request);
+        if (next && next.startsWith('/') && !next.startsWith('//')) {
+          return new Response(null, { status: 302, headers: { Location: next } });
+        }
+        return res;
       },
 
     },
