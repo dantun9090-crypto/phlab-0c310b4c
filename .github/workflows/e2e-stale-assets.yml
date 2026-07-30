@@ -6,17 +6,15 @@ name: E2E — stale-asset recovery
 # Runs nightly + on PRs that touch the affected client/server code.
 
 on:
-  pull_request:
-    paths:
-      - "src/lib/chunk-reload.ts"
-      - "src/routes/__root.tsx"
-      - "src/routes/api/public/post-publish-check.ts"
-      - "scripts/e2e-stale-assets.mjs"
-      - ".github/workflows/e2e-stale-assets.yml"
+  # Deliberately NOT run on pull_request: this suite drives real traffic at
+  # https://phlabs.co.uk and repeated per-deploy runs tripped the Cloudflare WAF
+  # rate limit for GitHub runner IPs (403 on the document). Once a day is enough
+  # for a regression guard; use workflow_dispatch for on-demand checks.
   schedule:
     # Nightly at 04:07 UTC — offset from the survey suite to spread load.
     - cron: "7 4 * * *"
   workflow_dispatch:
+
 
 concurrency:
   group: e2e-stale-assets-${{ github.ref }}
