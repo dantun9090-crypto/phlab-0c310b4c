@@ -637,8 +637,11 @@ async function withContext(browser, name, fn) {
   });
 
 
-  // Stub purge endpoint (or replay).
-  await context.route('**/api/public/post-publish-check*', async (route) => {
+  // Stub purge endpoint (or replay). NOTE the trailing `**`: the recovery
+  // navigation hits this endpoint with `?next=/` — a single `*` does not
+  // cross the `/` in the query string, so the stub silently missed and the
+  // request escaped to the network (403 from the WAF).
+  await context.route('**/api/public/post-publish-check**', async (route) => {
     purgeCalls.push({ at: Date.now(), url: route.request().url() });
     sc.purgeCalls.push({ at: Date.now(), url: route.request().url() });
     let fixtureBody = null;
