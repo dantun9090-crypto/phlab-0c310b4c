@@ -174,11 +174,10 @@ function CheckoutSuccessPage() {
               stopRef.current = true;
             } else if (s === "failed" || s === "expired") {
               setPhaseSafe("error");
-              setError("Payment was not completed. Please try again.");
+              setError("Your bank did not complete the payment. No money was taken.");
               stopRef.current = true;
             } else if (s === "cancelled") {
-              setPhaseSafe("error");
-              setError("Payment was cancelled at the bank. You can retry from your account.");
+              setPhaseSafe("cancelled");
               stopRef.current = true;
             } else if (s === "needs_review") {
               // Surface support escalation immediately on needs_review.
