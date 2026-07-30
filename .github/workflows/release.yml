@@ -30,6 +30,8 @@ jobs:
     name: Build, sign, attest, publish SBOM to release
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      sbom_skipped: ${{ steps.tag.outputs.skip }}
     permissions:
       contents: write    # upload release assets
       id-token: write    # cosign keyless OIDC
@@ -136,13 +138,18 @@ jobs:
             TAG="$(gh release list --limit 1 --json tagName --jq '.[0].tagName')"
           fi
           if [ -z "$TAG" ]; then
-            echo "::error::No release tag found to attach SBOM assets to."
-            exit 1
+            # No release exists yet — nothing to attach to. Not an error:
+            # skip gracefully; the job runs for real on the next release.
+            echo "::notice::No release tag found — skipping SBOM asset upload (nothing to attach to)."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Attaching SBOM assets to release: $TAG"
 
       - name: Stage release assets
+        if: steps.tag.outputs.skip != 'true'
         run: |
           mkdir -p release-assets
           cp dist/sbom.cdx.json                          release-assets/
@@ -157,6 +164,7 @@ jobs:
           ls -la release-assets/
 
       - name: Upload SBOM bundle to GitHub Release
+        if: steps.tag.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.tag.outputs.tag }}
@@ -164,6 +172,7 @@ jobs:
           gh release upload "$TAG" release-assets/* --clobber
 
       - name: Release summary
+        if: steps.tag.outputs.skip != 'true'
         env:
           TAG: ${{ steps.tag.outputs.tag }}
         run: |
@@ -193,6 +202,7 @@ jobs:
     name: Attestation verify (release)
     runs-on: ubuntu-latest
     needs: release-sbom
+    if: needs.release-sbom.outputs.sbom_skipped != 'true'
     timeout-minutes: 5
     permissions:
       contents: write   # update README badge + re-upload report
