@@ -1003,13 +1003,15 @@ const STALE_ASSET_RECOVERY = `
       }catch(e){}
     };
     var hasHydration=function(){ try{ return !!sessionStorage.getItem(HYDRATION); }catch(e){ return false; } };
+    // NOTE: incident counters (KEY/COUNT/LEGACY_COUNT) and PURGE_FIRED are
+    // deliberately NOT cleared here — hardReloadClean wipes the rest of the
+    // storage, and if the counters went with it the 3-confirmed-404s
+    // threshold could never accumulate across reloads (the purge-on-threshold
+    // path stayed dead code). They are cleared by the stable-boot timer and
+    // the recovery-URL reset instead.
     var clearAllStaleFlags=function(){
       try{
-        sessionStorage.removeItem(KEY);
-        sessionStorage.removeItem(COUNT);
-        sessionStorage.removeItem(LEGACY_COUNT);
         sessionStorage.removeItem(HYDRATION);
-        sessionStorage.removeItem(PURGE_FIRED);
         sessionStorage.removeItem(AUTO_HARDRESET);
         sessionStorage.removeItem('__phl_boot_reload_at');
         sessionStorage.removeItem('__phl_boot_reload_count');
@@ -1037,7 +1039,15 @@ const STALE_ASSET_RECOVERY = `
         }
         remove.forEach(function(k){ try{ localStorage.removeItem(k); }catch(_e){} });
       }catch(e){}
-      try{ sessionStorage.clear(); }catch(e){}
+      // Preserve the incident counters + purge throttle across the wipe —
+      // same reload-loop hazard as above.
+      try{
+        var keep=[KEY,COUNT,LEGACY_COUNT,PURGE_FIRED];
+        var kept=[];
+        for(var ki=0;ki<keep.length;ki++){ var kv=sessionStorage.getItem(keep[ki]); if(kv!==null) kept.push([keep[ki],kv]); }
+        sessionStorage.clear();
+        for(var kr=0;kr<kept.length;kr++){ try{ sessionStorage.setItem(kept[kr][0],kept[kr][1]); }catch(_e){} }
+      }catch(e){}
       try{
         var idb=window.indexedDB;
         if(idb&&typeof idb.databases==='function') idb.databases().then(function(dbs){ (dbs||[]).forEach(function(db){ if(db&&db.name&&!new RegExp('^firebase|firestore|firebaseLocalStorageDb','i').test(db.name)){ try{ idb.deleteDatabase(db.name); }catch(_e){} } }); }).catch(function(){});
@@ -1160,6 +1170,19 @@ const STALE_ASSET_RECOVERY = `
           }
           if(res && (res.status===404||res.status===410)){
             reportStale(src,res.status,'asset-404');
+            // A server-confirmed 404 on a hashed asset IS proof of a stale
+            // build — fire the self-heal purge immediately (server dedupes
+            // globally), not only after the 3rd incident. Without this the
+            // counters got wiped on every recovery reload, the threshold
+            // path never executed, and the purge never fired at all.
+            try{
+              var purgeAt=Number(sessionStorage.getItem(PURGE_FIRED)||'0');
+              if(!purgeAt||Date.now()-purgeAt>5*60*1000){
+                sessionStorage.setItem(PURGE_FIRED,String(Date.now()));
+                try{ console.warn('%c[auto-purge] %cstale asset 404 confirmed — requesting purge%c build='+getCurrentBuildId(),'color:#10b981;font-weight:700','color:#f0f6ff','color:#8ca3c7'); }catch(e){}
+                fetch('/api/public/post-publish-check',{method:'GET',cache:'no-store',credentials:'omit',keepalive:true}).catch(function(){});
+              }
+            }catch(e){}
             try{
               if(onRecoveryUrl()){ if(!requestHardReset('recovery-url-asset-404')) showLimit(); return; }
               var count=readCount();
@@ -1359,17 +1382,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: STALE_ASSET_RECOVERY }} />
         <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: BOOT_WATCHDOG }} />
         <HeadContent />
-        {/* Activate the media="print" main stylesheet WITHOUT waiting for
-            React. Routes that skip CSR (checkout/payment return pages,
-            static research articles) never run RootComponent's effect, so
-            relying on hydration left those pages rendering unstyled. */}
-        <script
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{
-            __html:
-              "(function(){function a(){var l=document.getElementById('appcss');if(!l)return;l.media='all';}var l=document.getElementById('appcss');if(l){if(l.sheet)a();else{l.addEventListener('load',a,{once:true});l.addEventListener('error',a,{once:true});}}document.addEventListener('DOMContentLoaded',a);setTimeout(a,1500);})();",
-          }}
-        />
         {/* No-JS fallback: if scripts are disabled the media=print swap
             never fires, so reload the main sheet as a blocking stylesheet. */}
         <noscript>
