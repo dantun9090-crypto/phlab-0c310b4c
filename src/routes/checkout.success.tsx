@@ -318,9 +318,11 @@ function CheckoutSuccessPage() {
         if (status === "SUCCESS" || status === "PAID" || status === "COMPLETED") {
           setPhaseSafe("paid");
           void fireGaPurchaseOnce(orderId);
-        } else if (status === "FAILED" || status === "CANCELLED" || status === "EXPIRED") {
+        } else if (status === "CANCELLED" || status === "CANCELED") {
+          setPhaseSafe("cancelled");
+        } else if (status === "FAILED" || status === "DECLINED" || status === "EXPIRED") {
           setPhaseSafe("error");
-          setError("Payment was not completed. Please try again.");
+          setError("Your bank did not complete the payment. No money was taken.");
         }
       }
     } finally {
