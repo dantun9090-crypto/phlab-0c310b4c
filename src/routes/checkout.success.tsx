@@ -237,12 +237,17 @@ function CheckoutSuccessPage() {
         // the Firestore order on a terminal remote status — this *is* our
         // fallback poll (Item 3). The very first tick (attempt=1) acts as the
         // one-time on-load reconcile call.
+        // Per-request 10s cap: a hung request must not stall the poll loop
+        // (the soft/hard deadlines already bound the spinner itself).
+        const pollAc = new AbortController();
+        const pollAbort = setTimeout(() => pollAc.abort(), 10_000);
         const res = await fetch(`/api/payments/status`, {
           method: "POST",
           headers: { "content-type": "application/json", accept: "application/json" },
           body: JSON.stringify({ orderId: oid, idToken, paymentToken }),
           cache: "no-store",
-        });
+          signal: pollAc.signal,
+        }).finally(() => clearTimeout(pollAbort));
         const data = await res.json().catch(() => ({} as Record<string, unknown>));
 
         if (!res.ok) {
@@ -312,6 +317,10 @@ function CheckoutSuccessPage() {
   async function manualRefresh() {
     if (!orderId || refreshing) return;
     setRefreshing(true);
+    // Hard 15s cap so the "Checking…" spinner can never spin forever if the
+    // status request (or auth restore) hangs on a flaky mobile connection.
+    const ac = new AbortController();
+    const abortTimer = setTimeout(() => ac.abort(), 15_000);
     try {
       await authReadyFast();
       const idToken = auth.currentUser
@@ -324,6 +333,7 @@ function CheckoutSuccessPage() {
         headers: { "content-type": "application/json", accept: "application/json" },
         body: JSON.stringify({ orderId, idToken, paymentToken }),
         cache: "no-store",
+        signal: ac.signal,
       });
       const data = await res.json().catch(() => ({} as Record<string, unknown>));
       if (res.ok) {
@@ -339,7 +349,8 @@ function CheckoutSuccessPage() {
           setError("Your bank did not complete the payment. No money was taken.");
         }
       }
-    } finally {
+    } catch { /* aborted or offline — keep current phase, spinner stops */ } finally {
+      clearTimeout(abortTimer);
       setRefreshing(false);
     }
   }
