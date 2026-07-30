@@ -309,12 +309,25 @@ const SKIP_CSR_ROUTES: readonly string[] = [
   "/research/retatrutide-comprehensive-guide",
   "/research/retatrutide-uk",
   "/research/tirzepatide-vs-retatrutide",
-  // Checkout / payment return pages are self-contained TanStack routes.
-  // If CSR/LegacyApp takes over on these paths, LegacyApp's react-router
-  // has no matching route, wipes the SSR HTML, logs [PHL 404], and takes
-  // ~17s to finally land the visitor on the homepage. Skip CSR here so
-  // the SSR content (which the useEffect in checkout.cancel.tsx already
-  // hydrates client-side for the cancel API call) stays put.
+];
+const SKIP_CSR_PREFIXES: readonly string[] = ["/compare/"];
+
+// ============================================================
+// INTERACTIVE TANSTACK RETURN ROUTES — MUST HYDRATE
+// ------------------------------------------------------------
+// Checkout / payment return pages are TanStack routes whose SSR HTML
+// only shows the initial "checking" state — the payment-status
+// polling, escalation timers, meta-refresh removal and CSS activation
+// all live in the client component. They used to sit in
+// SKIP_CSR_ROUTES above, which meant NO React ever ran on them: the
+// page froze on a static spinner forever (bank webview returns made
+// this very visible — spinner didn't even rotate because the
+// media="print" stylesheet is only activated post-hydration).
+// They must hydrate via hydrateSsr() like the /e2e/* routes.
+// renderCsr() must NEVER run for them: LegacyApp's react-router has no
+// matching path and would wipe the SSR HTML into a fake NotFound.
+// ============================================================
+const INTERACTIVE_RETURN_ROUTES: readonly string[] = [
   "/checkout/cancel",
   "/checkout/cancelled",
   "/checkout/success",
@@ -324,7 +337,16 @@ const SKIP_CSR_ROUTES: readonly string[] = [
   "/payment/cancel",
   "/payment/success",
 ];
-const SKIP_CSR_PREFIXES: readonly string[] = ["/compare/"];
+
+function isInteractiveReturnRoute(): boolean {
+  try {
+    if (typeof location === "undefined") return false;
+    const path = location.pathname.replace(/\/+$/, "") || "/";
+    return INTERACTIVE_RETURN_ROUTES.includes(path);
+  } catch {
+    return false;
+  }
+}
 
 function shouldSkipCsrForCurrentPath(): boolean {
   try {
@@ -710,13 +732,19 @@ if (shouldStartPhlClient) {
 
   window.addEventListener("error", (event) => {
     const error = event.error ?? event.message;
-    if (isHydrationCrash(error)) renderCsr(error);
+    // On interactive return routes renderCsr would mount LegacyApp's
+    // NotFound over a valid payment page — keep the SSR HTML and let the
+    // page's meta-refresh retry the boot instead.
+    if (isHydrationCrash(error) && !isInteractiveReturnRoute()) renderCsr(error);
   }, true);
   window.addEventListener("unhandledrejection", (event) => {
-    if (isHydrationCrash(event.reason)) renderCsr(event.reason);
+    if (isHydrationCrash(event.reason) && !isInteractiveReturnRoute()) renderCsr(event.reason);
   }, true);
 
-  if (shouldSkipCsrForCurrentPath()) {
+  if (isInteractiveReturnRoute()) {
+    console.info(`[HYDRATION] Hydrating interactive return route ${location.pathname}`);
+    hydrateSsr();
+  } else if (shouldSkipCsrForCurrentPath()) {
     // Dedicated TanStack route: keep the SSR HTML in place. Mounting
     // LegacyApp here would wipe the article and render the react-router
     // catch-all NotFound (page title flips to "Page Not Found | PH Labs UK"),
@@ -767,6 +795,12 @@ function hydrateSsr() {
       // errors land in the window listeners above → renderCsr.
       hydrateRoot(document, <StartClient />);
     } catch (err) {
+      if (isInteractiveReturnRoute()) {
+        // Never CSR-fallback on payment return pages (LegacyApp NotFound
+        // wipe). The SSR card + meta refresh will retry the boot.
+        console.warn("[HYDRATION] hydrateSsr failed on return route — keeping SSR HTML:", err);
+        return;
+      }
       console.warn("[HYDRATION] hydrateSsr failed — falling back to CSR:", err);
       renderCsr(err);
     }
