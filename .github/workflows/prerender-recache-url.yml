@@ -1,0 +1,50 @@
+name: Prerender recache single URL
+
+# Forces Prerender.io to re-render and re-cache one URL (default /about).
+# Use when the Googlebot prerender monitor reports an empty shell for a
+# specific path — i.e. Prerender has a stale/broken cached render.
+# Token never printed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Absolute URL to recache"
+        required: true
+        default: "https://phlabs.co.uk/about"
+
+permissions:
+  contents: read
+
+jobs:
+  recache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Prerender.io recache
+        env:
+          TOKEN: ${{ secrets.PRERENDER_TOKEN }}
+          URL: ${{ github.event.inputs.url }}
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /tmp/recache.json -w "%{http_code}" \
+            -X POST "https://api.prerender.io/recache" \
+            -H "X-Prerender-Token: ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{\"prerenderToken\":\"${TOKEN}\",\"urls\":[\"${URL}\"]}" \
+            --max-time 60)
+          echo "recache HTTP $code"
+          head -c 300 /tmp/recache.json; echo
+          [ "$code" = "200" ] || exit 1
+
+      - name: Verify Googlebot render (after warm-up)
+        env:
+          URL: ${{ github.event.inputs.url }}
+        run: |
+          set -euo pipefail
+          sleep 45
+          curl -sS -A "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" \
+            "$URL" -o /tmp/bot.html --max-time 60
+          size=$(wc -c < /tmp/bot.html | tr -d ' ')
+          h1=$(grep -oc "<h1[^>]*>" /tmp/bot.html || true)
+          echo "size=${size}B h1=${h1}"
+          [ "$size" -ge 30000 ] && [ "$h1" -ge 1 ] || { echo "::error::still empty shell after recache"; exit 1; }
