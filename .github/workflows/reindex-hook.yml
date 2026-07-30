@@ -36,18 +36,19 @@ jobs:
       # firefox/webkit failing with "Executable doesn't exist".
       - run: bunx playwright install --with-deps chromium firefox webkit
 
-      - name: Build app
-        run: bun run build
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
-
-      - name: Start preview server
+      - name: Start local dev server for Playwright
+        # bun run preview looks for dist/server/server.js, which this nitro
+        # build never emits (it writes .output/) — every API route then 500s
+        # with ERR_MODULE_NOT_FOUND. The other e2e workflows use vite dev.
         run: |
-          (bun run preview --port 8080 &) && \
-            for i in {1..40}; do
-              curl -sf http://localhost:8080 >/dev/null && break || sleep 1
-            done
+          (bun run dev --host 127.0.0.1 --port 8080 > server.log 2>&1 &)
+          for i in $(seq 1 120); do
+            if curl -fsS -o /dev/null "http://127.0.0.1:8080/"; then
+              echo "server up after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "server failed to start"; tail -n 200 server.log; exit 1
 
       - name: Probe POST handling (diagnostic)
         run: |
