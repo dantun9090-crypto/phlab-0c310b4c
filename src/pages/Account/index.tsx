@@ -27,6 +27,59 @@ import { logSecurityEvent } from '@/lib/security-events';
 import { OrderTrackingBar } from '@/components/OrderTrackingBar';
 import { PayAgainCTA } from '@/components/PayAgainCTA';
 import { getDisplayStatus } from '@/lib/order-payment-retry';
+import {
+  openCustomerInvoice,
+  downloadCustomerInvoice,
+  type InvoiceDocumentOptions,
+} from '@/lib/customer-invoice-document';
+import { formatShippingAddressLines } from '@/lib/format-address';
+
+/** Maps a Firestore order into the print-ready invoice document model. */
+function buildInvoiceOptions(order: any, reference: string): InvoiceDocumentOptions {
+  const c = order?.customer ?? {};
+  const items = (order?.items ?? []).map((it: any) => ({
+    name: it.productName || it.name || 'Research compound',
+    variantName: it.variantName || it.dosage || undefined,
+    quantity: Number(it.quantity) || 1,
+    unitPrice: Number(it.price) || 0,
+    lineTotal: typeof it.total === 'number' ? it.total : undefined,
+  }));
+  const issued =
+    order?.orderDate?.toDate?.() ??
+    order?.createdAt?.toDate?.() ??
+    (order?.orderDate ? new Date(order.orderDate) : new Date());
+  const addressLines = c.address || c.city || c.postcode
+    ? formatShippingAddressLines({
+        firstName: [c.firstName, c.lastName].filter(Boolean).join(' '),
+        address: c.address,
+        city: c.city,
+        postcode: c.postcode,
+        country: c.country,
+      }).slice(1)
+    : order?.shippingAddress
+      ? String(order.shippingAddress).split(/\s*,\s*/)
+      : [];
+
+  return {
+    reference,
+    paymentReference: order?.bankTransferReference || order?.bankTransferRef || undefined,
+    issuedDate: issued.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+    status: getDisplayStatus(order),
+    paymentMethod: order?.paymentMethod === 'bank_transfer' ? 'Bank transfer' : 'Open banking (Pay by Bank)',
+    customerName: [c.firstName, c.lastName].filter(Boolean).join(' ') || order?.userName || undefined,
+    customerEmail: c.email || order?.userEmail || undefined,
+    addressLines,
+    items,
+    subtotal: typeof order?.subtotal === 'number' ? order.subtotal : undefined,
+    discount: Number(order?.discount ?? order?.discountAmount ?? 0) || 0,
+    discountLabel: order?.couponCode || undefined,
+    shipping: typeof order?.shippingCost === 'number' ? order.shippingCost : 0,
+    shippingLabel: order?.shippingLabel || order?.shippingMethod || undefined,
+    total: Number(order?.totalAmount ?? order?.total ?? 0),
+  };
+}
+
+
 
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -1018,7 +1071,7 @@ export default function AccountPage() {
                     <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
                     <div className="px-6 pt-6 pb-4 border-b border-white/[0.06]">
                       <h2 className="text-white font-bold text-base">Receipts</h2>
-                      <p className="text-[#3a5a82] text-xs mt-1">Download receipts for your orders</p>
+                      <p className="text-[#3a5a82] text-xs mt-1">Print-ready A4 invoices — open to save as PDF</p>
                     </div>
                     <div className="p-4">
                       {orders.length === 0 ? (
@@ -1039,34 +1092,25 @@ export default function AccountPage() {
                                   <p className="text-white text-sm font-semibold font-mono">{receiptRef}</p>
                                   <p className="text-[#3a5a82] text-xs">{formatDate(order.orderDate)} · £{(order.totalAmount || 0).toFixed(2)}</p>
                                 </div>
-                                <div className="flex items-center gap-3 flex-shrink-0">
+                                <div className="flex items-center gap-2 flex-shrink-0">
                                   <StatusBadge status={getDisplayStatus(order as any)} />
                                   <button
-                                    onClick={() => {
-                                      const lines = [
-                                        'PH LABS - ORDER RECEIPT',
-                                        '====================================',
-                                        `Order: ${receiptRef}`,
-                                        `Date: ${formatDate(order.orderDate)}`,
-                                        `Status: ${order.status}`,
-                                        '',
-                                        'ITEMS:',
-                                        ...(order.items || []).map((i: any) => `  ${i.productName || i.name} x${i.quantity} - £${((i.price || 0) * (i.quantity || 1)).toFixed(2)}`),
-                                        '',
-                                        `TOTAL: £${(order.totalAmount || 0).toFixed(2)}`,
-                                      ];
-                                      const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
-                                      const url = URL.createObjectURL(blob);
-                                      const a = document.createElement('a');
-                                      a.href = url; a.download = `receipt-${receiptRef}.txt`; a.click();
-                                      URL.revokeObjectURL(url);
-                                    }}
+                                    onClick={() => openCustomerInvoice(buildInvoiceOptions(order as any, receiptRef))}
                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-lg text-xs font-medium transition-colors"
                                   >
+                                    <FileText className="w-3.5 h-3.5" />
+                                    View / PDF
+                                  </button>
+                                  <button
+                                    onClick={() => downloadCustomerInvoice(buildInvoiceOptions(order as any, receiptRef))}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.04] hover:bg-white/[0.08] text-[#9cb8d9] border border-white/[0.08] rounded-lg text-xs font-medium transition-colors"
+                                    aria-label="Download invoice"
+                                  >
                                     <Download className="w-3.5 h-3.5" />
-                                    Download
+                                    Save
                                   </button>
                                 </div>
+
                               </div>
                             );
                           })}
