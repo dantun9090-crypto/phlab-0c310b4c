@@ -21,6 +21,9 @@ export const Route = createFileRoute("/checkout/cancel")({
 
 function CheckoutCancelPage() {
   const [orderId, setOrderId] = useState("");
+  // The Wallid fail_url is used for BOTH a user cancel and a real bank
+  // failure — ask the status API which one it was so the copy is correct.
+  const [outcome, setOutcome] = useState<"cancelled" | "failed">("cancelled");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -48,10 +51,28 @@ function CheckoutCancelPage() {
         let paymentToken: string | null = null;
         try { paymentToken = localStorage.getItem(`php_pt_${oid}`); } catch { /* ignore */ }
         if (!idToken && !paymentToken) return;
+        const body = JSON.stringify({ idToken, paymentToken, orderId: oid });
+        // 1) Classify the outcome first (cancel vs genuine failure).
+        try {
+          const statusRes = await fetch("/api/payments/status", {
+            method: "POST",
+            headers: { "content-type": "application/json", accept: "application/json" },
+            body,
+            cache: "no-store",
+          });
+          if (statusRes.ok) {
+            const data = await statusRes.json().catch(() => ({}));
+            const status = String((data as { status?: unknown }).status || "").toUpperCase();
+            if (status === "FAILED" || status === "DECLINED" || status === "EXPIRED") {
+              setOutcome("failed");
+              return; // real failure — don't overwrite it with "cancelled"
+            }
+          }
+        } catch { /* fall through to cancel */ }
         await fetch("/api/payments/cancel", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ idToken, paymentToken, orderId: oid }),
+          body,
         });
         // The server burns the token after cancel; clear it locally too so
         // a subsequent page load doesn't keep retrying.
@@ -63,10 +84,16 @@ function CheckoutCancelPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-slate-950">
       <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">
-        <XCircle className="w-12 h-12 mx-auto text-amber-400" />
-        <h1 className="mt-4 text-2xl font-bold text-white">Payment cancelled</h1>
+        <XCircle className={`w-12 h-12 mx-auto ${outcome === "failed" ? "text-rose-500" : "text-amber-400"}`} />
+        <h1 className="mt-4 text-2xl font-bold text-white">
+          {outcome === "failed" ? "Payment failed" : "Payment cancelled"}
+        </h1>
         <p className="mt-2 text-sm text-slate-300">
-          Your bank payment was cancelled or failed{orderId ? <> for order <span className="font-mono text-emerald-400">{orderId}</span></> : ""}. No charge was made.
+          {outcome === "failed" ? (
+            <>Your bank could not complete the payment{orderId ? <> for order <span className="font-mono text-emerald-400">{orderId}</span></> : ""}. No money was charged — please try again.</>
+          ) : (
+            <>You cancelled the payment{orderId ? <> for order <span className="font-mono text-emerald-400">{orderId}</span></> : ""}. No money was charged.</>
+          )}
         </p>
         <div className="mt-6 flex flex-col gap-3">
           <a href="/checkout" className="inline-block rounded-lg bg-emerald-500 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-400">Try again</a>
