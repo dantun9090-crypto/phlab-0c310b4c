@@ -725,7 +725,17 @@ const stopMutationLogger = shouldStartPhlClient ? installPreReactMutationLogger(
 
 if (shouldStartPhlClient) {
   capturePreHydrationDom();
-  window.__phlHydrationFallback = (error?: unknown) => renderCsr(error || new Error("External hydration fallback requested"));
+  window.__phlHydrationFallback = (error?: unknown) => {
+    // Interactive return routes (checkout/order/payment): CSR mounts
+    // LegacyApp's NotFound over a valid payment page — refuse. React 19
+    // recovers from hydration mismatches by client-rendering the route
+    // itself, which is all these pages need for their polling to start.
+    if (isInteractiveReturnRoute()) {
+      console.warn("[HYDRATION] fallback suppressed on return route — React self-recovery proceeds:", error);
+      return;
+    }
+    renderCsr(error || new Error("External hydration fallback requested"));
+  };
 
   // Temporary SW debug instrumentation — gated by ?sw_debug=1 (persists).
   void import("@/lib/sw-debug").then((m) => m.startSwDebug()).catch(() => { /* noop */ });
