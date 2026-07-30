@@ -237,12 +237,17 @@ function CheckoutSuccessPage() {
         // the Firestore order on a terminal remote status — this *is* our
         // fallback poll (Item 3). The very first tick (attempt=1) acts as the
         // one-time on-load reconcile call.
+        // Per-request 10s cap: a hung request must not stall the poll loop
+        // (the soft/hard deadlines already bound the spinner itself).
+        const pollAc = new AbortController();
+        const pollAbort = setTimeout(() => pollAc.abort(), 10_000);
         const res = await fetch(`/api/payments/status`, {
           method: "POST",
           headers: { "content-type": "application/json", accept: "application/json" },
           body: JSON.stringify({ orderId: oid, idToken, paymentToken }),
           cache: "no-store",
-        });
+          signal: pollAc.signal,
+        }).finally(() => clearTimeout(pollAbort));
         const data = await res.json().catch(() => ({} as Record<string, unknown>));
 
         if (!res.ok) {
