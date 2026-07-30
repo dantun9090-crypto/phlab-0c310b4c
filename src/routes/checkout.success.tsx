@@ -315,6 +315,7 @@ function CheckoutSuccessPage() {
       const data = await res.json().catch(() => ({} as Record<string, unknown>));
       if (res.ok) {
         const status = String((data as { status?: unknown }).status || "").toUpperCase();
+        captureAmount(data);
         if (status === "SUCCESS" || status === "PAID" || status === "COMPLETED") {
           setPhaseSafe("paid");
           void fireGaPurchaseOnce(orderId);
