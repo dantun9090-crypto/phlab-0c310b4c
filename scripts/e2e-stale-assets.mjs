@@ -698,8 +698,12 @@ function diag(extra) {
 
 // Shared stronger no-loop / single-swap assertions used by JS+CSS scenarios.
 function assertNoLoop(reloads, assetReqs, sc, label) {
-  record(`${label}: navigation count ≤ 2 (initial + at most one recovery)`, reloads.length <= 2,
-    `navigations=${reloads.length}`, diag({ reloads }));
+  // The recovery now navigates THROUGH /api/public/post-publish-check?next=/
+  // (the endpoint purges, then 302s home). That hop is the purge itself,
+  // not a content reload — exclude it from the navigation budget.
+  const contentReloads = reloads.filter((r) => !/post-publish-check/.test(r.url));
+  record(`${label}: navigation count ≤ 2 (initial + at most one recovery)`, contentReloads.length <= 2,
+    `navigations=${contentReloads.length} (+${reloads.length - contentReloads.length} purge hop)`, diag({ reloads }));
   const unique = new Set(assetReqs.map((u) => u.split('?')[0]));
   record(`${label}: hashed chunk URL set changes at most once`, unique.size <= 2,
     `unique=${unique.size} total=${assetReqs.length}`,
@@ -822,7 +826,10 @@ const scenarios = {
     });
     await page.goto(TARGET, { waitUntil: 'domcontentloaded' }).catch(() => {});
     await page.waitForTimeout(7000);
-    record('aborted purge does NOT cause reload loop', reloads.length <= 2, `n=${reloads.length}`, diag({ reloads }));
+    record('aborted purge does NOT cause reload loop',
+      reloads.filter((r) => !/post-publish-check/.test(r.url)).length <= 2,
+      `n=${reloads.filter((r) => !/post-publish-check/.test(r.url)).length} (+${reloads.length - reloads.filter((r) => !/post-publish-check/.test(r.url)).length} purge hop)`,
+      diag({ reloads }));
     assertNoLoop(reloads, assetReqs, sc, 'netfail');
   }),
 };
