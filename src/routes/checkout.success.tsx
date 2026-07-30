@@ -312,6 +312,10 @@ function CheckoutSuccessPage() {
   async function manualRefresh() {
     if (!orderId || refreshing) return;
     setRefreshing(true);
+    // Hard 15s cap so the "Checking…" spinner can never spin forever if the
+    // status request (or auth restore) hangs on a flaky mobile connection.
+    const ac = new AbortController();
+    const abortTimer = setTimeout(() => ac.abort(), 15_000);
     try {
       await authReadyFast();
       const idToken = auth.currentUser
@@ -324,6 +328,7 @@ function CheckoutSuccessPage() {
         headers: { "content-type": "application/json", accept: "application/json" },
         body: JSON.stringify({ orderId, idToken, paymentToken }),
         cache: "no-store",
+        signal: ac.signal,
       });
       const data = await res.json().catch(() => ({} as Record<string, unknown>));
       if (res.ok) {
@@ -339,7 +344,8 @@ function CheckoutSuccessPage() {
           setError("Your bank did not complete the payment. No money was taken.");
         }
       }
-    } finally {
+    } catch { /* aborted or offline — keep current phase, spinner stops */ } finally {
+      clearTimeout(abortTimer);
       setRefreshing(false);
     }
   }
