@@ -1153,6 +1153,21 @@ const STALE_ASSET_RECOVERY = `
         var last=Number(sessionStorage.getItem(KEY)||'0');
         if(last&&Date.now()-last<30000) return;
       }catch(e){}
+      // Fire the self-heal purge FIRST, before the async HEAD verify and any
+      // navigation — a 404 on a hashed asset at this origin is already proof
+      // of a stale build, and the server dedupes the purge globally. We AWAIT
+      // it (capped) before recovering: keepalive fetches are aborted by the
+      // navigation, so without the await the purge never actually lands.
+      var purgeP=null;
+      try{
+        var purgeAt0=Number(sessionStorage.getItem(PURGE_FIRED)||'0');
+        if(!purgeAt0||Date.now()-purgeAt0>5*60*1000){
+          sessionStorage.setItem(PURGE_FIRED,String(Date.now()));
+          try{ console.warn('%c[auto-purge] %cstale asset error — requesting purge%c build='+getCurrentBuildId(),'color:#10b981;font-weight:700','color:#f0f6ff','color:#8ca3c7'); }catch(e){}
+          purgeP=fetch('/api/public/post-publish-check',{method:'GET',cache:'no-store',credentials:'omit'}).catch(function(){});
+        }
+      }catch(e){}
+      var finishRecovery=function(){
       // Verify the asset is actually missing before forcing a reload.
       // A parse/syntax/CSP error fires the same 'error' event but the asset is fine —
       // reloading would loop. Only reload when the server confirms 404/410.
@@ -1205,6 +1220,15 @@ const STALE_ASSET_RECOVERY = `
           }
         }).catch(function(){});
       }catch(e){}
+      };
+      // Wait for the purge (max 800ms) BEFORE any recovery navigation — a
+      // fetch in flight is aborted when the page unloads, which is why the
+      // purge previously never landed (and why the e2e harness never saw it).
+      if(purgeP){
+        Promise.race([purgeP, new Promise(function(r){ setTimeout(r,800); })]).then(function(){ finishRecovery(); });
+      }else{
+        finishRecovery();
+      }
     };
     addEventListener('error',function(ev){ if(isHydration(ev&&(ev.error||ev.message))) showHydration(); },true);
     addEventListener('unhandledrejection',function(ev){ if(isHydration(ev&&ev.reason)) showHydration(); },true);
