@@ -84,7 +84,28 @@ export const Route = createFileRoute("/api/public/hooks/reindex")({
     handlers: {
       POST: async ({ request }) => {
         const ENDPOINT = "/api/public/hooks/reindex";
+        try {
+          return await handlePost(request, ENDPOINT);
+        } catch (err) {
+          // The contract tests read the JSON body — never let a bare
+          // exception escape as an empty 500 (that's what made CI failures
+          // undebuggable).
+          console.error("[reindex] unhandled:", err);
+          return Response.json(
+            {
+              ok: false,
+              error: "internal",
+              detail: err instanceof Error ? err.message : String(err),
+            },
+            { status: 500 },
+          );
+        }
+      },
+    },
+  },
+});
 
+async function handlePost(request: Request, ENDPOINT: string): Promise<Response> {
         // Per-IP throttle on top of cooldown.
         const limited = await enforceRateLimit(request, ENDPOINT, {
           limit: 12,
@@ -221,7 +242,4 @@ export const Route = createFileRoute("/api/public/hooks/reindex")({
           note:
             "Google Search Console Request-Indexing has no public automation endpoint; click each gscInspectorLinks[].inspector URL to submit from the GSC UI.",
         });
-      },
-    },
-  },
-});
+}
