@@ -115,8 +115,12 @@ jobs:
 
       # Same verification used by CI / security-scan so the release also
       # produces a green "Attestation verify" Check on the release run.
+      # NOTE: the identity regex is built from this arg as
+      # `.github/workflows/<arg>.yml@` — it must be THIS workflow's filename,
+      # otherwise the freshly-signed certificate (subject = release-sbom.yml)
+      # never matches and the job fails on every trigger.
       - name: Verify attestations
-        run: bash scripts/verify-attestations.sh dist release
+        run: bash scripts/verify-attestations.sh dist release-sbom
 
       # Resolve which release tag to attach to. release.published gives
       # github.event.release.tag_name; workflow_dispatch can override
