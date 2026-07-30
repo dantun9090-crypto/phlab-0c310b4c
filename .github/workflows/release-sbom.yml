@@ -193,6 +193,7 @@ jobs:
 
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
+      sbom_skipped: ${{ steps.tag.outputs.skip }}
 
   # Confirms the release is *actually* verifiable end-to-end by
   # downloading the SBOM bundle from the published GitHub Release (NOT
@@ -205,6 +206,7 @@ jobs:
     name: Attestation verify (release)
     runs-on: ubuntu-latest
     needs: release-sbom
+    if: needs.release-sbom.outputs.sbom_skipped != 'true'
     timeout-minutes: 5
     permissions:
       contents: write   # update README badge + re-upload report
