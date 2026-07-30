@@ -455,10 +455,26 @@ function CheckoutSuccessPage() {
             <a href="/account" className="mt-6 inline-block text-xs text-slate-400 underline hover:text-slate-200">View my orders</a>
           </>
         )}
+        {phase === "cancelled" && (
+          <>
+            <AlertCircle className="w-10 h-10 mx-auto text-amber-400" />
+            <h1 className="mt-4 text-xl font-bold text-white">Payment cancelled</h1>
+            <p className="mt-2 text-sm text-slate-300">
+              You cancelled the payment. No money was charged.
+            </p>
+            {orderId && (
+              <p className="mt-2 text-[11px] text-slate-500">
+                Reference for support: <span className="font-mono text-slate-400">{orderId}</span>
+              </p>
+            )}
+            <a href="/checkout" className="mt-6 inline-block rounded-lg bg-emerald-500 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-400">Try again</a>
+            <a href="/" className="mt-3 inline-block text-xs text-slate-400 underline hover:text-slate-200">Back to shop</a>
+          </>
+        )}
         {phase === "error" && (
           <>
-            <AlertCircle className="w-10 h-10 mx-auto text-rose-400" />
-            <h1 className="mt-4 text-xl font-bold text-white">Payment could not be completed</h1>
+            <XCircle className="w-10 h-10 mx-auto text-rose-500" />
+            <h1 className="mt-4 text-xl font-bold text-white">Payment failed</h1>
             <p className="mt-2 text-sm text-slate-300">{error}</p>
             <p className="mt-3 text-sm text-slate-300">
               No charge was confirmed — your cart is saved, you can try again right away.
@@ -468,7 +484,7 @@ function CheckoutSuccessPage() {
                 Reference for support: <span className="font-mono text-slate-400">{orderId}</span>
               </p>
             )}
-            <a href="/checkout" className="mt-6 inline-block rounded-lg bg-emerald-500 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-400">Try payment again</a>
+            <a href="/checkout" className="mt-6 inline-block rounded-lg bg-emerald-500 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-400">Try again</a>
             <a href="/" className="mt-3 inline-block text-xs text-slate-400 underline hover:text-slate-200">Back to shop</a>
           </>
         )}
