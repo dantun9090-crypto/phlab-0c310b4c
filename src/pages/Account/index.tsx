@@ -1071,7 +1071,7 @@ export default function AccountPage() {
                     <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
                     <div className="px-6 pt-6 pb-4 border-b border-white/[0.06]">
                       <h2 className="text-white font-bold text-base">Receipts</h2>
-                      <p className="text-[#3a5a82] text-xs mt-1">Download receipts for your orders</p>
+                      <p className="text-[#3a5a82] text-xs mt-1">Print-ready A4 invoices — open to save as PDF</p>
                     </div>
                     <div className="p-4">
                       {orders.length === 0 ? (
