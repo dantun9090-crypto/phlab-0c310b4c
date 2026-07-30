@@ -525,7 +525,16 @@ function validateFixture(scenario, kind, data) {
 async function withContext(browser, name, fn) {
   currentScenario = name;
   const sc = ensureScenario(name);
-  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  // PHL_E2E_BYPASS_TOKEN matches a Cloudflare skip rule on the phlabs.co.uk
+  // zone (WAF / rate-limit / bot fight), so repeated CI runs from shared
+  // GitHub runner IPs are not answered with 403 on the document.
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 800 },
+    extraHTTPHeaders: process.env.PHL_E2E_BYPASS_TOKEN
+      ? { 'x-phl-e2e': process.env.PHL_E2E_BYPASS_TOKEN }
+      : undefined,
+  });
+
   const purgeCalls = [];
   const purgeResponses = [];
   const autoPurgeLogs = [];
