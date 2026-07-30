@@ -253,9 +253,13 @@ function CheckoutSuccessPage() {
             } catch { /* ignore */ }
             return; // terminal — stop polling
           }
-          if (status === "FAILED" || status === "CANCELLED" || status === "EXPIRED") {
+          if (status === "CANCELLED" || status === "CANCELED") {
+            setPhaseSafe("cancelled");
+            return; // terminal — stop polling
+          }
+          if (status === "FAILED" || status === "DECLINED" || status === "EXPIRED") {
             setPhaseSafe("error");
-            setError("Payment was not completed. Please try again.");
+            setError("Your bank did not complete the payment. No money was taken.");
             return; // terminal — stop polling
           }
         }
