@@ -221,7 +221,26 @@ async function purgeRecoveryStorage(): Promise<void> {
     });
   } catch { /* ignore */ }
 
-  try { sessionStorage.clear(); } catch { /* ignore */ }
+  // Preserve the anti-loop guard keys across the wipe. Clearing
+  // __phl_reloaded_count / the in-flight flag resets the "reload once"
+  // budget on every recovery, so a persistent chunk 404 turned into an
+  // infinite reload loop (caught by e2e-stale-assets: 4+ navigations).
+  try {
+    const GUARD_KEYS = [
+      "__phl_reloaded_at",
+      "__phl_reloaded_count",
+      HARD_RELOAD_FLAG,
+    ];
+    const preserved: Array<[string, string]> = [];
+    for (const k of GUARD_KEYS) {
+      const v = sessionStorage.getItem(k);
+      if (v !== null) preserved.push([k, v]);
+    }
+    sessionStorage.clear();
+    for (const [k, v] of preserved) {
+      try { sessionStorage.setItem(k, v); } catch { /* ignore */ }
+    }
+  } catch { /* ignore */ }
 
   try {
     const idb = window.indexedDB as IDBFactory & { databases?: () => Promise<{ name?: string }[]> };
@@ -289,7 +308,19 @@ export async function hardReload(options: HardReloadOptions = {}): Promise<void>
     } catch (err) {
       console.error("Cache clear failed:", err);
       try { localStorage.clear(); } catch { /* ignore */ }
-      try { sessionStorage.clear(); } catch { /* ignore */ }
+      try {
+        // Same anti-loop preservation as purgeRecoveryStorage above.
+        const GUARD_KEYS = ["__phl_reloaded_at", "__phl_reloaded_count", HARD_RELOAD_FLAG];
+        const preserved: Array<[string, string]> = [];
+        for (const k of GUARD_KEYS) {
+          const v = sessionStorage.getItem(k);
+          if (v !== null) preserved.push([k, v]);
+        }
+        sessionStorage.clear();
+        for (const [k, v] of preserved) {
+          try { sessionStorage.setItem(k, v); } catch { /* ignore */ }
+        }
+      } catch { /* ignore */ }
     } finally {
       try { window.location.replace("/"); }
       catch {
