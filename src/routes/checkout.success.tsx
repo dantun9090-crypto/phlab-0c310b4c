@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { merchantItemId } from '@/lib/merchant-item-id';
 import { useEffect, useRef, useState } from "react";
-import { Loader, CheckCircle2, AlertCircle, RefreshCw, LifeBuoy } from "lucide-react";
+import { Loader, CheckCircle2, AlertCircle, XCircle, RefreshCw, LifeBuoy } from "lucide-react";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { trackPurchase, type GaItem } from "@/lib/analytics";
@@ -94,7 +94,7 @@ export const Route = createFileRoute("/checkout/success")({
   component: CheckoutSuccessPage,
 });
 
-type Phase = "checking" | "paid" | "pending" | "error";
+type Phase = "checking" | "paid" | "pending" | "cancelled" | "error";
 
 // Escalation tiers shown while the order stays non-terminal:
 //   pending  → standard "we're confirming" copy (after 8s soft deadline)
@@ -108,11 +108,20 @@ function CheckoutSuccessPage() {
   const [escalation, setEscalation] = useState<Escalation>("none");
   const [orderId, setOrderId] = useState("");
   const [error, setError] = useState("");
+  const [amount, setAmount] = useState<number | null>(null);
+  const [currency, setCurrency] = useState<string>("GBP");
   const [refreshing, setRefreshing] = useState(false);
   const stopRef = useRef(false);
   const phaseRef = useRef<Phase>("checking");
   const startedAtRef = useRef<number>(Date.now());
   const setPhaseSafe = (p: Phase) => { phaseRef.current = p; setPhase(p); };
+  // Echoed by /api/payments/status when the caller owns the order.
+  const captureAmount = (data: unknown) => {
+    const d = (data ?? {}) as { amount?: unknown; currency?: unknown };
+    const n = typeof d.amount === "string" ? parseFloat(d.amount) : Number(d.amount);
+    if (Number.isFinite(n) && n > 0) setAmount(n);
+    if (typeof d.currency === "string" && d.currency) setCurrency(d.currency.toUpperCase());
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -174,11 +183,10 @@ function CheckoutSuccessPage() {
               stopRef.current = true;
             } else if (s === "failed" || s === "expired") {
               setPhaseSafe("error");
-              setError("Payment was not completed. Please try again.");
+              setError("Your bank did not complete the payment. No money was taken.");
               stopRef.current = true;
             } else if (s === "cancelled") {
-              setPhaseSafe("error");
-              setError("Payment was cancelled at the bank. You can retry from your account.");
+              setPhaseSafe("cancelled");
               stopRef.current = true;
             } else if (s === "needs_review") {
               // Surface support escalation immediately on needs_review.
@@ -241,6 +249,7 @@ function CheckoutSuccessPage() {
           consecutiveErrors += 1;
         } else {
           consecutiveErrors = 0;
+          captureAmount(data);
           const status = String((data as { status?: unknown }).status || "").toUpperCase();
           if (status === "SUCCESS" || status === "PAID" || status === "COMPLETED") {
             setPhaseSafe("paid");
@@ -253,9 +262,13 @@ function CheckoutSuccessPage() {
             } catch { /* ignore */ }
             return; // terminal — stop polling
           }
-          if (status === "FAILED" || status === "CANCELLED" || status === "EXPIRED") {
+          if (status === "CANCELLED" || status === "CANCELED") {
+            setPhaseSafe("cancelled");
+            return; // terminal — stop polling
+          }
+          if (status === "FAILED" || status === "DECLINED" || status === "EXPIRED") {
             setPhaseSafe("error");
-            setError("Payment was not completed. Please try again.");
+            setError("Your bank did not complete the payment. No money was taken.");
             return; // terminal — stop polling
           }
         }
@@ -315,12 +328,15 @@ function CheckoutSuccessPage() {
       const data = await res.json().catch(() => ({} as Record<string, unknown>));
       if (res.ok) {
         const status = String((data as { status?: unknown }).status || "").toUpperCase();
+        captureAmount(data);
         if (status === "SUCCESS" || status === "PAID" || status === "COMPLETED") {
           setPhaseSafe("paid");
           void fireGaPurchaseOnce(orderId);
-        } else if (status === "FAILED" || status === "CANCELLED" || status === "EXPIRED") {
+        } else if (status === "CANCELLED" || status === "CANCELED") {
+          setPhaseSafe("cancelled");
+        } else if (status === "FAILED" || status === "DECLINED" || status === "EXPIRED") {
           setPhaseSafe("error");
-          setError("Payment was not completed. Please try again.");
+          setError("Your bank did not complete the payment. No money was taken.");
         }
       }
     } finally {
@@ -355,11 +371,25 @@ function CheckoutSuccessPage() {
         {phase === "paid" && (
           <>
             <CheckCircle2 className="w-12 h-12 mx-auto text-emerald-500" />
-            <h1 className="mt-4 text-2xl font-bold text-white">Payment confirmed</h1>
+            <h1 className="mt-4 text-2xl font-bold text-white">Payment successful</h1>
             <p className="mt-2 text-sm text-slate-300">
               Thank you. Order <span className="font-mono text-emerald-400">{orderId}</span> is confirmed and a receipt is on its way to your email.
             </p>
-            <a href="/account" className="mt-6 inline-block rounded-lg bg-emerald-500 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-400">View my orders</a>
+            <div className="mt-4 rounded-lg bg-slate-800 px-3 py-2 text-xs text-slate-300">
+              {amount !== null && (
+                <div>
+                  Amount paid:{" "}
+                  <span className="font-semibold text-white">
+                    {currency === "GBP" || !currency ? "£" : `${currency} `}
+                    {amount.toFixed(2)}
+                  </span>
+                </div>
+              )}
+              <div className={amount !== null ? "mt-1" : ""}>
+                Transaction ID: <span className="font-mono text-emerald-400 select-all">{orderId}</span>
+              </div>
+            </div>
+            <a href="/account" className="mt-6 inline-block rounded-lg bg-emerald-500 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-400">Continue</a>
           </>
         )}
         {phase === "pending" && (
@@ -455,10 +485,26 @@ function CheckoutSuccessPage() {
             <a href="/account" className="mt-6 inline-block text-xs text-slate-400 underline hover:text-slate-200">View my orders</a>
           </>
         )}
+        {phase === "cancelled" && (
+          <>
+            <AlertCircle className="w-10 h-10 mx-auto text-amber-400" />
+            <h1 className="mt-4 text-xl font-bold text-white">Payment cancelled</h1>
+            <p className="mt-2 text-sm text-slate-300">
+              You cancelled the payment. No money was charged.
+            </p>
+            {orderId && (
+              <p className="mt-2 text-[11px] text-slate-500">
+                Reference for support: <span className="font-mono text-slate-400">{orderId}</span>
+              </p>
+            )}
+            <a href="/checkout" className="mt-6 inline-block rounded-lg bg-emerald-500 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-400">Try again</a>
+            <a href="/" className="mt-3 inline-block text-xs text-slate-400 underline hover:text-slate-200">Back to shop</a>
+          </>
+        )}
         {phase === "error" && (
           <>
-            <AlertCircle className="w-10 h-10 mx-auto text-rose-400" />
-            <h1 className="mt-4 text-xl font-bold text-white">Payment could not be completed</h1>
+            <XCircle className="w-10 h-10 mx-auto text-rose-500" />
+            <h1 className="mt-4 text-xl font-bold text-white">Payment failed</h1>
             <p className="mt-2 text-sm text-slate-300">{error}</p>
             <p className="mt-3 text-sm text-slate-300">
               No charge was confirmed — your cart is saved, you can try again right away.
@@ -468,7 +514,7 @@ function CheckoutSuccessPage() {
                 Reference for support: <span className="font-mono text-slate-400">{orderId}</span>
               </p>
             )}
-            <a href="/checkout" className="mt-6 inline-block rounded-lg bg-emerald-500 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-400">Try payment again</a>
+            <a href="/checkout" className="mt-6 inline-block rounded-lg bg-emerald-500 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-400">Try again</a>
             <a href="/" className="mt-3 inline-block text-xs text-slate-400 underline hover:text-slate-200">Back to shop</a>
           </>
         )}
