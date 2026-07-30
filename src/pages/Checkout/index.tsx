@@ -725,7 +725,17 @@ export default function CheckoutPage() {
       setSelectedGiftId(null);
     }
   }, [eligibleGiftList, selectedGiftId]);
-  const hasItemsWithoutVariant = cart.some(item => !item.dosage || item.dosage === '');
+  // An item counts as having a variant if ANY of variantId / variantName / dosage
+  // is populated — must stay in sync with the cart drawer guard in Layout.tsx.
+  // Legacy Safari/iPhone cached carts and the cross-origin `?cart=` handoff carry
+  // variantId + variantName without a `dosage` string; checking `dosage` alone
+  // blocked those customers from paying even though the drawer let them through.
+  const hasItemsWithoutVariant = cart.some(item => {
+    const hasVariantId = typeof item.variantId === 'string' && item.variantId.trim() !== '';
+    const hasVariantName = typeof item.variantName === 'string' && item.variantName.trim() !== '';
+    const hasDosage = typeof item.dosage === 'string' && item.dosage.trim() !== '';
+    return !hasVariantId && !hasVariantName && !hasDosage;
+  });
   const activePayByBankName = paymentOptions?.primary?.name ?? 'Open Banking';
   const cartToGaItems = useCallback((): GaItem[] => cart.map(item => ({
     item_id: merchantItemId(item.id),
