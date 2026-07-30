@@ -1039,34 +1039,25 @@ export default function AccountPage() {
                                   <p className="text-white text-sm font-semibold font-mono">{receiptRef}</p>
                                   <p className="text-[#3a5a82] text-xs">{formatDate(order.orderDate)} · £{(order.totalAmount || 0).toFixed(2)}</p>
                                 </div>
-                                <div className="flex items-center gap-3 flex-shrink-0">
+                                <div className="flex items-center gap-2 flex-shrink-0">
                                   <StatusBadge status={getDisplayStatus(order as any)} />
                                   <button
-                                    onClick={() => {
-                                      const lines = [
-                                        'PH LABS - ORDER RECEIPT',
-                                        '====================================',
-                                        `Order: ${receiptRef}`,
-                                        `Date: ${formatDate(order.orderDate)}`,
-                                        `Status: ${order.status}`,
-                                        '',
-                                        'ITEMS:',
-                                        ...(order.items || []).map((i: any) => `  ${i.productName || i.name} x${i.quantity} - £${((i.price || 0) * (i.quantity || 1)).toFixed(2)}`),
-                                        '',
-                                        `TOTAL: £${(order.totalAmount || 0).toFixed(2)}`,
-                                      ];
-                                      const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
-                                      const url = URL.createObjectURL(blob);
-                                      const a = document.createElement('a');
-                                      a.href = url; a.download = `receipt-${receiptRef}.txt`; a.click();
-                                      URL.revokeObjectURL(url);
-                                    }}
+                                    onClick={() => openCustomerInvoice(buildInvoiceOptions(order as any, receiptRef))}
                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-lg text-xs font-medium transition-colors"
                                   >
+                                    <FileText className="w-3.5 h-3.5" />
+                                    View / PDF
+                                  </button>
+                                  <button
+                                    onClick={() => downloadCustomerInvoice(buildInvoiceOptions(order as any, receiptRef))}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.04] hover:bg-white/[0.08] text-[#9cb8d9] border border-white/[0.08] rounded-lg text-xs font-medium transition-colors"
+                                    aria-label="Download invoice"
+                                  >
                                     <Download className="w-3.5 h-3.5" />
-                                    Download
+                                    Save
                                   </button>
                                 </div>
+
                               </div>
                             );
                           })}
