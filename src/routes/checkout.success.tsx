@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { merchantItemId } from '@/lib/merchant-item-id';
 import { useEffect, useRef, useState } from "react";
-import { Loader, CheckCircle2, AlertCircle, RefreshCw, LifeBuoy } from "lucide-react";
+import { Loader, CheckCircle2, AlertCircle, XCircle, RefreshCw, LifeBuoy } from "lucide-react";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { trackPurchase, type GaItem } from "@/lib/analytics";
