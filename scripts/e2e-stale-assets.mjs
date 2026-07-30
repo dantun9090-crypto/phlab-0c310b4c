@@ -726,10 +726,11 @@ const scenarios = {
     record('forced stale chunk observed', !!seen, seen || '', diag({ seen }));
     record('post-publish-check called BEFORE reload',
       purgeCalls.length >= 1 && purgeCalls[0].at <= (reloads[1]?.at ?? Infinity),
-      `calls=${purgeCalls.length} reloads=${reloads.length}`, diag({ purgeCalls, reloads }));
+      `calls=${purgeCalls.length} reloads=${reloads.length}`,
+      diag({ purgeCalls, reloads, lastConsole: allConsole.slice(-40) }));
     assertNoLoop(reloads, assetReqs, sc, 'js');
     record('visible [auto-purge] console log', autoPurgeLogs.length >= 1,
-      autoPurgeLogs[0]?.slice(0, 120) ?? '', diag({ autoPurgeLogs }));
+      autoPurgeLogs[0]?.slice(0, 120) ?? '', diag({ autoPurgeLogs, lastConsole: allConsole.slice(-40) }));
   }),
 
   'sourcemap-404': async (browser) => withContext(browser, 'sourcemap-404',
