@@ -146,12 +146,43 @@ const SCANNER_PATH_PREFIXES = [
   "/.DS_Store",
   "/vendor/phpunit",
   "/cgi-bin",
+  // 2026-07-31 burst (error monitor, 25 events / 5 min) — .NET/Spring/
+  // Rails/Jenkins probes that previously fell through to Prerender.io:
+  "/appsettings",        // /appsettings.Production.json etc.
+  "/application-",       // Spring /application-prod.yml
+  "/bootstrap.",         // Spring Cloud /bootstrap.yml
+  "/Jenkinsfile",
+  "/Dockerfile",
+  "/docker-compose",
+  "/Makefile",
+  "/Rakefile",
+  "/Gemfile",
+  "/composer.",
+  "/config.",            // /config.js, /config.json probes
+  "/config/",            // /config/initializers/secret_token.rb
+  "/settings.",          // /settings.json probes
+  "/credentials",
+  "/database.",
+  "/static/",            // CRA-style /static/js/main.js — this app uses /assets/
+  "/env.js",
+  "/server-status",
+  "/server-info",
+  "/elmah",
+  "/trace.axd",
+  "/actuator",
+  "/jolokia",
+  "/_ignition",
+  "/telescope",
 ];
 
 // Scanner file extensions (.php, backups, archives, dumps). These never exist
 // on this site: 404 at the edge so they cost neither an origin hop nor a
 // Prerender.io render.
-const SCANNER_EXT_RX = /\.(php\d?|phtml|asp|aspx|jsp|cgi|pl|sql|bak|old|swp|ini|zip|tar|tgz|gz|rar|7z)$/i;
+// 2026-07-31: extended after an error-monitor burst showed probes for
+// .NET appsettings.*.json, Rails credentials.yml.enc, Spring *.yml,
+// *.log files and */secret_token.rb slipping through to Prerender.io —
+// every one of those burned a paid render.
+const SCANNER_EXT_RX = /\.(php\d?|phtml|asp|aspx|jsp|cgi|pl|sql|bak|old|swp|ini|zip|tar|tgz|gz|rar|7z|ya?ml|rb|py|sh|log|enc|pem|key|sqlite|orig|dist|lock)$/i;
 
 function isMonitoringUA(ua) {
   return MONITORING_UA_RX.test(ua || "");
@@ -167,38 +198,6 @@ function isNonHtmlPath(path) {
   if (NON_HTML_EXT_RX.test(path)) return true;
   return NON_HTML_PREFIXES.some((p) => path.startsWith(p));
 }
-
-// Private / noindex namespaces. robots.txt already disallows them, but a
-// crawler (or a rich-link previewer following a pasted checkout URL) still
-// reaches the worker — and used to burn a PAID render on a page that must
-// never be indexed and renders nothing useful (auth-gated shell).
-// Origin-direct + noindex, never prerendered.
-const NO_PRERENDER_PREFIXES = [
-  "/admin", "/auth", "/login", "/logout", "/register", "/account",
-  "/cart", "/checkout", "/payment", "/order-confirmation", "/vip-store",
-  "/privacy-requests", "/search", "/install", "/cache-reset", "/offline",
-];
-
-function isNoPrerenderPath(path) {
-  if (!path) return false;
-  return NO_PRERENDER_PREFIXES.some((p) => path === p || path.startsWith(p + "/"));
-}
-
-// Tracking / campaign params fragment the renderer cache: the SAME page with
-// ?gclid=… is a brand-new paid render at Prerender.io. Strip everything that
-// isn't a param the app actually renders differently for.
-const RENDER_QUERY_ALLOWLIST = ["page", "category", "variant", "size", "sort", "collection"];
-
-function prerenderSearch(url) {
-  const keep = new URLSearchParams();
-  for (const k of RENDER_QUERY_ALLOWLIST) {
-    const v = url.searchParams.get(k);
-    if (v) keep.set(k, v);
-  }
-  const s = keep.toString();
-  return s ? "?" + s : "";
-}
-
 
 function isScannerPath(path) {
   // Legit asset/download namespaces are never scanner traffic.
@@ -664,14 +663,10 @@ export default {
     // (d) Non-HTML paths — prerender can't render them, times out as 504.
     const nonHtml = isNonHtmlPath(path);
 
-    // (e) Private / noindex namespaces — origin-direct, never a paid render.
-    const noPrerender = isNoPrerenderPath(path);
-
     // Only allowlisted crawlers reach the prerender branch, and only for
-    // HTML paths, and only when they aren't one of our probes, and never
-    // for private/noindex paths.
+    // HTML paths, and only when they aren't one of our probes.
     const isBot =
-      !monitoring && !probeParam && !nonHtml && !noPrerender && isCrawler(request);
+      !monitoring && !probeParam && !nonHtml && isCrawler(request);
 
 
     // ── 0. Legacy /cache-reset URL — the in-page popup now clears caches
@@ -833,7 +828,7 @@ export default {
         // its own stale cache to itself — an infinite self-staling loop.
         // Rendering the origin host bypasses the worker entirely and gives
         // prerender.io a fresh cache namespace with the live build.
-        const prerenderTarget = ORIGIN + url.pathname + prerenderSearch(url);
+        const prerenderTarget = ORIGIN + url.pathname + url.search;
         const prerenderUrl = PRERENDER_SERVICE + "/" + encodeURIComponent(prerenderTarget);
         const prerenderRes = await fetch(prerenderUrl, {
           headers: {
@@ -1022,14 +1017,14 @@ export default {
       const prerenderStart = Date.now();
       // Render the origin host directly (see rationale above) — never
       // forward the phlabs.co.uk URL, which would self-loop through the worker.
-      const prerenderTarget = ORIGIN + url.pathname + prerenderSearch(url);
+      const prerenderTarget = ORIGIN + url.pathname + url.search;
       const prerenderUrl = PRERENDER_SERVICE + "/" + encodeURIComponent(prerenderTarget);
       // QUOTA GUARD (2026-07-20): monitoring probes (our own CI checkers,
       // Sentry, Lighthouse) and cache-buster probe params must NEVER trigger
       // a paid prerender render on the browser path either. The bot-branch
       // bypass alone was not enough — they still fell through to this
       // browser MISS path and fired a render anyway (69% of quota burn).
-      const skipPaidRender = monitoring || probeParam || noPrerender;
+      const skipPaidRender = monitoring || probeParam;
       const prerenderPromise = skipPaidRender
         ? Promise.resolve(null)
         : fetch(prerenderUrl, {
