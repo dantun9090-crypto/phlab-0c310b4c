@@ -27,6 +27,59 @@ import { logSecurityEvent } from '@/lib/security-events';
 import { OrderTrackingBar } from '@/components/OrderTrackingBar';
 import { PayAgainCTA } from '@/components/PayAgainCTA';
 import { getDisplayStatus } from '@/lib/order-payment-retry';
+import {
+  openCustomerInvoice,
+  downloadCustomerInvoice,
+  type InvoiceDocumentOptions,
+} from '@/lib/customer-invoice-document';
+import { formatShippingAddressLines } from '@/lib/format-address';
+
+/** Maps a Firestore order into the print-ready invoice document model. */
+function buildInvoiceOptions(order: any, reference: string): InvoiceDocumentOptions {
+  const c = order?.customer ?? {};
+  const items = (order?.items ?? []).map((it: any) => ({
+    name: it.productName || it.name || 'Research compound',
+    variantName: it.variantName || it.dosage || undefined,
+    quantity: Number(it.quantity) || 1,
+    unitPrice: Number(it.price) || 0,
+    lineTotal: typeof it.total === 'number' ? it.total : undefined,
+  }));
+  const issued =
+    order?.orderDate?.toDate?.() ??
+    order?.createdAt?.toDate?.() ??
+    (order?.orderDate ? new Date(order.orderDate) : new Date());
+  const addressLines = c.address || c.city || c.postcode
+    ? formatShippingAddressLines({
+        firstName: [c.firstName, c.lastName].filter(Boolean).join(' '),
+        address: c.address,
+        city: c.city,
+        postcode: c.postcode,
+        country: c.country,
+      }).slice(1)
+    : order?.shippingAddress
+      ? String(order.shippingAddress).split(/\s*,\s*/)
+      : [];
+
+  return {
+    reference,
+    paymentReference: order?.bankTransferReference || order?.bankTransferRef || undefined,
+    issuedDate: issued.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+    status: getDisplayStatus(order),
+    paymentMethod: order?.paymentMethod === 'bank_transfer' ? 'Bank transfer' : 'Open banking (Pay by Bank)',
+    customerName: [c.firstName, c.lastName].filter(Boolean).join(' ') || order?.userName || undefined,
+    customerEmail: c.email || order?.userEmail || undefined,
+    addressLines,
+    items,
+    subtotal: typeof order?.subtotal === 'number' ? order.subtotal : undefined,
+    discount: Number(order?.discount ?? order?.discountAmount ?? 0) || 0,
+    discountLabel: order?.couponCode || undefined,
+    shipping: typeof order?.shippingCost === 'number' ? order.shippingCost : 0,
+    shippingLabel: order?.shippingLabel || order?.shippingMethod || undefined,
+    total: Number(order?.totalAmount ?? order?.total ?? 0),
+  };
+}
+
+
 
 import { motion, AnimatePresence } from 'framer-motion';
 
