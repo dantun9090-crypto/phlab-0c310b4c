@@ -707,12 +707,17 @@ function assertNoLoop(reloads, assetReqs, sc, label) {
 const scenarios = {
   'js-chunk-404': async (browser) => withContext(browser, 'js-chunk-404',
     async ({ context, page, purgeCalls, autoPurgeLogs, reloads, assetReqs, sc }) => {
-    let armed = true, seen = null;
+    let seen = null;
     await context.route('**/*', async (route) => {
       const url = route.request().url();
-      if (armed && ASSET_RE.test(url) && /\.(?:js|mjs)(?:[?#]|$)/.test(url)) {
-        seen = url; armed = false;
-        return route.fulfill({ status: 404, body: 'Not Found' });
+      if (ASSET_RE.test(url) && /\.(?:js|mjs)(?:[?#]|$)/.test(url)) {
+        // Stay 404 for the SAME asset on every request — the app re-checks
+        // the chunk with a HEAD fetch before purging, so a one-shot 404 is
+        // (correctly) ignored as transient and the scenario never arms.
+        if (!seen) seen = url;
+        if (url.split('?')[0] === seen.split('?')[0]) {
+          return route.fulfill({ status: 404, body: 'Not Found' });
+        }
       }
       return route.continue();
     });
@@ -743,12 +748,15 @@ const scenarios = {
 
   'css-link-error': async (browser) => withContext(browser, 'css-link-error',
     async ({ context, page, purgeCalls, autoPurgeLogs, reloads, assetReqs, sc }) => {
-    let armed = true, seen = null;
+    let seen = null;
     await context.route('**/*', async (route) => {
       const url = route.request().url();
-      if (armed && ASSET_RE.test(url) && /\.css(?:[?#]|$)/.test(url)) {
-        seen = url; armed = false;
-        return route.fulfill({ status: 404, body: 'Not Found' });
+      if (ASSET_RE.test(url) && /\.css(?:[?#]|$)/.test(url)) {
+        // Same persistent-404 rationale as the js-chunk scenario above.
+        if (!seen) seen = url;
+        if (url.split('?')[0] === seen.split('?')[0]) {
+          return route.fulfill({ status: 404, body: 'Not Found' });
+        }
       }
       return route.continue();
     });
