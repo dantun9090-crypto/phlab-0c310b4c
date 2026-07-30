@@ -108,11 +108,20 @@ function CheckoutSuccessPage() {
   const [escalation, setEscalation] = useState<Escalation>("none");
   const [orderId, setOrderId] = useState("");
   const [error, setError] = useState("");
+  const [amount, setAmount] = useState<number | null>(null);
+  const [currency, setCurrency] = useState<string>("GBP");
   const [refreshing, setRefreshing] = useState(false);
   const stopRef = useRef(false);
   const phaseRef = useRef<Phase>("checking");
   const startedAtRef = useRef<number>(Date.now());
   const setPhaseSafe = (p: Phase) => { phaseRef.current = p; setPhase(p); };
+  // Echoed by /api/payments/status when the caller owns the order.
+  const captureAmount = (data: unknown) => {
+    const d = (data ?? {}) as { amount?: unknown; currency?: unknown };
+    const n = typeof d.amount === "string" ? parseFloat(d.amount) : Number(d.amount);
+    if (Number.isFinite(n) && n > 0) setAmount(n);
+    if (typeof d.currency === "string" && d.currency) setCurrency(d.currency.toUpperCase());
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
