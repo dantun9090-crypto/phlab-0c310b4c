@@ -49,6 +49,15 @@ jobs:
               curl -sf http://localhost:8080 >/dev/null && break || sleep 1
             done
 
+      - name: Probe POST handling (diagnostic)
+        run: |
+          echo "--- POST no-auth probe ---"
+          curl -sS -i -X POST http://localhost:8080/api/public/hooks/reindex \
+            -H 'content-type: application/json' \
+            -d '{"urls":["/"]}' | head -30
+          echo "--- GET health probe ---"
+          curl -sS -i http://localhost:8080/api/public/health/build | head -12
+
       - name: Run reindex contract tests
         run: bunx playwright test e2e/reindex-hook.spec.ts e2e/admin-reindex-flow.spec.ts --reporter=list,html
 
