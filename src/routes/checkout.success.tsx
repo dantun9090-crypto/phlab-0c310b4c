@@ -355,11 +355,25 @@ function CheckoutSuccessPage() {
         {phase === "paid" && (
           <>
             <CheckCircle2 className="w-12 h-12 mx-auto text-emerald-500" />
-            <h1 className="mt-4 text-2xl font-bold text-white">Payment confirmed</h1>
+            <h1 className="mt-4 text-2xl font-bold text-white">Payment successful</h1>
             <p className="mt-2 text-sm text-slate-300">
               Thank you. Order <span className="font-mono text-emerald-400">{orderId}</span> is confirmed and a receipt is on its way to your email.
             </p>
-            <a href="/account" className="mt-6 inline-block rounded-lg bg-emerald-500 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-400">View my orders</a>
+            <div className="mt-4 rounded-lg bg-slate-800 px-3 py-2 text-xs text-slate-300">
+              {amount !== null && (
+                <div>
+                  Amount paid:{" "}
+                  <span className="font-semibold text-white">
+                    {currency === "GBP" || !currency ? "£" : `${currency} `}
+                    {amount.toFixed(2)}
+                  </span>
+                </div>
+              )}
+              <div className={amount !== null ? "mt-1" : ""}>
+                Transaction ID: <span className="font-mono text-emerald-400 select-all">{orderId}</span>
+              </div>
+            </div>
+            <a href="/account" className="mt-6 inline-block rounded-lg bg-emerald-500 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-400">Continue</a>
           </>
         )}
         {phase === "pending" && (
