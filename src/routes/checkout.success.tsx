@@ -241,6 +241,7 @@ function CheckoutSuccessPage() {
           consecutiveErrors += 1;
         } else {
           consecutiveErrors = 0;
+          captureAmount(data);
           const status = String((data as { status?: unknown }).status || "").toUpperCase();
           if (status === "SUCCESS" || status === "PAID" || status === "COMPLETED") {
             setPhaseSafe("paid");
