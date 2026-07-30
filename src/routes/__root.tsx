@@ -495,7 +495,10 @@ const FRESH_HTML_RECOVERY = `
   var openFreshHome=function(){
     if(recent()) return;
     mark();
-    nukeBrowserCaches().then(fetchFresh).then(function(){ try{ location.replace('/cache-reset?next=/'); }catch(e){ location.href='/cache-reset?next=/'; } });
+    // Navigate THROUGH the purge endpoint instead of /cache-reset: the
+    // document request always lands the purge (in-flight fetches die on
+    // unload), and the endpoint 302s home after purging.
+    nukeBrowserCaches().then(fetchFresh).then(function(){ try{ location.replace('/api/public/post-publish-check?next=/'); }catch(e){ location.href='/api/public/post-publish-check?next=/'; } });
   };
   try{ window.__phlFetchFreshHtmlAndOpenHome=openFreshHome; }catch(e){}
   if(isPreview()) return;
