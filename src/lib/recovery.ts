@@ -230,6 +230,11 @@ async function purgeRecoveryStorage(): Promise<void> {
       "__phl_reloaded_at",
       "__phl_reloaded_count",
       HARD_RELOAD_FLAG,
+      // Other recovery layers keep their own once-per-tab guards in
+      // sessionStorage too — wiping them re-arms every layer at once.
+      "__phl_build_force_reload_at",
+      "__phl_build_check_at",
+      "__phl_update_banner_shown",
     ];
     const preserved: Array<[string, string]> = [];
     for (const k of GUARD_KEYS) {
@@ -310,7 +315,14 @@ export async function hardReload(options: HardReloadOptions = {}): Promise<void>
       try { localStorage.clear(); } catch { /* ignore */ }
       try {
         // Same anti-loop preservation as purgeRecoveryStorage above.
-        const GUARD_KEYS = ["__phl_reloaded_at", "__phl_reloaded_count", HARD_RELOAD_FLAG];
+        const GUARD_KEYS = [
+          "__phl_reloaded_at",
+          "__phl_reloaded_count",
+          HARD_RELOAD_FLAG,
+          "__phl_build_force_reload_at",
+          "__phl_build_check_at",
+          "__phl_update_banner_shown",
+        ];
         const preserved: Array<[string, string]> = [];
         for (const k of GUARD_KEYS) {
           const v = sessionStorage.getItem(k);
