@@ -299,6 +299,21 @@ export default function OrdersTab() {
   const [bulkSyncProgress, setBulkSyncProgress] = useState({ done: 0, total: 0 });
   const [bulkSyncLog, setBulkSyncLog] = useState<{ id: string; status: 'synced' | 'waiting' | 'error'; message: string }[]>([]);
 
+  // Dispatch email audit (all shipped orders)
+  type MailAuditStatus = 'ok' | 'missing' | 'wrong_tracking' | 'send_error' | 'no_email' | 'no_tracking' | 'error';
+  const [mailAuditRunning, setMailAuditRunning] = useState(false);
+  const [mailAuditProgress, setMailAuditProgress] = useState({ done: 0, total: 0 });
+  const [mailAuditRows, setMailAuditRows] = useState<{
+    id: string;
+    email: string;
+    tracking: string;
+    status: MailAuditStatus;
+    message: string;
+  }[]>([]);
+  const [mailResendBusy, setMailResendBusy] = useState<string | null>(null);
+
+
+
   // Bank transfer payment state
   const [transferRefInput, setTransferRefInput] = useState('');
   const [paymentStatusInput, setPaymentStatusInput] = useState<'pending_bank_transfer' | 'paid' | 'cancelled'>('pending_bank_transfer');
