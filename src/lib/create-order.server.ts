@@ -37,10 +37,16 @@ const itemSchema = z.object({
   quantity: z.number().int().min(1).max(99),
 });
 
-const UK_POSTCODE_RE = /^[A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2}$/i;
+// Postcode patterns are matched against a normalised value (uppercase, all
+// whitespace — incl. non-breaking spaces pasted from address lookups — removed)
+// so "sw1a1aa", "SW1A 1AA" and "SW1A\u00a01AA" are all accepted.
+const normalisePostcode = (v: string) => v.replace(/[\s\u00a0\u2007\u202f-]+/g, '').toUpperCase();
+const UK_POSTCODE_RE = /^(?:GIR0AA|[A-Z]{1,2}\d[A-Z\d]?\d[A-Z]{2})$/;
 const DE_POSTCODE_RE = /^\d{5}$/;
-const PL_POSTCODE_RE = /^\d{2}-?\d{3}$/;
-const IE_EIRCODE_RE = /^[A-Z]\d{2}\s?[A-Z0-9]{4}$/i;
+const PL_POSTCODE_RE = /^\d{5}$/;
+// Eircode routing keys are a letter + 2 digits, except the D6W exception.
+const IE_EIRCODE_RE = /^(?:D6W|[A-Z]\d{2})[A-Z0-9]{4}$/;
+
 
 const customerSchema = z.object({
   firstName: z.string().trim().min(1).max(80),
@@ -52,7 +58,7 @@ const customerSchema = z.object({
   postcode:  z.string().trim().min(1).max(20),
   country:   z.string().trim().min(1).max(80),
 }).superRefine((c, ctx) => {
-  const pc = c.postcode;
+  const pc = normalisePostcode(c.postcode);
   if (c.country === 'United Kingdom') {
     if (!UK_POSTCODE_RE.test(pc)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['postcode'], message: 'Enter a valid UK postcode' });
