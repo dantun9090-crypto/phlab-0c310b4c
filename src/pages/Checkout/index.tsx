@@ -31,6 +31,8 @@ import { toast, Toaster as SonnerToaster } from 'sonner';
 
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
 import NoCacheHead from '@/components/NoCacheHead';
+import PostcodeLookup from '@/components/checkout/PostcodeLookup';
+
 
 
 interface CheckoutForm {
@@ -1902,6 +1904,17 @@ export default function CheckoutPage() {
                         {errors.postcode && <p className="text-red-400 text-xs mt-1">{errors.postcode}</p>}
                       </div>
                     </div>
+
+                    {form.country === 'United Kingdom' && (
+                      <PostcodeLookup
+                        postcode={form.postcode}
+                        onApply={patch => {
+                          if (patch.address) setField('address', patch.address);
+                          if (patch.city) setField('city', patch.city);
+                        }}
+                      />
+                    )}
+
 
                     <div>
                       <label htmlFor="country" className="block text-xs font-medium text-gray-300 mb-1">Country <span className="text-red-400">*</span></label>
