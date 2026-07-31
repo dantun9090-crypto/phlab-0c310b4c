@@ -845,20 +845,23 @@ export default function CheckoutPage() {
       if (!form.city.trim()) e.city = 'Required';
       if (!form.postcode.trim()) e.postcode = 'Required';
       else {
-        const pc = form.postcode.trim();
+        // Mirror the server rule: normalise first (uppercase, strip spaces /
+        // non-breaking spaces / hyphens) so pasted or lowercase codes pass.
+        const pc = form.postcode.replace(/[\s\u00a0\u2007\u202f-]+/g, '').toUpperCase();
         const country = form.country;
         if (country === 'United Kingdom') {
-          if (!/^[A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2}$/i.test(pc)) e.postcode = 'Enter a valid UK postcode';
+          if (!/^(?:GIR0AA|[A-Z]{1,2}\d[A-Z\d]?\d[A-Z]{2})$/.test(pc)) e.postcode = 'Enter a valid UK postcode';
         } else if (country === 'Germany') {
           if (!/^\d{5}$/.test(pc)) e.postcode = 'Enter a valid German postcode (5 digits)';
         } else if (country === 'Poland') {
-          if (!/^\d{2}-?\d{3}$/.test(pc)) e.postcode = 'Enter a valid Polish postcode (NN-NNN)';
+          if (!/^\d{5}$/.test(pc)) e.postcode = 'Enter a valid Polish postcode (NN-NNN)';
         } else if (country === 'Ireland') {
-          if (!/^[A-Z]\d{2}\s?[A-Z0-9]{4}$/i.test(pc)) e.postcode = 'Enter a valid Eircode';
+          if (!/^(?:D6W|[A-Z]\d{2})[A-Z0-9]{4}$/.test(pc)) e.postcode = 'Enter a valid Eircode';
         } else {
           if (pc.length < 3 || pc.length > 12) e.postcode = 'Enter a valid postcode';
         }
       }
+
       if (!form.country.trim()) e.country = 'Required';
       if (!form.shippingMethod) e.shippingMethod = 'Please choose a shipping method';
     }
