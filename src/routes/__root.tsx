@@ -495,10 +495,19 @@ const FRESH_HTML_RECOVERY = `
   var openFreshHome=function(){
     if(recent()) return;
     mark();
+    // Token semantics: several recovery mechanisms can fire on the same
+    // stale-asset event. Whichever writes the recovery key LAST wins the
+    // navigation; the others abort right before location.replace, so the
+    // tab recovers exactly once instead of double-navigating.
+    var token=null;
+    try{ token=localStorage.getItem(KEY); }catch(e){}
     // Navigate THROUGH the purge endpoint instead of /cache-reset: the
     // document request always lands the purge (in-flight fetches die on
     // unload), and the endpoint 302s home after purging.
-    nukeBrowserCaches().then(fetchFresh).then(function(){ try{ location.replace('/api/public/post-publish-check?next=/'); }catch(e){ location.href='/api/public/post-publish-check?next=/'; } });
+    nukeBrowserCaches().then(fetchFresh).then(function(){
+      try{ if(token!==null&&localStorage.getItem(KEY)!==token) return; }catch(e){}
+      try{ location.replace('/api/public/post-publish-check?next=/'); }catch(e){ location.href='/api/public/post-publish-check?next=/'; }
+    });
   };
   try{ window.__phlFetchFreshHtmlAndOpenHome=openFreshHome; }catch(e){}
   if(isPreview()) return;
@@ -1027,10 +1036,12 @@ const STALE_ASSET_RECOVERY = `
     var emit=function(evt,extra){ try{ var fn=window.__phlSwTelemetry; if(typeof fn==='function') fn(evt,extra||null); }catch(e){} };
     var hardReloadClean=function(){
       emit('sw_cache_reset_clicked',{ path: location.pathname });
+      var myToken=null;
       try{
         var guard=Number(localStorage.getItem('phlFreshHtmlRecoveryAt')||'0');
         if(guard && Date.now()-guard<60000){ return; }
         localStorage.setItem('phlFreshHtmlRecoveryAt',String(Date.now()));
+        myToken=localStorage.getItem('phlFreshHtmlRecoveryAt');
       }catch(e){}
       try{ sessionStorage.setItem('phl-sw-cache-reset-pending',String(Date.now())); }catch(e){}
       clearAllStaleFlags();
@@ -1058,7 +1069,12 @@ const STALE_ASSET_RECOVERY = `
       // Unregister all SWs and wipe caches so the next request hits the
       // freshly-purged Cloudflare edge instead of a stale SW snapshot.
       var done=function(){
-        var open=function(){ try{ location.replace('/'); }catch(e){ location.href='/'; } };
+        var open=function(){
+          // Another recovery mechanism wrote the key after us — it owns the
+          // navigation now; abort so the tab recovers exactly once.
+          try{ if(myToken!==null&&localStorage.getItem('phlFreshHtmlRecoveryAt')!==myToken) return; }catch(e){}
+          try{ location.replace('/api/public/post-publish-check?next=/'); }catch(e){ location.href='/api/public/post-publish-check?next=/'; }
+        };
         try{ fetch('/',{cache:'no-store',credentials:'same-origin',headers:{'Cache-Control':'no-cache','Pragma':'no-cache'}}).then(open,open); }
         catch(e){ open(); }
       };
