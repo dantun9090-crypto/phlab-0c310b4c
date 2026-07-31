@@ -157,8 +157,10 @@ export const syncRoyalMailTracking = createServerFn({ method: 'POST' })
     return {
       ok: true,
       royalMailOrderId: String(body?.royalMailOrderId ?? data.royalMailOrderId),
+      orderReference: body?.orderReference ? String(body.orderReference) : null,
       trackingNumber: body?.trackingNumber ? String(body.trackingNumber) : null,
       status: body?.status ? String(body.status) : null,
       labelGenerated: Boolean(body?.labelGenerated),
     };
+
   });
