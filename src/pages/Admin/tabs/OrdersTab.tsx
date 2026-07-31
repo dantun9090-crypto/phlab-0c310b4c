@@ -7,7 +7,7 @@ import {
   Trash2, ChevronRight, RotateCcw, ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getAllOrders, updateOrderStatus, Order, db, doc, updateDoc, addDoc, collection, Timestamp, deleteDoc, sendOrderStatusEmail } from '@/lib/firebase';
+import { getAllOrders, updateOrderStatus, Order, db, doc, updateDoc, addDoc, collection, query, where, getDocs, Timestamp, deleteDoc, sendOrderStatusEmail } from '@/lib/firebase';
 import { auth } from '@/lib/firebase';
 import { logAdminAction } from '@/lib/admin-audit';
 import PaymentTimeline from '@/components/admin/PaymentTimeline';
@@ -961,9 +961,9 @@ export default function OrdersTab() {
           }
 
           const snap = await getDocs(query(collection(db, 'mail'), where('to', '==', email)));
-          const docs = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
-          const match = docs.find(m => String(m?.message?.html || '').includes(tracking));
-          const orderMatch = docs.find(m => String(m?.message?.html || '').includes(String(o.id || '')));
+          const docs = snap.docs.map((d: any) => ({ id: d.id, ...(d.data() as any) }));
+          const match = docs.find((m: any) => String(m?.message?.html || '').includes(tracking));
+          const orderMatch = docs.find((m: any) => String(m?.message?.html || '').includes(String(o.id || '')));
 
           if (!match) {
             setMailAuditRows(prev => [...prev, {
