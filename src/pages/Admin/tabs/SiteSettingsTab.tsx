@@ -318,6 +318,10 @@ export default function SiteSettingsTab() {
         </div>
       </div>
 
+      <PostcodeLookupCard />
+
+
+
       {/* Status message */}
       <div aria-live="polite" aria-atomic="true">
         <AnimatePresence>
