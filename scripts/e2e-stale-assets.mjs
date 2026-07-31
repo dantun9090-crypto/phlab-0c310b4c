@@ -566,7 +566,7 @@ async function withContext(browser, name, fn) {
     appendNd(reqLog, entry);
     if (RECORD) requestRecording.push(entry);
     sc.liveRequests.push(entry);
-    if (HASHED_JS_RE.test(url)) { assetReqs.push(url); sc.hashedJsUrls.add(url.split('?')[0]); }
+    if (HASHED_JS_RE.test(url)) { assetReqs.push({ url, at: startedAt }); sc.hashedJsUrls.add(url.split('?')[0]); }
     if (sc.topRequests.length < 25) sc.topRequests.push({ method: req.method(), url });
     const har = {
       startedAt,
@@ -704,22 +704,26 @@ function assertNoLoop(reloads, assetReqs, sc, label) {
   const contentReloads = reloads.filter((r) => !/post-publish-check/.test(r.url));
   record(`${label}: navigation count ≤ 2 (initial + at most one recovery)`, contentReloads.length <= 2,
     `navigations=${contentReloads.length} (+${reloads.length - contentReloads.length} purge hop)`, diag({ reloads }));
-  // Per-module swap check: strip the content hash from each asset name,
-  // then require every module to appear with at most 2 distinct URLs
-  // (old hash -> new hash = exactly one swap). A flat unique<=2 can never
-  // hold on the live site, where the page legitimately loads ~45 chunks.
-  const stripHash = (u) => u.split('?')[0].replace(/-[A-Za-z0-9_-]{8}\.(js|mjs|css|map)$/i, '.$1');
-  const byModule = new Map();
-  for (const u of assetReqs) {
-    const key = stripHash(u);
-    const set = byModule.get(key) || new Set();
-    set.add(u.split('?')[0]);
-    byModule.set(key, set);
+  // Build-mixing check: the ENTRY chunk (index-*.js) is the build
+  // fingerprint. The page legitimately loads several DIFFERENT index-*.js
+  // chunks per view (entry + preloaded + lazy LegacyApp), so per-name
+  // grouping false-positives. Instead, take the FIRST index-*.js request
+  // after each navigation as that document's fingerprint and require at
+  // most 2 distinct fingerprints across the scenario (old build + at most
+  // one swap to the fresh build). 3+ means the cache ping-pongs builds.
+  const navAts = reloads.map((r) => r.at).sort((a, b) => a - b);
+  const fingerprints = [];
+  for (let i = 0; i < navAts.length; i++) {
+    const from = navAts[i];
+    const to = navAts[i + 1] ?? Infinity;
+    const firstEntry = assetReqs.find((r) =>
+      r.at >= from && r.at < to && /\/assets\/index-[^?#]+\.js(?:[?#]|$)/i.test(r.url));
+    if (firstEntry) fingerprints.push(firstEntry.url.split('?')[0]);
   }
-  const overSwapped = [...byModule.entries()].filter(([, set]) => set.size > 2);
-  record(`${label}: hashed chunk URL set changes at most once`, overSwapped.length === 0,
-    `modules=${byModule.size} overSwapped=${overSwapped.length} total=${assetReqs.length}`,
-    diag({ overSwapped: overSwapped.map(([k, set]) => [k, [...set]]) }));
+  const uniqueFingerprints = [...new Set(fingerprints)];
+  record(`${label}: hashed chunk URL set changes at most once`, uniqueFingerprints.length <= 2,
+    `builds=${uniqueFingerprints.length} navigations=${navAts.length} total=${assetReqs.length}`,
+    diag({ fingerprints: uniqueFingerprints }));
   // No third navigation arrives in a follow-up window.
   const lastAt = reloads[reloads.length - 1]?.at ?? 0;
   const trailing = reloads.filter((r) => r.at > lastAt - 1).length;
