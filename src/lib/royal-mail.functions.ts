@@ -106,11 +106,14 @@ const StatusInput = z.object({
 export interface RoyalMailTrackingResult {
   ok: boolean;
   royalMailOrderId?: string;
+  /** Channel reference Royal Mail returned — used to prove it's OUR order. */
+  orderReference?: string | null;
   trackingNumber?: string | null;
   status?: string | null;
   labelGenerated?: boolean;
   error?: string;
 }
+
 
 /**
  * Re-reads an EXISTING Click & Drop order and returns its tracking number.
