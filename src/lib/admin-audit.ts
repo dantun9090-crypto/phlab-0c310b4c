@@ -14,6 +14,7 @@ export type AdminAuditAction =
   | 'order.dispatch'
   | 'order.royal_mail_create'
   | 'order.royal_mail_tracking_sync'
+  | 'order.dispatch_email_resend'
   | 'order.payment_link_sent'
 
   | 'royal_mail.manual_label_create'
