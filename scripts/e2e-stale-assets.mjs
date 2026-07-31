@@ -525,16 +525,7 @@ function validateFixture(scenario, kind, data) {
 async function withContext(browser, name, fn) {
   currentScenario = name;
   const sc = ensureScenario(name);
-  // PHL_E2E_BYPASS_TOKEN matches a Cloudflare skip rule on the phlabs.co.uk
-  // zone (WAF / rate-limit / bot fight), so repeated CI runs from shared
-  // GitHub runner IPs are not answered with 403 on the document.
-  const context = await browser.newContext({
-    viewport: { width: 1280, height: 800 },
-    extraHTTPHeaders: process.env.PHL_E2E_BYPASS_TOKEN
-      ? { 'x-phl-e2e': process.env.PHL_E2E_BYPASS_TOKEN }
-      : undefined,
-  });
-
+  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const purgeCalls = [];
   const purgeResponses = [];
   const autoPurgeLogs = [];
@@ -646,11 +637,8 @@ async function withContext(browser, name, fn) {
   });
 
 
-  // Stub purge endpoint (or replay). NOTE the trailing `**`: the recovery
-  // navigation hits this endpoint with `?next=/` — a single `*` does not
-  // cross the `/` in the query string, so the stub silently missed and the
-  // request escaped to the network (403 from the WAF).
-  await context.route('**/api/public/post-publish-check**', async (route) => {
+  // Stub purge endpoint (or replay).
+  await context.route('**/api/public/post-publish-check*', async (route) => {
     purgeCalls.push({ at: Date.now(), url: route.request().url() });
     sc.purgeCalls.push({ at: Date.now(), url: route.request().url() });
     let fixtureBody = null;
@@ -716,10 +704,22 @@ function assertNoLoop(reloads, assetReqs, sc, label) {
   const contentReloads = reloads.filter((r) => !/post-publish-check/.test(r.url));
   record(`${label}: navigation count ≤ 2 (initial + at most one recovery)`, contentReloads.length <= 2,
     `navigations=${contentReloads.length} (+${reloads.length - contentReloads.length} purge hop)`, diag({ reloads }));
-  const unique = new Set(assetReqs.map((u) => u.split('?')[0]));
-  record(`${label}: hashed chunk URL set changes at most once`, unique.size <= 2,
-    `unique=${unique.size} total=${assetReqs.length}`,
-    diag({ uniqueAssets: [...unique], allAssetRequests: assetReqs }));
+  // Per-module swap check: strip the content hash from each asset name,
+  // then require every module to appear with at most 2 distinct URLs
+  // (old hash -> new hash = exactly one swap). A flat unique<=2 can never
+  // hold on the live site, where the page legitimately loads ~45 chunks.
+  const stripHash = (u) => u.split('?')[0].replace(/-[A-Za-z0-9_-]{8}\.(js|mjs|css|map)$/i, '.$1');
+  const byModule = new Map();
+  for (const u of assetReqs) {
+    const key = stripHash(u);
+    const set = byModule.get(key) || new Set();
+    set.add(u.split('?')[0]);
+    byModule.set(key, set);
+  }
+  const overSwapped = [...byModule.entries()].filter(([, set]) => set.size > 2);
+  record(`${label}: hashed chunk URL set changes at most once`, overSwapped.length === 0,
+    `modules=${byModule.size} overSwapped=${overSwapped.length} total=${assetReqs.length}`,
+    diag({ overSwapped: overSwapped.map(([k, set]) => [k, [...set]]) }));
   // No third navigation arrives in a follow-up window.
   const lastAt = reloads[reloads.length - 1]?.at ?? 0;
   const trailing = reloads.filter((r) => r.at > lastAt - 1).length;
@@ -734,6 +734,7 @@ const scenarios = {
     let armed = true, seen = null;
     await context.route('**/*', async (route) => {
       const url = route.request().url();
+      if (/post-publish-check/.test(url)) return route.fallback();
       if (armed && ASSET_RE.test(url) && /\.(?:js|mjs)(?:[?#]|$)/.test(url)) {
         seen = url; armed = false;
         return route.fulfill({ status: 404, body: 'Not Found' });
@@ -755,6 +756,7 @@ const scenarios = {
     async ({ context, page, reloads, allConsole, assetReqs, sc }) => {
     await context.route('**/*', async (route) => {
       const url = route.request().url();
+      if (/post-publish-check/.test(url)) return route.fallback();
       if (/\.map(?:[?#]|$)/.test(url)) return route.fulfill({ status: 404, body: 'Not Found' });
       return route.continue();
     });
@@ -770,6 +772,7 @@ const scenarios = {
     let armed = true, seen = null;
     await context.route('**/*', async (route) => {
       const url = route.request().url();
+      if (/post-publish-check/.test(url)) return route.fallback();
       if (armed && ASSET_RE.test(url) && /\.css(?:[?#]|$)/.test(url)) {
         seen = url; armed = false;
         return route.fulfill({ status: 404, body: 'Not Found' });
@@ -794,6 +797,7 @@ const scenarios = {
     let armed = true;
     await context.route('**/*', async (route) => {
       const url = route.request().url();
+      if (/post-publish-check/.test(url)) return route.fallback();
       if (armed && ASSET_RE.test(url) && /\.(?:js|mjs)(?:[?#]|$)/.test(url)) {
         armed = false;
         return route.fulfill({ status: 404, body: 'Not Found' });
@@ -830,6 +834,7 @@ const scenarios = {
     let armed = true;
     await context.route('**/*', async (route) => {
       const url = route.request().url();
+      if (/post-publish-check/.test(url)) return route.fallback();
       if (armed && ASSET_RE.test(url) && /\.(?:js|mjs)(?:[?#]|$)/.test(url)) {
         armed = false;
         return route.fulfill({ status: 404, body: 'Not Found' });
