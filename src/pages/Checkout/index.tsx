@@ -1903,6 +1903,17 @@ export default function CheckoutPage() {
                       </div>
                     </div>
 
+                    {form.country === 'United Kingdom' && (
+                      <PostcodeLookup
+                        postcode={form.postcode}
+                        onApply={patch => {
+                          if (patch.address) setField('address', patch.address);
+                          if (patch.city) setField('city', patch.city);
+                        }}
+                      />
+                    )}
+
+
                     <div>
                       <label htmlFor="country" className="block text-xs font-medium text-gray-300 mb-1">Country <span className="text-red-400">*</span></label>
                       <select
