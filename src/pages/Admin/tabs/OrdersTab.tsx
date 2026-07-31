@@ -903,7 +903,132 @@ export default function OrdersTab() {
     }
   };
 
+  /** Builds the dispatch email payload for an order (shared by dispatch + resend). */
+  const buildDispatchMailDoc = (order: Order, tracking: string, email: string) => {
+    const o = order as any;
+    const firstName = o.shippingFirstName || o.customer?.firstName || 'Customer';
+    const courier = String(o.courier || 'Royal Mail');
+    return {
+      to: email,
+      message: {
+        subject: `Order #${order.id?.slice(-8).toUpperCase()} — Your Order Has Shipped!`,
+        html: buildDispatchEmail({
+          firstName,
+          orderId: order.id || '',
+          trackingNumber: tracking,
+          trackingUrl: `https://www.royalmail.com/track-your-item#/tracking-results/${tracking}`,
+          courier,
+          items: (order.items || []).map((it: any) => ({
+            name: it.name || '',
+            variantName: it.variantName,
+            quantity: it.quantity || 1,
+            priceNum: it.priceNum || 0,
+          })),
+          totalAmount: order.totalAmount || 0,
+          shippingAddress: order.shippingAddress,
+        }),
+      },
+      createdAt: Timestamp.now(),
+    };
+  };
+
+  /**
+   * Audit: walks every shipped/delivered order and verifies the customer really
+   * received a dispatch email containing THIS order's tracking number.
+   */
+  const handleAuditDispatchEmails = async () => {
+    if (mailAuditRunning) return;
+    const shipped = orders.filter(o =>
+      ['shipped', 'delivered'].includes(String(o.status || '').toLowerCase())
+    );
+    setMailAuditRows([]);
+    setMailAuditProgress({ done: 0, total: shipped.length });
+    if (shipped.length === 0) return;
+
+    setMailAuditRunning(true);
+    try {
+      for (const o of shipped) {
+        const email = String((o as any).userEmail || (o as any).customer?.email || '').trim();
+        const tracking = String(o.trackingNumber || '').trim();
+        try {
+          if (!email) {
+            setMailAuditRows(prev => [...prev, { id: o.id, email: '—', tracking, status: 'no_email', message: 'No customer email on the order — nothing was sent.' }]);
+            continue;
+          }
+          if (!tracking) {
+            setMailAuditRows(prev => [...prev, { id: o.id, email, tracking: '—', status: 'no_tracking', message: 'Marked shipped but has no tracking number.' }]);
+            continue;
+          }
+
+          const snap = await getDocs(query(collection(db, 'mail'), where('to', '==', email)));
+          const docs = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+          const match = docs.find(m => String(m?.message?.html || '').includes(tracking));
+          const orderMatch = docs.find(m => String(m?.message?.html || '').includes(String(o.id || '')));
+
+          if (!match) {
+            setMailAuditRows(prev => [...prev, {
+              id: o.id, email, tracking,
+              status: orderMatch ? 'wrong_tracking' : 'missing',
+              message: orderMatch
+                ? 'An email exists for this order but WITHOUT the current tracking number.'
+                : 'No dispatch email found with this tracking number.',
+            }]);
+            continue;
+          }
+
+          const state = String(match?.delivery?.state || '').toUpperCase();
+          if (state === 'ERROR') {
+            setMailAuditRows(prev => [...prev, {
+              id: o.id, email, tracking, status: 'send_error',
+              message: `Send failed: ${String(match?.delivery?.error || 'unknown error').slice(0, 140)}`,
+            }]);
+            continue;
+          }
+
+          setMailAuditRows(prev => [...prev, {
+            id: o.id, email, tracking, status: 'ok',
+            message: state ? `Email ${state.toLowerCase()} with correct tracking.` : 'Email queued with correct tracking.',
+          }]);
+        } catch (e: any) {
+          setMailAuditRows(prev => [...prev, { id: o.id, email, tracking, status: 'error', message: e?.message || 'Audit failed for this order.' }]);
+        } finally {
+          setMailAuditProgress(prev => ({ ...prev, done: prev.done + 1 }));
+        }
+      }
+    } finally {
+      setMailAuditRunning(false);
+    }
+  };
+
+  /** Re-sends the dispatch email for one audited order. */
+  const handleResendDispatchEmail = async (orderId: string) => {
+    const order = orders.find(o => o.id === orderId);
+    if (!order || mailResendBusy) return;
+    const email = String((order as any).userEmail || (order as any).customer?.email || '').trim();
+    const tracking = String(order.trackingNumber || '').trim();
+    if (!email || !tracking) return;
+    setMailResendBusy(orderId);
+    try {
+      await addDoc(collection(db, 'mail'), buildDispatchMailDoc(order, tracking, email));
+      await logAdminAction({
+        action: 'order.dispatch_email_resend',
+        target: `orders/${orderId}`,
+        meta: { to: email, trackingNumber: tracking },
+      });
+      setMailAuditRows(prev => prev.map(r => r.id === orderId
+        ? { ...r, status: 'ok', message: `Re-sent to ${email} with tracking ${tracking}.` }
+        : r));
+    } catch (e: any) {
+      setMailAuditRows(prev => prev.map(r => r.id === orderId
+        ? { ...r, status: 'error', message: e?.message || 'Resend failed.' }
+        : r));
+    } finally {
+      setMailResendBusy(null);
+    }
+  };
+
   const copyToClipboard = (text: string, orderId: string) => {
+
     navigator.clipboard.writeText(text);
     setCopiedTrackingId(orderId);
     setTimeout(() => setCopiedTrackingId(null), 2000);
