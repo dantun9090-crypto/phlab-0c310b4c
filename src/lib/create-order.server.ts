@@ -58,7 +58,7 @@ const customerSchema = z.object({
   postcode:  z.string().trim().min(1).max(20),
   country:   z.string().trim().min(1).max(80),
 }).superRefine((c, ctx) => {
-  const pc = c.postcode;
+  const pc = normalisePostcode(c.postcode);
   if (c.country === 'United Kingdom') {
     if (!UK_POSTCODE_RE.test(pc)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['postcode'], message: 'Enter a valid UK postcode' });
