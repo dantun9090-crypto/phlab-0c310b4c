@@ -294,6 +294,11 @@ export default function OrdersTab() {
   const [rmSyncLoading, setRmSyncLoading] = useState(false);
   const [rmSyncMsg, setRmSyncMsg] = useState('');
 
+  // Bulk Royal Mail tracking sync
+  const [bulkSyncRunning, setBulkSyncRunning] = useState(false);
+  const [bulkSyncProgress, setBulkSyncProgress] = useState({ done: 0, total: 0 });
+  const [bulkSyncLog, setBulkSyncLog] = useState<{ id: string; status: 'synced' | 'waiting' | 'error'; message: string }[]>([]);
+
   // Bank transfer payment state
   const [transferRefInput, setTransferRefInput] = useState('');
   const [paymentStatusInput, setPaymentStatusInput] = useState<'pending_bank_transfer' | 'paid' | 'cancelled'>('pending_bank_transfer');
@@ -811,6 +816,78 @@ export default function OrdersTab() {
     }
   };
 
+  /**
+   * Bulk version of the sync above: walks every order that already has a Click &
+   * Drop order ID but no tracking number yet, one at a time, and writes back the
+   * tracking number when Royal Mail returns a matching order reference.
+   */
+  const handleBulkSyncRoyalMailTracking = async () => {
+    if (bulkSyncRunning) return;
+    const candidates = orders.filter(o =>
+      String((o as any).royalMailOrderId || '').trim() &&
+      !String(o.trackingNumber || '').trim()
+    );
+    setBulkSyncLog([]);
+    setBulkSyncProgress({ done: 0, total: candidates.length });
+    if (candidates.length === 0) return;
+
+    setBulkSyncRunning(true);
+    try {
+      const idToken = await getAdminIdToken();
+      if (!idToken) {
+        setBulkSyncLog([{ id: '—', status: 'error', message: 'You must be signed in as an admin to sync tracking.' }]);
+        return;
+      }
+
+      for (const o of candidates) {
+        const rmOrderId = String((o as any).royalMailOrderId || '').trim();
+        try {
+          const res = await syncRoyalMailTracking({ data: { idToken, royalMailOrderId: rmOrderId, orderReference: o.id } });
+          if (!res.ok) throw new Error(res.error || 'Failed to read Royal Mail order.');
+
+          const returnedRef = String(res.orderReference || '').trim().toUpperCase();
+          const ourRef = String(o.id || '').trim().toUpperCase();
+          if (returnedRef && ourRef && returnedRef !== ourRef) {
+            setBulkSyncLog(prev => [...prev, { id: o.id, status: 'error', message: `Royal Mail returned a different order (${res.orderReference}) — skipped.` }]);
+            continue;
+          }
+
+          const tracking = res.trackingNumber ? String(res.trackingNumber).trim() : null;
+          if (!tracking) {
+            setBulkSyncLog(prev => [...prev, { id: o.id, status: 'waiting', message: 'No tracking yet — apply postage in Click & Drop.' }]);
+            continue;
+          }
+
+          await updateDoc(doc(db, 'orders', o.id), {
+            trackingNumber: tracking,
+            royalMailTracking: tracking,
+            courier: 'Royal Mail',
+          });
+          await logAdminAction({
+            action: 'order.royal_mail_tracking_sync',
+            target: `orders/${o.id}`,
+            meta: { royalMailOrderId: rmOrderId, trackingNumber: tracking, bulk: true },
+          });
+
+          setOrders(prev => prev.map(x => x.id === o.id
+            ? { ...x, trackingNumber: tracking, courier: 'Royal Mail' } as Order
+            : x));
+          setSelected(prev => prev && prev.id === o.id
+            ? { ...prev, trackingNumber: tracking, courier: 'Royal Mail' } as Order
+            : prev);
+          setBulkSyncLog(prev => [...prev, { id: o.id, status: 'synced', message: tracking }]);
+        } catch (e: any) {
+          console.error('[royal-mail] bulk sync failed for', o.id, e);
+          setBulkSyncLog(prev => [...prev, { id: o.id, status: 'error', message: e?.message || 'Sync failed.' }]);
+        } finally {
+          setBulkSyncProgress(prev => ({ ...prev, done: prev.done + 1 }));
+        }
+      }
+    } finally {
+      setBulkSyncRunning(false);
+    }
+  };
+
   const copyToClipboard = (text: string, orderId: string) => {
     navigator.clipboard.writeText(text);
     setCopiedTrackingId(orderId);
@@ -1087,6 +1164,49 @@ export default function OrdersTab() {
           );
         })}
       </div>
+
+      {/* Bulk Royal Mail tracking sync */}
+      {(() => {
+        const pending = orders.filter(o =>
+          String((o as any).royalMailOrderId || '').trim() && !String(o.trackingNumber || '').trim()
+        ).length;
+        if (pending === 0 && bulkSyncLog.length === 0) return null;
+        return (
+          <div className="p-3 bg-[#0d1f35] border border-white/[0.08] rounded-xl">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-[#9cb8d9] text-xs">
+                {pending} Royal Mail order{pending === 1 ? '' : 's'} awaiting a tracking number.
+              </p>
+              <button
+                onClick={handleBulkSyncRoyalMailTracking}
+                disabled={bulkSyncRunning || pending === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-300 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+              >
+                {bulkSyncRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Truck className="w-3.5 h-3.5" />}
+                {bulkSyncRunning
+                  ? `Syncing ${bulkSyncProgress.done}/${bulkSyncProgress.total}…`
+                  : 'Bulk synchronize tracking'}
+              </button>
+            </div>
+            {bulkSyncLog.length > 0 && (
+              <ul className="mt-2 space-y-1 max-h-40 overflow-y-auto" role="status">
+                {bulkSyncLog.map((r, i) => (
+                  <li
+                    key={`${r.id}-${i}`}
+                    className={`text-xs font-mono ${
+                      r.status === 'synced' ? 'text-emerald-300'
+                        : r.status === 'waiting' ? 'text-amber-300'
+                        : 'text-red-400'
+                    }`}
+                  >
+                    {r.id}: {r.message}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Search */}
       <div className="relative">
