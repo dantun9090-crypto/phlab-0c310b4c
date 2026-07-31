@@ -294,6 +294,11 @@ export default function OrdersTab() {
   const [rmSyncLoading, setRmSyncLoading] = useState(false);
   const [rmSyncMsg, setRmSyncMsg] = useState('');
 
+  // Bulk Royal Mail tracking sync
+  const [bulkSyncRunning, setBulkSyncRunning] = useState(false);
+  const [bulkSyncProgress, setBulkSyncProgress] = useState({ done: 0, total: 0 });
+  const [bulkSyncLog, setBulkSyncLog] = useState<{ id: string; status: 'synced' | 'waiting' | 'error'; message: string }[]>([]);
+
   // Bank transfer payment state
   const [transferRefInput, setTransferRefInput] = useState('');
   const [paymentStatusInput, setPaymentStatusInput] = useState<'pending_bank_transfer' | 'paid' | 'cancelled'>('pending_bank_transfer');
