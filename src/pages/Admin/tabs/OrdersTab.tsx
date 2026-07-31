@@ -816,6 +816,78 @@ export default function OrdersTab() {
     }
   };
 
+  /**
+   * Bulk version of the sync above: walks every order that already has a Click &
+   * Drop order ID but no tracking number yet, one at a time, and writes back the
+   * tracking number when Royal Mail returns a matching order reference.
+   */
+  const handleBulkSyncRoyalMailTracking = async () => {
+    if (bulkSyncRunning) return;
+    const candidates = orders.filter(o =>
+      String((o as any).royalMailOrderId || '').trim() &&
+      !String(o.trackingNumber || '').trim()
+    );
+    setBulkSyncLog([]);
+    setBulkSyncProgress({ done: 0, total: candidates.length });
+    if (candidates.length === 0) return;
+
+    setBulkSyncRunning(true);
+    try {
+      const idToken = await getAdminIdToken();
+      if (!idToken) {
+        setBulkSyncLog([{ id: '—', status: 'error', message: 'You must be signed in as an admin to sync tracking.' }]);
+        return;
+      }
+
+      for (const o of candidates) {
+        const rmOrderId = String((o as any).royalMailOrderId || '').trim();
+        try {
+          const res = await syncRoyalMailTracking({ data: { idToken, royalMailOrderId: rmOrderId, orderReference: o.id } });
+          if (!res.ok) throw new Error(res.error || 'Failed to read Royal Mail order.');
+
+          const returnedRef = String(res.orderReference || '').trim().toUpperCase();
+          const ourRef = String(o.id || '').trim().toUpperCase();
+          if (returnedRef && ourRef && returnedRef !== ourRef) {
+            setBulkSyncLog(prev => [...prev, { id: o.id, status: 'error', message: `Royal Mail returned a different order (${res.orderReference}) — skipped.` }]);
+            continue;
+          }
+
+          const tracking = res.trackingNumber ? String(res.trackingNumber).trim() : null;
+          if (!tracking) {
+            setBulkSyncLog(prev => [...prev, { id: o.id, status: 'waiting', message: 'No tracking yet — apply postage in Click & Drop.' }]);
+            continue;
+          }
+
+          await updateDoc(doc(db, 'orders', o.id), {
+            trackingNumber: tracking,
+            royalMailTracking: tracking,
+            courier: 'Royal Mail',
+          });
+          await logAdminAction({
+            action: 'order.royal_mail_tracking_sync',
+            target: `orders/${o.id}`,
+            meta: { royalMailOrderId: rmOrderId, trackingNumber: tracking, bulk: true },
+          });
+
+          setOrders(prev => prev.map(x => x.id === o.id
+            ? { ...x, trackingNumber: tracking, courier: 'Royal Mail' } as Order
+            : x));
+          setSelected(prev => prev && prev.id === o.id
+            ? { ...prev, trackingNumber: tracking, courier: 'Royal Mail' } as Order
+            : prev);
+          setBulkSyncLog(prev => [...prev, { id: o.id, status: 'synced', message: tracking }]);
+        } catch (e: any) {
+          console.error('[royal-mail] bulk sync failed for', o.id, e);
+          setBulkSyncLog(prev => [...prev, { id: o.id, status: 'error', message: e?.message || 'Sync failed.' }]);
+        } finally {
+          setBulkSyncProgress(prev => ({ ...prev, done: prev.done + 1 }));
+        }
+      }
+    } finally {
+      setBulkSyncRunning(false);
+    }
+  };
+
   const copyToClipboard = (text: string, orderId: string) => {
     navigator.clipboard.writeText(text);
     setCopiedTrackingId(orderId);
