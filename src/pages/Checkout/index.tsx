@@ -31,6 +31,8 @@ import { toast, Toaster as SonnerToaster } from 'sonner';
 
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
 import NoCacheHead from '@/components/NoCacheHead';
+import PostcodeLookup from '@/components/checkout/PostcodeLookup';
+
 
 
 interface CheckoutForm {
