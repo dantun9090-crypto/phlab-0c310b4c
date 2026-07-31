@@ -179,10 +179,28 @@ export default {
             : Array.isArray(lookupData?.orders)
               ? lookupData.orders
               : [lookupData];
-          if (orders.length && orders[0]) {
-            found = orders[0];
+          // STRICT MATCH — Click & Drop sometimes answers an unknown
+          // identifier/reference with a collection of unrelated orders. Taking
+          // orders[0] blindly wrote ANOTHER parcel's tracking number onto the
+          // order. Only accept a row that really is the order we asked for.
+          const norm = (v) => String(v ?? '').trim().toUpperCase();
+          const wantId = norm(identifier);
+          const wantRef = norm(reference);
+          const match = orders.find((o) => {
+            if (!o) return false;
+            const oid = norm(o.orderIdentifier);
+            const acc = norm(o.accountOrderNumber);
+            const ref = norm(o.orderReference);
+            if (wantId && (oid === wantId || acc === wantId)) return true;
+            if (wantRef && ref === wantRef) return true;
+            return false;
+          });
+          if (match) {
+            found = match;
             break;
           }
+          lastStatus = 404;
+          lastDetails = 'Royal Mail returned no order matching the requested identifier/reference';
         }
 
         if (!found) {
@@ -206,6 +224,7 @@ export default {
           status: found.orderStatus || found.status || null,
           labelGenerated: Boolean(found.labelGeneratedDate || tracking),
         });
+
       }
 
       // ---- Action: delivery status by tracking number -------------------

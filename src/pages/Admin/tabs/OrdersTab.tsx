@@ -763,11 +763,22 @@ export default function OrdersTab() {
       const res = await syncRoyalMailTracking({ data: { idToken, royalMailOrderId: rmOrderId, orderReference: selected.id } });
       if (!res.ok) throw new Error(res.error || 'Failed to read Royal Mail order.');
 
+      // Safety check — never write a tracking number that belongs to a
+      // different shipment. If Royal Mail answered with another order's
+      // reference, refuse instead of corrupting this order.
+      const returnedRef = String(res.orderReference || '').trim().toUpperCase();
+      const ourRef = String(selected.id || '').trim().toUpperCase();
+      if (returnedRef && ourRef && returnedRef !== ourRef) {
+        setRmError(`Royal Mail returned a different order (${res.orderReference}). Tracking NOT saved — check the Royal Mail order ID on this order.`);
+        return;
+      }
+
       const tracking = res.trackingNumber ? String(res.trackingNumber).trim() : null;
       if (!tracking) {
         setRmSyncMsg('No tracking yet — apply postage / print the label in Click & Drop, then sync again.');
         return;
       }
+
 
       await updateDoc(doc(db, 'orders', selected.id), {
         trackingNumber: tracking,
