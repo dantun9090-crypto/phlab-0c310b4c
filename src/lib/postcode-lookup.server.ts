@@ -98,8 +98,14 @@ async function lookupGetAddress(pc: string, key: string): Promise<PostcodeLookup
   const json = await fetchJson(
     `https://api.getaddress.io/find/${encodeURIComponent(pc)}?expand=true&api-key=${encodeURIComponent(key)}`,
   );
+  if (json?.__status) {
+    // 401/403 = key not authorised (often a domain/IP restriction on the key).
+    console.warn('[postcode-lookup] getAddress.io returned', json.__status, '— falling back to postcodes.io');
+    return lookupPostcodesIo(pc);
+  }
   const list: any[] = Array.isArray(json?.addresses) ? json.addresses : [];
   if (list.length === 0) return lookupPostcodesIo(pc);
+
 
   const addresses: PostcodeAddress[] = list.map((a: any) => {
     const line1 = [a.line_1, a.line_2, a.line_3, a.line_4]
