@@ -314,6 +314,20 @@ export default function OrdersTab() {
   }[]>([]);
   const [mailResendBusy, setMailResendBusy] = useState<string | null>(null);
 
+  // Bulk "Order received" confirmation audit + resend (covers PAID orders too,
+  // not just the ones still awaiting payment).
+  type ConfAuditStatus = 'ok' | 'missing' | 'sent' | 'no_email' | 'error';
+  const [confBulkRunning, setConfBulkRunning] = useState(false);
+  const [confBulkProgress, setConfBulkProgress] = useState({ done: 0, total: 0 });
+  const [confBulkRows, setConfBulkRows] = useState<{
+    id: string;
+    email: string;
+    paid: boolean;
+    status: ConfAuditStatus;
+    message: string;
+  }[]>([]);
+
+
 
 
   // Bank transfer payment state
