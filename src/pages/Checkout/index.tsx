@@ -820,6 +820,11 @@ export default function CheckoutPage() {
       if (!form.lastName.trim()) e.lastName = 'Required';
       if (!form.email.trim()) e.email = 'Required';
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Enter a valid email';
+      else {
+        const suggestion = suggestEmailTypo(form.email);
+        if (suggestion) e.email = `Did you mean ${suggestion}? Please check your email address — order updates are sent there.`;
+      }
+
       if (form.phone.trim()) {
         const digits = form.phone.replace(/[\s()\-+]/g, '');
         if (form.country === 'United Kingdom') {
