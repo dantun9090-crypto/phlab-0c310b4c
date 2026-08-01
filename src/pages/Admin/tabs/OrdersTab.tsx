@@ -314,6 +314,20 @@ export default function OrdersTab() {
   }[]>([]);
   const [mailResendBusy, setMailResendBusy] = useState<string | null>(null);
 
+  // Bulk "Order received" confirmation audit + resend (covers PAID orders too,
+  // not just the ones still awaiting payment).
+  type ConfAuditStatus = 'ok' | 'missing' | 'sent' | 'no_email' | 'error';
+  const [confBulkRunning, setConfBulkRunning] = useState(false);
+  const [confBulkProgress, setConfBulkProgress] = useState({ done: 0, total: 0 });
+  const [confBulkRows, setConfBulkRows] = useState<{
+    id: string;
+    email: string;
+    paid: boolean;
+    status: ConfAuditStatus;
+    message: string;
+  }[]>([]);
+
+
 
 
   // Bank transfer payment state
@@ -546,6 +560,94 @@ export default function OrdersTab() {
       setConfirmMailMsg({ msg: `Failed to send: ${e?.message || 'please try again.'}`, ok: false });
     } finally {
       setConfirmMailBusy(null);
+    }
+  };
+
+  /** Builds the "Order received" confirmation mail doc for an order. */
+  const buildConfirmationMailDoc = (order: any, email: string) => {
+    const paid = ['paid', 'processing', 'shipped', 'delivered'].includes(
+      String(order.status || '').toLowerCase(),
+    );
+    const mail = orderReceivedEmail({
+      firstName: order.shippingFirstName || order.customer?.firstName || 'Customer',
+      orderNumber: order.id,
+      totalAmount: Number(order.totalAmount || 0),
+      items: (order.items || []).map((it: any) => ({
+        name: String(it.name || it.productName || 'Item'),
+        variantName: it.variantName ? String(it.variantName) : undefined,
+        quantity: Number(it.quantity) || 1,
+        total: Number(it.total ?? it.priceNum ?? 0),
+      })),
+      bankTransferReference: order.bankTransferReference,
+      paymentPending: !paid,
+    });
+    return {
+      to: email,
+      bcc: 'info@phlabs.co.uk',
+      replyTo: 'info@phlabs.co.uk',
+      message: mail,
+      source: 'admin:order-confirmation-bulk-resend',
+      createdAt: Timestamp.now(),
+    };
+  };
+
+  /**
+   * Bulk audit + resend of the "Order received" confirmation across EVERY
+   * non-cancelled order — paid ones included, not only those still awaiting
+   * payment. Orders placed before the automatic confirmation existed (and any
+   * send that silently failed) get a fresh email in one click.
+   */
+  const handleBulkResendConfirmations = async () => {
+    if (confBulkRunning) return;
+    const candidates = orders.filter(
+      (o) => !['cancelled', 'canceled', 'refunded'].includes(String(o.status || '').toLowerCase()),
+    );
+    setConfBulkRows([]);
+    setConfBulkProgress({ done: 0, total: candidates.length });
+    if (candidates.length === 0) return;
+
+    setConfBulkRunning(true);
+    try {
+      for (const o of candidates) {
+        const order = o as any;
+        const email = String(order.userEmail || order.customer?.email || '').trim();
+        const paid = ['paid', 'processing', 'shipped', 'delivered'].includes(
+          String(order.status || '').toLowerCase(),
+        );
+        try {
+          if (!email) {
+            setConfBulkRows(prev => [...prev, { id: order.id, email: '—', paid, status: 'no_email', message: 'No customer email on the order.' }]);
+            continue;
+          }
+          const snap = await getDocs(query(collection(db, 'mail'), where('to', '==', email)));
+          const docs = snap.docs.map((d: any) => d.data() as any);
+          const hasConfirmation = docs.some((m: any) => {
+            const subject = String(m?.message?.subject || '');
+            const html = String(m?.message?.html || '');
+            const failed = String(m?.delivery?.state || '').toUpperCase() === 'ERROR';
+            return !failed && /order received/i.test(subject) && html.includes(String(order.id || ''));
+          });
+
+          if (hasConfirmation) {
+            setConfBulkRows(prev => [...prev, { id: order.id, email, paid, status: 'ok', message: 'Confirmation already delivered.' }]);
+            continue;
+          }
+
+          await addDoc(collection(db, 'mail'), buildConfirmationMailDoc(order, email));
+          await logAdminAction({
+            action: 'order.confirmation_email_resend',
+            target: `orders/${order.id}`,
+            meta: { to: email, bulk: true, paid },
+          });
+          setConfBulkRows(prev => [...prev, { id: order.id, email, paid, status: 'sent', message: `Confirmation sent to ${email}.` }]);
+        } catch (e: any) {
+          setConfBulkRows(prev => [...prev, { id: order.id, email, paid, status: 'error', message: e?.message || 'Failed for this order.' }]);
+        } finally {
+          setConfBulkProgress(prev => ({ ...prev, done: prev.done + 1 }));
+        }
+      }
+    } finally {
+      setConfBulkRunning(false);
     }
   };
 
@@ -1472,6 +1574,64 @@ export default function OrdersTab() {
         );
       })()}
 
+      {/* Bulk confirmation resend — paid orders included, not only awaiting payment */}
+      {(() => {
+        const candidates = orders.filter(
+          (o) => !['cancelled', 'canceled', 'refunded'].includes(String(o.status || '').toLowerCase()),
+        );
+        if (candidates.length === 0 && confBulkRows.length === 0) return null;
+        const paidCount = candidates.filter(o =>
+          ['paid', 'processing', 'shipped', 'delivered'].includes(String(o.status || '').toLowerCase()),
+        ).length;
+        const sent = confBulkRows.filter(r => r.status === 'sent').length;
+        const okCount = confBulkRows.filter(r => r.status === 'ok').length;
+        const problems = confBulkRows.filter(r => r.status === 'error' || r.status === 'no_email').length;
+        return (
+          <div className="p-3 bg-[#0d1f35] border border-white/[0.08] rounded-xl">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-[#9cb8d9] text-xs">
+                {candidates.length} order{candidates.length === 1 ? '' : 's'} ({paidCount} paid) — resend the
+                “Order received” confirmation to anyone missing it.
+                {confBulkRows.length > 0 && (
+                  <span className="ml-1">
+                    <span className="text-emerald-300">{okCount} already OK</span>
+                    {sent > 0 && <span className="text-blue-300"> · {sent} re-sent</span>}
+                    {problems > 0 && <span className="text-red-400"> · {problems} problem{problems === 1 ? '' : 's'}</span>}
+                  </span>
+                )}
+              </p>
+              <button
+                onClick={handleBulkResendConfirmations}
+                disabled={confBulkRunning || candidates.length === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+              >
+                {confBulkRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                {confBulkRunning
+                  ? `Checking ${confBulkProgress.done}/${confBulkProgress.total}…`
+                  : 'Bulk resend confirmations (paid + unpaid)'}
+              </button>
+            </div>
+            {confBulkRows.length > 0 && (
+              <ul className="mt-2 space-y-1 max-h-56 overflow-y-auto" role="status">
+                {confBulkRows.map((r, i) => {
+                  const tone = r.status === 'ok'
+                    ? 'text-emerald-300'
+                    : r.status === 'sent'
+                      ? 'text-blue-300'
+                      : r.status === 'no_email'
+                        ? 'text-amber-300'
+                        : 'text-red-400';
+                  return (
+                    <li key={`${r.id}-${i}`} className={`text-xs font-mono ${tone}`}>
+                      {r.id} · {r.email} · {r.paid ? 'paid' : 'unpaid'} — {r.message}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        );
+      })()}
 
 
       {/* Search */}
