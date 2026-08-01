@@ -563,6 +563,94 @@ export default function OrdersTab() {
     }
   };
 
+  /** Builds the "Order received" confirmation mail doc for an order. */
+  const buildConfirmationMailDoc = (order: any, email: string) => {
+    const paid = ['paid', 'processing', 'shipped', 'delivered'].includes(
+      String(order.status || '').toLowerCase(),
+    );
+    const mail = orderReceivedEmail({
+      firstName: order.shippingFirstName || order.customer?.firstName || 'Customer',
+      orderNumber: order.id,
+      totalAmount: Number(order.totalAmount || 0),
+      items: (order.items || []).map((it: any) => ({
+        name: String(it.name || it.productName || 'Item'),
+        variantName: it.variantName ? String(it.variantName) : undefined,
+        quantity: Number(it.quantity) || 1,
+        total: Number(it.total ?? it.priceNum ?? 0),
+      })),
+      bankTransferReference: order.bankTransferReference,
+      paymentPending: !paid,
+    });
+    return {
+      to: email,
+      bcc: 'info@phlabs.co.uk',
+      replyTo: 'info@phlabs.co.uk',
+      message: mail,
+      source: 'admin:order-confirmation-bulk-resend',
+      createdAt: Timestamp.now(),
+    };
+  };
+
+  /**
+   * Bulk audit + resend of the "Order received" confirmation across EVERY
+   * non-cancelled order — paid ones included, not only those still awaiting
+   * payment. Orders placed before the automatic confirmation existed (and any
+   * send that silently failed) get a fresh email in one click.
+   */
+  const handleBulkResendConfirmations = async () => {
+    if (confBulkRunning) return;
+    const candidates = orders.filter(
+      (o) => !['cancelled', 'canceled', 'refunded'].includes(String(o.status || '').toLowerCase()),
+    );
+    setConfBulkRows([]);
+    setConfBulkProgress({ done: 0, total: candidates.length });
+    if (candidates.length === 0) return;
+
+    setConfBulkRunning(true);
+    try {
+      for (const o of candidates) {
+        const order = o as any;
+        const email = String(order.userEmail || order.customer?.email || '').trim();
+        const paid = ['paid', 'processing', 'shipped', 'delivered'].includes(
+          String(order.status || '').toLowerCase(),
+        );
+        try {
+          if (!email) {
+            setConfBulkRows(prev => [...prev, { id: order.id, email: '—', paid, status: 'no_email', message: 'No customer email on the order.' }]);
+            continue;
+          }
+          const snap = await getDocs(query(collection(db, 'mail'), where('to', '==', email)));
+          const docs = snap.docs.map((d: any) => d.data() as any);
+          const hasConfirmation = docs.some((m: any) => {
+            const subject = String(m?.message?.subject || '');
+            const html = String(m?.message?.html || '');
+            const failed = String(m?.delivery?.state || '').toUpperCase() === 'ERROR';
+            return !failed && /order received/i.test(subject) && html.includes(String(order.id || ''));
+          });
+
+          if (hasConfirmation) {
+            setConfBulkRows(prev => [...prev, { id: order.id, email, paid, status: 'ok', message: 'Confirmation already delivered.' }]);
+            continue;
+          }
+
+          await addDoc(collection(db, 'mail'), buildConfirmationMailDoc(order, email));
+          await logAdminAction({
+            action: 'order.confirmation_email_resend',
+            target: `orders/${order.id}`,
+            meta: { to: email, bulk: true, paid },
+          });
+          setConfBulkRows(prev => [...prev, { id: order.id, email, paid, status: 'sent', message: `Confirmation sent to ${email}.` }]);
+        } catch (e: any) {
+          setConfBulkRows(prev => [...prev, { id: order.id, email, paid, status: 'error', message: e?.message || 'Failed for this order.' }]);
+        } finally {
+          setConfBulkProgress(prev => ({ ...prev, done: prev.done + 1 }));
+        }
+      }
+    } finally {
+      setConfBulkRunning(false);
+    }
+  };
+
 
 
   const handleReinstateOrder = async (orderId: string) => {
