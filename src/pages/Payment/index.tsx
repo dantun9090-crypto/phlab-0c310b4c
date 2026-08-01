@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { Loader } from 'lucide-react';
 import { db, auth, doc, getDoc, onAuthStateChanged } from '@/lib/firebase';
 import InAppBrowserNotice from '@/components/InAppBrowserNotice';
+import WallidMark from '@/components/WallidMark';
 
 const DAILY_RESET_KEY = 'php_payment_fallback_date';
 
@@ -361,6 +362,14 @@ export default function PaymentPage() {
                   <span style={{ color: '#f0f6ff' }}>{userEmail}</span>
                 </div>
               )}
+            </div>
+
+            <div
+              className="flex items-center justify-center gap-2 mb-3 text-[11px] font-semibold uppercase"
+              style={{ color: '#7dd3fc', letterSpacing: '1px' }}
+            >
+              <WallidMark size={16} />
+              <span>Open Banking</span>
             </div>
 
             <button
