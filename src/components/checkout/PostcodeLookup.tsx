@@ -51,7 +51,11 @@ export default function PostcodeLookup({ postcode, onApply, disabled }: Postcode
       setResult(res);
       setSelected('');
       // Free mode has no street data — fill the town straight away.
-      if (res.mode === 'outcode' && res.city) onApply({ city: res.city });
+      if (res.mode === 'outcode' && res.city) {
+        const h = house.trim();
+        onApply(h ? { city: res.city, address: `${h} ` } : { city: res.city });
+      }
+
     } catch {
       setResult(null);
       setError('Address lookup is unavailable right now — please enter your address manually.');
