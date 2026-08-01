@@ -2080,6 +2080,36 @@ export default function OrdersTab() {
                   </p>
                 </div>
 
+                {/* Confirmation email — resend to the customer (or a corrected address) */}
+                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Send className="w-4 h-4 text-emerald-400" />
+                    <p className="text-emerald-400 text-xs font-semibold uppercase tracking-wide">Order Confirmation Email</p>
+                  </div>
+                  <p className="text-[#9cb8d9] text-xs mb-3">
+                    Re-sends the "Order received" confirmation to{' '}
+                    <span className="text-white">
+                      {String((selected as any).userEmail || (selected as any).customer?.email || '—')}
+                    </span>
+                    . A blind copy goes to info@phlabs.co.uk so you can prove it was sent.
+                  </p>
+                  <button
+                    onClick={() => handleResendConfirmation(selected.id)}
+                    disabled={confirmMailBusy === selected.id}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 hover:border-emerald-500/60 text-emerald-300 hover:text-emerald-200 rounded-lg text-sm font-medium transition-all disabled:opacity-50 min-h-[40px]"
+                  >
+                    {confirmMailBusy === selected.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                    Resend Confirmation
+                  </button>
+                  {confirmMailMsg && (
+                    <p aria-live="polite" className={`mt-2 text-xs ${confirmMailMsg.ok ? 'text-green-400' : 'text-red-400'}`}>
+                      {confirmMailMsg.msg}
+                    </p>
+                  )}
+                </div>
+
+
+
                 {/* Failed / unpaid bank payment — email a pay-again link */}
                 {['pending', 'pending_payment', 'awaiting_payment', 'processing_payment', 'failed', 'cancelled']
                   .includes(String(selected.status || '').toLowerCase()) && (
