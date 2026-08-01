@@ -33,7 +33,7 @@ function BgPicture({ base, fallback, className, eager, width, height }: BgImgPro
         height={height}
         loading={eager ? "eager" : "lazy"}
         fetchPriority={eager ? "high" : "auto"}
-        decoding="async"
+        decoding={eager ? "auto" : "async"}
         className={className}
       />
     </picture>
