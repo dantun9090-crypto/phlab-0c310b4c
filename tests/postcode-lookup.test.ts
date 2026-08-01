@@ -42,12 +42,14 @@ describe('provider selection', () => {
   const saved = { ...process.env };
   afterEach(() => {
     delete process.env['GETADDRESS_API_KEY'];
+    delete process.env['GETADDRESS_ADMINISTRATION_KEY'];
     delete process.env['IDEAL_POSTCODES_API_KEY'];
     Object.assign(process.env, saved);
   });
 
   it('defaults to the free provider with no keys', () => {
     delete process.env['GETADDRESS_API_KEY'];
+    delete process.env['GETADDRESS_ADMINISTRATION_KEY'];
     delete process.env['IDEAL_POSTCODES_API_KEY'];
     expect(getLookupProvider()).toBe('postcodes-io');
   });
@@ -59,6 +61,7 @@ describe('provider selection', () => {
 
   it('uses Ideal Postcodes when only that key is present', () => {
     delete process.env['GETADDRESS_API_KEY'];
+    delete process.env['GETADDRESS_ADMINISTRATION_KEY'];
     process.env['IDEAL_POSTCODES_API_KEY'] = 'x';
     expect(getLookupProvider()).toBe('ideal');
   });
@@ -67,6 +70,7 @@ describe('provider selection', () => {
 describe('runPostcodeLookup', () => {
   beforeEach(() => {
     delete process.env['GETADDRESS_API_KEY'];
+    delete process.env['GETADDRESS_ADMINISTRATION_KEY'];
     delete process.env['IDEAL_POSTCODES_API_KEY'];
     vi.restoreAllMocks();
   });
