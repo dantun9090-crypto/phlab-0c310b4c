@@ -6,15 +6,17 @@ name: E2E — stale-asset recovery
 # Runs nightly + on PRs that touch the affected client/server code.
 
 on:
-  # Deliberately NOT run on pull_request: this suite drives real traffic at
-  # https://phlabs.co.uk and repeated per-deploy runs tripped the Cloudflare WAF
-  # rate limit for GitHub runner IPs (403 on the document). Once a day is enough
-  # for a regression guard; use workflow_dispatch for on-demand checks.
+  pull_request:
+    paths:
+      - "src/lib/chunk-reload.ts"
+      - "src/routes/__root.tsx"
+      - "src/routes/api/public/post-publish-check.ts"
+      - "scripts/e2e-stale-assets.mjs"
+      - ".github/workflows/e2e-stale-assets.yml"
   schedule:
     # Nightly at 04:07 UTC — offset from the survey suite to spread load.
     - cron: "7 4 * * *"
   workflow_dispatch:
-
 
 concurrency:
   group: e2e-stale-assets-${{ github.ref }}
@@ -32,19 +34,17 @@ jobs:
       # Optional — when set, the report includes before/after DB diffs of
       # _meta/build_state. Without it the rest of the suite still runs.
       FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+      # Fixed token sent as x-phl-e2e; a Cloudflare WAF "skip" rule matching
+      # this header keeps CI runner traffic out of the zone rate limiter.
+      # Optional — without it the suite still runs (and self-skips on 403).
+      E2E_BYPASS_TOKEN: ${{ secrets.E2E_BYPASS_TOKEN }}
       # The prod build targets the Cloudflare Workers Nitro preset — there is
       # no node-runnable server for CI to host, and the dev server does not
       # inject the production build-killer/stale-asset recovery scripts this
       # probe asserts on. Run against live instead (read-only browser
       # traffic; "stale" assets are faked via Playwright route interception).
       TARGET_URL: https://phlabs.co.uk
-      # Matches the "Allow PH Labs E2E runner" skip rule on the Cloudflare zone
-      # so runner IPs are not rate-limited/403'd by the WAF.
-      PHL_E2E_BYPASS_TOKEN: ${{ secrets.PHL_E2E_BYPASS_TOKEN }}
       E2E_REPORT_DIR: ${{ github.workspace }}/e2e-stale-report
-
-
-
     steps:
       - uses: actions/checkout@v5
 
