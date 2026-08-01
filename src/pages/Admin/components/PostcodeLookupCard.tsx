@@ -3,11 +3,17 @@
  * on checkout. Read-only status; no key values are ever returned.
  */
 import { useEffect, useState } from 'react';
-import { MapPin, Loader2, CheckCircle2, Info } from 'lucide-react';
+import { MapPin, Loader2, CheckCircle2, Info, AlertTriangle } from 'lucide-react';
 import { getPostcodeLookupStatus } from '@/lib/postcode-lookup.functions';
 
+interface LookupStatus {
+  provider: string;
+  mode: string;
+  health?: { ok: boolean; status?: number; reason?: string };
+}
+
 export default function PostcodeLookupCard() {
-  const [status, setStatus] = useState<{ provider: string; mode: string } | null>(null);
+  const [status, setStatus] = useState<LookupStatus | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,11 +26,14 @@ export default function PostcodeLookupCard() {
   }, []);
 
   const isFull = status?.mode === 'full';
+  const health = status?.health;
+  const keyBroken = isFull && health && !health.ok;
   const providerLabel = status?.provider === 'getaddress'
     ? 'getAddress.io (paid)'
     : status?.provider === 'ideal'
       ? 'Ideal Postcodes (paid)'
       : 'postcodes.io (free)';
+
 
   return (
     <div className="bg-[#0b1a30] border border-white/[0.07] rounded-2xl p-5">
