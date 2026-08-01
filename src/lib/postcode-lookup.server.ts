@@ -307,10 +307,25 @@ export async function probeProviderHealth(): Promise<{ ok: boolean; status?: num
   const provider = getLookupProvider();
   if (provider === 'postcodes-io') return { ok: true };
   try {
-    const url = provider === 'getaddress'
-      ? `https://api.getaddress.io/find/SW1A1AA?expand=true&api-key=${encodeURIComponent(process.env['GETADDRESS_API_KEY']!)}`
-      : `https://api.ideal-postcodes.co.uk/v1/postcodes/SW1A1AA?api_key=${encodeURIComponent(process.env['IDEAL_POSTCODES_API_KEY']!)}`;
-    const json = await fetchJson(url);
+    if (provider === 'getaddress') {
+      const key = await resolveGetAddressKey();
+      if (!key) {
+        return {
+          ok: false,
+          reason: 'Could not read an API key from getAddress.io — check the administration key.',
+        };
+      }
+      const live = await lookupGetAddress('SW1A1AA', key);
+      if (live.mode === 'full' && live.addresses.length > 0) return { ok: true };
+      return {
+        ok: false,
+        reason:
+          'Key is valid for the account but lookups are refused (usually an inactive/unpaid plan or a key restriction). Checkout uses the free city/county lookup meanwhile.',
+      };
+    }
+    const json = await fetchJson(
+      `https://api.ideal-postcodes.co.uk/v1/postcodes/SW1A1AA?api_key=${encodeURIComponent(process.env['IDEAL_POSTCODES_API_KEY']!)}`,
+    );
     if (json?.__status) {
       const status = Number(json.__status);
       return {
@@ -321,11 +336,10 @@ export async function probeProviderHealth(): Promise<{ ok: boolean; status?: num
           : `Provider returned HTTP ${status}.`,
       };
     }
-    const count = Array.isArray(json?.addresses)
-      ? json.addresses.length
-      : Array.isArray(json?.result) ? json.result.length : 0;
+    const count = Array.isArray(json?.result) ? json.result.length : 0;
     return count > 0 ? { ok: true } : { ok: false, reason: 'Provider returned no addresses for the test postcode.' };
   } catch {
+
     return { ok: false, reason: 'Provider unreachable.' };
   }
 }
