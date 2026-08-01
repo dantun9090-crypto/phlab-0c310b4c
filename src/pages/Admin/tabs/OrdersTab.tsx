@@ -17,6 +17,7 @@ import { createRoyalMailOrder, syncRoyalMailTracking } from '@/lib/royal-mail.fu
 
 
 import { buildDispatchEmail } from '@/templates/dispatchEmail';
+import { orderReceivedEmail } from '@/templates/orderReceivedEmail';
 
 import { getAdminIdToken } from '@/lib/auth-ready';
 import { toDateSafe, toMillisSafe } from '@/lib/to-date';
