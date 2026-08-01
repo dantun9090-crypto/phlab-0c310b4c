@@ -50,10 +50,44 @@ export function formatUkPostcode(input: string): string {
 }
 
 export function getLookupProvider(): 'getaddress' | 'ideal' | 'postcodes-io' {
-  if (process.env['GETADDRESS_API_KEY']) return 'getaddress';
+  if (process.env['GETADDRESS_API_KEY'] || process.env['GETADDRESS_ADMINISTRATION_KEY']) return 'getaddress';
   if (process.env['IDEAL_POSTCODES_API_KEY']) return 'ideal';
   return 'postcodes-io';
 }
+
+/**
+ * getAddress.io key resolution.
+ * A direct GETADDRESS_API_KEY wins. Otherwise the administration key is used
+ * to mint/read the account's live API key (GET /security/api-key, header auth),
+ * cached in memory for an hour.
+ */
+let apiKeyCache: { key: string; at: number } | null = null;
+const API_KEY_TTL_MS = 60 * 60 * 1000;
+
+export async function resolveGetAddressKey(): Promise<string | null> {
+  const direct = process.env['GETADDRESS_API_KEY'];
+  if (direct) return direct;
+  const admin = process.env['GETADDRESS_ADMINISTRATION_KEY'];
+  if (!admin) return null;
+  if (apiKeyCache && Date.now() - apiKeyCache.at < API_KEY_TTL_MS) return apiKeyCache.key;
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+    const res = await fetch('https://api.getaddress.io/security/api-key', {
+      signal: ctrl.signal,
+      headers: { accept: 'application/json', 'api-key': admin },
+    });
+    clearTimeout(t);
+    if (!res.ok) return null;
+    const json: any = await res.json();
+    const key = typeof json?.['api-key'] === 'string' ? json['api-key'] : null;
+    if (key) apiKeyCache = { key, at: Date.now() };
+    return key;
+  } catch {
+    return null;
+  }
+}
+
 
 async function fetchJson(url: string): Promise<any> {
   const ctrl = new AbortController();
