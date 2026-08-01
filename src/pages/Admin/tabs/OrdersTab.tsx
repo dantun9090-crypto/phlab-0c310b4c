@@ -1574,6 +1574,64 @@ export default function OrdersTab() {
         );
       })()}
 
+      {/* Bulk confirmation resend — paid orders included, not only awaiting payment */}
+      {(() => {
+        const candidates = orders.filter(
+          (o) => !['cancelled', 'canceled', 'refunded'].includes(String(o.status || '').toLowerCase()),
+        );
+        if (candidates.length === 0 && confBulkRows.length === 0) return null;
+        const paidCount = candidates.filter(o =>
+          ['paid', 'processing', 'shipped', 'delivered'].includes(String(o.status || '').toLowerCase()),
+        ).length;
+        const sent = confBulkRows.filter(r => r.status === 'sent').length;
+        const okCount = confBulkRows.filter(r => r.status === 'ok').length;
+        const problems = confBulkRows.filter(r => r.status === 'error' || r.status === 'no_email').length;
+        return (
+          <div className="p-3 bg-[#0d1f35] border border-white/[0.08] rounded-xl">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-[#9cb8d9] text-xs">
+                {candidates.length} order{candidates.length === 1 ? '' : 's'} ({paidCount} paid) — resend the
+                “Order received” confirmation to anyone missing it.
+                {confBulkRows.length > 0 && (
+                  <span className="ml-1">
+                    <span className="text-emerald-300">{okCount} already OK</span>
+                    {sent > 0 && <span className="text-blue-300"> · {sent} re-sent</span>}
+                    {problems > 0 && <span className="text-red-400"> · {problems} problem{problems === 1 ? '' : 's'}</span>}
+                  </span>
+                )}
+              </p>
+              <button
+                onClick={handleBulkResendConfirmations}
+                disabled={confBulkRunning || candidates.length === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+              >
+                {confBulkRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                {confBulkRunning
+                  ? `Checking ${confBulkProgress.done}/${confBulkProgress.total}…`
+                  : 'Bulk resend confirmations (paid + unpaid)'}
+              </button>
+            </div>
+            {confBulkRows.length > 0 && (
+              <ul className="mt-2 space-y-1 max-h-56 overflow-y-auto" role="status">
+                {confBulkRows.map((r, i) => {
+                  const tone = r.status === 'ok'
+                    ? 'text-emerald-300'
+                    : r.status === 'sent'
+                      ? 'text-blue-300'
+                      : r.status === 'no_email'
+                        ? 'text-amber-300'
+                        : 'text-red-400';
+                  return (
+                    <li key={`${r.id}-${i}`} className={`text-xs font-mono ${tone}`}>
+                      {r.id} · {r.email} · {r.paid ? 'paid' : 'unpaid'} — {r.message}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        );
+      })()}
 
 
       {/* Search */}
