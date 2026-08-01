@@ -177,6 +177,56 @@ async function lookupGetAddress(pc: string, key: string): Promise<PostcodeLookup
   };
 }
 
+/**
+ * getAddress.io v3 flow: /autocomplete/{postcode} then /get/{id} per suggestion.
+ * Returns null when the account is not authorised so the caller can fall back.
+ */
+async function lookupGetAddressAutocomplete(
+  pc: string,
+  key: string,
+): Promise<PostcodeLookupResult | null> {
+  const suggest = await fetchJson(
+    `https://api.getaddress.io/autocomplete/${encodeURIComponent(pc)}?all=true`,
+    key,
+  );
+  if (suggest?.__status) {
+    console.warn('[postcode-lookup] getAddress.io /autocomplete returned', suggest.__status);
+    return null;
+  }
+  const suggestions: any[] = Array.isArray(suggest?.suggestions) ? suggest.suggestions : [];
+  if (suggestions.length === 0) return null;
+
+  const ids = suggestions
+    .map((s: any) => (typeof s?.id === 'string' ? s.id : null))
+    .filter((v): v is string => Boolean(v))
+    .slice(0, 6);
+
+  const resolved = await Promise.all(
+    ids.map((id) => fetchJson(`https://api.getaddress.io/get/${encodeURIComponent(id)}`, key)),
+  );
+
+  const addresses: PostcodeAddress[] = resolved
+    .filter((a) => a && !a.__status)
+    .map((a: any) => ({
+      line1: [a.line_1, a.line_2, a.line_3, a.line_4]
+        .map((x: unknown) => String(x || '').trim())
+        .filter(Boolean)
+        .join(', '),
+      city: titleCase(String(a.town_or_city || '').trim()),
+      county: titleCase(String(a.county || a.district || '').trim()),
+    }))
+    .filter((a) => a.line1);
+
+  if (addresses.length === 0) return null;
+
+  return {
+    ok: true, mode: 'full', postcode: formatUkPostcode(pc),
+    city: addresses[0]!.city, county: addresses[0]!.county, addresses,
+  };
+}
+
+
+
 /** Ideal Postcodes — paid, full PAF addresses. */
 async function lookupIdealPostcodes(pc: string, key: string): Promise<PostcodeLookupResult> {
   const json = await fetchJson(
