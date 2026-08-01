@@ -165,7 +165,7 @@ function defaultsFor(feedKey: FeedKey): MerchantFeedConfig {
       "For laboratory and analytical research only. Strictly for in-vitro scientific testing and reference standards. HPLC ≥99% purity, Certificate of Analysis per batch.",
     disclaimers:
       "Strictly for in-vitro scientific testing and reference standards. NOT for human consumption, therapeutic or diagnostic use.",
-    promoIds: isFree ? [] : ["PHL_LAUNCH"],
+    promoIds: isFree ? [] : ["PHL_LAUNCH", "SALE10"],
     shippingCountry: "GB",
     shippingService: "Standard",
     shippingPrice: "3.20",
