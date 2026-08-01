@@ -554,6 +554,20 @@ async function withContext(browser, name, fn) {
     viewport: { width: 1280, height: 800 },
     ...(E2E_BYPASS_TOKEN ? { extraHTTPHeaders: { 'x-phl-e2e': E2E_BYPASS_TOKEN } } : {}),
   });
+  // Same-document navigation filter. Playwright's `framenavigated` also fires
+  // for history.replaceState/pushState — the SPA router emits one during CSR
+  // boot — which is NOT a reload. Stamp every real document via init script
+  // (runs per document, not per same-document nav) so the handler below can
+  // count only genuine document swaps.
+  await context.addInitScript(() => {
+    try {
+      const n = Number(sessionStorage.getItem('__phlE2eDocSeq') || '0') + 1;
+      sessionStorage.setItem('__phlE2eDocSeq', String(n));
+      window.__phlE2eDocSeq = n;
+    } catch {
+      window.__phlE2eDocSeq = Math.random();
+    }
+  });
   const purgeCalls = [];
   const purgeResponses = [];
   const autoPurgeLogs = [];
@@ -689,11 +703,20 @@ async function withContext(browser, name, fn) {
   });
 
   const page = await context.newPage();
+  let lastDocSeq = null;
   page.on('framenavigated', (f) => {
-    if (f === page.mainFrame()) {
+    if (f !== page.mainFrame()) return;
+    const countIt = () => {
       const entry = { at: Date.now(), url: f.url() };
       reloads.push(entry); sc.reloads.push(entry);
-    }
+    };
+    page.evaluate(() => window.__phlE2eDocSeq ?? null)
+      .then((seq) => {
+        if (seq !== null && seq === lastDocSeq) return; // same-document router nav — not a reload
+        lastDocSeq = seq;
+        countIt();
+      })
+      .catch(countIt); // context mid-swap ⇒ genuine navigation — count it
   });
   page.on('console', (msg) => {
     const entry = { scenario: name, at: Date.now(), type: msg.type(), text: msg.text() };
