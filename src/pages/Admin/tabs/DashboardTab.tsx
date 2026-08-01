@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import { db, collection, query, orderBy, limit, onSnapshot } from '@/lib/firebase';
 
 import { getAdminAnalytics } from '@/lib/firebase';
+import { toDateSafe } from '@/lib/to-date';
 
 interface ActivityItem {
   id: string;
@@ -115,9 +116,7 @@ export default function DashboardTab() {
           id: d.id,
           type: 'order',
           message: `New order #${d.id.slice(-6).toUpperCase()} — £${(data.totalAmount || 0).toFixed(2)}`,
-          time: data.orderDate?.toDate
-            ? new Date(data.orderDate.toDate()).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-            : 'Just now',
+          time: toDateSafe(data.orderDate)?.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) ?? 'Just now',
           color: 'bg-blue-500',
         };
       });

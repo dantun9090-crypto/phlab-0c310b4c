@@ -45,9 +45,7 @@ function buildInvoiceOptions(order: any, reference: string): InvoiceDocumentOpti
     lineTotal: typeof it.total === 'number' ? it.total : undefined,
   }));
   const issued =
-    order?.orderDate?.toDate?.() ??
-    order?.createdAt?.toDate?.() ??
-    (order?.orderDate ? new Date(order.orderDate) : new Date());
+    toDateSafe(order?.orderDate) ?? toDateSafe(order?.createdAt) ?? new Date();
   const addressLines = c.address || c.city || c.postcode
     ? formatShippingAddressLines({
         firstName: [c.firstName, c.lastName].filter(Boolean).join(' '),
@@ -82,6 +80,7 @@ function buildInvoiceOptions(order: any, reference: string): InvoiceDocumentOpti
 
 
 import { motion, AnimatePresence } from 'framer-motion';
+import { toDateSafe } from '@/lib/to-date';
 
 interface UserProfile {
   firstName: string;

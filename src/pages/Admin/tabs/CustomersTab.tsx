@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { db, collection, getDocs, updateDoc, doc } from '@/lib/firebase';
 import { getAllOrders } from '@/lib/firebase';
 import { logAdminAction } from '@/lib/admin-audit';
+import { toDateSafe, toMillisSafe } from '@/lib/to-date';
 
 interface CustomerProfile {
   uid: string;
@@ -60,7 +61,7 @@ export default function CustomersTab() {
         const userOrders = orders.filter(o => o.userId === u.uid && o.status !== 'cancelled');
         const totalSpend = userOrders.reduce((s, o) => s + (o.totalAmount || 0), 0);
         const sorted = [...userOrders].sort((a, b) =>
-          (b.orderDate?.toDate?.()?.getTime() || 0) - (a.orderDate?.toDate?.()?.getTime() || 0)
+          toMillisSafe(b.orderDate) - toMillisSafe(a.orderDate)
         );
         // Check if any order has termsAccepted
         const termsOrder = userOrders.find((o: any) => o.termsAccepted === true);
@@ -69,7 +70,7 @@ export default function CustomersTab() {
           totalSpend,
           orderCount: userOrders.length,
           avgOrderValue: userOrders.length > 0 ? totalSpend / userOrders.length : 0,
-          lastPurchase: sorted[0]?.orderDate?.toDate?.()?.toLocaleDateString('en-GB') || null,
+          lastPurchase: toDateSafe(sorted[0]?.orderDate)?.toLocaleDateString('en-GB') || null,
           termsAccepted: termsOrder ? true : (u.termsAccepted || false),
           termsAcceptedAt: termsOrder ? (termsOrder as any).termsAcceptedAt : u.termsAcceptedAt,
         };
