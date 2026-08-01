@@ -272,12 +272,14 @@ export async function runPostcodeLookup(rawPostcode: string): Promise<PostcodeLo
   try {
     const provider = getLookupProvider();
     if (provider === 'getaddress') {
-      result = await lookupGetAddress(pc, process.env['GETADDRESS_API_KEY']!);
+      const key = await resolveGetAddressKey();
+      result = key ? await lookupGetAddress(pc, key) : await lookupPostcodesIo(pc);
     } else if (provider === 'ideal') {
       result = await lookupIdealPostcodes(pc, process.env['IDEAL_POSTCODES_API_KEY']!);
     } else {
       result = await lookupPostcodesIo(pc);
     }
+
   } catch (err) {
     // Log server-side only; never surface upstream details to the customer.
     console.warn('[postcode-lookup] provider failed', (err as Error)?.name);
