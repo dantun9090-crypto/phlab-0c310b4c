@@ -69,7 +69,7 @@ jobs:
       matrix:
         profile: [desktop, mobile]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Clean stale Lighthouse artifacts
         run: rm -rf .lighthouseci
 
