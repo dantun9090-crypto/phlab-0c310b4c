@@ -19,6 +19,7 @@ import { createRoyalMailOrder, syncRoyalMailTracking } from '@/lib/royal-mail.fu
 import { buildDispatchEmail } from '@/templates/dispatchEmail';
 
 import { getAdminIdToken } from '@/lib/auth-ready';
+import { toDateSafe, toMillisSafe } from '@/lib/to-date';
 // ── Payment status config for bank transfer orders ──
 const PAYMENT_STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
   pending_bank_transfer: { label: 'Awaiting Payment', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', icon: Clock },
@@ -61,7 +62,7 @@ function generateShippingLabelPDF(order: Order): boolean {
 
   const rawName = `${(order as any).customer?.firstName || ''} ${(order as any).customer?.lastName || ''}`.trim();
   const customerName = esc(rawName || 'Customer');
-  const orderDate = esc(order.orderDate?.toDate?.()?.toLocaleDateString('en-GB') || 'N/A');
+  const orderDate = esc(toDateSafe(order.orderDate)?.toLocaleDateString('en-GB') || 'N/A');
   const orderIdShort = esc(order.id?.slice(-8) || '');
   const orderIdUpper = esc(order.id?.slice(-8).toUpperCase() || 'N/A');
   const shippingAddress = esc(order.shippingAddress || 'No address').replace(/\n/g, '<br>');
@@ -1137,7 +1138,7 @@ export default function OrdersTab() {
   const now = Date.now();
   const expiredPending = orders.filter(o => {
     if (o.status !== 'pending') return false;
-    const ts = o.orderDate?.toDate?.()?.getTime?.() ?? 0;
+    const ts = toMillisSafe(o.orderDate);
     return ts > 0 && now - ts > EXPIRY_MS;
   });
 
@@ -1238,7 +1239,7 @@ export default function OrdersTab() {
           </div>
           <div className="divide-y divide-white/[0.04]">
             {expiredPending.map(o => {
-              const hoursAgo = Math.floor((now - (o.orderDate?.toDate?.()?.getTime?.() ?? 0)) / (60 * 60 * 1000));
+              const hoursAgo = Math.floor((now - toMillisSafe(o.orderDate)) / (60 * 60 * 1000));
               const method = (o as any).paymentMethod === 'bank_transfer' ? 'Bank Transfer' : 'Card';
               const name = `${(o as any).customer?.firstName || ''} ${(o as any).customer?.lastName || ''}`.trim() || 'Unknown';
               return (
@@ -1632,7 +1633,7 @@ export default function OrdersTab() {
                         </button>
                       )}
                       <span className="text-[#9cb8d9] text-xs">
-                        {selected.orderDate?.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        {toDateSafe(selected.orderDate)?.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) ?? 'N/A'}
                       </span>
                     </div>
                   </div>

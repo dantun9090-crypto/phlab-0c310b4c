@@ -78,6 +78,7 @@ import { clearStoreCachesForNewBuild } from '@/lib/build-cache';
 // (sendWelcomeEmail / sendOrderStatusEmail / processReferralReward) so the
 // large HTML template strings don't ship in the home/PDP bundles.
 import {
+import { toDateSafe } from '@/lib/to-date';
   getFirestore,
   doc,
   setDoc,
@@ -1677,12 +1678,12 @@ export const getDashboardAnalytics = async () => {
   const gmv = completedOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
   const weeklyOrders = completedOrders.filter(
-    (o) => o.orderDate?.toDate() >= weekAgo
+    (o) => { const d = toDateSafe(o.orderDate); return !!d && d >= weekAgo; }
   );
   const weeklyRevenue = weeklyOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
   const monthlyOrders = completedOrders.filter(
-    (o) => o.orderDate?.toDate() >= monthAgo
+    (o) => { const d = toDateSafe(o.orderDate); return !!d && d >= monthAgo; }
   );
   const monthlyRevenue = monthlyOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
@@ -1713,7 +1714,7 @@ export const getDashboardAnalytics = async () => {
     dayEnd.setHours(23, 59, 59, 999);
     const rev = completedOrders
       .filter((o) => {
-        const d = o.orderDate?.toDate();
+        const d = toDateSafe(o.orderDate);
         return d && d >= dayStart && d <= dayEnd;
       })
       .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
