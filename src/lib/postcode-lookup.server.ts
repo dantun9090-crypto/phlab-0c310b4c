@@ -132,18 +132,29 @@ async function lookupPostcodesIo(pc: string): Promise<PostcodeLookupResult> {
   };
 }
 
-/** getAddress.io — paid, full PAF addresses. */
+/**
+ * getAddress.io — paid, full PAF addresses.
+ * Tries the classic /find endpoint first, then the newer
+ * /autocomplete + /get pair, then falls back to the free provider.
+ */
 async function lookupGetAddress(pc: string, key: string): Promise<PostcodeLookupResult> {
   const json = await fetchJson(
-    `https://api.getaddress.io/find/${encodeURIComponent(pc)}?expand=true&api-key=${encodeURIComponent(key)}`,
+    `https://api.getaddress.io/find/${encodeURIComponent(pc)}?expand=true`,
+    key,
   );
   if (json?.__status) {
-    // 401/403 = key not authorised (often a domain/IP restriction on the key).
-    console.warn('[postcode-lookup] getAddress.io returned', json.__status, '— falling back to postcodes.io');
-    return lookupPostcodesIo(pc);
+    // 401/403 = key not authorised for lookups (inactive plan or restriction).
+    // 404 = endpoint unavailable on this account tier.
+    console.warn('[postcode-lookup] getAddress.io /find returned', json.__status);
+    const viaAutocomplete = await lookupGetAddressAutocomplete(pc, key);
+    return viaAutocomplete ?? lookupPostcodesIo(pc);
   }
   const list: any[] = Array.isArray(json?.addresses) ? json.addresses : [];
-  if (list.length === 0) return lookupPostcodesIo(pc);
+  if (list.length === 0) {
+    const viaAutocomplete = await lookupGetAddressAutocomplete(pc, key);
+    return viaAutocomplete ?? lookupPostcodesIo(pc);
+  }
+
 
 
   const addresses: PostcodeAddress[] = list.map((a: any) => {
