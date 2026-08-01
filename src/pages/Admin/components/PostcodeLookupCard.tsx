@@ -76,11 +76,13 @@ export default function PostcodeLookupCard() {
           {!isFull && (
             <p className="text-[#8caad4] text-xs flex items-start gap-2 pt-1">
               <Info className="w-3.5 h-3.5 mt-[2px] shrink-0" />
-              To switch to full address selection, add a <code className="text-emerald-300">GETADDRESS_API_KEY</code> (or
-              <code className="text-emerald-300"> IDEAL_POSTCODES_API_KEY</code>) secret — the paid mode turns on
-              automatically, no code change needed.
+              Full address selection turns on automatically once getAddress.io authorises lookups. The
+              account key is read from <code className="text-emerald-300">GETADDRESS_ADMINISTRATION_KEY</code> (or a
+              direct <code className="text-emerald-300">GETADDRESS_API_KEY</code> / <code className="text-emerald-300">IDEAL_POSTCODES_API_KEY</code>).
+              A 401 on lookups with a valid account key usually means the plan is not active yet.
             </p>
           )}
+
           <p className="text-[#8caad4] text-xs">
             Lookup runs server-side and applies to United Kingdom addresses only. Germany, Poland, Ireland
             and Other keep manual entry.
