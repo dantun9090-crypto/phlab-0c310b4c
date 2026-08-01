@@ -55,6 +55,8 @@ interface CheckoutForm {
 
 import { checkNextDayEligibility, SHIPPING_CONFIG, formatLondonDate } from '@/lib/shipping/next-day';
 import { formatShippingAddressInline, formatShippingAddressLines, shortPostcodeLabel } from '@/lib/format-address';
+import { suggestEmailTypo } from '@/lib/email-typo';
+
 
 type ShippingOptionId = 'standard' | 'next_day_12';
 interface ShippingOption { id: ShippingOptionId; label: string; desc: string; price: number; }
