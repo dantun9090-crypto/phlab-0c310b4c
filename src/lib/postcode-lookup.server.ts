@@ -89,17 +89,22 @@ export async function resolveGetAddressKey(): Promise<string | null> {
 }
 
 
-async function fetchJson(url: string): Promise<any> {
+async function fetchJson(url: string, apiKey?: string): Promise<any> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
-    const res = await fetch(url, { signal: ctrl.signal, headers: { accept: 'application/json' } });
+    const headers: Record<string, string> = { accept: 'application/json' };
+    // getAddress.io accepts the key as a header — required for the admin
+    // endpoints and more reliable than the query param.
+    if (apiKey) headers['api-key'] = apiKey;
+    const res = await fetch(url, { signal: ctrl.signal, headers });
     if (!res.ok) return { __status: res.status };
     return await res.json();
   } finally {
     clearTimeout(t);
   }
 }
+
 
 function titleCase(v: string): string {
   return String(v || '')
