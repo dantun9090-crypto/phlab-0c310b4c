@@ -363,6 +363,14 @@ export default function PaymentPage() {
               )}
             </div>
 
+            <div
+              className="flex items-center justify-center gap-2 mb-3 text-[11px] font-semibold uppercase"
+              style={{ color: '#7dd3fc', letterSpacing: '1px' }}
+            >
+              <WallidMark size={16} />
+              <span>Open Banking</span>
+            </div>
+
             <button
               onClick={initiatePayment}
               disabled={isLoading}
