@@ -296,6 +296,41 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
 
   await addDocAdmin('orders', orderData, orderId);
 
+  // Immediate "order received" confirmation. Previously the first customer
+  // email only fired on the `paid` transition, so anyone whose Wallid payment
+  // did not complete received nothing at all and had to contact support.
+  // Best-effort and idempotent — never fails a placed order.
+  try {
+    const [{ enqueueMailOnce }, { orderReceivedEmail }] = await Promise.all([
+      import('./server/enqueue-mail'),
+      import('@/templates/orderReceivedEmail'),
+    ]);
+    const mail = orderReceivedEmail({
+      firstName: input.customer.firstName,
+      orderNumber: orderId,
+      totalAmount,
+      items: orderItems.map((it: any) => ({
+        name: String(it.productName ?? it.name ?? 'Item'),
+        variantName: it.variantName ? String(it.variantName) : undefined,
+        quantity: Number(it.quantity) || 1,
+        total: Number(it.total ?? it.price ?? 0),
+      })),
+      bankTransferReference: btRef,
+      paymentPending: true,
+    });
+    await enqueueMailOnce(`order-received:${orderId}`, {
+      to: input.customer.email,
+      message: mail,
+      source: 'order-received',
+    });
+  } catch (err) {
+    console.error('[create-order] order-received email failed', {
+      orderId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
+
   // Server-side coupon redemption. The /coupons collection is admin-only, so
   // the previous client transaction could not increment usedCount for normal
   // shoppers. This runs after the order write and is best-effort; the coupon
