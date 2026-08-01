@@ -105,7 +105,7 @@ const EXTRA_VARIANT_ITEMS: Array<{ slug: string; variantName: string }> = [
 
 /** Promotion ID attached to every item (must match a promotion created in
  *  Merchant Center → Marketing → Promotions to render the badge). */
-const FREE_FEED_PROMO_ID = "SALE15";
+const FREE_FEED_PROMO_ID = "SALE10";
 
 function casFor(name: string): string | null {
   const n = (name || "").toLowerCase();

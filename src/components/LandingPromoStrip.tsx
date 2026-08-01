@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 
 const PROMO_CODES = [
   { code: "SALE5", label: "5% off · min £20" },
-  { code: "SALE10", label: "10% off · min £80 · free 3ml vial case 🎁" },
+  { code: "SALE10", label: "10% off all products 🎁" },
 ] as const;
 const PROMO_HEADLINE = "Launch promo — save on your research order";
 const DISMISS_KEY = "phl_landing_promo_dismissed_v2";
