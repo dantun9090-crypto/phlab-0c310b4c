@@ -19,11 +19,17 @@ export const lookupPostcode = createServerFn({ method: 'POST' })
     return runPostcodeLookup(data.postcode);
   });
 
-/** Admin-panel status: which provider is active. Never returns key values. */
+/** Admin-panel status: which provider is active + live key health. Never returns key values. */
 export const getPostcodeLookupStatus = createServerFn({ method: 'GET' })
-  .handler(async (): Promise<{ provider: 'getaddress' | 'ideal' | 'postcodes-io'; mode: 'outcode' | 'full' }> => {
-    const { getLookupProvider } = await import('./postcode-lookup.server');
+  .handler(async (): Promise<{
+    provider: 'getaddress' | 'ideal' | 'postcodes-io';
+    mode: 'outcode' | 'full';
+    health: { ok: boolean; status?: number; reason?: string };
+  }> => {
+    const { getLookupProvider, probeProviderHealth } = await import('./postcode-lookup.server');
     const provider = getLookupProvider();
-    return { provider, mode: provider === 'postcodes-io' ? 'outcode' : 'full' };
+    const health = await probeProviderHealth();
+    return { provider, mode: provider === 'postcodes-io' ? 'outcode' : 'full', health };
   });
+
 
