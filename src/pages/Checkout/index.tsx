@@ -23,7 +23,8 @@ import { sendPublicMail } from '@/lib/sendPublicMail';
 import type { CartItem } from '@/components/Layout';
 import { useFreeGiftConfig, freeGiftApplies, eligibleGifts } from '@/lib/free-gift-config';
 import FreeGiftPicker from '@/components/checkout/FreeGiftPicker';
-import { trackAddPaymentInfo, trackBeginCheckout, trackViewCart, type GaItem } from '@/lib/analytics';
+import { trackAddPaymentInfo, trackBeginCheckout, trackPurchase, trackViewCart, renderGoogleCustomerReviewsOptIn, type GaItem } from '@/lib/analytics';
+import { trackBingPurchase } from '@/lib/bing-uet';
 import { merchantItemId } from '@/lib/merchant-item-id';
 import { logCheckoutEvent } from '@/lib/checkoutTelemetry';
 import { callPreflightWithRetry } from '@/lib/checkoutPreflightRetry';
@@ -1366,6 +1367,36 @@ export default function CheckoutPage() {
           bankInstructions: siteSettings.bankTransferInstructions,
         });
       } catch { /* non-blocking */ }
+
+      // GA4 + Bing purchase tracking — manual bank transfer counts the order
+      // PLACEMENT as the conversion (offline payment; the /payment|checkout
+      // success pages never run for this flow). Uses the same per-order
+      // localStorage flag as the card success pages, so a later status-page
+      // visit can never double-count.
+      try {
+        const purchaseFlagKey = `php_ga_purchase_${orderId}`;
+        if (localStorage.getItem(purchaseFlagKey) !== '1') {
+          trackPurchase(orderId, Number(totalAmount) || 0, cartToGaItems(), {
+            shipping: Number(serverResult.shippingCost ?? 0) || 0,
+            userData: {
+              email: form.email,
+              phone: form.phone || undefined,
+              firstName: form.firstName,
+              lastName: form.lastName,
+              country: form.country === 'Germany' ? 'DE' : form.country === 'Poland' ? 'PL' : form.country === 'Ireland' ? 'IE' : 'GB',
+              postalCode: form.postcode,
+              city: form.city,
+            },
+          });
+          trackBingPurchase(orderId);
+          renderGoogleCustomerReviewsOptIn({
+            orderId,
+            email: form.email,
+            deliveryCountry: form.country === 'Germany' ? 'DE' : form.country === 'Poland' ? 'PL' : form.country === 'Ireland' ? 'IE' : 'GB',
+          });
+          localStorage.setItem(purchaseFlagKey, '1');
+        }
+      } catch { /* analytics never blocks checkout */ }
 
       localStorage.removeItem('php_cart');
       setCart([]);
