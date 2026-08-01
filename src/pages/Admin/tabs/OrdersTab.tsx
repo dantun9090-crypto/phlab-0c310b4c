@@ -492,6 +492,64 @@ export default function OrdersTab() {
     }
   };
 
+  const [confirmMailBusy, setConfirmMailBusy] = useState<string | null>(null);
+  const [confirmMailMsg, setConfirmMailMsg] = useState<{ msg: string; ok: boolean } | null>(null);
+
+  /**
+   * Re-sends the "Order received" confirmation for any order. Customers keep
+   * reporting they never got a confirmation (older orders were placed before
+   * the automatic confirmation existed, and some land in spam), so admins need
+   * a one-click resend that also lets them correct the address first.
+   */
+  const handleResendConfirmation = async (orderId: string, overrideEmail?: string) => {
+    const order = orders.find(o => o.id === orderId) as any;
+    if (!order || confirmMailBusy) return;
+    const email = String(overrideEmail || order.userEmail || order.customer?.email || '').trim();
+    if (!email) {
+      setConfirmMailMsg({ msg: 'This order has no customer email address.', ok: false });
+      return;
+    }
+    setConfirmMailBusy(orderId);
+    setConfirmMailMsg(null);
+    try {
+      const mail = orderReceivedEmail({
+        firstName: order.shippingFirstName || order.customer?.firstName || 'Customer',
+        orderNumber: order.id,
+        totalAmount: Number(order.totalAmount || 0),
+        items: (order.items || []).map((it: any) => ({
+          name: String(it.name || it.productName || 'Item'),
+          variantName: it.variantName ? String(it.variantName) : undefined,
+          quantity: Number(it.quantity) || 1,
+          total: Number(it.total ?? it.priceNum ?? 0),
+        })),
+        bankTransferReference: order.bankTransferReference,
+        paymentPending: !['paid', 'processing', 'shipped', 'delivered'].includes(
+          String(order.status || '').toLowerCase(),
+        ),
+      });
+      await addDoc(collection(db, 'mail'), {
+        to: email,
+        // Blind copy to the shop inbox so every confirmation is provable.
+        bcc: 'info@phlabs.co.uk',
+        replyTo: 'info@phlabs.co.uk',
+        message: mail,
+        source: 'admin:order-confirmation-resend',
+        createdAt: Timestamp.now(),
+      });
+      await logAdminAction({
+        action: 'order.confirmation_email_resend',
+        target: `orders/${orderId}`,
+        meta: { to: email },
+      });
+      setConfirmMailMsg({ msg: `Confirmation re-sent to ${email}`, ok: true });
+    } catch (e: any) {
+      setConfirmMailMsg({ msg: `Failed to send: ${e?.message || 'please try again.'}`, ok: false });
+    } finally {
+      setConfirmMailBusy(null);
+    }
+  };
+
+
 
   const handleReinstateOrder = async (orderId: string) => {
     if (!window.confirm('Reinstate this order? It will be set back to Pending and the customer will receive a new payment reminder.')) return;
