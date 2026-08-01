@@ -50,22 +50,61 @@ export function formatUkPostcode(input: string): string {
 }
 
 export function getLookupProvider(): 'getaddress' | 'ideal' | 'postcodes-io' {
-  if (process.env['GETADDRESS_API_KEY']) return 'getaddress';
+  if (process.env['GETADDRESS_API_KEY'] || process.env['GETADDRESS_ADMINISTRATION_KEY']) return 'getaddress';
   if (process.env['IDEAL_POSTCODES_API_KEY']) return 'ideal';
   return 'postcodes-io';
 }
 
-async function fetchJson(url: string): Promise<any> {
+/**
+ * getAddress.io key resolution.
+ * A direct GETADDRESS_API_KEY wins. Otherwise the administration key is used
+ * to mint/read the account's live API key (GET /security/api-key, header auth),
+ * cached in memory for an hour.
+ */
+let apiKeyCache: { key: string; at: number } | null = null;
+const API_KEY_TTL_MS = 60 * 60 * 1000;
+
+export async function resolveGetAddressKey(): Promise<string | null> {
+  const direct = process.env['GETADDRESS_API_KEY'];
+  if (direct) return direct;
+  const admin = process.env['GETADDRESS_ADMINISTRATION_KEY'];
+  if (!admin) return null;
+  if (apiKeyCache && Date.now() - apiKeyCache.at < API_KEY_TTL_MS) return apiKeyCache.key;
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+    const res = await fetch('https://api.getaddress.io/security/api-key', {
+      signal: ctrl.signal,
+      headers: { accept: 'application/json', 'api-key': admin },
+    });
+    clearTimeout(t);
+    if (!res.ok) return null;
+    const json: any = await res.json();
+    const key = typeof json?.['api-key'] === 'string' ? json['api-key'] : null;
+    if (key) apiKeyCache = { key, at: Date.now() };
+    return key;
+  } catch {
+    return null;
+  }
+}
+
+
+async function fetchJson(url: string, apiKey?: string): Promise<any> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
-    const res = await fetch(url, { signal: ctrl.signal, headers: { accept: 'application/json' } });
+    const headers: Record<string, string> = { accept: 'application/json' };
+    // getAddress.io accepts the key as a header — required for the admin
+    // endpoints and more reliable than the query param.
+    if (apiKey) headers['api-key'] = apiKey;
+    const res = await fetch(url, { signal: ctrl.signal, headers });
     if (!res.ok) return { __status: res.status };
     return await res.json();
   } finally {
     clearTimeout(t);
   }
 }
+
 
 function titleCase(v: string): string {
   return String(v || '')
@@ -93,18 +132,29 @@ async function lookupPostcodesIo(pc: string): Promise<PostcodeLookupResult> {
   };
 }
 
-/** getAddress.io — paid, full PAF addresses. */
+/**
+ * getAddress.io — paid, full PAF addresses.
+ * Tries the classic /find endpoint first, then the newer
+ * /autocomplete + /get pair, then falls back to the free provider.
+ */
 async function lookupGetAddress(pc: string, key: string): Promise<PostcodeLookupResult> {
   const json = await fetchJson(
-    `https://api.getaddress.io/find/${encodeURIComponent(pc)}?expand=true&api-key=${encodeURIComponent(key)}`,
+    `https://api.getaddress.io/find/${encodeURIComponent(pc)}?expand=true`,
+    key,
   );
   if (json?.__status) {
-    // 401/403 = key not authorised (often a domain/IP restriction on the key).
-    console.warn('[postcode-lookup] getAddress.io returned', json.__status, '— falling back to postcodes.io');
-    return lookupPostcodesIo(pc);
+    // 401/403 = key not authorised for lookups (inactive plan or restriction).
+    // 404 = endpoint unavailable on this account tier.
+    console.warn('[postcode-lookup] getAddress.io /find returned', json.__status);
+    const viaAutocomplete = await lookupGetAddressAutocomplete(pc, key);
+    return viaAutocomplete ?? lookupPostcodesIo(pc);
   }
   const list: any[] = Array.isArray(json?.addresses) ? json.addresses : [];
-  if (list.length === 0) return lookupPostcodesIo(pc);
+  if (list.length === 0) {
+    const viaAutocomplete = await lookupGetAddressAutocomplete(pc, key);
+    return viaAutocomplete ?? lookupPostcodesIo(pc);
+  }
+
 
 
   const addresses: PostcodeAddress[] = list.map((a: any) => {
@@ -126,6 +176,56 @@ async function lookupGetAddress(pc: string, key: string): Promise<PostcodeLookup
     city: addresses[0]!.city, county: addresses[0]!.county, addresses,
   };
 }
+
+/**
+ * getAddress.io v3 flow: /autocomplete/{postcode} then /get/{id} per suggestion.
+ * Returns null when the account is not authorised so the caller can fall back.
+ */
+async function lookupGetAddressAutocomplete(
+  pc: string,
+  key: string,
+): Promise<PostcodeLookupResult | null> {
+  const suggest = await fetchJson(
+    `https://api.getaddress.io/autocomplete/${encodeURIComponent(pc)}?all=true`,
+    key,
+  );
+  if (suggest?.__status) {
+    console.warn('[postcode-lookup] getAddress.io /autocomplete returned', suggest.__status);
+    return null;
+  }
+  const suggestions: any[] = Array.isArray(suggest?.suggestions) ? suggest.suggestions : [];
+  if (suggestions.length === 0) return null;
+
+  const ids = suggestions
+    .map((s: any) => (typeof s?.id === 'string' ? s.id : null))
+    .filter((v): v is string => Boolean(v))
+    .slice(0, 6);
+
+  const resolved = await Promise.all(
+    ids.map((id) => fetchJson(`https://api.getaddress.io/get/${encodeURIComponent(id)}`, key)),
+  );
+
+  const addresses: PostcodeAddress[] = resolved
+    .filter((a) => a && !a.__status)
+    .map((a: any) => ({
+      line1: [a.line_1, a.line_2, a.line_3, a.line_4]
+        .map((x: unknown) => String(x || '').trim())
+        .filter(Boolean)
+        .join(', '),
+      city: titleCase(String(a.town_or_city || '').trim()),
+      county: titleCase(String(a.county || a.district || '').trim()),
+    }))
+    .filter((a) => a.line1);
+
+  if (addresses.length === 0) return null;
+
+  return {
+    ok: true, mode: 'full', postcode: formatUkPostcode(pc),
+    city: addresses[0]!.city, county: addresses[0]!.county, addresses,
+  };
+}
+
+
 
 /** Ideal Postcodes — paid, full PAF addresses. */
 async function lookupIdealPostcodes(pc: string, key: string): Promise<PostcodeLookupResult> {
@@ -172,12 +272,14 @@ export async function runPostcodeLookup(rawPostcode: string): Promise<PostcodeLo
   try {
     const provider = getLookupProvider();
     if (provider === 'getaddress') {
-      result = await lookupGetAddress(pc, process.env['GETADDRESS_API_KEY']!);
+      const key = await resolveGetAddressKey();
+      result = key ? await lookupGetAddress(pc, key) : await lookupPostcodesIo(pc);
     } else if (provider === 'ideal') {
       result = await lookupIdealPostcodes(pc, process.env['IDEAL_POSTCODES_API_KEY']!);
     } else {
       result = await lookupPostcodesIo(pc);
     }
+
   } catch (err) {
     // Log server-side only; never surface upstream details to the customer.
     console.warn('[postcode-lookup] provider failed', (err as Error)?.name);
@@ -205,10 +307,25 @@ export async function probeProviderHealth(): Promise<{ ok: boolean; status?: num
   const provider = getLookupProvider();
   if (provider === 'postcodes-io') return { ok: true };
   try {
-    const url = provider === 'getaddress'
-      ? `https://api.getaddress.io/find/SW1A1AA?expand=true&api-key=${encodeURIComponent(process.env['GETADDRESS_API_KEY']!)}`
-      : `https://api.ideal-postcodes.co.uk/v1/postcodes/SW1A1AA?api_key=${encodeURIComponent(process.env['IDEAL_POSTCODES_API_KEY']!)}`;
-    const json = await fetchJson(url);
+    if (provider === 'getaddress') {
+      const key = await resolveGetAddressKey();
+      if (!key) {
+        return {
+          ok: false,
+          reason: 'Could not read an API key from getAddress.io — check the administration key.',
+        };
+      }
+      const live = await lookupGetAddress('SW1A1AA', key);
+      if (live.mode === 'full' && live.addresses.length > 0) return { ok: true };
+      return {
+        ok: false,
+        reason:
+          'Key is valid for the account but lookups are refused (usually an inactive/unpaid plan or a key restriction). Checkout uses the free city/county lookup meanwhile.',
+      };
+    }
+    const json = await fetchJson(
+      `https://api.ideal-postcodes.co.uk/v1/postcodes/SW1A1AA?api_key=${encodeURIComponent(process.env['IDEAL_POSTCODES_API_KEY']!)}`,
+    );
     if (json?.__status) {
       const status = Number(json.__status);
       return {
@@ -219,11 +336,10 @@ export async function probeProviderHealth(): Promise<{ ok: boolean; status?: num
           : `Provider returned HTTP ${status}.`,
       };
     }
-    const count = Array.isArray(json?.addresses)
-      ? json.addresses.length
-      : Array.isArray(json?.result) ? json.result.length : 0;
+    const count = Array.isArray(json?.result) ? json.result.length : 0;
     return count > 0 ? { ok: true } : { ok: false, reason: 'Provider returned no addresses for the test postcode.' };
   } catch {
+
     return { ok: false, reason: 'Provider unreachable.' };
   }
 }
