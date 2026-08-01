@@ -176,7 +176,7 @@ jobs:
 
       - name: Open issue if regression
         if: steps.scan.outputs.exit_code != '0'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const sha = context.sha.slice(0, 7);
