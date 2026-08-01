@@ -57,6 +57,22 @@ export default function PostcodeLookupCard() {
               {isFull ? 'Full addresses — customers pick their exact address' : 'City / county only — customers type the street line'}
             </span>
           </p>
+          {isFull && health?.ok && (
+            <p className="text-[#9cb8d9] flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              Key check: <span className="text-white font-medium">authorised — live test returned addresses</span>
+            </p>
+          )}
+          {keyBroken && (
+            <p className="text-amber-300 text-xs flex items-start gap-2">
+              <AlertTriangle className="w-3.5 h-3.5 mt-[2px] shrink-0" />
+              <span>
+                Key check failed{health?.status ? ` (HTTP ${health.status})` : ''}: {health?.reason}
+                {' '}Checkout automatically falls back to the free city/county lookup until this is fixed.
+              </span>
+            </p>
+          )}
+
           {!isFull && (
             <p className="text-[#8caad4] text-xs flex items-start gap-2 pt-1">
               <Info className="w-3.5 h-3.5 mt-[2px] shrink-0" />
