@@ -9,11 +9,25 @@
  * snapshot. Re-run with `bunx vitest run -u` to accept intentional
  * updates after review.
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import { Route as ProductRoute } from "../src/routes/products_.$slug";
 import { Route as SplatRoute } from "../src/routes/$";
 import { articles } from "../src/pages/Resources/data/articles";
 import type { SeoProduct } from "../src/lib/firestore-rest";
+
+// ---------------------------------------------------------------------------
+// The product offer JSON-LD emits `validFrom` / `priceValidUntil` anchored to
+// the first of the CURRENT month (see products_.$slug.tsx). Freeze the clock
+// so snapshots don't break on every calendar-month rollover.
+// ---------------------------------------------------------------------------
+beforeAll(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-07-15T12:00:00Z"));
+});
+
+afterAll(() => {
+  vi.useRealTimers();
+});
 
 type Script = { type: string; children: string };
 type HeadResult = { scripts?: Script[] };

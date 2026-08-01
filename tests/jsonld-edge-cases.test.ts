@@ -8,12 +8,26 @@
  *
  * Snapshots are also captured so any drift is reviewed.
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import { Route as ProductRoute } from "../src/routes/products_.$slug";
 import { Route as SplatRoute } from "../src/routes/$";
 import { ARTICLE_INDEX } from "../src/pages/Resources/data/articles-index";
 import type { SeoProduct } from "../src/lib/firestore-rest";
 import type { Article } from "../src/pages/Resources/data/articles";
+
+// ---------------------------------------------------------------------------
+// The product offer JSON-LD emits `validFrom` / `priceValidUntil` anchored to
+// the first of the CURRENT month (see products_.$slug.tsx). Freeze the clock
+// so snapshots don't break on every calendar-month rollover.
+// ---------------------------------------------------------------------------
+beforeAll(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-07-15T12:00:00Z"));
+});
+
+afterAll(() => {
+  vi.useRealTimers();
+});
 
 type Script = { type: string; children: string };
 type HeadResult = { scripts?: Script[] };
