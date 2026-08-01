@@ -86,9 +86,33 @@ export default function PostcodeLookup({ postcode, onApply, disabled }: Postcode
     );
   }
 
+  const houseKey = house.trim().toLowerCase();
+  const all = result?.ok ? result.addresses : [];
+  const matches = houseKey
+    ? all.filter(a => {
+        const first = a.line1.split(',')[0]!.trim().toLowerCase();
+        return (
+          first === houseKey ||
+          first.startsWith(`${houseKey} `) ||
+          first.startsWith(`${houseKey},`) ||
+          new RegExp(`(^|[^0-9a-z])${houseKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^0-9a-z]|$)`).test(first)
+        );
+      })
+    : all;
+  const list = matches.length > 0 ? matches : all;
+
   return (
     <div className="space-y-2" data-testid="postcode-lookup">
       <div className="flex items-center gap-2 flex-wrap">
+        <input
+          id="postcode-house-number"
+          type="text"
+          value={house}
+          onChange={e => { setHouse(e.target.value.slice(0, 20)); setSelected(''); }}
+          placeholder="House no. / name"
+          aria-label="House number or name"
+          className="w-36 border-2 border-slate-600 bg-slate-800 text-white min-h-[48px] rounded-lg px-3 text-sm placeholder:text-gray-500"
+        />
         <button
           type="button"
           onClick={() => { lastLookedUp.current = ''; void run(postcode); }}
@@ -109,10 +133,10 @@ export default function PostcodeLookup({ postcode, onApply, disabled }: Postcode
 
       {error && <p className="text-amber-400 text-xs">{error}</p>}
 
-      {result?.ok && result.mode === 'full' && result.addresses.length > 0 && (
+      {result?.ok && result.mode === 'full' && list.length > 0 && (
         <div>
           <label htmlFor="postcode-address-select" className="block text-xs font-medium text-gray-300 mb-1">
-            Select your address ({result.addresses.length} found)
+            Select your address ({list.length} found{houseKey && matches.length === 0 ? ' — no match for that number, showing all' : ''})
           </label>
           <select
             id="postcode-address-select"
@@ -120,13 +144,13 @@ export default function PostcodeLookup({ postcode, onApply, disabled }: Postcode
             onChange={e => {
               const idx = Number(e.target.value);
               setSelected(e.target.value);
-              const a = result.addresses[idx];
+              const a = list[idx];
               if (a) onApply({ address: a.line1, city: a.city || result.city });
             }}
             className="w-full border-2 border-slate-600 bg-slate-800 text-white min-h-[48px] rounded-lg px-3 text-sm"
           >
             <option value="">Choose an address…</option>
-            {result.addresses.map((a, i) => (
+            {list.map((a, i) => (
               <option key={`${a.line1}-${i}`} value={i}>{a.line1}</option>
             ))}
           </select>
@@ -139,10 +163,13 @@ export default function PostcodeLookup({ postcode, onApply, disabled }: Postcode
           <span>
             Found <span className="text-gray-200 font-medium">{result.city}</span>
             {result.county && result.county !== result.city ? `, ${result.county}` : ''} — city filled in.
-            Please add your street and house number above.
+            {house.trim()
+              ? ' House number saved — please add your street name above.'
+              : ' Please add your street and house number above.'}
           </span>
         </p>
       )}
+
 
       {!result && !error && !loading && !valid && postcode.trim() && (
         <p className="text-xs text-gray-500 inline-flex items-center gap-1.5">
