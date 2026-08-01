@@ -27,10 +27,12 @@ export default function PostcodeLookup({ postcode, onApply, disabled }: Postcode
   const [error, setError] = useState('');
   const [selected, setSelected] = useState('');
   const [manual, setManual] = useState(false);
+  const [house, setHouse] = useState('');
   const lastLookedUp = useRef('');
 
   const pc = normalise(postcode);
   const valid = UK_POSTCODE_RE.test(pc);
+
 
   const run = async (value: string) => {
     const target = normalise(value);
