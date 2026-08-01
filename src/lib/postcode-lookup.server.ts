@@ -98,8 +98,14 @@ async function lookupGetAddress(pc: string, key: string): Promise<PostcodeLookup
   const json = await fetchJson(
     `https://api.getaddress.io/find/${encodeURIComponent(pc)}?expand=true&api-key=${encodeURIComponent(key)}`,
   );
+  if (json?.__status) {
+    // 401/403 = key not authorised (often a domain/IP restriction on the key).
+    console.warn('[postcode-lookup] getAddress.io returned', json.__status, '— falling back to postcodes.io');
+    return lookupPostcodesIo(pc);
+  }
   const list: any[] = Array.isArray(json?.addresses) ? json.addresses : [];
   if (list.length === 0) return lookupPostcodesIo(pc);
+
 
   const addresses: PostcodeAddress[] = list.map((a: any) => {
     const line1 = [a.line_1, a.line_2, a.line_3, a.line_4]
@@ -189,4 +195,35 @@ export async function runPostcodeLookup(rawPostcode: string): Promise<PostcodeLo
     cache.set(pc, { at: Date.now(), value: result });
   }
   return result;
+}
+
+/**
+ * Live health probe for the paid provider — used by the admin card only.
+ * Returns whether the configured key is actually authorised upstream.
+ */
+export async function probeProviderHealth(): Promise<{ ok: boolean; status?: number; reason?: string }> {
+  const provider = getLookupProvider();
+  if (provider === 'postcodes-io') return { ok: true };
+  try {
+    const url = provider === 'getaddress'
+      ? `https://api.getaddress.io/find/SW1A1AA?expand=true&api-key=${encodeURIComponent(process.env['GETADDRESS_API_KEY']!)}`
+      : `https://api.ideal-postcodes.co.uk/v1/postcodes/SW1A1AA?api_key=${encodeURIComponent(process.env['IDEAL_POSTCODES_API_KEY']!)}`;
+    const json = await fetchJson(url);
+    if (json?.__status) {
+      const status = Number(json.__status);
+      return {
+        ok: false,
+        status,
+        reason: status === 401 || status === 403
+          ? 'Key rejected (401/403) — check the key value and remove any domain/IP restriction on it.'
+          : `Provider returned HTTP ${status}.`,
+      };
+    }
+    const count = Array.isArray(json?.addresses)
+      ? json.addresses.length
+      : Array.isArray(json?.result) ? json.result.length : 0;
+    return count > 0 ? { ok: true } : { ok: false, reason: 'Provider returned no addresses for the test postcode.' };
+  } catch {
+    return { ok: false, reason: 'Provider unreachable.' };
+  }
 }
