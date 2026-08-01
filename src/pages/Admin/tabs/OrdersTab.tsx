@@ -17,6 +17,7 @@ import { createRoyalMailOrder, syncRoyalMailTracking } from '@/lib/royal-mail.fu
 
 
 import { buildDispatchEmail } from '@/templates/dispatchEmail';
+import { orderReceivedEmail } from '@/templates/orderReceivedEmail';
 
 import { getAdminIdToken } from '@/lib/auth-ready';
 import { toDateSafe, toMillisSafe } from '@/lib/to-date';
@@ -490,6 +491,64 @@ export default function OrdersTab() {
       setPayLinkBusy(null);
     }
   };
+
+  const [confirmMailBusy, setConfirmMailBusy] = useState<string | null>(null);
+  const [confirmMailMsg, setConfirmMailMsg] = useState<{ msg: string; ok: boolean } | null>(null);
+
+  /**
+   * Re-sends the "Order received" confirmation for any order. Customers keep
+   * reporting they never got a confirmation (older orders were placed before
+   * the automatic confirmation existed, and some land in spam), so admins need
+   * a one-click resend that also lets them correct the address first.
+   */
+  const handleResendConfirmation = async (orderId: string, overrideEmail?: string) => {
+    const order = orders.find(o => o.id === orderId) as any;
+    if (!order || confirmMailBusy) return;
+    const email = String(overrideEmail || order.userEmail || order.customer?.email || '').trim();
+    if (!email) {
+      setConfirmMailMsg({ msg: 'This order has no customer email address.', ok: false });
+      return;
+    }
+    setConfirmMailBusy(orderId);
+    setConfirmMailMsg(null);
+    try {
+      const mail = orderReceivedEmail({
+        firstName: order.shippingFirstName || order.customer?.firstName || 'Customer',
+        orderNumber: order.id,
+        totalAmount: Number(order.totalAmount || 0),
+        items: (order.items || []).map((it: any) => ({
+          name: String(it.name || it.productName || 'Item'),
+          variantName: it.variantName ? String(it.variantName) : undefined,
+          quantity: Number(it.quantity) || 1,
+          total: Number(it.total ?? it.priceNum ?? 0),
+        })),
+        bankTransferReference: order.bankTransferReference,
+        paymentPending: !['paid', 'processing', 'shipped', 'delivered'].includes(
+          String(order.status || '').toLowerCase(),
+        ),
+      });
+      await addDoc(collection(db, 'mail'), {
+        to: email,
+        // Blind copy to the shop inbox so every confirmation is provable.
+        bcc: 'info@phlabs.co.uk',
+        replyTo: 'info@phlabs.co.uk',
+        message: mail,
+        source: 'admin:order-confirmation-resend',
+        createdAt: Timestamp.now(),
+      });
+      await logAdminAction({
+        action: 'order.confirmation_email_resend',
+        target: `orders/${orderId}`,
+        meta: { to: email },
+      });
+      setConfirmMailMsg({ msg: `Confirmation re-sent to ${email}`, ok: true });
+    } catch (e: any) {
+      setConfirmMailMsg({ msg: `Failed to send: ${e?.message || 'please try again.'}`, ok: false });
+    } finally {
+      setConfirmMailBusy(null);
+    }
+  };
+
 
 
   const handleReinstateOrder = async (orderId: string) => {
@@ -2020,6 +2079,36 @@ export default function OrdersTab() {
                     Click "Save" to store the tracking number, or "Dispatch" to save it, mark as Shipped, and email the customer automatically.
                   </p>
                 </div>
+
+                {/* Confirmation email — resend to the customer (or a corrected address) */}
+                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Send className="w-4 h-4 text-emerald-400" />
+                    <p className="text-emerald-400 text-xs font-semibold uppercase tracking-wide">Order Confirmation Email</p>
+                  </div>
+                  <p className="text-[#9cb8d9] text-xs mb-3">
+                    Re-sends the "Order received" confirmation to{' '}
+                    <span className="text-white">
+                      {String((selected as any).userEmail || (selected as any).customer?.email || '—')}
+                    </span>
+                    . A blind copy goes to info@phlabs.co.uk so you can prove it was sent.
+                  </p>
+                  <button
+                    onClick={() => handleResendConfirmation(selected.id)}
+                    disabled={confirmMailBusy === selected.id}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 hover:border-emerald-500/60 text-emerald-300 hover:text-emerald-200 rounded-lg text-sm font-medium transition-all disabled:opacity-50 min-h-[40px]"
+                  >
+                    {confirmMailBusy === selected.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                    Resend Confirmation
+                  </button>
+                  {confirmMailMsg && (
+                    <p aria-live="polite" className={`mt-2 text-xs ${confirmMailMsg.ok ? 'text-green-400' : 'text-red-400'}`}>
+                      {confirmMailMsg.msg}
+                    </p>
+                  )}
+                </div>
+
+
 
                 {/* Failed / unpaid bank payment — email a pay-again link */}
                 {['pending', 'pending_payment', 'awaiting_payment', 'processing_payment', 'failed', 'cancelled']

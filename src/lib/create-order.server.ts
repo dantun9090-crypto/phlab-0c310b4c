@@ -320,9 +320,14 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
     });
     await enqueueMailOnce(`order-received:${orderId}`, {
       to: input.customer.email,
+      // Blind copy so every confirmation is provable from the shop inbox even
+      // when the customer says it never arrived (spam filtering, typo domains).
+      bcc: 'info@phlabs.co.uk',
+      replyTo: 'info@phlabs.co.uk',
       message: mail,
       source: 'order-received',
     });
+
   } catch (err) {
     console.error('[create-order] order-received email failed', {
       orderId,
