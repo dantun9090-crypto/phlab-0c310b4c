@@ -1336,6 +1336,26 @@ async function normalizeCatastrophicSsrResponse(
   const captured = consumeLastCapturedError();
   const err = captured ?? new Error(`h3 swallowed SSR error: ${body}`);
   console.error(err);
+  // The h3-swallowed case loses the original throw, so log enough request
+  // context to identify WHICH route/URL is failing in Server Logs.
+  if (request) {
+    try {
+      const u = new URL(request.url);
+      log.error({
+        event: "worker.ssr.catastrophic",
+        captured: Boolean(captured),
+        method: request.method,
+        path: u.pathname,
+        query: u.search.slice(0, 200),
+        ua: (request.headers.get("user-agent") ?? "").slice(0, 160),
+        referer: (request.headers.get("referer") ?? "").slice(0, 200),
+        message: err.message.slice(0, 300),
+      });
+    } catch {
+      /* logging must never throw */
+    }
+  }
+
   if (request) {
     notifySsrError({
       error: err,
