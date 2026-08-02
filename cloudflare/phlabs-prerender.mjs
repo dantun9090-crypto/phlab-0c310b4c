@@ -124,7 +124,7 @@ const NON_HTML_EXT_RX =
   /\.(webmanifest|json|xml|txt|ico|map|css|js|mjs|png|jpe?g|gif|webp|avif|svg|woff2?|ttf|otf|pdf|mp4|webm|zip)$/i;
 // `/lovable/` carries the email queue-drain, preview and suppression routes —
 // they must reach origin untouched (never prerendered, never edge-cached).
-const NON_HTML_PREFIXES = ["/downloads/", "/.well-known/", "/api/", "/_api/", "/__/", "/lovable/"];
+const NON_HTML_PREFIXES = ["/downloads/", "/.well-known/", "/api/", "/_api/", "/__/", "/lovable/", "/_serverFn/", "/_server/"];
 
 // Vulnerability-scanner path prefixes — return 404 at the edge before any
 // origin/prerender hop. Not just to save renders: these attempts pollute
@@ -173,6 +173,26 @@ const SCANNER_PATH_PREFIXES = [
   "/jolokia",
   "/_ignition",
   "/telescope",
+  // 2026-08-03 render-history audit — residual probes still burning paid
+  // renders (all 404 at origin, ~500 renders/week combined):
+  "/env",          // bare /env (dotfile /.env was already covered)
+  "/wordpress",
+  "/wp",           // bare /wp; also covers /wp-* probes
+  "/dev",
+  "/test",
+  "/backup",
+  "/staging",
+  "/old",
+  "/server",
+  "/debug",
+  "/ecp",          // MS Exchange Control Panel probes
+  "/___proxy",     // cPanel ___proxy_subdomain_* probes
+  "/_profiler",    // Symfony profiler
+  "/phpinfo",
+  "/redmine",
+  "/license.txt",
+  "/sitemap.txt",
+  "//",            // double-slash prefix probes (//.bash_history, //redmine/*)
 ];
 
 // Scanner file extensions (.php, backups, archives, dumps). These never exist
