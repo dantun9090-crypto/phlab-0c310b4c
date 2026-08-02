@@ -1334,7 +1334,9 @@ async function normalizeCatastrophicSsrResponse(
   }
 
   const captured = consumeLastCapturedError();
-  const err = captured ?? new Error(`h3 swallowed SSR error: ${body}`);
+  const err: Error =
+    captured instanceof Error ? captured : new Error(`h3 swallowed SSR error: ${body}`);
+
   console.error(err);
   // The h3-swallowed case loses the original throw, so log enough request
   // context to identify WHICH route/URL is failing in Server Logs.
