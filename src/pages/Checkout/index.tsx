@@ -1235,7 +1235,7 @@ export default function CheckoutPage() {
           try { parsed = new URL(data.payment_link); } catch { throw new Error('Invalid payment redirect URL.'); }
           if (parsed.protocol !== 'https:') throw new Error('Unexpected payment redirect.');
           try {
-            localStorage.setItem('php_pending_order', orderId);
+            localStorage.setItem('php_pending_order', orderId); localStorage.setItem('php_pending_order_at', String(Date.now()));
             if (paymentToken) localStorage.setItem(`php_pt_${orderId}`, paymentToken);
           } catch { /* ignore */ }
 
@@ -1315,7 +1315,7 @@ export default function CheckoutPage() {
           // Persist orderId so the success page can clear the cart only
           // after the bank confirms payment. If the user cancels/aborts
           // the redirect, the cart stays intact and they can retry.
-          try { localStorage.setItem('php_pending_order', orderId); } catch { /* ignore */ }
+          try { localStorage.setItem('php_pending_order', orderId); localStorage.setItem('php_pending_order_at', String(Date.now())); } catch { /* ignore */ }
           const paymentUrl = parsed.toString();
           setPendingPaymentUrl(paymentUrl);
           setPaymentRecoveryVisible(true);

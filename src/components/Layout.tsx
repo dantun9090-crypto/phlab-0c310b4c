@@ -217,6 +217,9 @@ export function Layout({ children }: LayoutProps) {
       if (cached) id = (JSON.parse(cached) as { googleAnalyticsId?: string }).googleAnalyticsId?.trim() || undefined;
     } catch { /* ignore */ }
     initAnalytics(id);
+    // Recover purchase conversions for buyers who never returned to the
+    // checkout success page after the bank app-switch.
+    void import('@/lib/purchase-recovery').then((m) => m.recoverPendingPurchase());
     // Google Customer Reviews floating badge (sitewide trust signal).
     // Skips admin/auth pages where the badge would obscure UI.
     // Deferred until first user interaction OR 10s — whichever comes first.
