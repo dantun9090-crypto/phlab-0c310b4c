@@ -53,6 +53,15 @@ const GTAG_GATEWAY_BASE =
   (import.meta.env.VITE_GTAG_GATEWAY_BASE as string | undefined)?.trim() ||
   '/metrics';
 const GTAG_DIRECT_BASE = 'https://www.googletagmanager.com';
+// Google Tag Manager web container for phlabs.co.uk. Loaded through the same
+// first-party gateway as gtag.js (ad-blocker bypass) with a CDN fallback.
+// Set VITE_GTM_CONTAINER_ID to '' to disable.
+const GTM_CONTAINER_ID = (() => {
+  const raw = import.meta.env.VITE_GTM_CONTAINER_ID as string | undefined;
+  const value = raw === undefined ? 'GTM-MT4BZ2X8' : raw.trim();
+  return /^GTM-[A-Z0-9]{4,}$/i.test(value) ? value : '';
+})();
+
 // First-party endpoint for gtag hits (/g/collect etc.). Always the
 // canonical gateway origin so mirrored domains without a local /metrics
 // route still deliver events first-party (worker sets ACAO:*).
@@ -180,6 +189,37 @@ function injectScript(id: string): Promise<void> {
 }
 
 /**
+ * Load the Google Tag Manager web container once, sharing the same
+ * `window.dataLayer` (and therefore the Consent Mode v2 defaults already
+ * queued by initAnalytics). Gateway-first with a CDN fallback.
+ */
+function injectGtmContainer(): void {
+  if (!GTM_CONTAINER_ID) return;
+  if (document.querySelector(`script[data-gtm-id="${GTM_CONTAINER_ID}"]`)) return;
+  if (document.querySelector('script[src*="gtm.js?id="]')) return;
+
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+
+  const append = (base: string, direct: boolean) => {
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = `${base}/gtm.js?id=${GTM_CONTAINER_ID}`;
+    s.dataset.gtmId = GTM_CONTAINER_ID;
+    if (direct) s.dataset.direct = '1';
+    s.onerror = () => {
+      if (!direct && GTAG_GATEWAY_BASE !== GTAG_DIRECT_BASE) append(GTAG_DIRECT_BASE, true);
+      else log('GTM container failed to load', GTM_CONTAINER_ID);
+    };
+    s.onload = () => log('GTM container loaded', GTM_CONTAINER_ID);
+    document.head.appendChild(s);
+  };
+  append(GTAG_GATEWAY_BASE, false);
+}
+
+
+
+/**
  * Initialise GA4. Safe to call multiple times — only loads once.
  * Pass a custom Measurement ID to override the default.
  */
@@ -223,6 +263,11 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
     loaded = false;
     return;
   }
+
+  // GTM web container (phlabs.co.uk) — shares dataLayer + consent defaults.
+  injectGtmContainer();
+
+
 
   // If the hardcoded <head> bootstrap already ran (window.__phlGaBootstrapped),
   // it called gtag('config', id) which fired the initial page_view. Skip our
