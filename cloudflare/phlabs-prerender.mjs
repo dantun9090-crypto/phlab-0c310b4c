@@ -193,6 +193,31 @@ const SCANNER_PATH_PREFIXES = [
   "/license.txt",
   "/sitemap.txt",
   "//",            // double-slash prefix probes (//.bash_history, //redmine/*)
+  // 2026-08-03 error-monitor burst (25 events/5 min) — framework & server
+  // config probes: JS bundler configs, Laravel storage, nginx/apache vhosts,
+  // credential dumps. All 404 on this app; block at edge so they never reach
+  // the origin error monitor or prerender.io.
+  "/next.config",
+  "/nuxt.config",
+  "/vite.config",
+  "/webpack.config",
+  "/ecosystem.config",
+  "/pm2.config",
+  "/_next",        // Next.js asset probes (this app is Vite/TanStack)
+  "/app.js",
+  "/index.js",     // root-file probes; real entry is /assets/index-<hash>.js
+  "/storage/",     // Laravel storage/* (trailing slash: /storage-guide is a real page)
+  "/frontend/",
+  "/js/",
+  "/public/",
+  "/nginx/",
+  "/apache/",
+  "/ftp-",
+  "/secret.json",
+  "/api_keys",
+  "/keys.json",
+  "/tokens.json",
+  "/application.",
 ];
 
 // Scanner file extensions (.php, backups, archives, dumps). These never exist
@@ -202,7 +227,7 @@ const SCANNER_PATH_PREFIXES = [
 // .NET appsettings.*.json, Rails credentials.yml.enc, Spring *.yml,
 // *.log files and */secret_token.rb slipping through to Prerender.io —
 // every one of those burned a paid render.
-const SCANNER_EXT_RX = /\.(php\d?|phtml|asp|aspx|jsp|cgi|pl|sql|bak|old|swp|ini|zip|tar|tgz|gz|rar|7z|ya?ml|rb|py|sh|log|enc|pem|key|sqlite|orig|dist|lock)$/i;
+const SCANNER_EXT_RX = /\.(php\d?|phtml|asp|aspx|jsp|cgi|pl|sql|bak|old|swp|ini|zip|tar|tgz|gz|rar|7z|ya?ml|rb|py|sh|log|enc|pem|key|sqlite|orig|dist|lock|conf|properties)$/i;
 
 function isMonitoringUA(ua) {
   return MONITORING_UA_RX.test(ua || "");
