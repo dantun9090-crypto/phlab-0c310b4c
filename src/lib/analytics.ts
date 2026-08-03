@@ -53,6 +53,15 @@ const GTAG_GATEWAY_BASE =
   (import.meta.env.VITE_GTAG_GATEWAY_BASE as string | undefined)?.trim() ||
   '/metrics';
 const GTAG_DIRECT_BASE = 'https://www.googletagmanager.com';
+// Google Tag Manager web container for phlabs.co.uk. Loaded through the same
+// first-party gateway as gtag.js (ad-blocker bypass) with a CDN fallback.
+// Set VITE_GTM_CONTAINER_ID to '' to disable.
+const GTM_CONTAINER_ID = (() => {
+  const raw = import.meta.env.VITE_GTM_CONTAINER_ID as string | undefined;
+  const value = raw === undefined ? 'GTM-MT4BZ2X8' : raw.trim();
+  return /^GTM-[A-Z0-9]{4,}$/i.test(value) ? value : '';
+})();
+
 // First-party endpoint for gtag hits (/g/collect etc.). Always the
 // canonical gateway origin so mirrored domains without a local /metrics
 // route still deliver events first-party (worker sets ACAO:*).
