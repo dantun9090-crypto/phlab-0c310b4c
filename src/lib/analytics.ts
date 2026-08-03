@@ -189,6 +189,37 @@ function injectScript(id: string): Promise<void> {
 }
 
 /**
+ * Load the Google Tag Manager web container once, sharing the same
+ * `window.dataLayer` (and therefore the Consent Mode v2 defaults already
+ * queued by initAnalytics). Gateway-first with a CDN fallback.
+ */
+function injectGtmContainer(): void {
+  if (!GTM_CONTAINER_ID) return;
+  if (document.querySelector(`script[data-gtm-id="${GTM_CONTAINER_ID}"]`)) return;
+  if (document.querySelector('script[src*="gtm.js?id="]')) return;
+
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+
+  const append = (base: string, direct: boolean) => {
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = `${base}/gtm.js?id=${GTM_CONTAINER_ID}`;
+    s.dataset.gtmId = GTM_CONTAINER_ID;
+    if (direct) s.dataset.direct = '1';
+    s.onerror = () => {
+      if (!direct && GTAG_GATEWAY_BASE !== GTAG_DIRECT_BASE) append(GTAG_DIRECT_BASE, true);
+      else log('GTM container failed to load', GTM_CONTAINER_ID);
+    };
+    s.onload = () => log('GTM container loaded', GTM_CONTAINER_ID);
+    document.head.appendChild(s);
+  };
+  append(GTAG_GATEWAY_BASE, false);
+}
+
+
+
+/**
  * Initialise GA4. Safe to call multiple times — only loads once.
  * Pass a custom Measurement ID to override the default.
  */
