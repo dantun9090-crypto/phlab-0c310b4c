@@ -264,6 +264,11 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
     return;
   }
 
+  // GTM web container (phlabs.co.uk) — shares dataLayer + consent defaults.
+  injectGtmContainer();
+
+
+
   // If the hardcoded <head> bootstrap already ran (window.__phlGaBootstrapped),
   // it called gtag('config', id) which fired the initial page_view. Skip our
   // own config to avoid a duplicate hit, and just register the GT- container.
