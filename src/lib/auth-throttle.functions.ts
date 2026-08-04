@@ -92,7 +92,12 @@ export const requestEmailVerification = createServerFn({ method: "POST" })
     try {
       const res = await fetch(OOB_ENDPOINT, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          referer: "https://phlabs.co.uk/login",
+          origin: "https://phlabs.co.uk",
+        },
+
         body: JSON.stringify({
           requestType: "VERIFY_EMAIL",
           idToken: data.idToken,
