@@ -41,21 +41,37 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
       return { ok: true as const, throttled: true as const };
     }
 
+    // The web API key is restricted to HTTP referrers, so a server-side fetch
+    // with no Referer is rejected with 403 API_KEY_HTTP_REFERRER_BLOCKED and
+    // no email is ever sent. Always send the canonical site referer/origin.
     try {
-      await fetch(OOB_ENDPOINT, {
+      const res = await fetch(OOB_ENDPOINT, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          referer: "https://phlabs.co.uk/login",
+          origin: "https://phlabs.co.uk",
+        },
         body: JSON.stringify({
           requestType: "PASSWORD_RESET",
           email: data.email,
           ...(data.continueUrl ? { continueUrl: data.continueUrl } : {}),
         }),
       });
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        // EMAIL_NOT_FOUND must stay silent (no user enumeration); anything
+        // else is a real failure the client should retry client-side.
+        if (!/EMAIL_NOT_FOUND/i.test(body)) {
+          return { ok: false as const, throttled: false as const };
+        }
+      }
     } catch {
-      /* swallow — never reveal whether the email exists */
+      return { ok: false as const, throttled: false as const };
     }
     return { ok: true as const, throttled: false as const };
   });
+
 
 const VerifyInput = z.object({
   idToken: z.string().min(10).max(4096),
@@ -76,7 +92,12 @@ export const requestEmailVerification = createServerFn({ method: "POST" })
     try {
       const res = await fetch(OOB_ENDPOINT, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          referer: "https://phlabs.co.uk/login",
+          origin: "https://phlabs.co.uk",
+        },
+
         body: JSON.stringify({
           requestType: "VERIFY_EMAIL",
           idToken: data.idToken,

@@ -186,6 +186,16 @@ export default function Login() {
       const result = await requestPasswordReset({ data: { email: resetEmail.trim() } });
       if (result?.throttled) {
         setResetError('Too many reset requests from your network. Try again in 15 minutes.');
+      } else if (result?.ok === false) {
+        // Server-side send failed — retry from the browser, where the Firebase
+        // web API key referrer restriction is satisfied.
+        const { auth, sendPasswordResetEmail } = await import('@/lib/firebase');
+        try {
+          await sendPasswordResetEmail(auth, resetEmail.trim());
+        } catch (err: any) {
+          if (err?.code !== 'auth/user-not-found') throw err;
+        }
+        setResetSent(true);
       } else {
         // Generic success message — never reveal whether the address is registered.
         setResetSent(true);
@@ -195,6 +205,7 @@ export default function Login() {
     } finally {
       setResetLoading(false);
     }
+
   };
 
   const shareUrl = encodeURIComponent(window.location.origin);
