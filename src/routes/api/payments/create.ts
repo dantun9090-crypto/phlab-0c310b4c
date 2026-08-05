@@ -179,14 +179,21 @@ export const Route = createFileRoute("/api/payments/create")({
               paymentTokenUsedAt: new Date(),
             }).catch((err) => console.error("[Wallid] token cleanup failed:", err));
           }
+          // `wallidBankRef` = Wallid's internal payment id, embedded in the
+          // checkout link. Banks often show THIS (not our PHP-xxxx order
+          // number) on the customer's statement, so we store it to make the
+          // narrative searchable in the admin panel.
+          const bankRef = extractWallidBankRef(wallid.payment_link);
           await updateDocAdmin("orders", orderId, {
             paymentProvider: "wallid",
             paymentRef: ctx.reference,
             apiPaymentId: wallid.api_payment_id,
             wallidApiPaymentId: wallid.api_payment_id,
             wallidPaymentRef: ctx.reference,
+            ...(bankRef ? { wallidBankRef: bankRef } : {}),
             paymentLinkCreatedAt: new Date(),
           }).catch((err) => console.error("[Wallid] order payment marker failed:", err));
+
 
           return json({
             payment_link: wallid.payment_link,
