@@ -901,7 +901,7 @@ export default function AccountPage() {
                                 <p className="text-[#3a5a82] text-xs">{formatDate(order.orderDate)}</p>
                               </div>
                               <div className="flex items-center gap-3 flex-shrink-0">
-                                <StatusBadge status={getDisplayStatus(order as any)} />
+                                <StatusBadge status={badgeStatus(order as any)} />
                                 <span className="text-white text-sm font-semibold">£{(order.totalAmount || 0).toFixed(2)}</span>
                               </div>
                             </div>
@@ -997,7 +997,7 @@ export default function AccountPage() {
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-3">
-                                    <StatusBadge status={getDisplayStatus(order as any)} />
+                                    <StatusBadge status={badgeStatus(order as any)} />
                                     <ChevronRight className={`w-4 h-4 text-[#3a5a82] transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
                                   </div>
                                 </button>
@@ -1116,7 +1116,7 @@ export default function AccountPage() {
                                   <p className="text-[#3a5a82] text-xs">{formatDate(order.orderDate)} · £{(order.totalAmount || 0).toFixed(2)}</p>
                                 </div>
                                 <div className="flex items-center gap-2 flex-shrink-0">
-                                  <StatusBadge status={getDisplayStatus(order as any)} />
+                                  <StatusBadge status={badgeStatus(order as any)} />
                                   <button
                                     onClick={() => openCustomerInvoice(buildInvoiceOptions(order as any, receiptRef))}
                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-lg text-xs font-medium transition-colors"
