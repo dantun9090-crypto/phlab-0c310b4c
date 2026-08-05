@@ -144,10 +144,34 @@ function PaymentCountdown({ createdAt }: { createdAt: any }) {
   );
 }
 
+/**
+ * Pay-by-Bank confirmations reach us 30s–3min after the customer approves
+ * the transfer in their banking app (webhook + reconcile cron). During that
+ * window the order doc still says `pending_payment`, and showing "Awaiting
+ * Payment" makes an already-paid customer think the money never left. We
+ * show "Confirming Payment" instead and re-read the order until it settles.
+ */
+const CONFIRMING_WINDOW_MS = 15 * 60_000;
+
+export function isConfirmingPayment(order: any): boolean {
+  const status = String(order?.status ?? '').toLowerCase();
+  if (status !== 'pending_payment') return false;
+  const created = toDateSafe(order?.createdAt) ?? toDateSafe(order?.orderDate);
+  if (!created) return false;
+  const age = Date.now() - created.getTime();
+  return age >= 0 && age < CONFIRMING_WINDOW_MS;
+}
+
+function badgeStatus(order: any): string {
+  return isConfirmingPayment(order) ? 'confirming_payment' : getDisplayStatus(order);
+}
+
 const STATUS_CONFIG: Record<string, { label: string; color: string; glow: string; icon: any }> = {
   pending: { label: 'Pending', color: 'bg-amber-500/15 text-amber-300 border-amber-500/25', glow: 'shadow-amber-500/10', icon: Clock },
   pending_payment: { label: 'Awaiting Payment', color: 'bg-orange-500/15 text-orange-300 border-orange-500/25', glow: 'shadow-orange-500/10', icon: Clock },
+  confirming_payment: { label: 'Confirming Payment', color: 'bg-sky-500/15 text-sky-300 border-sky-500/25', glow: 'shadow-sky-500/10', icon: RotateCcw },
   paid: { label: 'Paid', color: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25', glow: 'shadow-emerald-500/10', icon: CheckCircle2 },
+
   processing: { label: 'Processing', color: 'bg-blue-500/15 text-blue-300 border-blue-500/25', glow: 'shadow-blue-500/10', icon: RotateCcw },
   shipped: { label: 'Shipped', color: 'bg-violet-500/15 text-violet-300 border-violet-500/25', glow: 'shadow-violet-500/10', icon: Truck },
   delivered: { label: 'Delivered', color: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25', glow: 'shadow-emerald-500/10', icon: CheckCircle2 },
@@ -351,6 +375,24 @@ export default function AccountPage() {
     });
     return unsub;
   }, []);
+
+  // While an order is inside the "confirming payment" window, re-read the
+  // orders every 12s so the badge flips to Paid on its own — the customer no
+  // longer has to reload the page to see that their transfer landed.
+  useEffect(() => {
+    if (!user) return;
+    if (!orders.some(o => isConfirmingPayment(o as any))) return;
+    const timer = setTimeout(async () => {
+      try {
+        const fresh = await getUserOrders(user.uid);
+        setOrders(fresh);
+      } catch (e) {
+        console.error('[account] payment status refresh failed', e);
+      }
+    }, 12_000);
+    return () => clearTimeout(timer);
+  }, [user, orders]);
+
 
   const loadSavedReports = async (uid: string) => {
     setReportsLoading(true);
@@ -877,7 +919,7 @@ export default function AccountPage() {
                                 <p className="text-[#3a5a82] text-xs">{formatDate(order.orderDate)}</p>
                               </div>
                               <div className="flex items-center gap-3 flex-shrink-0">
-                                <StatusBadge status={getDisplayStatus(order as any)} />
+                                <StatusBadge status={badgeStatus(order as any)} />
                                 <span className="text-white text-sm font-semibold">£{(order.totalAmount || 0).toFixed(2)}</span>
                               </div>
                             </div>
@@ -973,7 +1015,7 @@ export default function AccountPage() {
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-3">
-                                    <StatusBadge status={getDisplayStatus(order as any)} />
+                                    <StatusBadge status={badgeStatus(order as any)} />
                                     <ChevronRight className={`w-4 h-4 text-[#3a5a82] transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
                                   </div>
                                 </button>
@@ -1092,7 +1134,7 @@ export default function AccountPage() {
                                   <p className="text-[#3a5a82] text-xs">{formatDate(order.orderDate)} · £{(order.totalAmount || 0).toFixed(2)}</p>
                                 </div>
                                 <div className="flex items-center gap-2 flex-shrink-0">
-                                  <StatusBadge status={getDisplayStatus(order as any)} />
+                                  <StatusBadge status={badgeStatus(order as any)} />
                                   <button
                                     onClick={() => openCustomerInvoice(buildInvoiceOptions(order as any, receiptRef))}
                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-lg text-xs font-medium transition-colors"

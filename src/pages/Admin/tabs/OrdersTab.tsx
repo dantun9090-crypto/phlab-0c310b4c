@@ -1241,11 +1241,15 @@ export default function OrdersTab() {
       (o as any).apiPaymentId,
       (o as any).wallidApiPaymentId,
       (o as any).wallidPaymentRef,
+      // Wallid's internal payment id — this is what most banks print on the
+      // customer's statement instead of our PHP-xxxx order number.
+      (o as any).wallidBankRef,
       (o as any).bankTransferRef,
       (o as any).bankTransferReference,
       (o as any).truelayerPaymentId,
       (o as any).fenaPaymentId,
     ].filter(Boolean).join(' ');
+
     const s = search.toLowerCase();
     // Bank statements show the Wallid id without dashes (e.g. "9b37b618d5"),
     // so compare an alphanumeric-only version too.
@@ -2318,9 +2322,26 @@ export default function OrdersTab() {
                   </div>
                 )}
 
+                {/* Bank-side reference — what the customer's statement shows */}
+                <div className="mt-4 rounded-lg border-2 border-slate-600 bg-slate-800 p-3">
+                  <p className="text-slate-300 text-xs font-semibold mb-1">Bank statement reference</p>
+                  <p className="text-white text-sm font-mono break-all">
+                    {(selected as any).wallidBankRef
+                      || (selected as any).apiPaymentId
+                      || (selected as any).bankTransferReference
+                      || '—'}
+                  </p>
+                  <p className="text-slate-400 text-[11px] mt-1">
+                    Banks often print Wallid&apos;s own payment id instead of the PH Labs order
+                    number. Paste whatever the statement shows into the search box above to find
+                    the order.
+                  </p>
+                </div>
+
                 {/* Payment timeline + manual retry — Wallid reliability layer */}
                 <div className="mt-4 space-y-3">
                   <PaymentTimeline orderId={selected.id} />
+
                   <WebhookRetryCard
                     orderId={selected.id}
                     apiPaymentId={
