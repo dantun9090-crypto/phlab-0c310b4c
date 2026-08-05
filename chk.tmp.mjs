@@ -1,0 +1,14 @@
+import admin from 'firebase-admin';
+admin.initializeApp({credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON))});
+const db = admin.firestore();
+const snap = await db.collection('orders').orderBy('createdAt','desc').limit(400).get();
+const now = Date.now();
+const ms = (v)=> v?.toMillis?.() ?? (v?._seconds? v._seconds*1000 : (typeof v==='number'?v:(v?Date.parse(v):0)));
+const rows=[];
+snap.forEach(d=>{const o=d.data();rows.push({id:d.id,ref:o.orderRef||o.reference||d.id,status:o.status,paymentStatus:o.paymentStatus,paidAt:ms(o.paidAt),created:ms(o.createdAt||o.orderDate),api:o.apiPaymentId||o.wallidPaymentId||o.paymentId,total:o.totalPrice,email:o.customerEmail||o.email});});
+const suspicious = rows.filter(r=> (r.status==='pending'||r.status==='awaiting_payment'||r.paymentStatus==='pending') && r.paidAt);
+console.log('total',rows.length,'paidAt-but-pending',suspicious.length);
+console.log(JSON.stringify(suspicious.slice(0,20),null,1));
+const stale = rows.filter(r=>(r.status==='pending')&& !r.paidAt && now-r.created>2*3600e3);
+console.log('stale pending >2h:',stale.length);
+console.log(JSON.stringify(stale.slice(0,30).map(r=>({ref:r.ref,api:r.api,total:r.total,email:r.email,ageH:((now-r.created)/3600e3).toFixed(1)})),null,1));
