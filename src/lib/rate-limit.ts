@@ -117,7 +117,15 @@ export function rateLimitedResponse(retryAfterSec: number): Response {
 /**
  * Best-effort append to `securityEvents`. Never throws — a logging failure
  * must not block the 429 we're already returning.
+ *
+ * De-duplicated per (endpoint, ip, reason) with a 1h cooldown: a client stuck
+ * in a retry loop (e.g. a browser re-POSTing /api/public/csp-report many times
+ * per second) previously wrote one Firestore doc per blocked request and
+ * drowned real security events. The 429 itself is unaffected.
  */
+const LOG_DEDUPE_WINDOW_MS = 60 * 60 * 1000;
+const lastLoggedAt = new Map<string, number>();
+
 export async function logRateLimitBlocked(opts: {
   endpoint: string;
   ip: string;
@@ -125,13 +133,26 @@ export async function logRateLimitBlocked(opts: {
   retryAfterSec: number;
   reason?: "rate_limit" | "bad_auth_rate_limit";
 }): Promise<void> {
+  const type = opts.reason === "bad_auth_rate_limit" ? "bad_auth_rate_limit_blocked" : "rate_limit_blocked";
+  const dedupeKey = `${type}|${opts.endpoint}|${opts.ip}`;
+  const now = Date.now();
+  const previous = lastLoggedAt.get(dedupeKey);
+  if (previous !== undefined && now - previous < LOG_DEDUPE_WINDOW_MS) return;
+  // Prune stale keys so a flood of unique IPs can't grow the map unbounded.
+  if (lastLoggedAt.size > MAX_BUCKETS) {
+    for (const [key, at] of lastLoggedAt) {
+      if (now - at >= LOG_DEDUPE_WINDOW_MS) lastLoggedAt.delete(key);
+    }
+  }
+  lastLoggedAt.set(dedupeKey, now);
   try {
     await addDocAdmin("securityEvents", {
-      type: opts.reason === "bad_auth_rate_limit" ? "bad_auth_rate_limit_blocked" : "rate_limit_blocked",
+      type,
       endpoint: opts.endpoint,
       ip: opts.ip,
       userAgent: opts.userAgent ?? null,
       retryAfter: opts.retryAfterSec,
+      dedupeWindowMinutes: 60,
       createdAt: new Date(),
     });
   } catch {
