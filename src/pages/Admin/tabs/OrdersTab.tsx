@@ -1241,11 +1241,15 @@ export default function OrdersTab() {
       (o as any).apiPaymentId,
       (o as any).wallidApiPaymentId,
       (o as any).wallidPaymentRef,
+      // Wallid's internal payment id — this is what most banks print on the
+      // customer's statement instead of our PHP-xxxx order number.
+      (o as any).wallidBankRef,
       (o as any).bankTransferRef,
       (o as any).bankTransferReference,
       (o as any).truelayerPaymentId,
       (o as any).fenaPaymentId,
     ].filter(Boolean).join(' ');
+
     const s = search.toLowerCase();
     // Bank statements show the Wallid id without dashes (e.g. "9b37b618d5"),
     // so compare an alphanumeric-only version too.
