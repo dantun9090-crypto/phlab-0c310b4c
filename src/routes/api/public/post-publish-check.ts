@@ -42,6 +42,19 @@ const META_DOC = 'build_state';
  *   ok        boolean when applicable, else omitted
  *   ...data   step-specific fields (cfCacheStatus, url, durationMs, error, ...)
  */
+/**
+ * Stages emitted on EVERY poll of this endpoint, even when it no-ops. They are
+ * still written to Worker stdout, but persisting them to Firestore added ~400
+ * docs/hour of pure noise (1.7M docs by Aug 2026) and buried real admin audit
+ * entries. Keep Firestore for stages that represent actual work or failures.
+ */
+const NON_PERSISTED_STAGES = new Set([
+  'handler.start',
+  'build_state.read',
+  'build_state.compare',
+  'handler.noop_already_invalidated',
+]);
+
 async function logPostPublishStep(
   buildId: string,
   stage: string,
@@ -53,6 +66,7 @@ async function logPostPublishStep(
     // Single-line JSON so `wrangler tail` / CF logpush stays grep-able.
     console.log(JSON.stringify(structured));
   } catch { /* ignore */ }
+  if (NON_PERSISTED_STAGES.has(stage)) return;
   await addDocAdmin('auditLogs', {
     kind: 'post_publish_step',
     buildId,
