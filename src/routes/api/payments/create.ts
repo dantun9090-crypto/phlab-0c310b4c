@@ -20,6 +20,8 @@ import { verifyFirebaseIdToken } from "@/lib/server/firebase-auth-admin";
 import { buildOrderCtxForPayment } from "@/lib/payments/dispatch.server";
 import { updateDocAdmin } from "@/lib/server/firestore-admin";
 import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
+import { extractWallidBankRef } from "@/lib/wallid-bank-ref";
+
 
 const ItemSchema = z.object({
   name: z.string().min(1).max(200),
