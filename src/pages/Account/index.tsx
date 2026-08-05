@@ -376,6 +376,24 @@ export default function AccountPage() {
     return unsub;
   }, []);
 
+  // While an order is inside the "confirming payment" window, re-read the
+  // orders every 12s so the badge flips to Paid on its own — the customer no
+  // longer has to reload the page to see that their transfer landed.
+  useEffect(() => {
+    if (!user) return;
+    if (!orders.some(o => isConfirmingPayment(o as any))) return;
+    const timer = setTimeout(async () => {
+      try {
+        const fresh = await getUserOrders(user.uid);
+        setOrders(fresh);
+      } catch (e) {
+        console.error('[account] payment status refresh failed', e);
+      }
+    }, 12_000);
+    return () => clearTimeout(timer);
+  }, [user, orders]);
+
+
   const loadSavedReports = async (uid: string) => {
     setReportsLoading(true);
     try {
