@@ -1548,6 +1548,38 @@ export default function OrdersTab() {
         );
       })()}
 
+      {/* AfterShip live tracking — instant "delivered" webhooks */}
+      {(() => {
+        const unregistered = orders.filter(o =>
+          String(o.trackingNumber || '').trim() &&
+          !(o as any).aftershipRegistered &&
+          ['shipped', 'delivered'].includes(String(o.status || '').toLowerCase())
+        ).length;
+        if (unregistered === 0 && !afterShipMsg) return null;
+        return (
+          <div className="p-3 bg-[#0d1f35] border border-white/[0.08] rounded-xl">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-[#9cb8d9] text-xs">
+                {unregistered} parcel{unregistered === 1 ? '' : 's'} not yet on live tracking (AfterShip pushes
+                “delivered” instantly, no waiting for the 4-hour sync).
+              </p>
+              <button
+                onClick={handleBulkRegisterLiveTracking}
+                disabled={afterShipRunning}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+              >
+                {afterShipRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Truck className="w-3.5 h-3.5" />}
+                {afterShipRunning ? 'Registering…' : 'Enable live tracking (bulk)'}
+              </button>
+            </div>
+            {afterShipMsg && (
+              <p className="mt-2 text-xs font-mono text-[#9cb8d9]" role="status">{afterShipMsg}</p>
+            )}
+          </div>
+        );
+      })()}
+
+
       {/* Dispatch email audit — verify every shipped order got its tracking email */}
       {(() => {
         const shippedCount = orders.filter(o =>
