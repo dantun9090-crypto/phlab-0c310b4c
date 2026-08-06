@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import {
-  Users, Search, DollarSign, ShoppingBag, UserX, RefreshCw, Shield, ChevronDown, Crown
+  Users, Search, DollarSign, ShoppingBag, UserX, RefreshCw, Shield, ChevronDown, Crown, Trash2, AlertTriangle, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { db, collection, getDocs, updateDoc, doc } from '@/lib/firebase';
+import { db, collection, getDocs, updateDoc, doc, auth } from '@/lib/firebase';
 import { getAllOrders } from '@/lib/firebase';
 import { logAdminAction } from '@/lib/admin-audit';
 import { toDateSafe, toMillisSafe } from '@/lib/to-date';
+
 
 interface CustomerProfile {
   uid: string;
