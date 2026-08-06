@@ -299,7 +299,10 @@ export default function OrdersTab() {
   const [rmSyncMsg, setRmSyncMsg] = useState('');
 
   // Bulk Royal Mail tracking sync
+  const [afterShipRunning, setAfterShipRunning] = useState(false);
+  const [afterShipMsg, setAfterShipMsg] = useState('');
   const [bulkSyncRunning, setBulkSyncRunning] = useState(false);
+
   const [bulkSyncProgress, setBulkSyncProgress] = useState({ done: 0, total: 0 });
   const [bulkSyncLog, setBulkSyncLog] = useState<{ id: string; status: 'synced' | 'waiting' | 'error'; message: string }[]>([]);
 
