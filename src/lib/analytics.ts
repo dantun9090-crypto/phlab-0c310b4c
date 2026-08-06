@@ -28,7 +28,7 @@ const GOOGLE_ADS_CONVERSION_ID =
   (import.meta.env.VITE_GOOGLE_ADS_CONVERSION_ID as string | undefined)?.trim() ||
   DEFAULT_GOOGLE_ADS_CONVERSION_ID;
 // Conversion label issued by Google Ads for the "Purchase" action.
-const DEFAULT_GOOGLE_ADS_PURCHASE_LABEL = '8fZPCJfJodscENyUyNlD';
+const DEFAULT_GOOGLE_ADS_PURCHASE_LABEL = 'ksL0COOWrt0cENyUyNlD';
 const GOOGLE_ADS_PURCHASE_LABEL =
   (import.meta.env.VITE_GOOGLE_ADS_PURCHASE_LABEL as string | undefined)?.trim() ||
   DEFAULT_GOOGLE_ADS_PURCHASE_LABEL;
