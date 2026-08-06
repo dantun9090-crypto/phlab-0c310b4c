@@ -854,7 +854,11 @@ export default function OrdersTab() {
          });
        }
 
-      // 3. Update local state
+      // 3. Register live tracking (AfterShip) — instant delivered webhook
+      await registerLiveTracking(selected.id, tracking, courier);
+
+      // 4. Update local state
+
       setOrders(prev => prev.map(o =>
         o.id === selected.id ? { ...o, trackingNumber: tracking, status: 'shipped', ...(courier ? { courier } : {}) } : o
       ));
