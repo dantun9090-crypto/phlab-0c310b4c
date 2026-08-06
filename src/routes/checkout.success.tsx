@@ -83,14 +83,24 @@ export const Route = createFileRoute("/checkout/success")({
       { property: "og:description", content: "Your research peptide order with PH Labs UK has been received and is being processed." },
       { property: "og:url", content: "https://phlabs.co.uk/checkout/success" },
       { name: "robots", content: "noindex, nofollow, noarchive" },
-      // Dead-JS fallback: if the app bundle fails to load (bank in-app
-      // browsers cache stale HTML aggressively, so chunk/CSS 404s happen
-      // right after a deploy), this reloads the page until it can boot.
-      // Removed on mount once React is alive (see useEffect below).
-      { "http-equiv": "refresh", content: "10" },
+      // NOTE: the old `<meta http-equiv="refresh" content="10">` dead-JS
+      // fallback was removed — on slow mobile connections React needed
+      // longer than 10s to hydrate, so the page reloaded mid-hydration in
+      // an endless loop (React #418 + MOUNT_TIMEOUT_UNMOUNTED on
+      // /checkout/success). The guarded script below replaces it: it waits
+      // 25s and reloads at most twice, and React cancels it on mount.
+    ],
+    scripts: [
+      {
+        children:
+          "(function(){try{var K='php_boot_reload_success';var n=0;try{n=parseInt(sessionStorage.getItem(K)||'0',10)||0;}catch(e){}" +
+          "if(n>=2)return;var t=setTimeout(function(){try{sessionStorage.setItem(K,String(n+1));}catch(e){}location.reload();},25000);" +
+          "window.__phlCancelBootReload=function(){try{clearTimeout(t);sessionStorage.removeItem(K);}catch(e){}};}catch(e){}})();",
+      },
     ],
     links: [{ rel: "canonical", href: "https://phlabs.co.uk/checkout/success" }],
   }),
+
   component: CheckoutSuccessPage,
 });
 
@@ -355,10 +365,15 @@ function CheckoutSuccessPage() {
     }
   }
 
-  // React is alive — cancel the dead-JS meta-refresh fallback.
+  // React is alive — cancel the dead-JS boot-reload fallback (and any
+  // legacy meta refresh still present in cached HTML).
   useEffect(() => {
+    try {
+      (window as unknown as { __phlCancelBootReload?: () => void }).__phlCancelBootReload?.();
+    } catch { /* ignore */ }
     document.querySelectorAll('meta[http-equiv="refresh"]').forEach((m) => m.remove());
   }, []);
+
 
   // Inline critical styles mirror the Tailwind classes so the page stays
   // centered/readable even when the CSS bundle 404s (stale-asset webview).
