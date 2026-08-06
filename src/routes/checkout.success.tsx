@@ -365,10 +365,15 @@ function CheckoutSuccessPage() {
     }
   }
 
-  // React is alive — cancel the dead-JS meta-refresh fallback.
+  // React is alive — cancel the dead-JS boot-reload fallback (and any
+  // legacy meta refresh still present in cached HTML).
   useEffect(() => {
+    try {
+      (window as unknown as { __phlCancelBootReload?: () => void }).__phlCancelBootReload?.();
+    } catch { /* ignore */ }
     document.querySelectorAll('meta[http-equiv="refresh"]').forEach((m) => m.remove());
   }, []);
+
 
   // Inline critical styles mirror the Tailwind classes so the page stays
   // centered/readable even when the CSS bundle 404s (stale-asset webview).
