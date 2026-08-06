@@ -10,6 +10,9 @@ export type AdminAuditAction =
   | 'customer.role.update'
   | 'customer.vip.toggle'
   | 'customer.deactivate'
+  | 'customer.delete'
+  | 'customer.anonymise'
+
   | 'order.status.update'
   | 'order.dispatch'
   | 'order.royal_mail_create'
