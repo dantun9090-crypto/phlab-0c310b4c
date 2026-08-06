@@ -781,7 +781,10 @@ export default function OrdersTab() {
         ...(courier ? { courier } : {}),
       });
 
+      await registerLiveTracking(selected.id, tracking, courier);
+
       // Update local state
+
       setOrders(prev => prev.map(o =>
         o.id === selected.id ? { ...o, trackingNumber: tracking, ...(courier ? { courier } : {}) } : o
       ));
