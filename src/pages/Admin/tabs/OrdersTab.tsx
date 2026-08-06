@@ -14,6 +14,8 @@ import PaymentTimeline from '@/components/admin/PaymentTimeline';
 import WebhookRetryCard from '@/components/admin/WebhookRetryCard';
 import { isFenaAutoPaid } from '@/lib/fena-filter';
 import { createRoyalMailOrder, syncRoyalMailTracking } from '@/lib/royal-mail.functions';
+import { registerTracker, bulkRegisterTrackers } from '@/lib/aftership.functions';
+
 
 
 import { buildDispatchEmail } from '@/templates/dispatchEmail';
@@ -297,7 +299,10 @@ export default function OrdersTab() {
   const [rmSyncMsg, setRmSyncMsg] = useState('');
 
   // Bulk Royal Mail tracking sync
+  const [afterShipRunning, setAfterShipRunning] = useState(false);
+  const [afterShipMsg, setAfterShipMsg] = useState('');
   const [bulkSyncRunning, setBulkSyncRunning] = useState(false);
+
   const [bulkSyncProgress, setBulkSyncProgress] = useState({ done: 0, total: 0 });
   const [bulkSyncLog, setBulkSyncLog] = useState<{ id: string; status: 'synced' | 'waiting' | 'error'; message: string }[]>([]);
 
@@ -735,7 +740,60 @@ export default function OrdersTab() {
     }
   };
 
+  // Bulk-register every shipped parcel with AfterShip live tracking.
+  const handleBulkRegisterLiveTracking = async () => {
+    if (afterShipRunning) return;
+    setAfterShipRunning(true);
+    setAfterShipMsg('');
+    try {
+      const idToken = await getAdminIdToken();
+      if (!idToken) {
+        setAfterShipMsg('Admin session expired — sign in again.');
+        return;
+      }
+      const res = await bulkRegisterTrackers({ data: { idToken } });
+      if (!res.ok) {
+        setAfterShipMsg(`Failed: ${(res as any).error || 'unknown error'}`);
+        return;
+      }
+      const r = res as { registered: string[]; skipped: number; errors: string[] };
+      setAfterShipMsg(
+        `Registered ${r.registered.length}, skipped ${r.skipped}${r.errors.length ? `, errors: ${r.errors.slice(0, 3).join('; ')}` : ''}`
+      );
+    } catch (e: any) {
+      setAfterShipMsg(e?.message || 'Failed to register live tracking.');
+    } finally {
+      setAfterShipRunning(false);
+    }
+  };
+
+
+  // Register the parcel with AfterShip so we get live courier checkpoints and
+  // an instant "delivered" webhook. Best-effort — never blocks dispatch.
+  const registerLiveTracking = async (orderId: string, tracking: string, courier: string) => {
+    try {
+      const idToken = await getAdminIdToken();
+      if (!idToken) return;
+      await registerTracker({
+        data: {
+          idToken,
+          orderId,
+          trackingNumber: tracking,
+          slug: /evri|hermes/i.test(courier)
+            ? 'evri'
+            : /dpd/i.test(courier)
+              ? 'dpd-uk'
+              : 'royal-mail',
+          ...(selected?.userEmail ? { email: selected.userEmail } : {}),
+        },
+      });
+    } catch (err) {
+      console.warn('[aftership] register failed', err);
+    }
+  };
+
   // Save tracking number + courier to order
+
   const handleSaveTracking = async () => {
     if (!selected || !trackingInput.trim()) {
       setTrackingError('Please enter a tracking number first.');
@@ -754,7 +812,10 @@ export default function OrdersTab() {
         ...(courier ? { courier } : {}),
       });
 
+      await registerLiveTracking(selected.id, tracking, courier);
+
       // Update local state
+
       setOrders(prev => prev.map(o =>
         o.id === selected.id ? { ...o, trackingNumber: tracking, ...(courier ? { courier } : {}) } : o
       ));
@@ -824,7 +885,11 @@ export default function OrdersTab() {
          });
        }
 
-      // 3. Update local state
+      // 3. Register live tracking (AfterShip) — instant delivered webhook
+      await registerLiveTracking(selected.id, tracking, courier);
+
+      // 4. Update local state
+
       setOrders(prev => prev.map(o =>
         o.id === selected.id ? { ...o, trackingNumber: tracking, status: 'shipped', ...(courier ? { courier } : {}) } : o
       ));
@@ -1513,6 +1578,38 @@ export default function OrdersTab() {
           </div>
         );
       })()}
+
+      {/* AfterShip live tracking — instant "delivered" webhooks */}
+      {(() => {
+        const unregistered = orders.filter(o =>
+          String(o.trackingNumber || '').trim() &&
+          !(o as any).aftershipRegistered &&
+          ['shipped', 'delivered'].includes(String(o.status || '').toLowerCase())
+        ).length;
+        if (unregistered === 0 && !afterShipMsg) return null;
+        return (
+          <div className="p-3 bg-[#0d1f35] border border-white/[0.08] rounded-xl">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-[#9cb8d9] text-xs">
+                {unregistered} parcel{unregistered === 1 ? '' : 's'} not yet on live tracking (AfterShip pushes
+                “delivered” instantly, no waiting for the 4-hour sync).
+              </p>
+              <button
+                onClick={handleBulkRegisterLiveTracking}
+                disabled={afterShipRunning}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+              >
+                {afterShipRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Truck className="w-3.5 h-3.5" />}
+                {afterShipRunning ? 'Registering…' : 'Enable live tracking (bulk)'}
+              </button>
+            </div>
+            {afterShipMsg && (
+              <p className="mt-2 text-xs font-mono text-[#9cb8d9]" role="status">{afterShipMsg}</p>
+            )}
+          </div>
+        );
+      })()}
+
 
       {/* Dispatch email audit — verify every shipped order got its tracking email */}
       {(() => {

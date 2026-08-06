@@ -139,6 +139,7 @@ import { Route as ApiPublicHooksFenaProcessRetriesRouteImport } from './routes/a
 import { Route as ApiPublicHooksFenaRouteImport } from './routes/api/public/hooks/fena'
 import { Route as ApiPublicHooksCompoundQueryHistoryRouteImport } from './routes/api/public/hooks/compound-query-history'
 import { Route as ApiPublicHooksBacklinkWatcherRouteImport } from './routes/api/public/hooks/backlink-watcher'
+import { Route as ApiPublicHooksAftershipRouteImport } from './routes/api/public/hooks/aftership'
 import { Route as ApiPublicHealthBuildRouteImport } from './routes/api/public/health.build'
 import { Route as ApiPublicDiagCacheHeadersRouteImport } from './routes/api/public/diag.cache-headers'
 import { Route as ApiPublicDiagBuildStateRouteImport } from './routes/api/public/diag.build-state'
@@ -827,6 +828,11 @@ const ApiPublicHooksBacklinkWatcherRoute =
     path: '/api/public/hooks/backlink-watcher',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksAftershipRoute = ApiPublicHooksAftershipRouteImport.update({
+  id: '/api/public/hooks/aftership',
+  path: '/api/public/hooks/aftership',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHealthBuildRoute = ApiPublicHealthBuildRouteImport.update({
   id: '/build',
   path: '/build',
@@ -955,6 +961,7 @@ export interface FileRoutesByFullPath {
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
   '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
   '/api/public/health/build': typeof ApiPublicHealthBuildRoute
+  '/api/public/hooks/aftership': typeof ApiPublicHooksAftershipRoute
   '/api/public/hooks/backlink-watcher': typeof ApiPublicHooksBacklinkWatcherRoute
   '/api/public/hooks/compound-query-history': typeof ApiPublicHooksCompoundQueryHistoryRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
@@ -1088,6 +1095,7 @@ export interface FileRoutesByTo {
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
   '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
   '/api/public/health/build': typeof ApiPublicHealthBuildRoute
+  '/api/public/hooks/aftership': typeof ApiPublicHooksAftershipRoute
   '/api/public/hooks/backlink-watcher': typeof ApiPublicHooksBacklinkWatcherRoute
   '/api/public/hooks/compound-query-history': typeof ApiPublicHooksCompoundQueryHistoryRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
@@ -1224,6 +1232,7 @@ export interface FileRoutesById {
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
   '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
   '/api/public/health/build': typeof ApiPublicHealthBuildRoute
+  '/api/public/hooks/aftership': typeof ApiPublicHooksAftershipRoute
   '/api/public/hooks/backlink-watcher': typeof ApiPublicHooksBacklinkWatcherRoute
   '/api/public/hooks/compound-query-history': typeof ApiPublicHooksCompoundQueryHistoryRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
@@ -1360,6 +1369,7 @@ export interface FileRouteTypes {
     | '/api/public/diag/build-state'
     | '/api/public/diag/cache-headers'
     | '/api/public/health/build'
+    | '/api/public/hooks/aftership'
     | '/api/public/hooks/backlink-watcher'
     | '/api/public/hooks/compound-query-history'
     | '/api/public/hooks/fena'
@@ -1493,6 +1503,7 @@ export interface FileRouteTypes {
     | '/api/public/diag/build-state'
     | '/api/public/diag/cache-headers'
     | '/api/public/health/build'
+    | '/api/public/hooks/aftership'
     | '/api/public/hooks/backlink-watcher'
     | '/api/public/hooks/compound-query-history'
     | '/api/public/hooks/fena'
@@ -1628,6 +1639,7 @@ export interface FileRouteTypes {
     | '/api/public/diag/build-state'
     | '/api/public/diag/cache-headers'
     | '/api/public/health/build'
+    | '/api/public/hooks/aftership'
     | '/api/public/hooks/backlink-watcher'
     | '/api/public/hooks/compound-query-history'
     | '/api/public/hooks/fena'
@@ -1745,6 +1757,7 @@ export interface RootRouteChildren {
   ApiWebhooksWallidRoute: typeof ApiWebhooksWallidRoute
   ApiPublicDiagBuildStateRoute: typeof ApiPublicDiagBuildStateRoute
   ApiPublicDiagCacheHeadersRoute: typeof ApiPublicDiagCacheHeadersRoute
+  ApiPublicHooksAftershipRoute: typeof ApiPublicHooksAftershipRoute
   ApiPublicHooksBacklinkWatcherRoute: typeof ApiPublicHooksBacklinkWatcherRoute
   ApiPublicHooksCompoundQueryHistoryRoute: typeof ApiPublicHooksCompoundQueryHistoryRoute
   ApiPublicHooksFenaRoute: typeof ApiPublicHooksFenaRoute
@@ -2681,6 +2694,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksBacklinkWatcherRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/aftership': {
+      id: '/api/public/hooks/aftership'
+      path: '/api/public/hooks/aftership'
+      fullPath: '/api/public/hooks/aftership'
+      preLoaderRoute: typeof ApiPublicHooksAftershipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/health/build': {
       id: '/api/public/health/build'
       path: '/build'
@@ -2887,6 +2907,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWebhooksWallidRoute: ApiWebhooksWallidRoute,
   ApiPublicDiagBuildStateRoute: ApiPublicDiagBuildStateRoute,
   ApiPublicDiagCacheHeadersRoute: ApiPublicDiagCacheHeadersRoute,
+  ApiPublicHooksAftershipRoute: ApiPublicHooksAftershipRoute,
   ApiPublicHooksBacklinkWatcherRoute: ApiPublicHooksBacklinkWatcherRoute,
   ApiPublicHooksCompoundQueryHistoryRoute:
     ApiPublicHooksCompoundQueryHistoryRoute,
