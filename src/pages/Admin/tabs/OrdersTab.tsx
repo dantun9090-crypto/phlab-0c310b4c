@@ -1644,6 +1644,38 @@ export default function OrdersTab() {
         );
       })()}
 
+      {/* Bulk delivery check — which shipped parcels are already delivered? */}
+      {(() => {
+        const shippedWithTracking = orders.filter(o =>
+          String(o.trackingNumber || '').trim() &&
+          String(o.status || '').toLowerCase() === 'shipped'
+        ).length;
+        if (shippedWithTracking === 0 && !deliveryCheckMsg) return null;
+        return (
+          <div className="p-3 bg-[#0d1f35] border border-white/[0.08] rounded-xl">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-[#9cb8d9] text-xs">
+                {shippedWithTracking} shipped parcel{shippedWithTracking === 1 ? '' : 's'} — check live courier
+                status now and mark the delivered ones as “delivered” (customer gets the delivery email).
+              </p>
+              <button
+                onClick={handleBulkCheckDeliveries}
+                disabled={deliveryCheckRunning || shippedWithTracking === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+              >
+                {deliveryCheckRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Truck className="w-3.5 h-3.5" />}
+                {deliveryCheckRunning ? 'Checking deliveries…' : 'Check deliveries (bulk)'}
+              </button>
+            </div>
+            {deliveryCheckMsg && (
+              <p className="mt-2 text-xs font-mono text-[#9cb8d9]" role="status">{deliveryCheckMsg}</p>
+            )}
+          </div>
+        );
+      })()}
+
+
+
 
       {/* Dispatch email audit — verify every shipped order got its tracking email */}
       {(() => {
