@@ -453,6 +453,119 @@ export default function CustomersTab() {
           </div>
         </div>
       )}
+
+      {/* Permanent removal modal */}
+      {removeTarget && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70">
+          <div className="w-full max-w-lg bg-[#0b1a30] border border-red-500/30 rounded-2xl p-5 sm:p-6 max-h-[90dvh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-400" />
+                <h3 className="text-white font-bold text-lg">Remove customer</h3>
+              </div>
+              <button
+                onClick={() => setRemoveTarget(null)}
+                aria-label="Close"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#9cb8d9] hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-[#9cb8d9] text-sm mb-4">
+              <span className="text-white font-semibold">{removeTarget.email || removeTarget.uid}</span>
+              {' — '}{removeTarget.orderCount} order(s), £{removeTarget.totalSpend.toFixed(2)} lifetime value.
+            </p>
+
+            {removeResult ? (
+              <>
+                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4 text-emerald-300 text-sm mb-4">
+                  {removeResult}
+                </div>
+                <button
+                  onClick={() => setRemoveTarget(null)}
+                  className="w-full min-h-[48px] bg-[#0f2640] hover:bg-[#1a3a5c] text-white rounded-lg font-semibold"
+                >
+                  Close
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="space-y-2 mb-4">
+                  {([
+                    ['full', 'Delete in full', 'Deletes the login account, the customer record and newsletter entries. Personal data on past orders is redacted (order rows kept 6 years for HMRC).'],
+                    ['anonymise', 'Erase personal data only', 'Keeps the customer row but wipes name, email, phone and addresses, and deactivates the account.'],
+                  ] as const).map(([value, label, hint]) => (
+                    <label
+                      key={value}
+                      className={`block cursor-pointer rounded-lg border-2 p-3 ${removeMode === value ? 'border-red-500/60 bg-red-500/10' : 'border-[#475569] bg-[#1e293b]'}`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="remove-mode"
+                          value={value}
+                          checked={removeMode === value}
+                          onChange={() => setRemoveMode(value)}
+                          className="accent-red-500"
+                        />
+                        <span className="text-white text-sm font-semibold">{label}</span>
+                      </span>
+                      <span className="block text-[#9cb8d9] text-xs mt-1">{hint}</span>
+                    </label>
+                  ))}
+                </div>
+
+                <label className="block text-[#9cb8d9] text-xs mb-1" htmlFor="remove-reason">
+                  Reason (stored in the audit log)
+                </label>
+                <input
+                  id="remove-reason"
+                  value={removeReason}
+                  onChange={e => setRemoveReason(e.target.value)}
+                  placeholder="e.g. GDPR erasure request"
+                  className="w-full mb-4 px-3 py-2 bg-[#1e293b] border-2 border-[#475569] rounded-lg text-white text-sm min-h-[48px] focus:outline-none focus:border-[#3b82f6]"
+                />
+
+                <label className="block text-[#9cb8d9] text-xs mb-1" htmlFor="remove-confirm">
+                  Type <span className="text-red-300 font-mono">DELETE</span> to confirm
+                </label>
+                <input
+                  id="remove-confirm"
+                  value={removeConfirm}
+                  onChange={e => setRemoveConfirm(e.target.value)}
+                  autoComplete="off"
+                  className="w-full mb-4 px-3 py-2 bg-[#1e293b] border-2 border-[#475569] rounded-lg text-white text-sm min-h-[48px] focus:outline-none focus:border-red-500"
+                />
+
+                {removeError && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-red-300 text-sm mb-4">
+                    {removeError}
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <button
+                    onClick={() => setRemoveTarget(null)}
+                    disabled={removeBusy}
+                    className="flex-1 min-h-[48px] bg-[#0f2640] hover:bg-[#1a3a5c] text-white rounded-lg font-semibold disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleRemove}
+                    disabled={removeBusy || removeConfirm.trim().toUpperCase() !== 'DELETE'}
+                    className="flex-1 min-h-[48px] bg-red-600 hover:bg-red-500 text-white rounded-lg font-semibold disabled:opacity-40"
+                  >
+                    {removeBusy ? 'Removing…' : removeMode === 'full' ? 'Delete in full' : 'Erase personal data'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
+
   );
 }
