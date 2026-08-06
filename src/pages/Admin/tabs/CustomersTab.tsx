@@ -155,7 +155,74 @@ export default function CustomersTab() {
     }
   };
 
+  const openRemove = (c: CustomerProfile) => {
+    setRemoveTarget(c);
+    setRemoveMode('full');
+    setRemoveConfirm('');
+    setRemoveReason('');
+    setRemoveError(null);
+    setRemoveResult(null);
+  };
+
+  /**
+   * Permanent removal. The server route deletes the Firebase Auth account,
+   * the customer document and newsletter subscriptions, and redacts personal
+   * data on past orders (order rows are kept for 6 years for HMRC).
+   */
+  const handleRemove = async () => {
+    const target = removeTarget;
+    if (!target) return;
+    setRemoveBusy(true);
+    setRemoveError(null);
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Not signed in');
+      const idToken = await user.getIdToken();
+      const res = await fetch('/api/admin/customer-delete', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          idToken,
+          uid: target.uid,
+          mode: removeMode,
+          reason: removeReason || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || `Failed (${res.status})`);
+
+      const s = data.summary || {};
+      setRemoveResult(
+        removeMode === 'full'
+          ? `Account removed. Auth: ${s.authDeleted ? 'deleted' : s.authMissing ? 'already gone' : 'unchanged'} · Orders redacted: ${s.orders ?? 0} · Newsletter entries removed: ${s.emailSubscribers ?? 0}`
+          : `Personal data erased. Orders redacted: ${s.orders ?? 0} · Newsletter entries removed: ${s.emailSubscribers ?? 0}`,
+      );
+
+      if (removeMode === 'full') {
+        setCustomers(prev => prev.filter(c => c.uid !== target.uid));
+      } else {
+        setCustomers(prev =>
+          prev.map(c => (c.uid === target.uid ? { ...c, email: '[REMOVED]', firstName: '', lastName: '', isActive: false } : c)),
+        );
+      }
+    } catch (err: any) {
+      const code = err?.message || 'unknown_error';
+      const friendly: Record<string, string> = {
+        forbidden: 'Your account is not an admin.',
+        unauthorized: 'Session expired — sign in again.',
+        cannot_remove_self: 'You cannot remove your own account.',
+        cannot_remove_admin: 'Demote this admin to customer before removing.',
+        not_found: 'Customer record no longer exists.',
+        deletion_failed: 'Removal failed part-way — check the audit log and retry.',
+      };
+      setRemoveError(friendly[code] || code);
+    } finally {
+      setRemoveBusy(false);
+    }
+  };
+
   const filtered = customers.filter(c => {
+
     const matchSearch =
       (c.email || '').toLowerCase().includes(search.toLowerCase()) ||
       (`${c.firstName || ''} ${c.lastName || ''}`).toLowerCase().includes(search.toLowerCase());
