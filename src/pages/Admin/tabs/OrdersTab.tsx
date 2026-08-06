@@ -4,9 +4,10 @@ import {
   ShoppingCart, Search, Clock, Package, Truck, CheckCircle, XCircle,
   Eye, Printer, RefreshCw, ChevronDown, X, Send, Hash, Copy,
   Banknote, CheckCheck, AlertCircle, Loader2, CreditCard, ExternalLink,
-  Trash2, ChevronRight, RotateCcw, ArrowRight
+  Trash2, ChevronRight, RotateCcw, ArrowRight, BarChart3
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import CustomerOrdersSummary, { orderEmail } from '@/components/admin/CustomerOrdersSummary';
 import { getAllOrders, updateOrderStatus, Order, db, doc, updateDoc, addDoc, collection, query, where, getDocs, Timestamp, deleteDoc, sendOrderStatusEmail } from '@/lib/firebase';
 import { auth } from '@/lib/firebase';
 import { logAdminAction } from '@/lib/admin-audit';
@@ -226,6 +227,9 @@ export default function OrdersTab() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('new');
   const [selected, setSelected] = useState<Order | null>(null);
+  // Per-row "customer history" toggle — one click shows paid/failed stats
+  // for that customer inline under the order row.
+  const [historyOrderId, setHistoryOrderId] = useState<string | null>(null);
   // Orders the admin has already opened — persisted so "New Orders" only
   // shows genuinely unhandled orders across sessions.
   const SEEN_KEY = 'php_admin_seen_orders';
@@ -1768,6 +1772,13 @@ export default function OrdersTab() {
 
 
                   <button
+                    onClick={() => setHistoryOrderId(historyOrderId === order.id ? null : order.id)}
+                    className={`p-1.5 rounded-lg transition-colors ${historyOrderId === order.id ? 'bg-emerald-500/20 border border-emerald-500/40' : 'bg-[#0f2640] hover:bg-[#1a3a5c]'}`}
+                    title="Customer history (paid / failed)"
+                  >
+                    <BarChart3 className={`w-4 h-4 ${historyOrderId === order.id ? 'text-emerald-300' : 'text-[#8caad4]'}`} />
+                  </button>
+                  <button
                     onClick={() => openOrder(order)}
                     className="p-1.5 bg-[#0f2640] hover:bg-[#1a3a5c] rounded-lg transition-colors"
                     title="View details"
@@ -1787,6 +1798,15 @@ export default function OrdersTab() {
                   </button>
                 </div>
               </div>
+              {historyOrderId === order.id && (
+                <div className="mt-3">
+                  <CustomerOrdersSummary
+                    email={orderEmail(order)}
+                    orders={orders}
+                    onOpenOrder={(o) => { setHistoryOrderId(null); openOrder(o); }}
+                  />
+                </div>
+              )}
             </div>
             );
           })}
@@ -2149,7 +2169,7 @@ export default function OrdersTab() {
                           <input
                             readOnly
                             value={rmResult.trackingNumber}
-                            className="w-full px-2 py-1.5 bg-white border border-gray-300 rounded text-gray-900 text-sm font-mono"
+                            className="w-full px-2 py-1.5 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm font-mono"
                             onFocus={(e) => e.currentTarget.select()}
                           />
                         </div>
@@ -2336,6 +2356,15 @@ export default function OrdersTab() {
                     number. Paste whatever the statement shows into the search box above to find
                     the order.
                   </p>
+                </div>
+
+                {/* Customer history — one-click paid/failed stats for this email */}
+                <div className="mt-4">
+                  <CustomerOrdersSummary
+                    email={orderEmail(selected)}
+                    orders={orders}
+                    onOpenOrder={(o) => openOrder(o)}
+                  />
                 </div>
 
                 {/* Payment timeline + manual retry — Wallid reliability layer */}
