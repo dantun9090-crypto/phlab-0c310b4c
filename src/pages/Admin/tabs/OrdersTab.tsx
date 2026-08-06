@@ -1,1 +1,2427 @@
-placeholder
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import {
+  ShoppingCart, Search, Clock, Package, Truck, CheckCircle, XCircle,
+  Eye, Printer, RefreshCw, ChevronDown, X, Send, Hash, Copy,
+  Banknote, CheckCheck, AlertCircle, Loader2, CreditCard, ExternalLink,
+  Trash2, ChevronRight, RotateCcw, ArrowRight, BarChart3
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import CustomerOrdersSummary, { orderEmail } from '@/components/admin/CustomerOrdersSummary';
+import { getAllOrders, updateOrderStatus, Order, db, doc, updateDoc, addDoc, collection, query, where, getDocs, Timestamp, deleteDoc, sendOrderStatusEmail } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
+import { logAdminAction } from '@/lib/admin-audit';
+import PaymentTimeline from '@/components/admin/PaymentTimeline';
+import WebhookRetryCard from '@/components/admin/WebhookRetryCard';
+import { isFenaAutoPaid } from '@/lib/fena-filter';
+import { createRoyalMailOrder, syncRoyalMailTracking } from '@/lib/royal-mail.functions';
+
+
+import { buildDispatchEmail } from '@/templates/dispatchEmail';
+import { orderReceivedEmail } from '@/templates/orderReceivedEmail';
+
+import { getAdminIdToken } from '@/lib/auth-ready';
+import { toDateSafe, toMillisSafe } from '@/lib/to-date';
+// ── Payment status config for bank transfer orders ──
+const PAYMENT_STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
+  pending_bank_transfer: { label: 'Awaiting Payment', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', icon: Clock },
+  paid:                  { label: 'Paid',             color: 'bg-green-500/20 text-green-400 border-green-500/30', icon: CheckCheck },
+  cancelled:             { label: 'Cancelled',        color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: XCircle },
+};
+
+const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string }> = {
+  pending:    { label: 'Pending',    icon: Clock,       color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' },
+  paid:       { label: 'Paid',       icon: CheckCheck,  color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+  processing: { label: 'Processing', icon: Package,     color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+  shipped:    { label: 'Shipped',    icon: Truck,       color: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' },
+  delivered:  { label: 'Delivered',  icon: CheckCircle, color: 'bg-green-500/20 text-green-400 border-green-500/30' },
+  cancelled:  { label: 'Cancelled',  icon: XCircle,     color: 'bg-red-500/20 text-red-400 border-red-500/30' },
+  refunded:   { label: 'Refunded',   icon: XCircle,     color: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
+};
+
+
+const WORKFLOW: Order['status'][] = ['pending', 'processing', 'shipped', 'delivered'];
+
+// Escape HTML special chars to prevent stored XSS from customer-supplied fields
+// (first/last name, shipping address, tracking number, courier) when written
+// into the print-label window via document.write.
+function esc(s: unknown): string {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function generateShippingLabelPDF(order: Order): boolean {
+  // Generate printable shipping label using browser print - no dependencies needed
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    alert('Please allow popups to print shipping labels');
+    return false;
+  }
+
+  const rawName = `${(order as any).customer?.firstName || ''} ${(order as any).customer?.lastName || ''}`.trim();
+  const customerName = esc(rawName || 'Customer');
+  const orderDate = esc(toDateSafe(order.orderDate)?.toLocaleDateString('en-GB') || 'N/A');
+  const orderIdShort = esc(order.id?.slice(-8) || '');
+  const orderIdUpper = esc(order.id?.slice(-8).toUpperCase() || 'N/A');
+  const shippingAddress = esc(order.shippingAddress || 'No address').replace(/\n/g, '<br>');
+  const trackingNumber = order.trackingNumber ? esc(order.trackingNumber) : '';
+  const courier = order.courier ? esc(order.courier) : '';
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Shipping Label - ${orderIdShort}</title>
+      <style>
+        @media print {
+          body { margin: 0; padding: 0; }
+          .label { width: 105mm; height: 148mm; page-break-after: always; }
+          @page { size: A6 portrait; margin: 0; }
+        }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+        .label { 
+          border: 2px solid #000; 
+          padding: 10mm; 
+          box-sizing: border-box; 
+          width: 105mm; 
+          height: 148mm; 
+          margin: 10mm auto;
+        }
+        h2 { margin: 0 0 8px; font-size: 16px; text-align: center; font-weight: bold; }
+        .section { margin: 10px 0; border-top: 1px dashed #000; padding-top: 8px; }
+        .section-title { font-weight: bold; font-size: 11px; margin-bottom: 4px; }
+        p { margin: 2px 0; font-size: 10px; line-height: 1.3; }
+        .tracking { font-size: 12px; font-weight: bold; margin-top: 8px; }
+        .no-print { display: block; text-align: center; margin: 20px; }
+        @media print {
+          .no-print { display: none; }
+        }
+      </style>
+    </head>
+    <body onload="window.print()">
+      <div class="label">
+        <h2>PH LABS</h2>
+        
+        <div class="section">
+          <div class="section-title">FROM:</div>
+          <p>PH Labs</p>
+          <p>United Kingdom</p>
+          <p>info@phlabs.co.uk</p>
+        </div>
+        
+        <div class="section">
+          <div class="section-title">TO:</div>
+          <p><strong>${customerName}</strong></p>
+          <p>${shippingAddress}</p>
+        </div>
+        
+        <div class="section">
+          <div class="section-title">Order Information:</div>
+          <p><strong>Order #:</strong> ${orderIdUpper}</p>
+          <p><strong>Date:</strong> ${orderDate}</p>
+          ${trackingNumber ? `<p class="tracking">Tracking: ${trackingNumber}</p>` : ''}
+          ${courier ? `<p><strong>Courier:</strong> ${courier}</p>` : ''}
+        </div>
+      </div>
+      <div class="no-print">
+        <p>Label will print automatically. If not, use Ctrl+P (Windows) or Cmd+P (Mac)</p>
+      </div>
+    </body>
+    </html>
+  `);
+  
+  printWindow.document.close();
+  return true;
+}
+
+
+function StatusBadge({ status }: { status: Order['status'] }) {
+  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
+  const Icon = cfg.icon;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${cfg.color}`}>
+      <Icon className="w-3 h-3" />{cfg.label}
+    </span>
+  );
+}
+
+function PaymentStatusBadge({ paymentStatus }: { paymentStatus: string }) {
+  const cfg = PAYMENT_STATUS_CONFIG[paymentStatus] || PAYMENT_STATUS_CONFIG.pending_bank_transfer;
+  const Icon = cfg.icon;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${cfg.color}`}>
+      <Icon className="w-3 h-3" />{cfg.label}
+    </span>
+  );
+}
+
+// ── Fena (Open Banking) status badge ──
+// Webhook is the authoritative source for Fena payments — no manual confirmation.
+function isFenaOrder(order: any): boolean {
+  return order?.paymentProvider === 'fena'
+    || order?.paymentMethod === 'fena_ob'
+    || order?.paymentMethod === 'pay_by_bank'
+    || typeof order?.fenaStatus === 'string';
+}
+function FenaStatusBadge({ order }: { order: any }) {
+  const fenaStatus = String(order?.fenaStatus || '').toLowerCase();
+  if (fenaStatus === 'paid') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-green-500/20 text-green-400 border-green-500/30">
+        <CheckCheck className="w-3 h-3" />Auto-paid by Fena
+      </span>
+    );
+  }
+  if (fenaStatus === 'cancelled' || fenaStatus === 'expired') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-red-500/20 text-red-400 border-red-500/30">
+        <XCircle className="w-3 h-3" />Fena {fenaStatus}
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-blue-500/20 text-blue-400 border-blue-500/30">
+      <CreditCard className="w-3 h-3" />Fena {fenaStatus || 'pending'}
+    </span>
+  );
+}
+
+// ── Payment provider badge (source of payment) ──
+function ProviderBadge({ order }: { order: any }) {
+  const provider = String(order?.paymentProvider || '').toLowerCase();
+  if (provider === 'fena') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border bg-blue-500/15 text-blue-300 border-blue-500/30">
+        <CreditCard className="w-3 h-3" />Fena
+      </span>
+    );
+  }
+  if (provider === 'manual' || order?.paymentMethod === 'bank_transfer') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border bg-slate-500/15 text-slate-300 border-slate-500/30">
+        <Banknote className="w-3 h-3" />Manual
+      </span>
+    );
+  }
+  return null;
+}
+
+// ── Wallid cron reconciliation badge ──
+function ReconciledCronBadge({ order }: { order: any }) {
+  if (!order?.reconciledViaCron) return null;
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border bg-violet-500/15 text-violet-300 border-violet-500/30" title="Status updated automatically by Wallid reconciliation cron">
+      <RefreshCw className="w-3 h-3" />Cron Reconciled
+    </span>
+  );
+}
+
+export default function OrdersTab() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('new');
+  const [selected, setSelected] = useState<Order | null>(null);
+  // Per-row "customer history" toggle — one click shows paid/failed stats
+  // for that customer inline under the order row.
+  const [historyOrderId, setHistoryOrderId] = useState<string | null>(null);
+  // Orders the admin has already opened — persisted so "New Orders" only
+  // shows genuinely unhandled orders across sessions.
+  const SEEN_KEY = 'php_admin_seen_orders';
+  const [seenIds, setSeenIds] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const raw = window.localStorage.getItem(SEEN_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const markSeen = (orderId: string) => {
+    setSeenIds(prev => {
+      if (!orderId || prev.includes(orderId)) return prev;
+      const next = [...prev, orderId].slice(-2000);
+      try { window.localStorage.setItem(SEEN_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
+
+  const openOrder = (order: Order) => {
+    markSeen(order.id);
+    setSelected(order);
+  };
+
+  // "Create Label" UX — brief button lock + success/error toast.
+  const [labelBusy, setLabelBusy] = useState(false);
+  const [labelToast, setLabelToast] = useState<{ msg: string; ok: boolean } | null>(null);
+
+  const handleCreateLabel = (order: Order) => {
+    if (labelBusy) return;
+    setLabelBusy(true);
+    let ok = false;
+    try {
+      ok = generateShippingLabelPDF(order);
+    } catch {
+      ok = false;
+    }
+    setLabelToast(
+      ok
+        ? { msg: 'Label created successfully', ok: true }
+        : { msg: 'Failed to create label. Please try again.', ok: false },
+    );
+    window.setTimeout(() => setLabelToast(null), 3000);
+    window.setTimeout(() => setLabelBusy(false), 2000);
+  };
+  const [updating, setUpdating] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  // Tracking number state
+  const [trackingInput, setTrackingInput] = useState('');
+  const [courierInput, setCourierInput] = useState('');
+  const [trackingLoading, setTrackingLoading] = useState(false);
+  const [trackingSuccess, setTrackingSuccess] = useState('');
+  const [trackingError, setTrackingError] = useState('');
+  const [copiedTrackingId, setCopiedTrackingId] = useState<string | null>(null);
+
+  // Royal Mail order state
+  const [rmService, setRmService] = useState('');
+  const [rmWeight, setRmWeight] = useState<number>(100);
+  const [rmLoading, setRmLoading] = useState(false);
+  const [rmError, setRmError] = useState('');
+  const [rmResult, setRmResult] = useState<{ orderIdentifier: string; orderReference?: string; trackingNumber?: string | null } | null>(null);
+  const [rmCopied, setRmCopied] = useState(false);
+  const [rmSyncLoading, setRmSyncLoading] = useState(false);
+  const [rmSyncMsg, setRmSyncMsg] = useState('');
+
+  // Bulk Royal Mail tracking sync
+  const [bulkSyncRunning, setBulkSyncRunning] = useState(false);
+  const [bulkSyncProgress, setBulkSyncProgress] = useState({ done: 0, total: 0 });
+  const [bulkSyncLog, setBulkSyncLog] = useState<{ id: string; status: 'synced' | 'waiting' | 'error'; message: string }[]>([]);
+
+  // Dispatch email audit (all shipped orders)
+  type MailAuditStatus = 'ok' | 'missing' | 'wrong_tracking' | 'send_error' | 'no_email' | 'no_tracking' | 'error';
+  const [mailAuditRunning, setMailAuditRunning] = useState(false);
+  const [mailAuditProgress, setMailAuditProgress] = useState({ done: 0, total: 0 });
+  const [mailAuditRows, setMailAuditRows] = useState<{
+    id: string;
+    email: string;
+    tracking: string;
+    status: MailAuditStatus;
+    message: string;
+  }[]>([]);
+  const [mailResendBusy, setMailResendBusy] = useState<string | null>(null);
+
+  // Bulk "Order received" confirmation audit + resend (covers PAID orders too,
+  // not just the ones still awaiting payment).
+  type ConfAuditStatus = 'ok' | 'missing' | 'sent' | 'no_email' | 'error';
+  const [confBulkRunning, setConfBulkRunning] = useState(false);
+  const [confBulkProgress, setConfBulkProgress] = useState({ done: 0, total: 0 });
+  const [confBulkRows, setConfBulkRows] = useState<{
+    id: string;
+    email: string;
+    paid: boolean;
+    status: ConfAuditStatus;
+    message: string;
+  }[]>([]);
+
+
+
+
+  // Bank transfer payment state
+  const [transferRefInput, setTransferRefInput] = useState('');
+  const [paymentStatusInput, setPaymentStatusInput] = useState<'pending_bank_transfer' | 'paid' | 'cancelled'>('pending_bank_transfer');
+  const [transferLoading, setTransferLoading] = useState(false);
+  const [transferMsg, setTransferMsg] = useState('');
+
+  useEffect(() => {
+    loadOrders();
+  }, []);
+
+  // Trigger element to return focus to when the modal closes.
+  const triggerRef = useRef<HTMLElement | null>(null);
+  // First focusable inside the modal (the Close button) — autofocus on open.
+  const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  // Lock background scroll while the order detail modal is open (prevents
+  // the page behind from scrolling on mobile when reviewing an order).
+  // Also: capture the trigger element, autofocus the modal close button,
+  // handle Escape to close, and restore focus on unmount.
+  useEffect(() => {
+    if (typeof document === 'undefined' || !selected) return;
+    triggerRef.current = (document.activeElement as HTMLElement) || null;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    // Autofocus the close button on next paint so the assistive tech announces it.
+    const focusTimer = window.setTimeout(() => {
+      closeBtnRef.current?.focus();
+    }, 30);
+    // Focus trap: Tab / Shift+Tab cycles inside the dialog panel only.
+    const FOCUSABLE = 'a[href],area[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+    const getPanel = () => document.querySelector<HTMLElement>('[data-testid="orders-modal-panel"]');
+    const focusables = () => {
+      const panel = getPanel();
+      if (!panel) return [] as HTMLElement[];
+      return Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE))
+        .filter((el) => !el.hasAttribute('disabled') && el.offsetParent !== null);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setSelected(null);
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      const items = focusables();
+      if (items.length === 0) {
+        e.preventDefault();
+        closeBtnRef.current?.focus();
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      const panel = getPanel();
+      const inside = !!(panel && active && panel.contains(active));
+      if (!inside) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+        return;
+      }
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      window.clearTimeout(focusTimer);
+      document.body.style.overflow = prev;
+      // Return focus to the trigger element if it's still in the DOM.
+      const t = triggerRef.current;
+      if (t && document.contains(t) && typeof t.focus === 'function') {
+        try { t.focus(); } catch { /* ignore */ }
+      }
+      triggerRef.current = null;
+    };
+  }, [selected]);
+
+  // Sync inputs when selected order changes
+  useEffect(() => {
+    setTrackingInput(selected?.trackingNumber || '');
+    setCourierInput(selected?.courier || '');
+    setTrackingSuccess('');
+    setTrackingError('');
+    setCopiedTrackingId(null);
+    // Royal Mail fields
+    const existingRmOrderId = (selected as any)?.royalMailOrderId || null;
+    const existingRmTracking = (selected as any)?.royalMailTracking || null;
+    setRmService(typeof (selected as any)?.royalMailService === 'string' ? (selected as any).royalMailService : '');
+    setRmWeight(100);
+    setRmError('');
+    setRmCopied(false);
+    setRmResult(existingRmOrderId
+      ? { orderIdentifier: existingRmOrderId, orderReference: selected?.id, trackingNumber: existingRmTracking }
+      : null);
+    // Bank transfer fields
+    setTransferRefInput((selected as any)?.transferReference || '');
+    setPaymentStatusInput((selected as any)?.paymentStatus || 'pending_bank_transfer');
+    setTransferMsg('');
+  }, [selected?.id]);
+
+  const loadOrders = async () => {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const data = await getAllOrders();
+      setOrders(data);
+    } catch (e: any) {
+      console.error('Failed to load orders:', e);
+      setLoadError(e?.message || 'Failed to load orders. Check Firestore rules and indexes.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (orderId: string, status: Order['status']) => {
+    setUpdating(orderId);
+    try {
+      await updateOrderStatus(orderId, status);
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
+      if (selected?.id === orderId) setSelected(prev => prev ? { ...prev, status } : prev);
+
+      // Send order status email notification to customer
+      const order = orders.find(o => o.id === orderId);
+      const customerEmail = order?.userEmail || (order as any)?.customer?.email;
+      if (customerEmail && ['processing', 'shipped', 'delivered', 'canceled', 'paid', 'refunded'].includes(status)) {
+        const firstName = (order as any)?.shippingFirstName || (order as any)?.customer?.firstName || 'Customer';
+        const orderItems = (order?.items || []).map((it: any) => ({
+          name: it.name || '',
+          variantName: it.variantName,
+          quantity: it.quantity || 1,
+          priceNum: it.priceNum || 0,
+        }));
+        sendOrderStatusEmail(
+          customerEmail, firstName, orderId, status,
+          undefined, undefined, undefined, undefined,
+          orderItems, order?.totalAmount
+        ).catch(console.error);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const [reinstating, setReinstating] = useState<string | null>(null);
+  const [payLinkBusy, setPayLinkBusy] = useState<string | null>(null);
+  const [payLinkMsg, setPayLinkMsg] = useState<{ msg: string; ok: boolean } | null>(null);
+
+  /** Email the customer a "Pay Again" link + bank-transfer fallback. */
+  const handleSendPaymentLink = async (orderId: string) => {
+    setPayLinkBusy(orderId);
+    setPayLinkMsg(null);
+    try {
+      const idToken = await getAdminIdToken();
+      const res = await fetch('/api/admin/send-payment-link', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ idToken, orderId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      setPayLinkMsg({ msg: `Payment link emailed to ${data.to}`, ok: true });
+      await logAdminAction({ action: 'order.payment_link_sent', target: `orders/${orderId}` });
+    } catch (e: any) {
+      setPayLinkMsg({ msg: `Failed to send: ${e?.message || 'please try again.'}`, ok: false });
+    } finally {
+      setPayLinkBusy(null);
+    }
+  };
+
+  const [confirmMailBusy, setConfirmMailBusy] = useState<string | null>(null);
+  const [confirmMailMsg, setConfirmMailMsg] = useState<{ msg: string; ok: boolean } | null>(null);
+
+  /**
+   * Re-sends the "Order received" confirmation for any order. Customers keep
+   * reporting they never got a confirmation (older orders were placed before
+   * the automatic confirmation existed, and some land in spam), so admins need
+   * a one-click resend that also lets them correct the address first.
+   */
+  const handleResendConfirmation = async (orderId: string, overrideEmail?: string) => {
+    const order = orders.find(o => o.id === orderId) as any;
+    if (!order || confirmMailBusy) return;
+    const email = String(overrideEmail || order.userEmail || order.customer?.email || '').trim();
+    if (!email) {
+      setConfirmMailMsg({ msg: 'This order has no customer email address.', ok: false });
+      return;
+    }
+    setConfirmMailBusy(orderId);
+    setConfirmMailMsg(null);
+    try {
+      const mail = orderReceivedEmail({
+        firstName: order.shippingFirstName || order.customer?.firstName || 'Customer',
+        orderNumber: order.id,
+        totalAmount: Number(order.totalAmount || 0),
+        items: (order.items || []).map((it: any) => ({
+          name: String(it.name || it.productName || 'Item'),
+          variantName: it.variantName ? String(it.variantName) : undefined,
+          quantity: Number(it.quantity) || 1,
+          total: Number(it.total ?? it.priceNum ?? 0),
+        })),
+        bankTransferReference: order.bankTransferReference,
+        paymentPending: !['paid', 'processing', 'shipped', 'delivered'].includes(
+          String(order.status || '').toLowerCase(),
+        ),
+      });
+      await addDoc(collection(db, 'mail'), {
+        to: email,
+        // Blind copy to the shop inbox so every confirmation is provable.
+        bcc: 'info@phlabs.co.uk',
+        replyTo: 'info@phlabs.co.uk',
+        message: mail,
+        source: 'admin:order-confirmation-resend',
+        createdAt: Timestamp.now(),
+      });
+      await logAdminAction({
+        action: 'order.confirmation_email_resend',
+        target: `orders/${orderId}`,
+        meta: { to: email },
+      });
+      setConfirmMailMsg({ msg: `Confirmation re-sent to ${email}`, ok: true });
+    } catch (e: any) {
+      setConfirmMailMsg({ msg: `Failed to send: ${e?.message || 'please try again.'}`, ok: false });
+    } finally {
+      setConfirmMailBusy(null);
+    }
+  };
+
+  /** Builds the "Order received" confirmation mail doc for an order. */
+  const buildConfirmationMailDoc = (order: any, email: string) => {
+    const paid = ['paid', 'processing', 'shipped', 'delivered'].includes(
+      String(order.status || '').toLowerCase(),
+    );
+    const mail = orderReceivedEmail({
+      firstName: order.shippingFirstName || order.customer?.firstName || 'Customer',
+      orderNumber: order.id,
+      totalAmount: Number(order.totalAmount || 0),
+      items: (order.items || []).map((it: any) => ({
+        name: String(it.name || it.productName || 'Item'),
+        variantName: it.variantName ? String(it.variantName) : undefined,
+        quantity: Number(it.quantity) || 1,
+        total: Number(it.total ?? it.priceNum ?? 0),
+      })),
+      bankTransferReference: order.bankTransferReference,
+      paymentPending: !paid,
+    });
+    return {
+      to: email,
+      bcc: 'info@phlabs.co.uk',
+      replyTo: 'info@phlabs.co.uk',
+      message: mail,
+      source: 'admin:order-confirmation-bulk-resend',
+      createdAt: Timestamp.now(),
+    };
+  };
+
+  /**
+   * Bulk audit + resend of the "Order received" confirmation across EVERY
+   * non-cancelled order — paid ones included, not only those still awaiting
+   * payment. Orders placed before the automatic confirmation existed (and any
+   * send that silently failed) get a fresh email in one click.
+   */
+  const handleBulkResendConfirmations = async () => {
+    if (confBulkRunning) return;
+    const candidates = orders.filter(
+      (o) => !['cancelled', 'canceled', 'refunded'].includes(String(o.status || '').toLowerCase()),
+    );
+    setConfBulkRows([]);
+    setConfBulkProgress({ done: 0, total: candidates.length });
+    if (candidates.length === 0) return;
+
+    setConfBulkRunning(true);
+    try {
+      for (const o of candidates) {
+        const order = o as any;
+        const email = String(order.userEmail || order.customer?.email || '').trim();
+        const paid = ['paid', 'processing', 'shipped', 'delivered'].includes(
+          String(order.status || '').toLowerCase(),
+        );
+        try {
+          if (!email) {
+            setConfBulkRows(prev => [...prev, { id: order.id, email: '—', paid, status: 'no_email', message: 'No customer email on the order.' }]);
+            continue;
+          }
+          const snap = await getDocs(query(collection(db, 'mail'), where('to', '==', email)));
+          const docs = snap.docs.map((d: any) => d.data() as any);
+          const hasConfirmation = docs.some((m: any) => {
+            const subject = String(m?.message?.subject || '');
+            const html = String(m?.message?.html || '');
+            const failed = String(m?.delivery?.state || '').toUpperCase() === 'ERROR';
+            return !failed && /order received/i.test(subject) && html.includes(String(order.id || ''));
+          });
+
+          if (hasConfirmation) {
+            setConfBulkRows(prev => [...prev, { id: order.id, email, paid, status: 'ok', message: 'Confirmation already delivered.' }]);
+            continue;
+          }
+
+          await addDoc(collection(db, 'mail'), buildConfirmationMailDoc(order, email));
+          await logAdminAction({
+            action: 'order.confirmation_email_resend',
+            target: `orders/${order.id}`,
+            meta: { to: email, bulk: true, paid },
+          });
+          setConfBulkRows(prev => [...prev, { id: order.id, email, paid, status: 'sent', message: `Confirmation sent to ${email}.` }]);
+        } catch (e: any) {
+          setConfBulkRows(prev => [...prev, { id: order.id, email, paid, status: 'error', message: e?.message || 'Failed for this order.' }]);
+        } finally {
+          setConfBulkProgress(prev => ({ ...prev, done: prev.done + 1 }));
+        }
+      }
+    } finally {
+      setConfBulkRunning(false);
+    }
+  };
+
+
+
+  const handleReinstateOrder = async (orderId: string) => {
+    if (!window.confirm('Reinstate this order? It will be set back to Pending and the customer will receive a new payment reminder.')) return;
+    setReinstating(orderId);
+    try {
+      await updateDoc(doc(db, 'orders', orderId), {
+        status: 'pending',
+        cancelledAt: null,
+        cancelReason: null,
+      });
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'pending', cancelledAt: undefined, cancelReason: undefined } : o));
+      if (selected?.id === orderId) setSelected(prev => prev ? { ...prev, status: 'pending' } : prev);
+    } catch (e: any) {
+      alert('Failed to reinstate order: ' + (e?.message || 'Please try again.'));
+    } finally {
+      setReinstating(null);
+    }
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    const orderRef = orders.find(o => o.id === orderId);
+    const label = (orderRef as any)?.bankTransferRef || `#${orderId?.slice(-8).toUpperCase()}`;
+    if (!window.confirm(`Permanently delete order ${label}?\n\nThis cannot be undone.`)) return;
+    setDeleting(orderId);
+    try {
+      await deleteDoc(doc(db, 'orders', orderId));
+      await logAdminAction({
+        action: 'order.delete',
+        target: `orders/${orderId}`,
+        before: orderRef,
+      });
+      setOrders(prev => prev.filter(o => o.id !== orderId));
+      if (selected?.id === orderId) setSelected(null);
+    } catch (e: any) {
+      alert('Failed to delete order: ' + (e?.message || 'Please try again.'));
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  // Save bank transfer payment status + transfer reference
+  const handleSavePaymentStatus = async () => {
+    if (!selected) return;
+    setTransferLoading(true);
+    setTransferMsg('');
+    try {
+      const update: Record<string, any> = {
+        paymentStatus: paymentStatusInput,
+      };
+      if (transferRefInput.trim()) {
+        update.transferReference = transferRefInput.trim();
+      }
+      // If marking as paid, also advance order status to processing
+      if (paymentStatusInput === 'paid' && selected.status === 'pending') {
+        update.status = 'processing';
+        update.paidAt = new Date();
+      }
+      if (paymentStatusInput === 'cancelled') {
+        update.status = 'cancelled';
+      }
+      await updateDoc(doc(db, 'orders', selected.id), update);
+      await logAdminAction({
+        action: 'order.status.update',
+        target: `orders/${selected.id}`,
+        before: { status: selected.status, paymentStatus: (selected as any).paymentStatus ?? null },
+        after: update,
+      });
+      setOrders(prev => prev.map(o => o.id === selected.id ? { ...o, ...update } : o));
+      setSelected(prev => prev ? { ...prev, ...update } : prev);
+      setTransferMsg(
+        paymentStatusInput === 'paid'
+          ? 'Payment confirmed — order advanced to Processing.'
+          : paymentStatusInput === 'cancelled'
+          ? 'Order marked as cancelled.'
+          : 'Payment status updated.'
+      );
+    } catch (e: any) {
+      setTransferMsg('Failed to update: ' + (e?.message || 'Please try again.'));
+    } finally {
+      setTransferLoading(false);
+    }
+  };
+
+  // Save tracking number + courier to order
+  const handleSaveTracking = async () => {
+    if (!selected || !trackingInput.trim()) {
+      setTrackingError('Please enter a tracking number first.');
+      return;
+    }
+    setTrackingLoading(true);
+    setTrackingError('');
+    setTrackingSuccess('');
+    try {
+      const tracking = trackingInput.trim();
+      const courier = courierInput.trim();
+
+      // Save tracking number and courier to the order
+      await updateDoc(doc(db, 'orders', selected.id), {
+        trackingNumber: tracking,
+        ...(courier ? { courier } : {}),
+      });
+
+      // Update local state
+      setOrders(prev => prev.map(o =>
+        o.id === selected.id ? { ...o, trackingNumber: tracking, ...(courier ? { courier } : {}) } : o
+      ));
+      setSelected(prev => prev ? { ...prev, trackingNumber: tracking, ...(courier ? { courier } : {}) } : prev);
+      setTrackingSuccess('Tracking number saved successfully!');
+    } catch (e: any) {
+      console.error(e);
+      setTrackingError(e?.message || 'Failed to save. Please try again.');
+    } finally {
+      setTrackingLoading(false);
+    }
+  };
+
+  // Dispatch order: save tracking number + mark as shipped + write dispatch email to Firestore
+  // (Firebase Trigger Email extension picks up docs in 'mail' collection)
+  const handleDispatch = async () => {
+    if (!selected || !trackingInput.trim()) {
+      setTrackingError('Please enter a tracking number first.');
+      return;
+    }
+    setTrackingLoading(true);
+    setTrackingError('');
+    setTrackingSuccess('');
+    try {
+      const tracking = trackingInput.trim();
+      const courier = courierInput.trim();
+
+      // 1. Save tracking number + courier to the order and mark as shipped
+      await updateDoc(doc(db, 'orders', selected.id), {
+        trackingNumber: tracking,
+        status: 'shipped',
+        ...(courier ? { courier } : {}),
+      });
+      await logAdminAction({
+        action: 'order.dispatch',
+        target: `orders/${selected.id}`,
+        after: { trackingNumber: tracking, courier: courier || null, status: 'shipped' },
+      });
+
+       // 2. Write dispatch email to 'mail' collection
+       // Firebase Trigger Email extension sends it automatically
+       const customerEmail = selected.userEmail || (selected as any).customer?.email;
+       if (customerEmail) {
+         const firstName = (selected as any).shippingFirstName || (selected as any).customer?.firstName || 'Customer';
+         const orderItems = (selected.items || []).map((it: any) => ({
+           name: it.name || '',
+           variantName: it.variantName,
+           quantity: it.quantity || 1,
+           priceNum: it.priceNum || 0,
+         }));
+          await addDoc(collection(db, 'mail'), {
+            to: customerEmail,
+            message: {
+             subject: `Order #${selected.id?.slice(-8).toUpperCase()} — Your Order Has Shipped!`,
+             html: buildDispatchEmail({
+               firstName,
+               orderId: selected.id || '',
+               trackingNumber: tracking,
+               trackingUrl: tracking ? `https://www.royalmail.com/track-your-item#/tracking-results/${tracking}` : undefined,
+               courier,
+               items: orderItems,
+               totalAmount: selected.totalAmount || 0,
+               shippingAddress: selected.shippingAddress,
+             }),
+           },
+           createdAt: Timestamp.now(),
+         });
+       }
+
+      // 3. Update local state
+      setOrders(prev => prev.map(o =>
+        o.id === selected.id ? { ...o, trackingNumber: tracking, status: 'shipped', ...(courier ? { courier } : {}) } : o
+      ));
+      setSelected(prev => prev ? { ...prev, trackingNumber: tracking, status: 'shipped', ...(courier ? { courier } : {}) } : prev);
+      setTrackingSuccess(customerEmail
+        ? `Dispatched! Tracking saved & email sent to ${customerEmail}`
+        : 'Tracking number saved. (No customer email found — email not sent)');
+    } catch (e: any) {
+      console.error(e);
+      setTrackingError(e?.message || 'Failed to save. Please try again.');
+    } finally {
+      setTrackingLoading(false);
+    }
+  };
+
+  const handleCreateRoyalMailOrder = async () => {
+    if (!selected) return;
+    setRmError('');
+    setRmResult(null);
+    const c: any = (selected as any).customer || {};
+    const firstName = c.firstName || (selected as any).shippingFirstName || '';
+    const lastName = c.lastName || (selected as any).shippingLastName || '';
+    const addressLine1 = c.address || (selected as any).addressLine1 || '';
+    const addressLine2 = (selected as any).addressLine2 || '';
+    const city = c.city || (selected as any).city || '';
+    const postcode = (c.postcode || (selected as any).postcode || '').toUpperCase();
+    const email = c.email || selected.userEmail || '';
+    if (!firstName || !lastName || !addressLine1 || !postcode || !email) {
+      setRmError('Order is missing required address fields (name, addressLine1, postcode, email).');
+      return;
+    }
+    setRmLoading(true);
+    try {
+      const idToken = await getAdminIdToken();
+      if (!idToken) {
+        setRmError('You must be signed in as an admin to create Royal Mail orders.');
+        setRmLoading(false);
+        return;
+      }
+      const result = await createRoyalMailOrder({
+        data: {
+          idToken,
+          orderId: selected.id,
+          firstName, lastName, addressLine1, addressLine2,
+          city, postcode, email,
+          phone: (c.phone || (selected as any).phone || '') as string,
+          countryCode: 'GB',
+          ...(rmService ? { serviceCode: rmService } : {}),
+          weightGrams: Number(rmWeight) || 100,
+          subtotal: Number((selected as any).subtotal ?? selected.totalAmount ?? 0),
+          shippingCostCharged: Number((selected as any).shippingCost ?? 0),
+          total: Number((selected as any).total ?? selected.totalAmount ?? 0),
+        },
+      });
+      if (!result.ok) {
+        const detail = result.details ? ` — ${result.details}` : '';
+        throw new Error(`${result.error ?? 'Failed to create Royal Mail order.'}${detail}`);
+      }
+      const orderIdentifier = String(result.orderId || '').trim();
+      const orderReference = selected.id;
+      const trackingNumber = result.trackingNumber ? String(result.trackingNumber).trim() : null;
+      const serviceCodeUsed = result.serviceCodeUsed ?? '';
+      if (!orderIdentifier) throw new Error('Worker did not return an orderId');
+
+
+      // Save to Firestore
+      const updatePayload: Record<string, unknown> = {
+        royalMailOrderId: orderIdentifier,
+        royalMailService: serviceCodeUsed,
+        royalMailTracking: trackingNumber,
+        royalMailCreatedAt: Timestamp.now(),
+        courier: 'Royal Mail',
+      };
+      if (trackingNumber) updatePayload.trackingNumber = trackingNumber;
+      await updateDoc(doc(db, 'orders', selected.id), updatePayload);
+      await logAdminAction({
+        action: 'order.royal_mail_create',
+        target: `orders/${selected.id}`,
+        meta: { service: serviceCodeUsed, requestedService: rmService, royalMailOrderId: orderIdentifier, weightGrams: Number(rmWeight) || 100 },
+      });
+
+      setRmResult({ orderIdentifier, orderReference, trackingNumber });
+      if (trackingNumber) setTrackingInput(trackingNumber);
+      setCourierInput('Royal Mail');
+      setOrders(prev => prev.map(o => o.id === selected.id
+        ? { ...o, ...(trackingNumber ? { trackingNumber } : {}), courier: 'Royal Mail' } as Order
+        : o));
+      setSelected(prev => prev ? { ...prev, ...(trackingNumber ? { trackingNumber } : {}), courier: 'Royal Mail' } as Order : prev);
+    } catch (e: any) {
+      console.error('[royal-mail] create order failed', e);
+      setRmError(e?.message || 'Failed to create Royal Mail order.');
+    } finally {
+      setRmLoading(false);
+    }
+  };
+
+  /**
+   * Pulls the tracking number for an EXISTING Click & Drop order and writes it
+   * back to Firestore. Use this after applying postage / printing the label in
+   * Click & Drop — it never creates a second (chargeable) shipment.
+   */
+  const handleSyncRoyalMailTracking = async () => {
+    if (!selected) return;
+    const rmOrderId = String((selected as any).royalMailOrderId || '').trim();
+    setRmError('');
+    setRmSyncMsg('');
+    if (!rmOrderId) {
+      setRmError('This order has no Royal Mail order ID yet — create the Click & Drop order first.');
+      return;
+    }
+    setRmSyncLoading(true);
+    try {
+      const idToken = await getAdminIdToken();
+      if (!idToken) {
+        setRmError('You must be signed in as an admin to sync tracking.');
+        return;
+      }
+      const res = await syncRoyalMailTracking({ data: { idToken, royalMailOrderId: rmOrderId, orderReference: selected.id } });
+      if (!res.ok) throw new Error(res.error || 'Failed to read Royal Mail order.');
+
+      // Safety check — never write a tracking number that belongs to a
+      // different shipment. If Royal Mail answered with another order's
+      // reference, refuse instead of corrupting this order.
+      const returnedRef = String(res.orderReference || '').trim().toUpperCase();
+      const ourRef = String(selected.id || '').trim().toUpperCase();
+      if (returnedRef && ourRef && returnedRef !== ourRef) {
+        setRmError(`Royal Mail returned a different order (${res.orderReference}). Tracking NOT saved — check the Royal Mail order ID on this order.`);
+        return;
+      }
+
+      const tracking = res.trackingNumber ? String(res.trackingNumber).trim() : null;
+      if (!tracking) {
+        setRmSyncMsg('No tracking yet — apply postage / print the label in Click & Drop, then sync again.');
+        return;
+      }
+
+
+      await updateDoc(doc(db, 'orders', selected.id), {
+        trackingNumber: tracking,
+        royalMailTracking: tracking,
+        courier: 'Royal Mail',
+      });
+      await logAdminAction({
+        action: 'order.royal_mail_tracking_sync',
+        target: `orders/${selected.id}`,
+        meta: { royalMailOrderId: rmOrderId, trackingNumber: tracking },
+      });
+
+      setTrackingInput(tracking);
+      setCourierInput('Royal Mail');
+      setRmResult(prev => ({
+        orderIdentifier: prev?.orderIdentifier || rmOrderId,
+        orderReference: selected.id,
+        trackingNumber: tracking,
+      }));
+      setOrders(prev => prev.map(o => o.id === selected.id
+        ? { ...o, trackingNumber: tracking, courier: 'Royal Mail' } as Order
+        : o));
+      setSelected(prev => prev ? { ...prev, trackingNumber: tracking, courier: 'Royal Mail' } as Order : prev);
+      setRmSyncMsg(`Tracking synced: ${tracking}`);
+    } catch (e: any) {
+      console.error('[royal-mail] tracking sync failed', e);
+      setRmError(e?.message || 'Failed to sync tracking.');
+    } finally {
+      setRmSyncLoading(false);
+    }
+  };
+
+  /**
+   * Bulk version of the sync above: walks every order that already has a Click &
+   * Drop order ID but no tracking number yet, one at a time, and writes back the
+   * tracking number when Royal Mail returns a matching order reference.
+   */
+  const handleBulkSyncRoyalMailTracking = async () => {
+    if (bulkSyncRunning) return;
+    const candidates = orders.filter(o =>
+      String((o as any).royalMailOrderId || '').trim() &&
+      !String(o.trackingNumber || '').trim()
+    );
+    setBulkSyncLog([]);
+    setBulkSyncProgress({ done: 0, total: candidates.length });
+    if (candidates.length === 0) return;
+
+    setBulkSyncRunning(true);
+    try {
+      const idToken = await getAdminIdToken();
+      if (!idToken) {
+        setBulkSyncLog([{ id: '—', status: 'error', message: 'You must be signed in as an admin to sync tracking.' }]);
+        return;
+      }
+
+      for (const o of candidates) {
+        const rmOrderId = String((o as any).royalMailOrderId || '').trim();
+        try {
+          const res = await syncRoyalMailTracking({ data: { idToken, royalMailOrderId: rmOrderId, orderReference: o.id } });
+          if (!res.ok) throw new Error(res.error || 'Failed to read Royal Mail order.');
+
+          const returnedRef = String(res.orderReference || '').trim().toUpperCase();
+          const ourRef = String(o.id || '').trim().toUpperCase();
+          if (returnedRef && ourRef && returnedRef !== ourRef) {
+            setBulkSyncLog(prev => [...prev, { id: o.id, status: 'error', message: `Royal Mail returned a different order (${res.orderReference}) — skipped.` }]);
+            continue;
+          }
+
+          const tracking = res.trackingNumber ? String(res.trackingNumber).trim() : null;
+          if (!tracking) {
+            setBulkSyncLog(prev => [...prev, { id: o.id, status: 'waiting', message: 'No tracking yet — apply postage in Click & Drop.' }]);
+            continue;
+          }
+
+          await updateDoc(doc(db, 'orders', o.id), {
+            trackingNumber: tracking,
+            royalMailTracking: tracking,
+            courier: 'Royal Mail',
+          });
+          await logAdminAction({
+            action: 'order.royal_mail_tracking_sync',
+            target: `orders/${o.id}`,
+            meta: { royalMailOrderId: rmOrderId, trackingNumber: tracking, bulk: true },
+          });
+
+          setOrders(prev => prev.map(x => x.id === o.id
+            ? { ...x, trackingNumber: tracking, courier: 'Royal Mail' } as Order
+            : x));
+          setSelected(prev => prev && prev.id === o.id
+            ? { ...prev, trackingNumber: tracking, courier: 'Royal Mail' } as Order
+            : prev);
+          setBulkSyncLog(prev => [...prev, { id: o.id, status: 'synced', message: tracking }]);
+        } catch (e: any) {
+          console.error('[royal-mail] bulk sync failed for', o.id, e);
+          setBulkSyncLog(prev => [...prev, { id: o.id, status: 'error', message: e?.message || 'Sync failed.' }]);
+        } finally {
+          setBulkSyncProgress(prev => ({ ...prev, done: prev.done + 1 }));
+        }
+      }
+    } finally {
+      setBulkSyncRunning(false);
+    }
+  };
+
+  /** Builds the dispatch email payload for an order (shared by dispatch + resend). */
+  const buildDispatchMailDoc = (order: Order, tracking: string, email: string) => {
+    const o = order as any;
+    const firstName = o.shippingFirstName || o.customer?.firstName || 'Customer';
+    const courier = String(o.courier || 'Royal Mail');
+    return {
+      to: email,
+      message: {
+        subject: `Order #${order.id?.slice(-8).toUpperCase()} — Your Order Has Shipped!`,
+        html: buildDispatchEmail({
+          firstName,
+          orderId: order.id || '',
+          trackingNumber: tracking,
+          trackingUrl: `https://www.royalmail.com/track-your-item#/tracking-results/${tracking}`,
+          courier,
+          items: (order.items || []).map((it: any) => ({
+            name: it.name || '',
+            variantName: it.variantName,
+            quantity: it.quantity || 1,
+            priceNum: it.priceNum || 0,
+          })),
+          totalAmount: order.totalAmount || 0,
+          shippingAddress: order.shippingAddress,
+        }),
+      },
+      createdAt: Timestamp.now(),
+    };
+  };
+
+  /**
+   * Audit: walks every shipped/delivered order and verifies the customer really
+   * received a dispatch email containing THIS order's tracking number.
+   */
+  const handleAuditDispatchEmails = async () => {
+    if (mailAuditRunning) return;
+    const shipped = orders.filter(o =>
+      ['shipped', 'delivered'].includes(String(o.status || '').toLowerCase())
+    );
+    setMailAuditRows([]);
+    setMailAuditProgress({ done: 0, total: shipped.length });
+    if (shipped.length === 0) return;
+
+    setMailAuditRunning(true);
+    try {
+      for (const o of shipped) {
+        const email = String((o as any).userEmail || (o as any).customer?.email || '').trim();
+        const tracking = String(o.trackingNumber || '').trim();
+        try {
+          if (!email) {
+            setMailAuditRows(prev => [...prev, { id: o.id, email: '—', tracking, status: 'no_email', message: 'No customer email on the order — nothing was sent.' }]);
+            continue;
+          }
+          if (!tracking) {
+            setMailAuditRows(prev => [...prev, { id: o.id, email, tracking: '—', status: 'no_tracking', message: 'Marked shipped but has no tracking number.' }]);
+            continue;
+          }
+
+          const snap = await getDocs(query(collection(db, 'mail'), where('to', '==', email)));
+          const docs = snap.docs.map((d: any) => ({ id: d.id, ...(d.data() as any) }));
+          const match = docs.find((m: any) => String(m?.message?.html || '').includes(tracking));
+          const orderMatch = docs.find((m: any) => String(m?.message?.html || '').includes(String(o.id || '')));
+
+          if (!match) {
+            setMailAuditRows(prev => [...prev, {
+              id: o.id, email, tracking,
+              status: orderMatch ? 'wrong_tracking' : 'missing',
+              message: orderMatch
+                ? 'An email exists for this order but WITHOUT the current tracking number.'
+                : 'No dispatch email found with this tracking number.',
+            }]);
+            continue;
+          }
+
+          const state = String(match?.delivery?.state || '').toUpperCase();
+          if (state === 'ERROR') {
+            setMailAuditRows(prev => [...prev, {
+              id: o.id, email, tracking, status: 'send_error',
+              message: `Send failed: ${String(match?.delivery?.error || 'unknown error').slice(0, 140)}`,
+            }]);
+            continue;
+          }
+
+          setMailAuditRows(prev => [...prev, {
+            id: o.id, email, tracking, status: 'ok',
+            message: state ? `Email ${state.toLowerCase()} with correct tracking.` : 'Email queued with correct tracking.',
+          }]);
+        } catch (e: any) {
+          setMailAuditRows(prev => [...prev, { id: o.id, email, tracking, status: 'error', message: e?.message || 'Audit failed for this order.' }]);
+        } finally {
+          setMailAuditProgress(prev => ({ ...prev, done: prev.done + 1 }));
+        }
+      }
+    } finally {
+      setMailAuditRunning(false);
+    }
+  };
+
+  /** Re-sends the dispatch email for one audited order. */
+  const handleResendDispatchEmail = async (orderId: string) => {
+    const order = orders.find(o => o.id === orderId);
+    if (!order || mailResendBusy) return;
+    const email = String((order as any).userEmail || (order as any).customer?.email || '').trim();
+    const tracking = String(order.trackingNumber || '').trim();
+    if (!email || !tracking) return;
+    setMailResendBusy(orderId);
+    try {
+      await addDoc(collection(db, 'mail'), buildDispatchMailDoc(order, tracking, email));
+      await logAdminAction({
+        action: 'order.dispatch_email_resend',
+        target: `orders/${orderId}`,
+        meta: { to: email, trackingNumber: tracking },
+      });
+      setMailAuditRows(prev => prev.map(r => r.id === orderId
+        ? { ...r, status: 'ok', message: `Re-sent to ${email} with tracking ${tracking}.` }
+        : r));
+    } catch (e: any) {
+      setMailAuditRows(prev => prev.map(r => r.id === orderId
+        ? { ...r, status: 'error', message: e?.message || 'Resend failed.' }
+        : r));
+    } finally {
+      setMailResendBusy(null);
+    }
+  };
+
+  const copyToClipboard = (text: string, orderId: string) => {
+
+    navigator.clipboard.writeText(text);
+    setCopiedTrackingId(orderId);
+    setTimeout(() => setCopiedTrackingId(null), 2000);
+  };
+
+  /** Statuses that mean "money not received yet". */
+  const UNPAID_STATUSES = [
+    'pending',
+    'pending_payment',
+    'pending_bank_transfer',
+    'awaiting_payment',
+    'processing_payment',
+    'unpaid',
+    'failed',
+    'expired',
+  ];
+  const isUnpaidOrder = (o: Order) => UNPAID_STATUSES.includes(String(o.status));
+
+  /** A "new" order = awaiting action, never opened by an admin, placed < 24h ago. */
+  const NEW_ORDER_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+  const isNewOrder = (o: Order) => {
+    const ts = orderTimeMs(o);
+    if (!ts || Date.now() - ts > NEW_ORDER_MAX_AGE_MS) return false;
+    return !seenIds.includes(o.id) && (isUnpaidOrder(o) || String(o.status) === 'paid');
+  };
+
+
+
+
+  const orderTimeMs = (o: Order): number => {
+    const raw: any = (o as any).orderDate ?? (o as any).createdAt;
+    if (!raw) return 0;
+    if (typeof raw?.toDate === 'function') return raw.toDate().getTime();
+    if (typeof raw?.seconds === 'number') return raw.seconds * 1000;
+    const t = new Date(raw).getTime();
+    return Number.isFinite(t) ? t : 0;
+  };
+
+  const filtered = orders.filter(o => {
+
+    const c = (o as any).customer;
+    const customerName = c ? `${c.firstName || ''} ${c.lastName || ''}`.trim() : (o.userName || '');
+    const customerEmail = c?.email || o.userEmail || '';
+    const address = c ? `${c.address || ''} ${c.city || ''} ${c.postcode || ''}`.trim() : (o.shippingAddress || '');
+    const orderId = (o as any).orderId || o.id || '';
+    const paymentSearch = [
+      (o as any).paymentRef,
+      (o as any).apiPaymentId,
+      (o as any).wallidApiPaymentId,
+      (o as any).wallidPaymentRef,
+      // Wallid's internal payment id — this is what most banks print on the
+      // customer's statement instead of our PHP-xxxx order number.
+      (o as any).wallidBankRef,
+      (o as any).bankTransferRef,
+      (o as any).bankTransferReference,
+      (o as any).truelayerPaymentId,
+      (o as any).fenaPaymentId,
+    ].filter(Boolean).join(' ');
+
+    const s = search.toLowerCase();
+    // Bank statements show the Wallid id without dashes (e.g. "9b37b618d5"),
+    // so compare an alphanumeric-only version too.
+    const norm = (v: string) => v.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const sNorm = norm(search);
+    const matchSearch = !search ||
+      orderId.toLowerCase().includes(s) ||
+      o.id?.toLowerCase().includes(s) ||
+      customerName.toLowerCase().includes(s) ||
+      customerEmail.toLowerCase().includes(s) ||
+      paymentSearch.toLowerCase().includes(s) ||
+      (sNorm.length >= 4 && norm(paymentSearch).includes(sNorm)) ||
+      (sNorm.length >= 4 && norm(orderId).includes(sNorm)) ||
+      address.toLowerCase().includes(s);
+
+    const matchStatus = statusFilter === 'all' || o.status === statusFilter ||
+      (statusFilter === 'new' && isNewOrder(o)) ||
+      (statusFilter === 'unpaid' && isUnpaidOrder(o)) ||
+      (statusFilter === 'pending' && o.status === 'pending_payment') ||
+      (statusFilter === 'fena_paid' && isFenaAutoPaid(o)) ||
+      (statusFilter === 'next_day_12' && (o as any).shippingMethod === 'next_day_12') ||
+      (statusFilter === 'next_day_missed' && (o as any).nextDayMissedCutoff === true);
+    return matchSearch && matchStatus;
+  }).sort((a, b) => orderTimeMs(b) - orderTimeMs(a));
+
+
+  const counts = {
+    new: orders.filter(isNewOrder).length,
+    unpaid: orders.filter(isUnpaidOrder).length,
+    all: orders.length,
+    pending: orders.filter(o => o.status === 'pending' || o.status === 'pending_payment').length,
+    paid: orders.filter(o => o.status === 'paid').length,
+
+    processing: orders.filter(o => o.status === 'processing').length,
+    shipped: orders.filter(o => o.status === 'shipped').length,
+    delivered: orders.filter(o => o.status === 'delivered').length,
+    cancelled: orders.filter(o => o.status === 'cancelled').length,
+    fena_paid: orders.filter(isFenaAutoPaid).length,
+    next_day_12: orders.filter(o => (o as any).shippingMethod === 'next_day_12').length,
+    next_day_missed: orders.filter(o => (o as any).nextDayMissedCutoff === true).length,
+  };
+
+
+  // TrueLayer Open Banking orders still in 'pending' (no bank_transfer)
+  const trueLayerPending = orders.filter(o =>
+    o.status === 'pending' && (o as any).paymentMethod !== 'bank_transfer'
+  );
+
+  // Expired pending orders: pending (either method) older than 24h
+  const EXPIRY_MS = 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  const expiredPending = orders.filter(o => {
+    if (o.status !== 'pending') return false;
+    const ts = toMillisSafe(o.orderDate);
+    return ts > 0 && now - ts > EXPIRY_MS;
+  });
+
+  const handleCancelExpired = async (orderId: string) => {
+    setUpdating(orderId);
+    try {
+      await updateDoc(doc(db, 'orders', orderId), { status: 'cancelled' });
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'cancelled' } : o));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const handleCancelAllExpired = async () => {
+    for (const o of expiredPending) {
+      await handleCancelExpired(o.id);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <ShoppingCart className="w-5 h-5 text-blue-400" /> Order Management
+          </h2>
+          <p className="text-[#9cb8d9] text-sm mt-0.5">{orders.length} total orders</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => window.open('https://console.truelayer.com/', '_blank')}
+            className="flex items-center gap-2 px-3 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-600/30 hover:border-blue-600/50 text-blue-400 hover:text-white rounded-lg text-sm transition-all"
+          >
+            <CreditCard className="w-4 h-4" />
+            TrueLayer Console
+            <ExternalLink className="w-3 h-3 opacity-60" />
+          </button>
+          <button onClick={loadOrders} className="flex items-center gap-2 px-3 py-2 bg-[#0f2640] hover:bg-[#1a3a5c] text-white rounded-lg text-sm transition-colors">
+            <RefreshCw className="w-4 h-4" /> Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* TrueLayer manual verification banner */}
+      {trueLayerPending.length > 0 && (
+        <div className="flex items-start gap-3 bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
+          <div className="shrink-0 w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center mt-0.5">
+            <CreditCard className="w-4 h-4 text-amber-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-amber-400 font-semibold text-sm">
+              {trueLayerPending.length} Open Banking order{trueLayerPending.length > 1 ? 's' : ''} awaiting TrueLayer verification
+            </p>
+            <p className="text-amber-400/70 text-xs mt-0.5 leading-relaxed">
+              Open Banking payments are not automatically confirmed — check your TrueLayer Console to verify each payment before dispatching. Once confirmed, advance the order to <strong className="text-amber-300">Processing</strong>.
+            </p>
+            <div className="flex items-center gap-2 mt-2">
+              <button
+                onClick={() => window.open('https://console.truelayer.com/', '_blank')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 hover:text-amber-200 rounded-lg text-xs font-medium transition-all"
+              >
+                Open TrueLayer Console <ExternalLink className="w-3 h-3" />
+              </button>
+              <button
+                onClick={() => setStatusFilter('pending')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-[#9cb8d9] hover:text-white rounded-lg text-xs font-medium transition-all"
+              >
+                View Pending Orders <ChevronRight className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Expired pending orders cleanup */}
+      {expiredPending.length > 0 && (
+        <div className="bg-[#0b1a30]/80 border border-red-500/20 rounded-xl overflow-hidden">
+          <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/[0.06]">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-red-500/15 flex items-center justify-center">
+                <Clock className="w-3.5 h-3.5 text-red-400" />
+              </div>
+              <div>
+                <p className="text-white font-semibold text-sm">Expired Pending Orders</p>
+                <p className="text-[#9cb8d9] text-xs">{expiredPending.length} order{expiredPending.length > 1 ? 's' : ''} pending for more than 24 hours</p>
+              </div>
+            </div>
+            <button
+              onClick={handleCancelAllExpired}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-400 hover:text-red-300 rounded-lg text-xs font-medium transition-all"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Cancel All
+            </button>
+          </div>
+          <div className="divide-y divide-white/[0.04]">
+            {expiredPending.map(o => {
+              const hoursAgo = Math.floor((now - toMillisSafe(o.orderDate)) / (60 * 60 * 1000));
+              const method = (o as any).paymentMethod === 'bank_transfer' ? 'Bank Transfer' : 'Card';
+              const name = `${(o as any).customer?.firstName || ''} ${(o as any).customer?.lastName || ''}`.trim() || 'Unknown';
+              return (
+                <div key={o.id} className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-white/[0.02] transition-colors">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-xs font-mono">{(o as any).bankTransferRef || `#${o.id?.slice(-8).toUpperCase()}`}</p>
+                      <p className="text-[#9cb8d9] text-xs truncate">{name} · {method} · <span className="text-red-400">{hoursAgo}h ago</span></p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-white text-sm font-semibold">£{o.totalAmount?.toFixed(2)}</span>
+                    <button
+                      onClick={() => handleCancelExpired(o.id)}
+                      disabled={updating === o.id}
+                      className="flex items-center gap-1 px-2.5 py-1 bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-400 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+                    >
+                      {updating === o.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Status filter tabs */}
+      <div className="flex gap-2 flex-wrap">
+        {(['new', 'unpaid', 'all', 'pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'fena_paid', 'next_day_12', 'next_day_missed'] as const).map(s => {
+          const labelMap: Record<string, string> = {
+            new: '🆕 New Orders',
+            unpaid: '💷 Unpaid',
+            fena_paid: '✅ Fena Auto-Paid',
+            next_day_12: '🚀 Next Day by 12',
+            next_day_missed: '⚠️ Next Day Missed',
+          };
+          const label = labelMap[s] ?? (s.charAt(0).toUpperCase() + s.slice(1));
+
+          const isFena = s === 'fena_paid';
+          const isNextDay = s === 'next_day_12' || s === 'new';
+          const isMissed = s === 'next_day_missed';
+
+          return (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                statusFilter === s
+                  ? (isFena ? 'bg-green-600 border-green-500 text-white'
+                    : isNextDay ? 'bg-emerald-600 border-emerald-500 text-white'
+                    : isMissed ? 'bg-amber-600 border-amber-500 text-white'
+                    : 'bg-blue-600 border-blue-500 text-white')
+                  : (isFena ? 'bg-green-500/10 border-green-500/30 text-green-300 hover:text-green-200'
+                    : isNextDay ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:text-emerald-200'
+                    : isMissed ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:text-amber-200'
+                    : 'bg-[#0d1f35] border-white/[0.08] text-[#9cb8d9] hover:text-white')
+              }`}
+            >
+              {label} ({counts[s]})
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Bulk Royal Mail tracking sync */}
+      {(() => {
+        const pending = orders.filter(o =>
+          String((o as any).royalMailOrderId || '').trim() && !String(o.trackingNumber || '').trim()
+        ).length;
+        if (pending === 0 && bulkSyncLog.length === 0) return null;
+        return (
+          <div className="p-3 bg-[#0d1f35] border border-white/[0.08] rounded-xl">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-[#9cb8d9] text-xs">
+                {pending} Royal Mail order{pending === 1 ? '' : 's'} awaiting a tracking number.
+              </p>
+              <button
+                onClick={handleBulkSyncRoyalMailTracking}
+                disabled={bulkSyncRunning || pending === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-300 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+              >
+                {bulkSyncRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Truck className="w-3.5 h-3.5" />}
+                {bulkSyncRunning
+                  ? `Syncing ${bulkSyncProgress.done}/${bulkSyncProgress.total}…`
+                  : 'Bulk synchronize tracking'}
+              </button>
+            </div>
+            {bulkSyncLog.length > 0 && (
+              <ul className="mt-2 space-y-1 max-h-40 overflow-y-auto" role="status">
+                {bulkSyncLog.map((r, i) => (
+                  <li
+                    key={`${r.id}-${i}`}
+                    className={`text-xs font-mono ${
+                      r.status === 'synced' ? 'text-emerald-300'
+                        : r.status === 'waiting' ? 'text-amber-300'
+                        : 'text-red-400'
+                    }`}
+                  >
+                    {r.id}: {r.message}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Dispatch email audit — verify every shipped order got its tracking email */}
+      {(() => {
+        const shippedCount = orders.filter(o =>
+          ['shipped', 'delivered'].includes(String(o.status || '').toLowerCase())
+        ).length;
+        if (shippedCount === 0 && mailAuditRows.length === 0) return null;
+        const problems = mailAuditRows.filter(r => r.status !== 'ok').length;
+        const okCount = mailAuditRows.filter(r => r.status === 'ok').length;
+        return (
+          <div className="p-3 bg-[#0d1f35] border border-white/[0.08] rounded-xl">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-[#9cb8d9] text-xs">
+                {shippedCount} dispatched order{shippedCount === 1 ? '' : 's'} — check every customer got a tracking email.
+                {mailAuditRows.length > 0 && (
+                  <span className="ml-1">
+                    <span className="text-emerald-300">{okCount} OK</span>
+                    {problems > 0 && <span className="text-red-400"> · {problems} problem{problems === 1 ? '' : 's'}</span>}
+                  </span>
+                )}
+              </p>
+              <button
+                onClick={handleAuditDispatchEmails}
+                disabled={mailAuditRunning || shippedCount === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+              >
+                {mailAuditRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCheck className="w-3.5 h-3.5" />}
+                {mailAuditRunning
+                  ? `Checking ${mailAuditProgress.done}/${mailAuditProgress.total}…`
+                  : 'Check all dispatched · tracking emails'}
+              </button>
+            </div>
+            {mailAuditRows.length > 0 && (
+              <ul className="mt-2 space-y-1 max-h-56 overflow-y-auto" role="status">
+                {mailAuditRows.map((r, i) => {
+                  const tone = r.status === 'ok'
+                    ? 'text-emerald-300'
+                    : r.status === 'no_tracking' || r.status === 'wrong_tracking'
+                      ? 'text-amber-300'
+                      : 'text-red-400';
+                  const canResend = r.status === 'missing' || r.status === 'wrong_tracking' || r.status === 'send_error';
+                  return (
+                    <li key={`${r.id}-${i}`} className="flex items-start justify-between gap-2">
+                      <span className={`text-xs font-mono ${tone}`}>
+                        {r.id} · {r.email} · {r.tracking} — {r.message}
+                      </span>
+                      {canResend && (
+                        <button
+                          onClick={() => handleResendDispatchEmail(r.id)}
+                          disabled={mailResendBusy === r.id}
+                          className="shrink-0 flex items-center gap-1 px-2 py-1 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-300 rounded-md text-[11px] font-medium transition-all disabled:opacity-50"
+                        >
+                          {mailResendBusy === r.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                          Resend
+                        </button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Bulk confirmation resend — paid orders included, not only awaiting payment */}
+      {(() => {
+        const candidates = orders.filter(
+          (o) => !['cancelled', 'canceled', 'refunded'].includes(String(o.status || '').toLowerCase()),
+        );
+        if (candidates.length === 0 && confBulkRows.length === 0) return null;
+        const paidCount = candidates.filter(o =>
+          ['paid', 'processing', 'shipped', 'delivered'].includes(String(o.status || '').toLowerCase()),
+        ).length;
+        const sent = confBulkRows.filter(r => r.status === 'sent').length;
+        const okCount = confBulkRows.filter(r => r.status === 'ok').length;
+        const problems = confBulkRows.filter(r => r.status === 'error' || r.status === 'no_email').length;
+        return (
+          <div className="p-3 bg-[#0d1f35] border border-white/[0.08] rounded-xl">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-[#9cb8d9] text-xs">
+                {candidates.length} order{candidates.length === 1 ? '' : 's'} ({paidCount} paid) — resend the
+                “Order received” confirmation to anyone missing it.
+                {confBulkRows.length > 0 && (
+                  <span className="ml-1">
+                    <span className="text-emerald-300">{okCount} already OK</span>
+                    {sent > 0 && <span className="text-blue-300"> · {sent} re-sent</span>}
+                    {problems > 0 && <span className="text-red-400"> · {problems} problem{problems === 1 ? '' : 's'}</span>}
+                  </span>
+                )}
+              </p>
+              <button
+                onClick={handleBulkResendConfirmations}
+                disabled={confBulkRunning || candidates.length === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+              >
+                {confBulkRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                {confBulkRunning
+                  ? `Checking ${confBulkProgress.done}/${confBulkProgress.total}…`
+                  : 'Bulk resend confirmations (paid + unpaid)'}
+              </button>
+            </div>
+            {confBulkRows.length > 0 && (
+              <ul className="mt-2 space-y-1 max-h-56 overflow-y-auto" role="status">
+                {confBulkRows.map((r, i) => {
+                  const tone = r.status === 'ok'
+                    ? 'text-emerald-300'
+                    : r.status === 'sent'
+                      ? 'text-blue-300'
+                      : r.status === 'no_email'
+                        ? 'text-amber-300'
+                        : 'text-red-400';
+                  return (
+                    <li key={`${r.id}-${i}`} className={`text-xs font-mono ${tone}`}>
+                      {r.id} · {r.email} · {r.paid ? 'paid' : 'unpaid'} — {r.message}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        );
+      })()}
+
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#2a4a7a]" />
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search by order ID or address..."
+          className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        />
+      </div>
+
+      {/* Orders list */}
+      {loading ? (
+        <div className="text-center py-16 text-[#9cb8d9]">Loading orders...</div>
+      ) : loadError ? (
+        <div className="text-center py-16">
+          <p className="text-red-400 mb-3">{loadError}</p>
+          <button
+            onClick={loadOrders}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-16 text-[#9cb8d9]">No orders found</div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map(order => {
+            const c = (order as any).customer;
+            const customerName = c ? `${c.firstName || ''} ${c.lastName || ''}`.trim() : (order.userName || 'Guest');
+            const customerEmail = c?.email || order.userEmail || '';
+            const addressLine = c ? [c.address, c.city, c.postcode].filter(Boolean).join(', ') : (order.shippingAddress || '');
+            const orderRef = (order as any).orderId || `#${order.id?.slice(-8).toUpperCase()}`;
+            const wallidApiRef = (order as any).apiPaymentId || (order as any).wallidApiPaymentId || '';
+            const orderTs = order.orderDate || (order as any).createdAt;
+            return (
+            <div key={order.id} className="bg-[#0b1a30]/60 border border-white/[0.07] rounded-xl p-4 hover:border-white/[0.12] transition-colors">
+              {/* Mobile: stack info above actions — the old flex-wrap row let
+                  the price/select column squeeze the info column to a few
+                  characters wide, wrapping text letter-by-letter. */}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="font-mono text-white font-semibold text-sm">
+                      {orderRef}
+                      {wallidApiRef && (
+                        <span className="text-emerald-300">
+                          {' '}+ {String(wallidApiRef).replace(/-/g, '').slice(0, 10)}
+                        </span>
+                      )}
+                    </span>
+
+                    <StatusBadge status={order.status} />
+                    {(order as any).paymentMethod === 'bank_transfer' && (
+                      <PaymentStatusBadge paymentStatus={(order as any).paymentStatus || 'pending_bank_transfer'} />
+                    )}
+                    {isFenaOrder(order) && <FenaStatusBadge order={order} />}
+                    <ProviderBadge order={order} />
+                    <ReconciledCronBadge order={order} />
+                    {order.trackingNumber && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-400 font-mono">
+                        <Hash className="w-3 h-3" />{order.trackingNumber}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-white text-xs mt-1 font-medium">{customerName}{customerEmail ? <span className="text-[#9cb8d9] font-normal"> · {customerEmail}</span> : ''}</p>
+                  <p className="text-[#9cb8d9] text-xs mt-0.5 truncate">{addressLine || 'No address'}</p>
+                  <p className="text-[#2a4a7a] text-xs mt-0.5">
+                    {order.items?.length || 0} item(s) ·{' '}
+                    {orderTs?.toDate?.()?.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) || 'Unknown date'}
+                  </p>
+                  {wallidApiRef && (
+                    <p className="text-[#8caad4] text-xs mt-1 font-mono break-all">
+                      Bank ref: <span className="text-emerald-300">{String(wallidApiRef).replace(/-/g, '').slice(0, 10)}</span>
+                      <span className="text-[#2a4a7a]"> · Wallid ID: {wallidApiRef}</span>
+                    </p>
+                  )}
+
+                </div>
+                <div className="flex items-center gap-3 flex-wrap sm:shrink-0">
+                  <span className="text-green-400 font-bold text-lg">£{((order as any).total || order.totalAmount || 0).toFixed(2)}</span>
+
+                  {/* Status selector */}
+                  <div className="relative">
+                    <select
+                      value={order.status}
+                      onChange={e => handleStatusChange(order.id, e.target.value as Order['status'])}
+                      disabled={updating === order.id}
+                      className="appearance-none pl-3 pr-8 py-1.5 bg-white border border-gray-300 rounded-lg text-gray-900 text-xs focus:outline-none focus:border-blue-500 disabled:opacity-50 cursor-pointer"
+                    >
+                      {WORKFLOW.map(s => (
+                        <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
+                      ))}
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[#9cb8d9] pointer-events-none" />
+                  </div>
+
+                  {/* Quick-advance to next workflow status */}
+                  {(() => {
+                    const idx = WORKFLOW.indexOf(order.status as Order['status']);
+                    if (idx < 0 || idx >= WORKFLOW.length - 1) return null;
+                    const next = WORKFLOW[idx + 1];
+                    const nextCfg = STATUS_CONFIG[next];
+                    const needsDispatch = next === 'shipped';
+                    return (
+                      <button
+                        onClick={() => {
+                          if (needsDispatch) {
+                            openOrder(order);
+
+                          } else {
+                            handleStatusChange(order.id, next);
+                          }
+                        }}
+                        disabled={updating === order.id}
+                        title={needsDispatch ? `Open dispatch — requires tracking number` : `Advance to ${nextCfg.label}`}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 hover:border-emerald-500/50 text-emerald-300 hover:text-emerald-200 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+                      >
+                        {updating === order.id
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          : <ArrowRight className="w-3.5 h-3.5" />}
+                        {nextCfg.label}
+                      </button>
+                    );
+                  })()}
+
+
+                  <button
+                    onClick={() => setHistoryOrderId(historyOrderId === order.id ? null : order.id)}
+                    className={`p-1.5 rounded-lg transition-colors ${historyOrderId === order.id ? 'bg-emerald-500/20 border border-emerald-500/40' : 'bg-[#0f2640] hover:bg-[#1a3a5c]'}`}
+                    title="Customer history (paid / failed)"
+                  >
+                    <BarChart3 className={`w-4 h-4 ${historyOrderId === order.id ? 'text-emerald-300' : 'text-[#8caad4]'}`} />
+                  </button>
+                  <button
+                    onClick={() => openOrder(order)}
+                    className="p-1.5 bg-[#0f2640] hover:bg-[#1a3a5c] rounded-lg transition-colors"
+                    title="View details"
+                  >
+                    <Eye className="w-4 h-4 text-[#8caad4]" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteOrder(order.id)}
+                    disabled={deleting === order.id}
+                    className="p-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 rounded-lg transition-colors disabled:opacity-50"
+                    title="Delete order"
+                  >
+                    {deleting === order.id
+                      ? <Loader2 className="w-4 h-4 text-red-400 animate-spin" />
+                      : <Trash2 className="w-4 h-4 text-red-400" />
+                    }
+                  </button>
+                </div>
+              </div>
+              {historyOrderId === order.id && (
+                <div className="mt-3">
+                  <CustomerOrdersSummary
+                    email={orderEmail(order)}
+                    orders={orders}
+                    onOpenOrder={(o) => { setHistoryOrderId(null); openOrder(o); }}
+                  />
+                </div>
+              )}
+            </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Order Detail Modal — portalled to body so transformed ancestors don't break `fixed` positioning */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+        {selected && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Order details"
+            data-testid="orders-modal-overlay"
+            className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={e => { if (e.target === e.currentTarget) setSelected(null); }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              data-testid="orders-modal-panel"
+              className="relative z-[1001] bg-[#04101f] border border-white/[0.08] rounded-2xl w-full max-w-5xl max-h-[92vh] overflow-y-auto shadow-2xl"
+            >
+              <div>
+                {/* Sticky header — key info + actions always visible */}
+                <div className="sticky top-0 z-20 bg-[#04101f]/95 backdrop-blur supports-[backdrop-filter]:bg-[#04101f]/80 border-b border-white/[0.08] px-4 py-3 flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="text-white font-bold text-lg font-mono">
+                      {(selected as any).orderId || (selected as any).bankTransferRef || `#${selected.id?.slice(-8).toUpperCase()}`}
+                      {(() => {
+                        const wid = (selected as any).apiPaymentId || (selected as any).wallidApiPaymentId || '';
+                        return wid ? (
+                          <span className="text-emerald-300"> + {String(wid).replace(/-/g, '').slice(0, 10)}</span>
+                        ) : null;
+                      })()}
+                    </h3>
+
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <StatusBadge status={selected.status} />
+                      {(selected as any).paymentMethod === 'bank_transfer' && (
+                        <PaymentStatusBadge paymentStatus={(selected as any).paymentStatus || 'pending_bank_transfer'} />
+                      )}
+                      {(selected as any).paymentMethod === 'bank_transfer' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 border border-amber-500/30 rounded text-xs text-amber-400">
+                          <Banknote className="w-3 h-3" /> Bank Transfer
+                        </span>
+                      )}
+                      {isFenaOrder(selected) && <FenaStatusBadge order={selected} />}
+                      <ProviderBadge order={selected} />
+                      <ReconciledCronBadge order={selected} />
+                      {(selected as any).fenaPaymentId && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(String((selected as any).fenaPaymentId));
+                          }}
+                          title="Copy Fena payment ID"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono border bg-blue-500/10 text-blue-300 border-blue-500/30 hover:bg-blue-500/20"
+                        >
+                          <Copy className="w-3 h-3" />
+                          {String((selected as any).fenaPaymentId).slice(0, 12)}…
+                        </button>
+                      )}
+                      <span className="text-[#9cb8d9] text-xs">
+                        {toDateSafe(selected.orderDate)?.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) ?? 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleDeleteOrder(selected.id)}
+                      disabled={deleting === selected.id}
+                      title="Delete this order"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 hover:border-red-500/50 text-red-400 hover:text-red-300 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+                    >
+                      {deleting === selected.id
+                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        : <Trash2 className="w-3.5 h-3.5" />}
+                      Delete Order
+                    </button>
+                    <button ref={closeBtnRef} onClick={() => setSelected(null)} aria-label="Close order details" data-testid="orders-modal-close" className="text-[#9cb8d9] hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 rounded">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="px-4 pt-4 pb-2">
+                {/* Customer */}
+                {(() => {
+                  const c = (selected as any).customer;
+                  const name = c ? `${c.firstName || ''} ${c.lastName || ''}`.trim() : (selected.userName || 'Guest');
+                  const email = c?.email || selected.userEmail || '';
+                  const phone = c?.phone || '';
+                  const address = c ? [c.address, c.city, c.postcode, c.country].filter(Boolean).join(', ') : (selected.shippingAddress || '');
+                  const shipping = (selected as any).shippingLabel || '';
+                  return (
+                    <div className="bg-[#0b1a30]/60 rounded-xl p-3 mb-3 space-y-1">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <p className="text-[#9cb8d9] text-[10px] font-medium uppercase tracking-wide">Customer</p>
+                        <span className="text-green-400 font-bold text-base">£{(((selected as any).total || selected.totalAmount || 0)).toFixed(2)} · {selected.items?.length || 0} item{(selected.items?.length || 0) === 1 ? '' : 's'}</span>
+                      </div>
+                      <p className="text-white text-sm font-medium">{name}</p>
+                      {email && <p className="text-[#9cb8d9] text-sm">{email}</p>}
+                      {phone && <p className="text-[#9cb8d9] text-sm">{phone}</p>}
+                      {address && <p className="text-[#9cb8d9] text-sm">{address}</p>}
+                      {shipping && <p className="text-[#8caad4] text-xs mt-1">Shipping: {shipping}</p>}
+                      {(() => {
+                        const sel: any = selected;
+                        const isND = sel.shippingMethod === 'next_day_12';
+                        const created = sel.createdAt?.toDate?.() || sel.createdAt;
+                        const createdStr = created ? new Date(created).toLocaleString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' }) : '';
+                        if (isND) {
+                          return (
+                            <div className="mt-2 space-y-0.5">
+                              <p className="text-emerald-300 text-xs font-semibold">🚀 Next Day by 12 PM</p>
+                              {createdStr && (
+                                <p className="text-[#8caad4] text-xs">Ordered {createdStr} GMT — {sel.orderedBeforeCutoff ? 'qualifies for Next Day by 12' : 'AFTER cut-off'}</p>
+                              )}
+                              {sel.expectedDeliveryDate && (
+                                <p className="text-[#8caad4] text-xs">Expected delivery: {sel.expectedDeliveryDate} by 12:00 PM</p>
+                              )}
+                              {sel.nextDayMissedCutoff && (
+                                <p className="text-amber-300 text-xs font-semibold">⚠️ Selected Next Day but missed cut-off — fulfil as standard</p>
+                              )}
+                            </div>
+                          );
+                        }
+                        if (sel.expectedDeliveryFrom && sel.expectedDeliveryTo) {
+                          return (
+                            <p className="text-[#8caad4] text-xs mt-1">
+                              Expected delivery: {sel.expectedDeliveryFrom} – {sel.expectedDeliveryTo}
+                            </p>
+                          );
+                        }
+                        return null;
+                      })()}
+                      {(selected as any).customerNote && (
+                        <div className="mt-3 pt-3 border-t border-white/10">
+                          <p className="text-amber-300 text-xs font-semibold uppercase tracking-wide mb-1">Customer note</p>
+                          <p className="text-white text-sm whitespace-pre-wrap break-words">{(selected as any).customerNote}</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                <div className="lg:grid lg:grid-cols-2 lg:gap-4 lg:items-start">
+                {/* Bank Transfer Payment Panel — only for bank transfer orders */}
+                {(selected as any).paymentMethod === 'bank_transfer' && (
+                  <div className="bg-[#0b1a30]/60 rounded-xl p-4 mb-4 border border-amber-500/20">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Banknote className="w-4 h-4 text-amber-400" />
+                      <p className="text-amber-400 text-xs font-semibold uppercase tracking-wide">Bank Transfer Payment</p>
+                    </div>
+
+                    {/* Read-only fields */}
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-[#9cb8d9]">Order Number</span>
+                        <span className="text-white font-mono font-semibold">{(selected as any).bankTransferRef || selected.id?.slice(-10).toUpperCase()}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-[#9cb8d9]">Payment Method</span>
+                        <span className="text-white">Manual Bank Transfer</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-[#9cb8d9]">Amount Due</span>
+                        <span className="text-amber-400 font-bold">£{((selected as any).total || selected.totalAmount || 0).toFixed(2)}</span>
+                      </div>
+                    </div>
+
+                    {/* Editable payment status */}
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[#9cb8d9] text-xs font-medium block mb-1.5">Payment Status</label>
+                        <div className="flex gap-2">
+                          {(['pending_bank_transfer', 'paid', 'cancelled'] as const).map(ps => (
+                            <button
+                              key={ps}
+                              onClick={() => setPaymentStatusInput(ps)}
+                              className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                                paymentStatusInput === ps
+                                  ? ps === 'paid'
+                                    ? 'bg-green-600 border-green-500 text-white'
+                                    : ps === 'cancelled'
+                                    ? 'bg-red-600 border-red-500 text-white'
+                                    : 'bg-amber-600 border-amber-500 text-white'
+                                  : 'bg-[#0f2640] border-white/[0.12] text-[#8caad4] hover:text-white'
+                              }`}
+                            >
+                              {ps === 'pending_bank_transfer' ? 'Awaiting' : ps === 'paid' ? 'Paid' : 'Cancelled'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[#9cb8d9] text-xs font-medium block mb-1.5">
+                          Transfer Reference <span className="text-gray-600">(from your bank statement)</span>
+                        </label>
+                        <input
+                          value={transferRefInput}
+                          onChange={e => setTransferRefInput(e.target.value)}
+                          placeholder="e.g. PHP-12345-ABCD or customer name"
+                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 font-mono"
+                        />
+                      </div>
+
+                      {transferMsg && (
+                        <div className={`flex items-center gap-2 p-2.5 rounded-lg text-xs ${
+                          transferMsg.startsWith('Failed')
+                            ? 'bg-red-500/10 border border-red-500/30 text-red-400'
+                            : 'bg-green-500/10 border border-green-500/30 text-green-400'
+                        }`}>
+                          {transferMsg.startsWith('Failed')
+                            ? <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                            : <CheckCheck className="w-3.5 h-3.5 shrink-0" />}
+                          {transferMsg}
+                        </div>
+                      )}
+
+                      <button
+                        onClick={handleSavePaymentStatus}
+                        disabled={transferLoading}
+                        className="w-full flex items-center justify-center gap-2 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors"
+                      >
+                        {transferLoading
+                          ? <Loader2 className="w-4 h-4 animate-spin" />
+                          : <CheckCheck className="w-4 h-4" />}
+                        {paymentStatusInput === 'paid' ? 'Confirm Payment Received' : paymentStatusInput === 'cancelled' ? 'Cancel Order' : 'Save Payment Status'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Items */}
+                <div className="bg-[#0b1a30]/60 rounded-xl p-4 mb-4">
+                  <p className="text-[#9cb8d9] text-xs font-medium uppercase tracking-wide mb-3">Items</p>
+                  <div className="space-y-2">
+                    {selected.items?.map((item: any, i) => (
+                      <div key={i} className="flex justify-between text-sm">
+                        <span className="text-[#8caad4]">
+                          {item.productName}
+                          {item.variantName ? <span className="text-[#9cb8d9]"> — {item.variantName}</span> : ''}
+                          <span className="text-[#2a4a7a]"> ×{item.quantity}</span>
+                        </span>
+                        <span className="text-white font-medium">£{((item.total || item.price * item.quantity) || 0).toFixed(2)}</span>
+                      </div>
+                    ))}
+                    {(selected as any).subtotal !== undefined && (
+                      <div className="border-t border-white/[0.08] pt-2 space-y-1 text-xs">
+                        <div className="flex justify-between text-[#9cb8d9]">
+                          <span>Subtotal</span><span>£{((selected as any).subtotal || 0).toFixed(2)}</span>
+                        </div>
+                        {(selected as any).discount > 0 && (
+                          <div className="flex justify-between text-emerald-400">
+                            <span>Discount</span><span>-£{((selected as any).discount || 0).toFixed(2)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-[#9cb8d9]">
+                          <span>Shipping</span><span>{(selected as any).shippingCost === 0 ? 'FREE' : `£${((selected as any).shippingCost || 0).toFixed(2)}`}</span>
+                        </div>
+                      </div>
+                    )}
+                    <div className="border-t border-white/[0.08] pt-2 flex justify-between font-bold">
+                      <span className="text-[#8caad4]">Total</span>
+                      <span className="text-green-400">£{((selected as any).total || selected.totalAmount || 0).toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Royal Mail Order */}
+                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 mb-4">
+                  <p className="text-emerald-300 text-xs font-medium uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                    <Package className="w-3.5 h-3.5" /> Create Royal Mail Order
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <select
+                      value={rmService}
+                      onChange={(e) => setRmService(e.target.value.trim().toUpperCase())}
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    >
+                      <option value="">Use Click & Drop default service</option>
+                      <option value="CRL24">Royal Mail 24 (CRL24)</option>
+                      <option value="CRL48">Royal Mail 48 (CRL48)</option>
+                      <option value="TPS48">Tracked 48 (TPS48)</option>
+                      <option value="TPN24">Tracked 24 OBA only (TPN24)</option>
+                      <option value="TPN48">Tracked 48 OBA only (TPN48)</option>
+                      <option value="SD1">Special Delivery 1pm (SD1)</option>
+                    </select>
+                    <input
+                      type="number"
+                      min={1}
+                      max={2000}
+                      value={rmWeight}
+                      onChange={(e) => setRmWeight(parseInt(e.target.value, 10) || 0)}
+                      placeholder="Weight (g)"
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleCreateRoyalMailOrder}
+                    disabled={rmLoading}
+                    className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors"
+                  >
+                    {rmLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Package className="w-3.5 h-3.5" />}
+                    {rmLoading ? 'Creating…' : 'Create Royal Mail Order'}
+                  </button>
+
+                  {Boolean((selected as any).royalMailOrderId) && (
+                    <button
+                      onClick={handleSyncRoyalMailTracking}
+                      disabled={rmSyncLoading}
+                      className="mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors"
+                    >
+                      {rmSyncLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Truck className="w-3.5 h-3.5" />}
+                      {rmSyncLoading ? 'Syncing…' : `Sync tracking from RM order ${(selected as any).royalMailOrderId}`}
+                    </button>
+                  )}
+
+                  {rmSyncMsg && (
+                    <p className="mt-2 text-blue-300 text-xs" role="status">{rmSyncMsg}</p>
+                  )}
+
+                  {rmResult && (
+                    <div className="mt-3 p-2.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20 space-y-2">
+                      <div>
+                        <p className="text-xs text-[#9cb8d9] mb-1">Royal Mail order ID</p>
+                        <div className="flex items-center gap-2">
+                          <input
+                            readOnly
+                            value={rmResult.orderIdentifier}
+                            className="flex-1 px-2 py-1.5 bg-white border border-gray-300 rounded text-gray-900 text-sm font-mono"
+                            onFocus={(e) => e.currentTarget.select()}
+                          />
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(rmResult.orderIdentifier);
+                              setRmCopied(true);
+                              setTimeout(() => setRmCopied(false), 2000);
+                            }}
+                            className="p-2 bg-emerald-600 hover:bg-emerald-500 rounded text-white"
+                            title="Copy"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        {rmCopied && <p className="mt-1 text-emerald-300 text-xs">Copied!</p>}
+                      </div>
+                      {rmResult.trackingNumber && (
+                        <div>
+                          <p className="text-xs text-[#9cb8d9] mb-1">Tracking number</p>
+                          <input
+                            readOnly
+                            value={rmResult.trackingNumber}
+                            className="w-full px-2 py-1.5 bg-white border border-gray-300 rounded text-gray-900 text-sm font-mono"
+                            onFocus={(e) => e.currentTarget.select()}
+                          />
+                        </div>
+                      )}
+                      <p className="text-[#9cb8d9] text-xs">
+                        Order created. Print label at parcel.royalmail.com.
+                      </p>
+                    </div>
+                  )}
+
+                  {rmError && (
+                    <p className="mt-2 text-red-400 text-xs" role="alert">{rmError}</p>
+                  )}
+                  <p className="mt-2 text-[#2a4a7a] text-xs">
+                    Calls the secure worker — the Royal Mail API key is never exposed to the browser. Creates the shipment in Click & Drop and prefills the Dispatch form below.
+                  </p>
+                </div>
+
+                {/* Dispatch / Tracking Section */}
+                <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4 mb-4">
+                  <p className="text-blue-300 text-xs font-medium uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                    <Truck className="w-3.5 h-3.5" /> Dispatch & Tracking
+                  </p>
+
+                  {selected.trackingNumber && (
+                    <div className="mb-3 p-2.5 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                      <p className="text-xs text-[#9cb8d9] mb-0.5">Current tracking number</p>
+                      <div className="flex items-center justify-between">
+                        <p className="font-mono text-blue-300 text-sm font-bold">{selected.trackingNumber}</p>
+                        <button
+                          onClick={() => copyToClipboard(selected.trackingNumber!, selected.id)}
+                          className="p-1 hover:bg-blue-500/20 rounded transition-colors"
+                          title="Copy tracking number"
+                        >
+                          <Copy className={`w-3.5 h-3.5 ${copiedTrackingId === selected.id ? 'text-green-400' : 'text-blue-300'}`} />
+                        </button>
+                      </div>
+                      {selected.courier && (
+                        <p className="text-xs text-[#9cb8d9] mt-1">Courier: <span className="text-blue-300">{selected.courier}</span></p>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={trackingInput}
+                      onChange={e => setTrackingInput(e.target.value)}
+                      placeholder="Enter tracking number..."
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 font-mono"
+                    />
+                    <input
+                      type="text"
+                      value={courierInput}
+                      onChange={e => setCourierInput(e.target.value)}
+                      placeholder="Courier name (optional, e.g., DPD, DHL, Royal Mail)..."
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    />
+                  </div>
+
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={handleSaveTracking}
+                      disabled={trackingLoading || !trackingInput.trim()}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-[#0f2640] hover:bg-[#1a3a5c] disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+                    >
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      {trackingLoading ? 'Saving...' : 'Save'}
+                    </button>
+                    <button
+                      onClick={handleDispatch}
+                      disabled={trackingLoading || !trackingInput.trim()}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      {trackingLoading ? 'Sending...' : 'Dispatch'}
+                    </button>
+                  </div>
+
+                  <div aria-live="polite" aria-atomic="true">
+                    {trackingSuccess && (
+                      <p className="mt-2 text-green-400 text-xs flex items-center gap-1">
+                        <CheckCircle className="w-3.5 h-3.5" /> {trackingSuccess}
+                      </p>
+                    )}
+                    {trackingError && (
+                      <p className="mt-2 text-red-400 text-xs">{trackingError}</p>
+                    )}
+                  </div>
+                  <p className="mt-2 text-[#2a4a7a] text-xs">
+                    Click "Save" to store the tracking number, or "Dispatch" to save it, mark as Shipped, and email the customer automatically.
+                  </p>
+                </div>
+
+                {/* Confirmation email — resend to the customer (or a corrected address) */}
+                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Send className="w-4 h-4 text-emerald-400" />
+                    <p className="text-emerald-400 text-xs font-semibold uppercase tracking-wide">Order Confirmation Email</p>
+                  </div>
+                  <p className="text-[#9cb8d9] text-xs mb-3">
+                    Re-sends the "Order received" confirmation to{' '}
+                    <span className="text-white">
+                      {String((selected as any).userEmail || (selected as any).customer?.email || '—')}
+                    </span>
+                    . A blind copy goes to info@phlabs.co.uk so you can prove it was sent.
+                  </p>
+                  <button
+                    onClick={() => handleResendConfirmation(selected.id)}
+                    disabled={confirmMailBusy === selected.id}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 hover:border-emerald-500/60 text-emerald-300 hover:text-emerald-200 rounded-lg text-sm font-medium transition-all disabled:opacity-50 min-h-[40px]"
+                  >
+                    {confirmMailBusy === selected.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                    Resend Confirmation
+                  </button>
+                  {confirmMailMsg && (
+                    <p aria-live="polite" className={`mt-2 text-xs ${confirmMailMsg.ok ? 'text-green-400' : 'text-red-400'}`}>
+                      {confirmMailMsg.msg}
+                    </p>
+                  )}
+                </div>
+
+
+
+                {/* Failed / unpaid bank payment — email a pay-again link */}
+                {['pending', 'pending_payment', 'awaiting_payment', 'processing_payment', 'failed', 'cancelled']
+                  .includes(String(selected.status || '').toLowerCase()) && (
+                  <div className="bg-orange-500/5 border border-orange-500/20 rounded-xl p-4 mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Send className="w-4 h-4 text-orange-400" />
+                      <p className="text-orange-400 text-xs font-semibold uppercase tracking-wide">Payment Not Completed</p>
+                    </div>
+                    <p className="text-[#9cb8d9] text-xs mb-3">
+                      Email the customer a one-click "Pay Again" link for this order, including manual bank-transfer details as an alternative.
+                    </p>
+                    <button
+                      onClick={() => handleSendPaymentLink(selected.id)}
+                      disabled={payLinkBusy === selected.id}
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-orange-600/20 hover:bg-orange-600/30 border border-orange-500/40 hover:border-orange-500/60 text-orange-300 hover:text-orange-200 rounded-lg text-sm font-medium transition-all disabled:opacity-50"
+                    >
+                      {payLinkBusy === selected.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                      Send Payment Link
+                    </button>
+                    {payLinkMsg && (
+                      <p aria-live="polite" className={`mt-2 text-xs ${payLinkMsg.ok ? 'text-green-400' : 'text-red-400'}`}>
+                        {payLinkMsg.msg}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+
+
+                {/* Reinstate Order — shown only for auto-cancelled orders */}
+                {(selected as any).cancelReason === 'auto_72h_no_payment' && (
+                  <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <RotateCcw className="w-4 h-4 text-amber-400" />
+                      <p className="text-amber-400 text-xs font-semibold uppercase tracking-wide">Auto-Cancelled (72h no payment)</p>
+                    </div>
+                    <p className="text-[#9cb8d9] text-xs mb-3">This order was automatically cancelled after 72 hours without payment. You can reinstate it to allow the customer to complete payment.</p>
+                    <button
+                      onClick={() => handleReinstateOrder(selected.id)}
+                      disabled={reinstating === selected.id}
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/40 hover:border-amber-500/60 text-amber-400 hover:text-amber-300 rounded-lg text-sm font-medium transition-all disabled:opacity-50"
+                    >
+                      {reinstating === selected.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
+                      Reinstate Order
+                    </button>
+                  </div>
+                )}
+
+                {/* Bank-side reference — what the customer's statement shows */}
+                <div className="mt-4 rounded-lg border-2 border-slate-600 bg-slate-800 p-3">
+                  <p className="text-slate-300 text-xs font-semibold mb-1">Bank statement reference</p>
+                  <p className="text-white text-sm font-mono break-all">
+                    {(selected as any).wallidBankRef
+                      || (selected as any).apiPaymentId
+                      || (selected as any).bankTransferReference
+                      || '—'}
+                  </p>
+                  <p className="text-slate-400 text-[11px] mt-1">
+                    Banks often print Wallid&apos;s own payment id instead of the PH Labs order
+                    number. Paste whatever the statement shows into the search box above to find
+                    the order.
+                  </p>
+                </div>
+
+                {/* Customer history — one-click paid/failed stats for this email */}
+                <div className="mt-4">
+                  <CustomerOrdersSummary
+                    email={orderEmail(selected)}
+                    orders={orders}
+                    onOpenOrder={(o) => openOrder(o)}
+                  />
+                </div>
+
+                {/* Payment timeline + manual retry — Wallid reliability layer */}
+                <div className="mt-4 space-y-3">
+                  <PaymentTimeline orderId={selected.id} />
+
+                  <WebhookRetryCard
+                    orderId={selected.id}
+                    apiPaymentId={
+                      (selected as { paymentRef?: string; apiPaymentId?: string; fenaPaymentId?: string }).paymentRef ||
+                      (selected as { apiPaymentId?: string }).apiPaymentId ||
+                      undefined
+                    }
+                    currentStatus={String((selected as { paymentStatus?: string }).paymentStatus || selected.status || '')}
+                  />
+                </div>
+                </div>
+                </div>
+
+                {/* Create Label toast */}
+                {labelToast && (
+                  <div
+                    role="status"
+                    aria-live="polite"
+                    className={`fixed top-4 right-4 z-[10000] flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold border shadow-lg ${
+                      labelToast.ok
+                        ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-200'
+                        : 'bg-red-500/15 border-red-500/40 text-red-200'
+                    }`}
+                  >
+                    {labelToast.msg}
+                  </div>
+                )}
+
+                {/* Sticky action bar — always reachable without scrolling */}
+                <div className="sticky bottom-0 z-20 bg-[#04101f]/95 backdrop-blur supports-[backdrop-filter]:bg-[#04101f]/80 border-t border-white/[0.08] px-4 py-3 flex gap-3">
+                  <button
+                    onClick={() => handleCreateLabel(selected)}
+                    disabled={labelBusy}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#0f2640] hover:bg-[#1a3a5c] disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium transition-colors"
+                  >
+                    <Printer className="w-4 h-4" /> {labelBusy ? 'Creating…' : 'Print Label'}
+                  </button>
+                  <button
+                    onClick={() => setSelected(null)}
+                    className="flex-1 py-2.5 bg-[#0f2640] hover:bg-[#1a3a5c] text-white rounded-xl text-sm font-medium transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>,
+        document.body
+      )}
+    </div>
+  );
+}
