@@ -769,6 +769,38 @@ export default function OrdersTab() {
     }
   };
 
+  /**
+   * Bulk delivery check — asks AfterShip for the live status of every shipped
+   * parcel and flips the delivered ones to `delivered` (with customer email).
+   */
+  const handleBulkCheckDeliveries = async () => {
+    if (deliveryCheckRunning) return;
+    setDeliveryCheckRunning(true);
+    setDeliveryCheckMsg('');
+    try {
+      const idToken = await getAdminIdToken();
+      if (!idToken) {
+        setDeliveryCheckMsg('Admin session expired — sign in again.');
+        return;
+      }
+      const res = await bulkCheckDeliveries({ data: { idToken } });
+      if (!res.ok) {
+        setDeliveryCheckMsg(`Failed: ${(res as any).error || 'unknown error'}`);
+        return;
+      }
+      const r = res as { checked: number; delivered: string[]; inTransit: string[]; errors: string[] };
+      setDeliveryCheckMsg(
+        `Checked ${r.checked} · delivered ${r.delivered.length}${r.delivered.length ? ` (${r.delivered.map(id => id.slice(-8).toUpperCase()).slice(0, 5).join(', ')})` : ''} · still in transit ${r.inTransit.length}${r.errors.length ? ` · errors: ${r.errors.slice(0, 3).join('; ')}` : ''}`
+      );
+    } catch (e: any) {
+      setDeliveryCheckMsg(e?.message || 'Delivery check failed.');
+    } finally {
+      setDeliveryCheckRunning(false);
+    }
+  };
+
+
+
 
   // Register the parcel with AfterShip so we get live courier checkpoints and
   // an instant "delivered" webhook. Best-effort — never blocks dispatch.
