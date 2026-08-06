@@ -115,6 +115,7 @@ import { Route as ApiAdminWeeklyBriefingRouteImport } from './routes/api/admin/w
 import { Route as ApiAdminSendPaymentLinkRouteImport } from './routes/api/admin/send-payment-link'
 import { Route as ApiAdminRoyalMailDeliveriesRouteImport } from './routes/api/admin/royal-mail-deliveries'
 import { Route as ApiAdminOrderRemindersRouteImport } from './routes/api/admin/order-reminders'
+import { Route as ApiAdminCustomerDeleteRouteImport } from './routes/api/admin/customer-delete'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
@@ -688,6 +689,11 @@ const ApiAdminOrderRemindersRoute = ApiAdminOrderRemindersRouteImport.update({
   path: '/api/admin/order-reminders',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminCustomerDeleteRoute = ApiAdminCustomerDeleteRouteImport.update({
+  id: '/api/admin/customer-delete',
+  path: '/api/admin/customer-delete',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
   Char91DotmcpChar93InvokeToolToolRouteImport.update({
     id: '/.mcp/invoke-tool/$tool',
@@ -910,6 +916,7 @@ export interface FileRoutesByFullPath {
   '/research/': typeof ResearchIndexRoute
   '/resources/': typeof ResourcesIndexRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/admin/customer-delete': typeof ApiAdminCustomerDeleteRoute
   '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute
   '/api/admin/royal-mail-deliveries': typeof ApiAdminRoyalMailDeliveriesRoute
   '/api/admin/send-payment-link': typeof ApiAdminSendPaymentLinkRoute
@@ -1042,6 +1049,7 @@ export interface FileRoutesByTo {
   '/research': typeof ResearchIndexRoute
   '/resources': typeof ResourcesIndexRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/admin/customer-delete': typeof ApiAdminCustomerDeleteRoute
   '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute
   '/api/admin/royal-mail-deliveries': typeof ApiAdminRoyalMailDeliveriesRoute
   '/api/admin/send-payment-link': typeof ApiAdminSendPaymentLinkRoute
@@ -1177,6 +1185,7 @@ export interface FileRoutesById {
   '/research/': typeof ResearchIndexRoute
   '/resources/': typeof ResourcesIndexRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/admin/customer-delete': typeof ApiAdminCustomerDeleteRoute
   '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute
   '/api/admin/royal-mail-deliveries': typeof ApiAdminRoyalMailDeliveriesRoute
   '/api/admin/send-payment-link': typeof ApiAdminSendPaymentLinkRoute
@@ -1312,6 +1321,7 @@ export interface FileRouteTypes {
     | '/research/'
     | '/resources/'
     | '/.mcp/invoke-tool/$tool'
+    | '/api/admin/customer-delete'
     | '/api/admin/order-reminders'
     | '/api/admin/royal-mail-deliveries'
     | '/api/admin/send-payment-link'
@@ -1444,6 +1454,7 @@ export interface FileRouteTypes {
     | '/research'
     | '/resources'
     | '/.mcp/invoke-tool/$tool'
+    | '/api/admin/customer-delete'
     | '/api/admin/order-reminders'
     | '/api/admin/royal-mail-deliveries'
     | '/api/admin/send-payment-link'
@@ -1578,6 +1589,7 @@ export interface FileRouteTypes {
     | '/research/'
     | '/resources/'
     | '/.mcp/invoke-tool/$tool'
+    | '/api/admin/customer-delete'
     | '/api/admin/order-reminders'
     | '/api/admin/royal-mail-deliveries'
     | '/api/admin/send-payment-link'
@@ -1696,6 +1708,7 @@ export interface RootRouteChildren {
   DownloadsIndexRoute: typeof DownloadsIndexRoute
   ResourcesIndexRoute: typeof ResourcesIndexRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
+  ApiAdminCustomerDeleteRoute: typeof ApiAdminCustomerDeleteRoute
   ApiAdminOrderRemindersRoute: typeof ApiAdminOrderRemindersRoute
   ApiAdminRoyalMailDeliveriesRoute: typeof ApiAdminRoyalMailDeliveriesRoute
   ApiAdminSendPaymentLinkRoute: typeof ApiAdminSendPaymentLinkRoute
@@ -2500,6 +2513,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminOrderRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/customer-delete': {
+      id: '/api/admin/customer-delete'
+      path: '/api/admin/customer-delete'
+      fullPath: '/api/admin/customer-delete'
+      preLoaderRoute: typeof ApiAdminCustomerDeleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/.mcp/invoke-tool/$tool': {
       id: '/.mcp/invoke-tool/$tool'
       path: '/.mcp/invoke-tool/$tool'
@@ -2830,6 +2850,7 @@ const rootRouteChildren: RootRouteChildren = {
   DownloadsIndexRoute: DownloadsIndexRoute,
   ResourcesIndexRoute: ResourcesIndexRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
+  ApiAdminCustomerDeleteRoute: ApiAdminCustomerDeleteRoute,
   ApiAdminOrderRemindersRoute: ApiAdminOrderRemindersRoute,
   ApiAdminRoyalMailDeliveriesRoute: ApiAdminRoyalMailDeliveriesRoute,
   ApiAdminSendPaymentLinkRoute: ApiAdminSendPaymentLinkRoute,
