@@ -740,6 +740,34 @@ export default function OrdersTab() {
     }
   };
 
+  // Bulk-register every shipped parcel with AfterShip live tracking.
+  const handleBulkRegisterLiveTracking = async () => {
+    if (afterShipRunning) return;
+    setAfterShipRunning(true);
+    setAfterShipMsg('');
+    try {
+      const idToken = await getAdminIdToken();
+      if (!idToken) {
+        setAfterShipMsg('Admin session expired — sign in again.');
+        return;
+      }
+      const res = await bulkRegisterTrackers({ data: { idToken } });
+      if (!res.ok) {
+        setAfterShipMsg(`Failed: ${(res as any).error || 'unknown error'}`);
+        return;
+      }
+      const r = res as { registered: string[]; skipped: number; errors: string[] };
+      setAfterShipMsg(
+        `Registered ${r.registered.length}, skipped ${r.skipped}${r.errors.length ? `, errors: ${r.errors.slice(0, 3).join('; ')}` : ''}`
+      );
+    } catch (e: any) {
+      setAfterShipMsg(e?.message || 'Failed to register live tracking.');
+    } finally {
+      setAfterShipRunning(false);
+    }
+  };
+
+
   // Register the parcel with AfterShip so we get live courier checkpoints and
   // an instant "delivered" webhook. Best-effort — never blocks dispatch.
   const registerLiveTracking = async (orderId: string, tracking: string, courier: string) => {
