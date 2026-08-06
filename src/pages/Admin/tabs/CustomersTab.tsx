@@ -433,6 +433,16 @@ export default function CustomersTab() {
                               <UserX className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
                             </button>
                           )}
+                          <button
+                            onClick={() => openRemove(c)}
+                            disabled={saving === c.uid}
+                            title="Remove customer permanently"
+                            aria-label="Remove customer permanently"
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center bg-red-600/15 hover:bg-red-600/30 text-red-300 border border-red-500/30 rounded transition-colors disabled:opacity-50"
+                          >
+                            <Trash2 className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
+                          </button>
+
                         </div>
                       </td>
                     </motion.tr>
