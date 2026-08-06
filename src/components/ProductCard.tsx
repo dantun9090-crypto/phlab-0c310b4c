@@ -109,9 +109,8 @@ export function ProductCard({
     <div
       ref={isAboveFold ? undefined : revealRef}
       data-product-card={slug || product.id || 'product'}
-      className={`group relative rounded-2xl overflow-hidden flex flex-col phl-hover-lift ${isAboveFold ? '' : 'scroll-reveal'}`}
+      className={`group relative rounded-2xl overflow-hidden flex flex-col phl-hover-lift phl-glass-card ${isAboveFold ? '' : 'scroll-reveal'}`}
       style={{
-        background: 'rgba(255,255,255,0.025)',
         border: '1px solid rgba(255,255,255,0.06)',
       }}
       onMouseEnter={e => {
