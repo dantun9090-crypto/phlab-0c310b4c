@@ -735,7 +735,32 @@ export default function OrdersTab() {
     }
   };
 
+  // Register the parcel with AfterShip so we get live courier checkpoints and
+  // an instant "delivered" webhook. Best-effort — never blocks dispatch.
+  const registerLiveTracking = async (orderId: string, tracking: string, courier: string) => {
+    try {
+      const idToken = await getAdminIdToken();
+      if (!idToken) return;
+      await registerTracker({
+        data: {
+          idToken,
+          orderId,
+          trackingNumber: tracking,
+          slug: /evri|hermes/i.test(courier)
+            ? 'evri'
+            : /dpd/i.test(courier)
+              ? 'dpd-uk'
+              : 'royal-mail',
+          ...(selected?.userEmail ? { email: selected.userEmail } : {}),
+        },
+      });
+    } catch (err) {
+      console.warn('[aftership] register failed', err);
+    }
+  };
+
   // Save tracking number + courier to order
+
   const handleSaveTracking = async () => {
     if (!selected || !trackingInput.trim()) {
       setTrackingError('Please enter a tracking number first.');
