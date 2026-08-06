@@ -44,6 +44,14 @@ export default function CustomersTab() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [saving, setSaving] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<CustomerProfile | null>(null);
+  const [removeMode, setRemoveMode] = useState<'full' | 'anonymise'>('full');
+  const [removeConfirm, setRemoveConfirm] = useState('');
+  const [removeReason, setRemoveReason] = useState('');
+  const [removeBusy, setRemoveBusy] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
+  const [removeResult, setRemoveResult] = useState<string | null>(null);
+
 
   const fetchData = async () => {
     setLoading(true);
