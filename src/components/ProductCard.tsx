@@ -115,11 +115,9 @@ export function ProductCard({
       }}
       onMouseEnter={e => {
         (e.currentTarget as HTMLElement).style.borderColor = 'rgba(16,185,129,0.2)';
-        (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
       }}
       onMouseLeave={e => {
         (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)';
-        (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.025)';
       }}
     >
       {/* Image area */}
