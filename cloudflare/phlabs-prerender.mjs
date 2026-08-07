@@ -792,7 +792,7 @@ export default {
         status: 302,
         headers: {
           Location: `${safeNext}${sep}__cf=1`,
-          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          "Cache-Control": "no-store, no-cache, must-revalidate",
           "Server-Timing": `cache-reset;dur=${Date.now() - startTime}`,
         },
       });
