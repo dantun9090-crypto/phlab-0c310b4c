@@ -30,7 +30,7 @@ export const registerTracker = createServerFn({ method: "POST" })
     if (!aftershipConfigured()) return { ok: false, error: "aftership_api_key_missing" };
     const res = await registerAftershipTracking({
       trackingNumber: data.trackingNumber.trim(),
-      slug: data.slug || "royal-mail",
+      ...(data.slug ? { slug: data.slug } : {}),
       orderId: data.orderId,
       email: data.email,
       postcode: data.postcode,
@@ -40,7 +40,7 @@ export const registerTracker = createServerFn({ method: "POST" })
       const { updateDocAdmin } = await import("./server/firestore-admin");
       await updateDocAdmin("orders", data.orderId, {
         aftershipRegistered: true,
-        aftershipSlug: data.slug || "royal-mail",
+        aftershipSlug: data.slug || "auto",
         aftershipRegisteredAt: new Date(),
       }).catch(() => undefined);
     }
@@ -58,7 +58,7 @@ export const aftershipStatus = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
     const { getAftershipTracking } = await import("./server/aftership.server");
-    const res = await getAftershipTracking(data.trackingNumber.trim(), data.slug || "royal-mail");
+    const res = await getAftershipTracking(data.trackingNumber.trim(), data.slug);
     if (!res.ok) return { ok: false as const, error: res.error };
     const t = res.tracking;
     return {
@@ -103,7 +103,7 @@ export const bulkRegisterTrackers = createServerFn({ method: "POST" })
       }
       const res = await registerAftershipTracking({
         trackingNumber: tracking,
-        slug: data.slug || "royal-mail",
+        ...(data.slug ? { slug: data.slug } : {}),
         orderId: o.id,
         email: typeof o.userEmail === "string" ? o.userEmail : undefined,
         title: `PH Labs order ${o.id}`,
@@ -111,7 +111,7 @@ export const bulkRegisterTrackers = createServerFn({ method: "POST" })
       if (res.ok) {
         await updateDocAdmin("orders", o.id, {
           aftershipRegistered: true,
-          aftershipSlug: data.slug || "royal-mail",
+          aftershipSlug: data.slug || "auto",
           aftershipRegisteredAt: new Date(),
         }).catch(() => undefined);
         summary.registered.push(o.id);
@@ -156,7 +156,8 @@ export const bulkCheckDeliveries = createServerFn({ method: "POST" })
       const tracking = String(o.trackingNumber || "").trim();
       if (!tracking) continue;
       summary.checked++;
-      const slug = String(o.aftershipSlug || data.slug || "royal-mail");
+      const rawSlug = String(o.aftershipSlug || data.slug || "");
+      const slug = rawSlug && rawSlug !== "auto" ? rawSlug : undefined;
       const res = await getAftershipTracking(tracking, slug);
       if (!res.ok) {
         summary.errors.push(`${o.id}: ${res.error || "lookup failed"}`);
