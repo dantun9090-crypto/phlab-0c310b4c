@@ -38,12 +38,13 @@ async function request<T>(
       | { data?: T; meta?: { code?: number; message?: string } }
       | null;
     if (!res.ok) {
-      return {
-        ok: false,
-        status: res.status,
-        data: null,
-        error: body?.meta?.message || `aftership_status_${res.status}`,
-      };
+      // 403 on a write means the API key was created without the
+      // "Trackings: write" scope (reads still succeed) — surface that clearly.
+      const hint =
+        res.status === 403
+          ? "aftership_key_missing_write_permission"
+          : body?.meta?.message || `aftership_status_${res.status}`;
+      return { ok: false, status: res.status, data: null, error: hint };
     }
     return { ok: true, status: res.status, data: (body?.data ?? null) as T | null };
   } catch (err) {
