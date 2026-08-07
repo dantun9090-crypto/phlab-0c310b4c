@@ -8,7 +8,7 @@
  * Secret: AFTERSHIP_API_KEY (never expose to the client bundle).
  */
 
-const BASE = "https://api.aftership.com/v4";
+const BASE = "https://api.aftership.com/tracking/2024-04";
 
 function apiKey(): string {
   return (process.env.AFTERSHIP_API_KEY || "").trim();
@@ -29,7 +29,7 @@ async function request<T>(
       method: init.method,
       headers: {
         "content-type": "application/json",
-        "aftership-api-key": key,
+        "as-api-key": key,
       },
       ...(init.body !== undefined ? { body: JSON.stringify(init.body) } : {}),
       signal: AbortSignal.timeout(15_000),
@@ -38,12 +38,13 @@ async function request<T>(
       | { data?: T; meta?: { code?: number; message?: string } }
       | null;
     if (!res.ok) {
-      return {
-        ok: false,
-        status: res.status,
-        data: null,
-        error: body?.meta?.message || `aftership_status_${res.status}`,
-      };
+      // 403 on a write means the API key was created without the
+      // "Trackings: write" scope (reads still succeed) — surface that clearly.
+      const hint =
+        res.status === 403
+          ? "aftership_key_missing_write_permission"
+          : body?.meta?.message || `aftership_status_${res.status}`;
+      return { ok: false, status: res.status, data: null, error: hint };
     }
     return { ok: true, status: res.status, data: (body?.data ?? null) as T | null };
   } catch (err) {
@@ -95,23 +96,22 @@ export async function registerAftershipTracking(input: RegisterInput): Promise<{
   trackingId?: string | null;
   error?: string;
 }> {
-  const res = await request<{ tracking?: AftershipTracking }>("/trackings", {
+  // 2024-04 API: flat body, tracking returned directly under `data`.
+  const res = await request<AftershipTracking>("/trackings", {
     method: "POST",
     body: {
-      tracking: {
-        tracking_number: input.trackingNumber,
-        slug: input.slug || "royal-mail",
-        ...(input.orderId ? { order_id: input.orderId } : {}),
-        ...(input.email ? { emails: [input.email] } : {}),
-        ...(input.postcode ? { tracking_postal_code: input.postcode } : {}),
-        ...(input.title ? { title: input.title } : {}),
-      },
+      tracking_number: input.trackingNumber,
+      slug: input.slug || "royal-mail",
+      ...(input.orderId ? { order_id: input.orderId } : {}),
+      ...(input.email ? { emails: [input.email] } : {}),
+      ...(input.postcode ? { tracking_postal_code: input.postcode } : {}),
+      ...(input.title ? { title: input.title } : {}),
     },
   });
   if (res.ok) {
-    return { ok: true, trackingId: res.data?.tracking?.id ?? null };
+    return { ok: true, trackingId: res.data?.id ?? null };
   }
-  if (res.status === 400 && /exist/i.test(res.error || "")) {
+  if ((res.status === 400 || res.status === 409) && /exist/i.test(res.error || "")) {
     return { ok: true, alreadyExists: true };
   }
   return { ok: false, error: res.error };
@@ -122,12 +122,13 @@ export async function getAftershipTracking(
   trackingNumber: string,
   slug = "royal-mail",
 ): Promise<{ ok: boolean; tracking?: AftershipTracking | null; error?: string }> {
-  const res = await request<{ tracking?: AftershipTracking }>(
-    `/trackings/${encodeURIComponent(slug)}/${encodeURIComponent(trackingNumber)}`,
+  // 2024-04 API: lookup by query params (the /{slug}/{number} path was removed).
+  const res = await request<{ trackings?: AftershipTracking[] }>(
+    `/trackings?tracking_numbers=${encodeURIComponent(trackingNumber)}&slug=${encodeURIComponent(slug)}&limit=1`,
     { method: "GET" },
   );
   if (!res.ok) return { ok: false, error: res.error };
-  return { ok: true, tracking: res.data?.tracking ?? null };
+  return { ok: true, tracking: res.data?.trackings?.[0] ?? null };
 }
 
 /** AfterShip `tag` values that mean the parcel arrived. */
