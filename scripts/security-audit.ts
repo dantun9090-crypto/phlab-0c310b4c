@@ -48,8 +48,14 @@ if (existsSync(CONFIG_PATH)) {
     /* ignore malformed config — fall back to default */
   }
 }
-const MIN_BLOCKING: Severity =
-  (process.env.SECURITY_MIN_SEVERITY as Severity) ?? configMin ?? "medium";
+// `SECURITY_MIN_SEVERITY` may be present but empty (e.g. GitHub Actions
+// `${{ github.event.inputs.min_severity }}` on non-workflow_dispatch events).
+// Treat empty/invalid values as unset so the config file / default apply.
+const envMinRaw = (process.env.SECURITY_MIN_SEVERITY ?? "").trim();
+const envMin: Severity | undefined = (SEVERITY_ORDER as readonly string[]).includes(envMinRaw)
+  ? (envMinRaw as Severity)
+  : undefined;
+const MIN_BLOCKING: Severity = envMin ?? configMin ?? "medium";
 const minIdx = SEVERITY_ORDER.indexOf(MIN_BLOCKING);
 const SBOM_PATH = join(process.cwd(), "dist", "sbom.cdx.json");
 const REPORT_PATH =
