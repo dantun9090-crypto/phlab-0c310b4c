@@ -92,19 +92,45 @@ export const Route = createFileRoute("/api/admin/customer-delete")({
 
         try {
           // 1. Scrub PII from historical orders (rows retained for HMRC).
+          //    Order docs store `userEmail`/`userName` plus a nested
+          //    `customer` map (see the Order interface in src/lib/firebase.ts),
+          //    so those are the fields that must be overwritten. Legacy
+          //    flat fields are scrubbed too for older documents.
           const byUid = await listDocsAdmin("orders", {
             where: { field: "userId", value: body.uid },
             limit: 500,
           });
-          const byEmail = email
+          const byUserEmail = email
             ? await listDocsAdmin("orders", {
-                where: { field: "customerEmail", value: email },
+                where: { field: "userEmail", value: email },
                 limit: 500,
               })
             : [];
-          const orderIds = new Set([...byUid, ...byEmail].map((o) => o.id));
+          // Guest orders have no userId — match on the nested customer email.
+          const byCustomerEmail = email
+            ? await listDocsAdmin("orders", {
+                where: { field: "customer.email", value: email },
+                limit: 500,
+              })
+            : [];
+          const orderIds = new Set(
+            [...byUid, ...byUserEmail, ...byCustomerEmail].map((o) => o.id),
+          );
           for (const id of orderIds) {
             await updateDocAdmin("orders", id, {
+              userEmail: REDACTED,
+              userName: REDACTED,
+              customer: {
+                firstName: REDACTED,
+                lastName: REDACTED,
+                email: REDACTED,
+                phone: REDACTED,
+                address: REDACTED,
+                city: REDACTED,
+                postcode: REDACTED,
+                country: REDACTED,
+              },
+              // Legacy / alternate field names on older order documents.
               customerEmail: REDACTED,
               customerName: REDACTED,
               customerPhone: REDACTED,
@@ -116,6 +142,7 @@ export const Route = createFileRoute("/api/admin/customer-delete")({
             });
             summary.orders++;
           }
+
 
           // 2. Remove newsletter subscriptions.
           if (email) {
