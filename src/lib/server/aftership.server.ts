@@ -108,12 +108,15 @@ export async function registerAftershipTracking(input: RegisterInput): Promise<{
     ...(input.title ? { title: input.title } : {}),
   };
   // 2024-04 API: flat body, tracking returned directly under `data`.
+  // Default is AfterShip courier auto-detection — a hard-coded slug fails with
+  // 4000 when that courier isn't activated on the account (free plans can't
+  // always add Royal Mail manually).
   let res = await request<AftershipTracking>("/trackings", {
     method: "POST",
-    body: { ...base, slug: input.slug || "royal-mail" },
+    body: { ...base, ...(input.slug ? { slug: input.slug } : {}) },
   });
-  // Courier not activated on the account → retry letting AfterShip auto-detect.
-  if (!res.ok && res.status === 400 && !/exist/i.test(res.error || "")) {
+  // Slug rejected (courier not activated) → retry with auto-detection.
+  if (!res.ok && res.status === 400 && input.slug && !/exist/i.test(res.error || "")) {
     res = await request<AftershipTracking>("/trackings", { method: "POST", body: base });
   }
   if (res.ok) {
@@ -129,16 +132,17 @@ export async function registerAftershipTracking(input: RegisterInput): Promise<{
 /** Read the current tracking state (tag + checkpoints) for a parcel. */
 export async function getAftershipTracking(
   trackingNumber: string,
-  slug = "royal-mail",
+  slug?: string,
 ): Promise<{ ok: boolean; tracking?: AftershipTracking | null; error?: string }> {
   // 2024-04 API: lookup by query params (the /{slug}/{number} path was removed).
   const res = await request<{ trackings?: AftershipTracking[] }>(
-    `/trackings?tracking_numbers=${encodeURIComponent(trackingNumber)}&slug=${encodeURIComponent(slug)}&limit=1`,
+    `/trackings?tracking_numbers=${encodeURIComponent(trackingNumber)}${slug ? `&slug=${encodeURIComponent(slug)}` : ""}&limit=1`,
     { method: "GET" },
   );
   if (!res.ok) return { ok: false, error: res.error };
   return { ok: true, tracking: res.data?.trackings?.[0] ?? null };
 }
+
 
 /** AfterShip `tag` values that mean the parcel arrived. */
 export function isDeliveredTag(tag?: string | null): boolean {
