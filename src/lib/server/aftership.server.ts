@@ -8,7 +8,7 @@
  * Secret: AFTERSHIP_API_KEY (never expose to the client bundle).
  */
 
-const BASE = "https://api.aftership.com/v4";
+const BASE = "https://api.aftership.com/tracking/2024-04";
 
 function apiKey(): string {
   return (process.env.AFTERSHIP_API_KEY || "").trim();
@@ -29,7 +29,7 @@ async function request<T>(
       method: init.method,
       headers: {
         "content-type": "application/json",
-        "aftership-api-key": key,
+        "as-api-key": key,
       },
       ...(init.body !== undefined ? { body: JSON.stringify(init.body) } : {}),
       signal: AbortSignal.timeout(15_000),
