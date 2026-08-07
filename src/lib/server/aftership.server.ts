@@ -40,12 +40,16 @@ async function request<T>(
     if (!res.ok) {
       // 403 on a write means the API key was created without the
       // "Trackings: write" scope (reads still succeed) — surface that clearly.
+      // 429 means the free plan's daily API quota is used up.
       const hint =
         res.status === 403
           ? "aftership_key_missing_write_permission"
-          : body?.meta?.message || `aftership_status_${res.status}`;
+          : res.status === 429
+            ? `aftership_daily_quota_exceeded: ${body?.meta?.message || ""}`.trim()
+            : body?.meta?.message || `aftership_status_${res.status}`;
       return { ok: false, status: res.status, data: null, error: hint };
     }
+
     return { ok: true, status: res.status, data: (body?.data ?? null) as T | null };
   } catch (err) {
     return {
