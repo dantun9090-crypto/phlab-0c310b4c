@@ -100,18 +100,22 @@ export async function registerAftershipTracking(input: RegisterInput): Promise<{
   trackingId?: string | null;
   error?: string;
 }> {
+  const base = {
+    tracking_number: input.trackingNumber,
+    ...(input.orderId ? { order_id: input.orderId } : {}),
+    ...(input.email ? { emails: [input.email] } : {}),
+    ...(input.postcode ? { tracking_postal_code: input.postcode } : {}),
+    ...(input.title ? { title: input.title } : {}),
+  };
   // 2024-04 API: flat body, tracking returned directly under `data`.
-  const res = await request<AftershipTracking>("/trackings", {
+  let res = await request<AftershipTracking>("/trackings", {
     method: "POST",
-    body: {
-      tracking_number: input.trackingNumber,
-      slug: input.slug || "royal-mail",
-      ...(input.orderId ? { order_id: input.orderId } : {}),
-      ...(input.email ? { emails: [input.email] } : {}),
-      ...(input.postcode ? { tracking_postal_code: input.postcode } : {}),
-      ...(input.title ? { title: input.title } : {}),
-    },
+    body: { ...base, slug: input.slug || "royal-mail" },
   });
+  // Courier not activated on the account → retry letting AfterShip auto-detect.
+  if (!res.ok && res.status === 400 && !/exist/i.test(res.error || "")) {
+    res = await request<AftershipTracking>("/trackings", { method: "POST", body: base });
+  }
   if (res.ok) {
     return { ok: true, trackingId: res.data?.id ?? null };
   }
@@ -120,6 +124,7 @@ export async function registerAftershipTracking(input: RegisterInput): Promise<{
   }
   return { ok: false, error: res.error };
 }
+
 
 /** Read the current tracking state (tag + checkpoints) for a parcel. */
 export async function getAftershipTracking(
