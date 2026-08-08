@@ -14,12 +14,20 @@ import { trackBingPurchase } from "@/lib/bing-uet";
  * duplicate events on refresh or when both the snapshot and the polling
  * path resolve simultaneously.
  */
-async function fireGaPurchaseOnce(orderId: string, snapData?: Record<string, unknown>) {
+async function fireGaPurchaseOnce(
+  orderId: string,
+  snapData?: Record<string, unknown>,
+  apiTracking?: Record<string, unknown>,
+) {
   if (!orderId || typeof window === "undefined") return;
   const key = `php_ga_purchase_${orderId}`;
   try { if (localStorage.getItem(key) === "1") return; } catch { /* ignore */ }
   try {
-    let data = snapData;
+    // Priority: owner-verified payload from /api/payments/status (works for
+    // GUESTS — Firestore RLS denies them the order doc, which used to make
+    // the purchase event silently never fire), then the onSnapshot data,
+    // then a direct Firestore read (authed users only).
+    let data = apiTracking ?? snapData;
     if (!data) {
       const snap = await getDoc(doc(db, "orders", orderId));
       if (!snap.exists()) return;
@@ -41,8 +49,9 @@ async function fireGaPurchaseOnce(orderId: string, snapData?: Record<string, unk
       currency: "GBP",
     }));
     const ship = (data.shippingAddress ?? data.shipping_address ?? {}) as Record<string, unknown>;
+    const customerObj = (data.customer ?? {}) as Record<string, unknown>;
     const userData = {
-      email: String(data.email ?? data.customerEmail ?? ship.email ?? "") || undefined,
+      email: String(data.email ?? data.customerEmail ?? customerObj.email ?? ship.email ?? "") || undefined,
       phone: String(data.phone ?? ship.phone ?? "") || undefined,
       firstName: String(ship.firstName ?? ship.first_name ?? "") || undefined,
       lastName: String(ship.lastName ?? ship.last_name ?? "") || undefined,
@@ -79,7 +88,7 @@ export const Route = createFileRoute("/checkout/success")({
     meta: [
       { title: "Order Confirmed — PH Labs" },
       { name: "description", content: "Your research peptide order with PH Labs UK has been received and is being processed." },
-      { property: "og:title", content: "Order Confirmed — PH Labs" },
+      { property:"og:title", content: "Order Confirmed — PH Labs" },
       { property: "og:description", content: "Your research peptide order with PH Labs UK has been received and is being processed." },
       { property: "og:url", content: "https://phlabs.co.uk/checkout/success" },
       { name: "robots", content: "noindex, nofollow, noarchive" },
@@ -268,7 +277,11 @@ function CheckoutSuccessPage() {
           const status = String((data as { status?: unknown }).status || "").toUpperCase();
           if (status === "SUCCESS" || status === "PAID" || status === "COMPLETED") {
             setPhaseSafe("paid");
-            void fireGaPurchaseOnce(oid);
+            void fireGaPurchaseOnce(
+              oid,
+              undefined,
+              (data as { tracking?: Record<string, unknown> }).tracking,
+            );
             try {
               localStorage.removeItem("php_cart");
               localStorage.removeItem("php_pending_order");
@@ -351,7 +364,11 @@ function CheckoutSuccessPage() {
         captureAmount(data);
         if (status === "SUCCESS" || status === "PAID" || status === "COMPLETED") {
           setPhaseSafe("paid");
-          void fireGaPurchaseOnce(orderId);
+          void fireGaPurchaseOnce(
+            orderId,
+            undefined,
+            (data as { tracking?: Record<string, unknown> }).tracking,
+          );
         } else if (status === "CANCELLED" || status === "CANCELED") {
           setPhaseSafe("cancelled");
         } else if (status === "FAILED" || status === "DECLINED" || status === "EXPIRED") {
@@ -459,7 +476,7 @@ function CheckoutSuccessPage() {
                   Order ID: <span className="font-mono text-emerald-400 select-all">{orderId}</span>
                 </div>
                 <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                  <button
+<button
                     type="button"
                     onClick={() => void manualRefresh()}
                     disabled={refreshing}
