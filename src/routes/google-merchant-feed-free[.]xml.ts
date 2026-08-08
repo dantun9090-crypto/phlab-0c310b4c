@@ -103,9 +103,9 @@ const EXTRA_VARIANT_ITEMS: Array<{ slug: string; variantName: string }> = [
   { slug: "ghk-cu-research-peptide", variantName: "100 mg" },
 ];
 
-/** Promotion ID attached to every item (must match a promotion created in
- *  Merchant Center → Marketing → Promotions to render the badge). */
-const FREE_FEED_PROMO_ID = "SALE10";
+/** Promotion IDs attached to every item (each must match a promotion created
+ *  in Merchant Center → Marketing → Promotions to render the badge). */
+const FREE_FEED_PROMO_IDS: string[] = ["SALE10", "SALE11"];
 
 function casFor(name: string): string | null {
   const n = (name || "").toLowerCase();
@@ -290,7 +290,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               isLiquid ? null : `    <g:product_highlight>Lyophilised powder, stable cold-chain dispatch</g:product_highlight>`,
               `    <g:product_highlight>UK fulfilment to qualified laboratories</g:product_highlight>`,
               `    <g:product_highlight>Retention sample held for analytical traceability</g:product_highlight>`,
-              `    <g:promotion_id>${xmlEscape(FREE_FEED_PROMO_ID)}</g:promotion_id>`,
+              ...FREE_FEED_PROMO_IDS.map((pid: string) => `    <g:promotion_id>${xmlEscape(pid)}</g:promotion_id>`),
               `    <g:custom_label_0>UK-Stock</g:custom_label_0>`,
               `    <g:custom_label_1>${xmlEscape(formLabel)}</g:custom_label_1>`,
               `    <g:custom_label_2>${xmlEscape(sizeCompact || "Standard")}</g:custom_label_2>`,
@@ -371,7 +371,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
                   `    <g:product_highlight>HPLC-verified ≥99% purity (CoA per batch)</g:product_highlight>`,
                   isLiquid ? null : `    <g:product_highlight>Lyophilised powder, stable cold-chain dispatch</g:product_highlight>`,
                   `    <g:product_highlight>UK fulfilment to qualified laboratories</g:product_highlight>`,
-                  `    <g:promotion_id>${xmlEscape(FREE_FEED_PROMO_ID)}</g:promotion_id>`,
+                  ...FREE_FEED_PROMO_IDS.map((pid: string) => `    <g:promotion_id>${xmlEscape(pid)}</g:promotion_id>`),
                   `    <g:custom_label_0>UK-Stock</g:custom_label_0>`,
                   `    <g:custom_label_1>${xmlEscape(formLabel)}</g:custom_label_1>`,
                   `    <g:custom_label_2>${xmlEscape(compact)}</g:custom_label_2>`,
