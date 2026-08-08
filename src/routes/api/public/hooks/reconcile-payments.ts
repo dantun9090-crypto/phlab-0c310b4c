@@ -5,7 +5,7 @@
  * Auth: `x-cron-secret: ${CRON_SECRET}` header (constant-time compare).
  *
  * Called every 5 minutes by the `wallid-reconcile.yml` GitHub Actions
- * workflow. Two responsibilities:
+ * workflow. Three responsibilities:
  *
  *   1. Drain `retryQueue` — events the webhook failed to fully apply.
  *      For each ready item (nextAttemptAt <= now, attemptCount < 5):
@@ -20,6 +20,12 @@
  *   2. Stuck-order sweep — orders still `pending`/`pending_payment` after
  *      30 minutes with no lastWebhookAt/lastReconciledAt. Poll Wallid
  *      directly and, if it reports a terminal state, apply it.
+ *
+ *   3. GA4 MP purchase backfill — paid Wallid orders >2h old (max 72h)
+ *      with no client-side purchase confirmation get one server-side GA4
+ *      Measurement Protocol purchase, backdated to paidAt. Dedup markers:
+ *      gaClientPurchaseAt / gaMpPurchaseAt. Requires GA4_MP_API_SECRET.
+ *      See lib/server/ga-measurement.ts.
  *
  * Idempotent by construction: same api_payment_id keys the retryQueue row
  * and the Supabase `wallid_webhook_events.event_id` UNIQUE index still
