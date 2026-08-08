@@ -425,3 +425,6 @@ If gitleaks flags a false positive, add a narrow allowlist entry to
 `.gitleaks.toml` with a comment explaining *why* it is safe. Never widen
 the ruleset to make a real secret pass — rotate the credential instead.
 
+<!-- 2026-08-08: redeploy trigger — evict edge-cached HTML shells that still
+     carry the Cloudflare Google-Tag-Gateway auto-injected snippet after
+     setUpTag was disabled at zone level. No functional change. -->
