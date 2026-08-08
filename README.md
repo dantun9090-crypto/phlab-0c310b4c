@@ -234,7 +234,7 @@ machine-readable report next to the bundle:
   "summary": { "pass": 11, "fail": 0, "status": "green" },
   "subjectDigest": "…sha256 of sbom.cdx.json…",
   "attestedSubjectDigest": "…must equal subjectDigest…",
-  "cyclonedxSubjectDigest": "…must equal subjectDigest…",
+  "cyclonedxSubjectDigest": "…must equal cyclonedxSubjectDigest…",
   "slsaProvenance": {
     "repository": "https://github.com/phlabs-uk/phlabs",
     "ref": "refs/tags/v1.2.3",
@@ -428,3 +428,6 @@ the ruleset to make a real secret pass — rotate the credential instead.
 <!-- 2026-08-08: redeploy trigger — evict edge-cached HTML shells that still
      carry the Cloudflare Google-Tag-Gateway auto-injected snippet after
      setUpTag was disabled at zone level. No functional change. -->
+
+<!-- 2026-08-08: redeploy trigger #2 — evict edge-cached HTML shells after
+     the zone-level Google tag gateway was fully disabled. No functional change. -->
