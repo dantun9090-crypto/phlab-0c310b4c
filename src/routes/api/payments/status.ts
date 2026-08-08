@@ -194,7 +194,8 @@ export const Route = createFileRoute("/api/payments/status")({
                         (prior.firstName as string) ||
                           (customerObj.firstName as string) ||
                           (prior.customerName as string) ||
-                          "",
+                          ""
+,
                       ).split(" ")[0] || "there";
                     const amount = Number(
                       (prior.totalAmount as number) ??
@@ -257,11 +258,60 @@ export const Route = createFileRoute("/api/payments/status")({
           // NOTE: api_payment_id is an internal Wallid reference — never
           // expose it to the client. Amount/currency are echoed because the
           // caller is already proven to own the order.
+          //
+          // tracking: the Firestore order doc fields the success page needs
+          // to fire the GA4/Ads purchase event. Guests CANNOT read the
+          // order doc client-side (RLS: userId == auth.uid), so without this
+          // payload the purchase conversion silently never fired for guest
+          // checkouts (2026-08-08: 30 days of zero recorded conversions
+          // while Wallid orders were completing). Caller is already verified
+          // as the order owner above (idToken or paymentToken), so echoing
+          // their own order data leaks nothing.
+          const shipAddr = (
+            (order as { shippingAddress?: unknown }).shippingAddress ??
+            (order as { shipping?: unknown }).shipping ??
+            {}
+          ) as Record<string, unknown>;
+          const customerObj = (
+            ((order as { customer?: unknown }).customer ?? {}) as Record<string, unknown>
+          );
+          const tracking = {
+            total:
+              (order as { total?: unknown }).total ??
+              (order as { totalAmount?: unknown }).totalAmount ??
+              (order as { totalPrice?: unknown }).totalPrice ??
+              (order as { amount?: unknown }).amount ??
+              row.amount,
+            vatAmount:
+              (order as { vatAmount?: unknown }).vatAmount ??
+              (order as { tax?: unknown }).tax ??
+              0,
+            shippingCost:
+              (order as { shippingCost?: unknown }).shippingCost ??
+              (order as { shippingTotal?: unknown }).shippingTotal ??
+              0,
+            items: Array.isArray((order as { items?: unknown }).items)
+              ? (order as { items?: unknown }).items
+              : [],
+            email:
+              (order as { email?: unknown }).email ??
+              (order as { customerEmail?: unknown }).customerEmail ??
+              customerObj.email ??
+              shipAddr.email ??
+              null,
+            phone:
+              (order as { phone?: unknown }).phone ??
+              shipAddr.phone ??
+              customerObj.phone ??
+              null,
+            shippingAddress: shipAddr,
+          };
           return json({
             status,
             order_id: orderId,
             amount: row.amount,
             currency: row.currency,
+            tracking,
           });
         } catch (err) {
           if (err instanceof WallidError) {
