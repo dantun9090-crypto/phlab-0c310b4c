@@ -65,6 +65,24 @@ async function fireGaPurchaseOnce(
     });
     trackBingPurchase(orderId);
     try { localStorage.setItem(key, "1"); } catch { /* ignore */ }
+    // Ack to the server so the Measurement Protocol backfill (reconcile
+    // cron, +2h) skips this order. Covers the onSnapshot path where the
+    // status endpoint never delivered a tracking payload. Fire-and-forget.
+    try {
+      const idToken = auth.currentUser
+        ? await auth.currentUser.getIdToken().catch(() => null)
+        : null;
+      let paymentToken: string | null = null;
+      try { paymentToken = localStorage.getItem(`php_pt_${orderId}`); } catch { /* ignore */ }
+      if (idToken || paymentToken) {
+        void fetch(`/api/payments/status`, {
+          method: "POST",
+          headers: { "content-type": "application/json", accept: "application/json" },
+          body: JSON.stringify({ orderId, idToken, paymentToken, purchaseFired: true }),
+          cache: "no-store",
+        });
+      }
+    } catch { /* ignore */ }
   } catch { /* ignore — analytics must never break the success page */ }
 }
 
@@ -88,7 +106,7 @@ export const Route = createFileRoute("/checkout/success")({
     meta: [
       { title: "Order Confirmed — PH Labs" },
       { name: "description", content: "Your research peptide order with PH Labs UK has been received and is being processed." },
-      { property:"og:title", content: "Order Confirmed — PH Labs" },
+      { property: "og:title", content: "Order Confirmed — PH Labs" },
       { property: "og:description", content: "Your research peptide order with PH Labs UK has been received and is being processed." },
       { property: "og:url", content: "https://phlabs.co.uk/checkout/success" },
       { name: "robots", content: "noindex, nofollow, noarchive" },
@@ -476,7 +494,7 @@ function CheckoutSuccessPage() {
                   Order ID: <span className="font-mono text-emerald-400 select-all">{orderId}</span>
                 </div>
                 <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-<button
+                  <button
                     type="button"
                     onClick={() => void manualRefresh()}
                     disabled={refreshing}
