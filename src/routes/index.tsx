@@ -13,9 +13,10 @@ const BANNER_SIZES =
 const BANNER_QUALITY = 78;
 
 
-const HOME_TITLE = "HPLC-Verified Research Peptides UK | PH Labs";
+const HOME_TITLE = "Research Peptides UK | HPLC-Verified | PH Labs";
 const HOME_DESCRIPTION =
-  "UK supplier of HPLC-verified research peptides. Lab-tested purity, transparent COAs, and fast UK dispatch for research professionals. For research use only.";
+  "Buy research peptides UK — HPLC-verified purity, batch COAs and next-day UK dispatch for laboratory researchers. For research use only. Not for human consumption.";
+
 
 
 const HOME_URL = "https://phlabs.co.uk/";
