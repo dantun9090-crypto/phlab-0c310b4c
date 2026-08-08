@@ -56,7 +56,7 @@
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^2.0.48",
-    "@cloudflare/vite-plugin": "^1.25.5",
+    "@cloudflare/vite-plugin": "^1.50.0",
     "@fontsource-variable/space-grotesk": "^5.2.10",
     "@hookform/resolvers": "^5.2.2",
     "@lovable.dev/email-js": "^0.1.2",
