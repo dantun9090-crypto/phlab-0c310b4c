@@ -38,8 +38,10 @@ const CURRENCY = "GBP";
  *
  * SETUP (required for the promo badge to render in Google listings):
  *   1. Merchant Center → Marketing → Promotions → "Create promotion".
- *   2. Set "Promotion ID" to exactly `PHL_LAUNCH` (or each ID supplied
- *      via the `MERCHANT_PROMO_IDS` env var, comma-separated).
+ *   2. Set "Promotion ID" to exactly one of the defaults — currently
+ *      `PHL_LAUNCH`, `PHL_LAUNCH2`, `PHL_LAUNCH3`, `SALE10`, `SALE11`
+ *      (or each ID supplied via the `MERCHANT_PROMO_IDS` env var,
+ *      comma-separated). One Merchant Center promotion per ID.
  *   3. Configure offer details (e.g. "10% off", "Free shipping"),
  *      destination = Shopping ads + free listings, country = GB.
  *   4. Submit and wait for review — until "Active", the badge will not
@@ -53,13 +55,13 @@ export const DEFAULT_MERCHANT_PROMO_ID = "PHL_LAUNCH";
 export function getMerchantPromoIds(): string[] {
   const raw = process.env.MERCHANT_PROMO_IDS;
   if (!raw || typeof raw !== "string") {
-    return [DEFAULT_MERCHANT_PROMO_ID, "PHL_LAUNCH2", "PHL_LAUNCH3", "SALE10"];
+    return [DEFAULT_MERCHANT_PROMO_ID, "PHL_LAUNCH2", "PHL_LAUNCH3", "SALE10", "SALE11"];
   }
   const ids = raw
     .split(",")
     .map((s: string) => s.trim())
     .filter((s: string) => s.length > 0);
-  return ids.length > 0 ? ids : [DEFAULT_MERCHANT_PROMO_ID, "PHL_LAUNCH2", "PHL_LAUNCH3", "SALE10"];
+  return ids.length > 0 ? ids : [DEFAULT_MERCHANT_PROMO_ID, "PHL_LAUNCH2", "PHL_LAUNCH3", "SALE10", "SALE11"];
 }
 
 const MERCHANT_PROMO_IDS: string[] = getMerchantPromoIds();
