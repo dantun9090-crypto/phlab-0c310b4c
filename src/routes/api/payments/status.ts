@@ -26,6 +26,7 @@ const BodySchema = z.object({
   orderId: z.string().min(3).max(128).regex(/^[A-Za-z0-9_-]+$/),
   idToken: z.string().min(10).max(4096).optional().nullable(),
   paymentToken: z.string().min(32).max(256).optional().nullable(),
+  purchaseFired: z.boolean().optional(),
 });
 
 function json(body: unknown, status = 200): Response {
@@ -63,7 +64,7 @@ export const Route = createFileRoute("/api/payments/status")({
         try { raw = await request.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
         const parsed = BodySchema.safeParse(raw);
         if (!parsed.success) return json({ error: "Invalid request" }, 400);
-        const { orderId, idToken, paymentToken } = parsed.data;
+        const { orderId, idToken, paymentToken, purchaseFired } = parsed.data;
         // 1) Authenticate caller (idToken preferred; fall back to paymentToken).
         let userUid: string | null = null;
         if (idToken) {
@@ -116,6 +117,19 @@ export const Route = createFileRoute("/api/payments/status")({
             return json({ error: "Authentication required" }, 401);
           }
           return json({ error: "Forbidden" }, 403);
+        }
+
+        // Analytics ack: the success page fired the GA4/Ads purchase event
+        // in the browser — mark the order so the server-side Measurement
+        // Protocol backfill (reconcile cron) doesn't duplicate it. Ownership
+        // was verified above; unauthenticated acks are refused (guessable
+        // orderIds could otherwise suppress the backfill).
+        if (purchaseFired === true) {
+          try {
+            const { updateDocAdmin } = await import("@/lib/server/firestore-admin");
+            await updateDocAdmin("orders", orderId, { gaClientPurchaseAt: new Date() });
+          } catch { /* analytics must never break payments */ }
+          return json({ ok: true });
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -194,8 +208,7 @@ export const Route = createFileRoute("/api/payments/status")({
                         (prior.firstName as string) ||
                           (customerObj.firstName as string) ||
                           (prior.customerName as string) ||
-                          ""
-,
+                          "",
                       ).split(" ")[0] || "there";
                     const amount = Number(
                       (prior.totalAmount as number) ??
@@ -306,6 +319,15 @@ export const Route = createFileRoute("/api/payments/status")({
               null,
             shippingAddress: shipAddr,
           };
+          // We just handed the verified owner everything needed to fire the
+          // GA4 purchase event client-side — mark the order so the MP
+          // backfill skips it. Fire-and-forget: never delay the response.
+          if (status === "SUCCESS" || status === "PAID" || status === "COMPLETED") {
+            try {
+              const { updateDocAdmin } = await import("@/lib/server/firestore-admin");
+              void updateDocAdmin("orders", orderId, { gaClientPurchaseAt: new Date() });
+            } catch { /* ignore */ }
+          }
           return json({
             status,
             order_id: orderId,
