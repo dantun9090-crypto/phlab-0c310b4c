@@ -258,6 +258,16 @@ export default function PaymentMethodOptions({
               Pay securely from any UK bank app — instant confirmation, no card needed.
             </p>
 
+            <p
+              data-testid="international-payment-note"
+              className="text-xs text-slate-300 mt-1.5 ml-8"
+            >
+              International customers: pay with <span className="text-emerald-300 font-medium">Revolut</span> or{" "}
+              <span className="text-emerald-300 font-medium">Wise</span> through the same Open Banking
+              checkout — select your Revolut or Wise account when choosing your bank.
+            </p>
+
+
             {options?.primary && !wallidEnabled && (
               <p
                 data-testid="active-gateway-label"
