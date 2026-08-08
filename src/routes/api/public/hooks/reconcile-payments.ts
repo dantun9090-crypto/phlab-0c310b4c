@@ -204,7 +204,7 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
         }
         if (diff !== 0) return json({ error: "forbidden" }, 403);
 
-        const results = { processed: 0, failed: 0, skipped: 0, conflicts: 0, stuck: 0 };
+        const results = { processed: 0, failed: 0, skipped: 0, conflicts: 0, stuck: 0, mpBackfill: 0 };
 
         const [{ listDocsAdmin, updateDocAdmin, transitionDocStatusAdmin }, reliability] =
           await Promise.all([
@@ -504,6 +504,46 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
           console.warn("[reconcile] stuck-order sweep failed:", e);
         }
 
+
+        // ---- 3) GA4 Measurement Protocol purchase backfill ------------
+        // The browser fires the GA4/Ads purchase event on /checkout/success,
+        // but bank-app redirects sometimes strand the customer — they pay and
+        // never return, so no client event ever fires (2026-08: 30 days of
+        // Wallid sales with zero recorded conversions). Sweep paid Wallid
+        // orders older than 2h (GA4 MP accepts backdated events up to 72h)
+        // and send ONE server-side purchase when the client never confirmed.
+        //
+        // Dedup markers on the order doc (either suppresses the backfill):
+        //   gaClientPurchaseAt — /api/payments/status handed the tracking
+        //     payload to a verified owner, or the success page acked it.
+        //   gaMpPurchaseAt     — this sweep already sent the MP event.
+        // Only paymentProvider==="wallid" orders qualify (bank_transfer
+        // orders fire client-side at checkout time by design).
+        try {
+          const mpCutoff = new Date(Date.now() - 2 * 60 * 60_000);
+          const mpHorizon = new Date(Date.now() - 72 * 60 * 60_000);
+          const candidates = await listDocsAdmin("orders", {
+            orderBy: "paidAt",
+            direction: "DESCENDING",
+            limit: 200,
+            rangeFilter: { field: "paidAt", gte: mpHorizon, lte: mpCutoff },
+          });
+          for (const order of candidates) {
+            if (String(order.status ?? "").toLowerCase() !== "paid") continue;
+            if (String((order as { paymentProvider?: unknown }).paymentProvider ?? "") !== "wallid") continue;
+            if ((order as { gaClientPurchaseAt?: unknown }).gaClientPurchaseAt) continue;
+            if ((order as { gaMpPurchaseAt?: unknown }).gaMpPurchaseAt) continue;
+            const orderId = String(order.id);
+            const { sendGa4MpPurchase } = await import("@/lib/server/ga-measurement");
+            const sent = await sendGa4MpPurchase(orderId, order);
+            if (sent) {
+              await updateDocAdmin("orders", orderId, { gaMpPurchaseAt: new Date() });
+              results.mpBackfill += 1;
+            }
+          }
+        } catch (e) {
+          console.warn("[reconcile] GA4 MP backfill failed:", e instanceof Error ? e.message : e);
+        }
 
         return json({ ok: true, ...results });
       },
