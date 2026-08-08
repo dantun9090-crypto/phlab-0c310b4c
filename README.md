@@ -234,7 +234,7 @@ machine-readable report next to the bundle:
   "summary": { "pass": 11, "fail": 0, "status": "green" },
   "subjectDigest": "…sha256 of sbom.cdx.json…",
   "attestedSubjectDigest": "…must equal subjectDigest…",
-  "cyclonedxSubjectDigest": "…must equal cyclonedxSubjectDigest…",
+  "cyclonedxSubjectDigest": "…must equal subjectDigest…",
   "slsaProvenance": {
     "repository": "https://github.com/phlabs-uk/phlabs",
     "ref": "refs/tags/v1.2.3",
