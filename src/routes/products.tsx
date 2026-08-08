@@ -3,9 +3,10 @@ import LegacyApp from "@/legacy/LegacyApp";
 import { fetchAllProductsFn, type SeoProduct } from "@/lib/products-rest.functions";
 import { SITE_URL } from "@/lib/seo-meta";
 
-const TITLE = "Research Peptides UK | Full Catalogue | PH Labs";
+const TITLE = "Buy Research Peptides UK | Catalogue | PH Labs";
 const DESCRIPTION =
-  "Browse HPLC-verified research peptides from PH Labs. Lab-tested purity, transparent COAs, fast UK dispatch.";
+  "Research peptides for sale UK — full PH Labs catalogue with HPLC-verified purity, batch COAs and fast UK dispatch. For research use only. Not for human consumption.";
+
 const URL = `${SITE_URL}/products`;
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
 
