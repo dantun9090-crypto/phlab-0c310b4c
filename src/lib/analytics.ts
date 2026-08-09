@@ -289,8 +289,16 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
   }
   // Google destinations — activates linked GA4, Google Ads and Merchant Center destinations.
   for (const destinationId of GOOGLE_DESTINATION_IDS) {
-    if (destinationId !== id) gtag('config', destinationId, { send_page_view: false, cookie_domain: 'auto' });
+    if (destinationId === id) continue;
+    const isAds = destinationId.startsWith('AW-');
+    gtag('config', destinationId, {
+      send_page_view: false,
+      cookie_domain: 'auto',
+      ...(isAds ? { allow_enhanced_conversions: true } : {}),
+    });
+    if (isAds) (window as unknown as { __phlAdsConfigured?: boolean }).__phlAdsConfigured = true;
   }
+
 
   // Fire initial page view (skip if the hardcoded <head> script already
   // triggered an auto-config page_view — deduplicate via lastTrackedPath).
