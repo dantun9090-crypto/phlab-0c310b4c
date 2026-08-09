@@ -26,7 +26,10 @@ import {
 import UkBankBadges from "@/components/UkBankBadges";
 import type { CheckoutPaymentOptions } from "@/lib/payments/types";
 
+export type PaymentMethodValue = "pay_by_bank" | "bank_transfer" | "wallid" | "peptidepay";
+
 export interface PaymentMethodOptionsProps {
+
   options: CheckoutPaymentOptions | null;
   /** Wallid Pay-by-Bank kill switch from admin panel (default false). */
   wallidEnabled?: boolean;
