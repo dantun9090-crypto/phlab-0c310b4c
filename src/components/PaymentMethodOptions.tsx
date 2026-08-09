@@ -139,9 +139,11 @@ function WallidCheckoutTrustInline({ className = "" }: { className?: string }) {
 export default function PaymentMethodOptions({
   options,
   wallidEnabled = false,
+  peptidepayEnabled = false,
   value,
   onChange,
 }: PaymentMethodOptionsProps) {
+
   const hasOnline = Boolean(
     options && (options.primary || options.backups.length > 0),
   );
