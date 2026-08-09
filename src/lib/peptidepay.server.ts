@@ -160,16 +160,30 @@ export async function createPeptidePaySession(
     throw new PeptidePayError(res.status, "unexpected_redirect", "Payment service unavailable");
   }
   if (!res.ok) {
-    // Never leak the provider's raw error to the browser.
+    // Never leak the provider's raw error verbatim, but map the known
+    // account-state errors to something actionable for the shopper/admin.
     console.error(`[PeptidePay] checkout/init failed ${res.status}: ${text.slice(0, 300)}`);
+    let code = "";
+    try {
+      code = String((JSON.parse(text) as Record<string, unknown>).error ?? "");
+    } catch {
+      code = "";
+    }
+    const accountNotLive =
+      code === "merchant_pending" ||
+      code === "merchant_disabled" ||
+      /pending activation|not activated|account is disabled/i.test(text);
     throw new PeptidePayError(
       res.status,
       text,
-      res.status === 400
-        ? "Card payment could not be started for this order."
-        : "Card payment service unavailable — please try Pay by Bank.",
+      accountNotLive
+        ? "Card payments are not active yet — please use Pay by Bank."
+        : res.status === 400
+          ? "Card payment could not be started for this order."
+          : "Card payment service unavailable — please try Pay by Bank.",
     );
   }
+
 
   let parsed: Record<string, unknown>;
   try {
