@@ -72,7 +72,10 @@ export interface PeptidePayCredentials {
 export function readPeptidePayCredentials(): PeptidePayCredentials {
   const apiKey = process.env["PEPTIDEPAY_API_KEY"] || null;
   const wallet = process.env["PEPTIDEPAY_WALLET"] || null;
-  const webhookSecret = process.env["PEPTIDEPAY_WEBHOOK_SECRET"] || null;
+  // Qist Digital is the same provider — their dashboard names the signing
+  // secret QIST_WEBHOOK_SECRET, so accept either name.
+  const webhookSecret =
+    process.env["PEPTIDEPAY_WEBHOOK_SECRET"] || process.env["QIST_WEBHOOK_SECRET"] || null;
   return { apiKey, wallet, webhookSecret };
 }
 
