@@ -1,2 +1,0 @@
-// Re-export the TanStack Start server handler built from `src/server.ts`.
-// The build (vinxi/vite) injects the actual handler at `src/server.ts`.
