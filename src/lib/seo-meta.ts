@@ -116,11 +116,12 @@ export function metaForPath(splat: string): PageMeta {
   // in search (low CTR despite impressions).
   const articleMetaOverrides: Record<string, PageMeta> = {
     "hplc-testing-explained": {
-      title: `HPLC Purity Testing Explained | ${BRAND}`,
+      title: "What Is HPLC Testing? Peptide Purity Verified | PH Labs",
       description:
-        "How HPLC verifies research peptide purity: chromatogram peaks, % purity thresholds, and how to read a certificate of analysis. For Research Use Only.",
+        "How reversed-phase HPLC verifies peptide purity: reading chromatograms, peak-area %, and LC-MS confirmation on every batch. For Research Use Only.",
       ogType: "article",
     },
+
   };
 
   if ((first === "research" || first === "resources") && segments.length > 1) {
