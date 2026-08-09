@@ -536,7 +536,10 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
           });
           for (const order of candidates) {
             if (String(order.status ?? "").toLowerCase() !== "paid") continue;
-            if (String((order as { paymentProvider?: unknown }).paymentProvider ?? "") !== "wallid") continue;
+            {
+              const prov = String((order as { paymentProvider?: unknown }).paymentProvider ?? "").toLowerCase();
+              if (prov !== "wallid" && prov !== "peptidepay") continue;
+            }
             if ((order as { gaClientPurchaseAt?: unknown }).gaClientPurchaseAt) continue;
             if ((order as { gaMpPurchaseAt?: unknown }).gaMpPurchaseAt) continue;
             const orderId = String(order.id);

@@ -48,6 +48,24 @@ async function verifyPaymentTokenHash(rawToken: string, storedHash: unknown): Pr
   return diff === 0;
 }
 
+/**
+ * Owner-only tracking payload the success page needs to fire the GA4/Ads
+ * purchase event (guests cannot read the order doc client-side).
+ */
+function buildTracking(order: Record<string, unknown>, fallbackAmount?: unknown) {
+  const shipAddr = ((order.shippingAddress ?? order.shipping ?? {}) as Record<string, unknown>);
+  const customerObj = ((order.customer ?? {}) as Record<string, unknown>);
+  return {
+    total: order.total ?? order.totalAmount ?? order.totalPrice ?? order.amount ?? fallbackAmount,
+    vatAmount: order.vatAmount ?? order.tax ?? 0,
+    shippingCost: order.shippingCost ?? order.shippingTotal ?? 0,
+    items: Array.isArray(order.items) ? order.items : [],
+    email: order.email ?? order.customerEmail ?? customerObj.email ?? shipAddr.email ?? null,
+    phone: order.phone ?? shipAddr.phone ?? customerObj.phone ?? null,
+    shippingAddress: shipAddr,
+  };
+}
+
 export const Route = createFileRoute("/api/payments/status")({
   server: {
     handlers: {
