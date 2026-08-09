@@ -304,9 +304,11 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
   // triggered an auto-config page_view — deduplicate via lastTrackedPath).
   if (bootstrapped) {
     lastTrackedPath = window.location.pathname + window.location.search;
+    try { (window as unknown as { __phlPageViewSent?: boolean }).__phlPageViewSent = true; } catch { /* ignore */ }
   } else {
     trackPageView(window.location.pathname + window.location.search);
   }
+
 
   // Listen for consent changes from the cookie banner
   window.addEventListener('php:cookie-consent-changed', ((e: Event) => {
