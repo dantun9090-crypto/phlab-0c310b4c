@@ -2140,7 +2140,10 @@ export default function CheckoutPage() {
                     <PaymentMethodOptions
                       options={paymentOptions}
                       wallidEnabled={wallidEnabled}
-                      peptidepayEnabled={import.meta.env['VITE_PEPTIDEPAY_ENABLED'] === 'true'}
+                      peptidepayEnabled={
+                        import.meta.env['VITE_PEPTIDEPAY_ENABLED'] === 'true' && peptidepayEnabled
+                      }
+
 
                       value={form.paymentMethod}
                       onChange={(v) => setField('paymentMethod', v)}
