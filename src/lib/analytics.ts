@@ -529,17 +529,45 @@ async function buildUserData(u: NonNullable<PurchaseExtras['userData']>): Promis
 }
 
 /**
+ * Ensure `window.gtag` exists AND the Google Ads destination has been
+ * configured, so a `conversion` event actually has somewhere to go.
+ *
+ * The order-confirmation routes (/checkout/success, /payment/success) do not
+ * render <Layout>, so `initAnalytics()` never runs there — the only tag is
+ * the inline bootstrap in __root, which is itself deferred until LCP+idle.
+ * Firing a purchase before that lands silently dropped the Google Ads
+ * conversion (30+ days of zero recorded conversions). Poll for up to ~20s.
+ */
+async function awaitAdsDestinationReady(timeoutMs = 20_000): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const w = window as unknown as { gtag?: unknown; __phlAdsConfigured?: boolean };
+    if (typeof w.gtag === 'function' && (w.__phlAdsConfigured === true || !GOOGLE_ADS_CONVERSION_ID)) {
+      return true;
+    }
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  return typeof (window as unknown as { gtag?: unknown }).gtag === 'function';
+}
+
+/**
  * GA4 + Google Ads purchase. `value` is gross/VAT-inclusive (£) — UK B2C.
  * `extras.tax` and `extras.shipping` are surfaced as native GA4 fields so
  * Google Ads reports net revenue correctly. `extras.userData` enables
  * Enhanced Conversions (PII hashed client-side; raw values never leave).
+ *
+ * Resolves `true` only when both the GA4 event and the Google Ads conversion
+ * reached `dataLayer`. Callers MUST use this to decide whether to write their
+ * "already fired" idempotency flag — marking a dropped event as fired
+ * permanently disables both the client retry and the server-side backfill.
  */
-export function trackPurchase(
+export async function trackPurchase(
   transactionId: string,
   value: number,
   items: GaItem[],
   extras: PurchaseExtras = {},
-): void {
+): Promise<boolean> {
   const params: Record<string, unknown> = {
     transaction_id: transactionId,
     currency: 'GBP',
@@ -549,42 +577,54 @@ export function trackPurchase(
   if (typeof extras.tax === 'number' && Number.isFinite(extras.tax)) params.tax = extras.tax;
   if (typeof extras.shipping === 'number' && Number.isFinite(extras.shipping)) params.shipping = extras.shipping;
 
-  const fire = (userData?: Record<string, string>) => {
-    if (userData && Object.keys(userData).length) params.user_data = userData;
-    trackEvent('purchase', params);
-    trackAdsPurchaseConversion(transactionId, value, userData);
-    // Mark purchase done so the abandoned-cart recovery timer skips re-firing.
-    try { sessionStorage.setItem('php_ec_purchase_done', '1'); } catch { /* ignore */ }
-  };
-
+  let userData: Record<string, string> | undefined;
   if (extras.userData) {
-    buildUserData(extras.userData).then(fire).catch(() => fire());
-  } else {
-    fire();
+    try { userData = await buildUserData(extras.userData); } catch { /* ignore */ }
   }
+  if (userData && Object.keys(userData).length) params.user_data = userData;
+
+  const ready = await awaitAdsDestinationReady();
+  if (!ready) {
+    log('purchase dropped — gtag never became ready', transactionId);
+    return false;
+  }
+
+  trackEvent('purchase', params);
+  const adsOk = trackAdsPurchaseConversion(transactionId, value, userData);
+  // Mark purchase done so the abandoned-cart recovery timer skips re-firing.
+  try { sessionStorage.setItem('php_ec_purchase_done', '1'); } catch { /* ignore */ }
+  return adsOk;
 }
 
 /**
  * Fire a Google Ads `conversion` event for a purchase. Requires both
  * VITE_GOOGLE_ADS_CONVERSION_ID (AW-XXXXXXXXXX) and
- * VITE_GOOGLE_ADS_PURCHASE_LABEL to be set at build time. No-op otherwise.
+ * VITE_GOOGLE_ADS_PURCHASE_LABEL to be set at build time.
+ * Returns true when the event was queued into `dataLayer`.
  */
 export function trackAdsPurchaseConversion(
   transactionId: string,
   value: number,
   userData?: Record<string, string>,
-): void {
-  if (!GOOGLE_ADS_CONVERSION_ID) return;
+): boolean {
+  if (!GOOGLE_ADS_CONVERSION_ID) return false;
   if (!GOOGLE_ADS_PURCHASE_LABEL) {
     // Without the per-action label Google Ads cannot attribute the sale.
     console.warn(
       '[analytics] VITE_GOOGLE_ADS_PURCHASE_LABEL is not set — Google Ads purchase conversion skipped.',
     );
-    return;
+    return false;
   }
-  if (!ensureAnalyticsReady()) return;
+  if (!ensureAnalyticsReady()) return false;
   const ga = window.gtag;
-  if (!ga) return;
+  if (!ga) return false;
+  // Belt-and-braces: if nothing configured the AW destination yet, do it now
+  // so the conversion event is not dropped on the floor.
+  const w = window as unknown as { __phlAdsConfigured?: boolean };
+  if (!w.__phlAdsConfigured) {
+    ga('config', GOOGLE_ADS_CONVERSION_ID, { send_page_view: false, allow_enhanced_conversions: true });
+    w.__phlAdsConfigured = true;
+  }
   log('ads conversion', { transactionId, value });
   const payload: Record<string, unknown> = {
     send_to: `${GOOGLE_ADS_CONVERSION_ID}/${GOOGLE_ADS_PURCHASE_LABEL}`,
@@ -594,7 +634,9 @@ export function trackAdsPurchaseConversion(
   };
   if (userData && Object.keys(userData).length) payload.user_data = userData;
   ga('event', 'conversion', payload);
+  return true;
 }
+
 
 
 /* ─────────────────────────────────────────────────────────────────────────
