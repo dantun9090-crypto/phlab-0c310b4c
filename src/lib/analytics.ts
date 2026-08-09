@@ -304,9 +304,11 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
   // triggered an auto-config page_view — deduplicate via lastTrackedPath).
   if (bootstrapped) {
     lastTrackedPath = window.location.pathname + window.location.search;
+    try { (window as unknown as { __phlPageViewSent?: boolean }).__phlPageViewSent = true; } catch { /* ignore */ }
   } else {
     trackPageView(window.location.pathname + window.location.search);
   }
+
 
   // Listen for consent changes from the cookie banner
   window.addEventListener('php:cookie-consent-changed', ((e: Event) => {
@@ -327,6 +329,9 @@ export function trackPageView(path: string): void {
   if (!ga) return;
   if (path === lastTrackedPath) return;
   lastTrackedPath = path;
+  // Claim the initial page_view so the deferred __root bootstrap (which may
+  // run AFTER this on Layout pages) does not fire a second one.
+  try { (window as unknown as { __phlPageViewSent?: boolean }).__phlPageViewSent = true; } catch { /* ignore */ }
   log('page_view', path);
   ga('event', 'page_view', {
     page_path: path,
@@ -336,6 +341,7 @@ export function trackPageView(path: string): void {
     debug_mode: debugMode,
   });
 }
+
 
 export function trackEvent(name: string, params?: Record<string, unknown>): void {
   if (!ensureAnalyticsReady()) return;
