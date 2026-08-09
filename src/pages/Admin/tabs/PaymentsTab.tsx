@@ -16,6 +16,8 @@ import WallidKillSwitchCard from '../components/WallidKillSwitchCard';
 import WallidTestPaymentCard from '../components/WallidTestPaymentCard';
 import WallidSyncCard from '../components/WallidSyncCard';
 import WallidReconcileCard from '../components/WallidReconcileCard';
+import PeptidePayToggleCard from '../components/PeptidePayToggleCard';
+
 
 import { getAdminIdToken } from '@/lib/auth-ready';
 type TestResult = { ok: boolean; durationMs: number; message: string; at: number };
