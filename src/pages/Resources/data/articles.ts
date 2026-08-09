@@ -112,8 +112,9 @@ The compound is currently progressing through Phase 3 evaluation (TRIUMPH progra
   {
     slug: 'hplc-testing-explained',
     title: 'HPLC Testing Explained: How Peptide Purity Is Verified',
-    seoTitle: 'What Is HPLC Testing? Peptide Purity Verification | PH Labs',
-    seoDescription: 'What is HPLC testing? A complete UK guide to reversed-phase HPLC for peptide purity verification — chromatograms, peak area %, LC-MS confirmation, and FAQ.',
+    seoTitle: 'What Is HPLC Testing? Peptide Purity Verified | PH Labs',
+    seoDescription: 'How reversed-phase HPLC verifies peptide purity: reading chromatograms, peak-area %, and LC-MS confirmation on every batch. For Research Use Only.',
+
     subtitle: 'Understanding reversed-phase HPLC, analytical method development, and how chromatographic data validates research-grade peptide quality',
     category: 'Analytical Chemistry',
     readTime: 11,

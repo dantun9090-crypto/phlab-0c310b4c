@@ -112,7 +112,21 @@ export function metaForPath(splat: string): PageMeta {
     };
   }
 
+  // Per-slug overrides for articles where the generic pattern under-performs
+  // in search (low CTR despite impressions).
+  const articleMetaOverrides: Record<string, PageMeta> = {
+    "hplc-testing-explained": {
+      title: "What Is HPLC Testing? Peptide Purity Verified | PH Labs",
+      description:
+        "How reversed-phase HPLC verifies peptide purity: reading chromatograms, peak-area %, and LC-MS confirmation on every batch. For Research Use Only.",
+      ogType: "article",
+    },
+
+  };
+
   if ((first === "research" || first === "resources") && segments.length > 1) {
+    const override = articleMetaOverrides[last];
+    if (override) return override;
     const name = titleize(last);
     const parent = first === "research" ? "Research" : "Resource";
     return {
@@ -124,6 +138,7 @@ export function metaForPath(splat: string): PageMeta {
       ogType: "article",
     };
   }
+
 
   const presets: Record<string, PageMeta> = {
     products: {
