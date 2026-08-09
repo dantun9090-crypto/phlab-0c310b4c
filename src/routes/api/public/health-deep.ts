@@ -62,11 +62,15 @@ async function checkSitemapFresh(): Promise<Check> {
   if (!times.length) return fail("unparseable lastmod");
   const latest = Math.max(...times);
   const ageH = (Date.now() - latest) / 3_600_000;
-  const allSame = new Set(times).size === 1;
   const latestIso = new Date(latest).toISOString().slice(0, 10);
-  if (ageH > 24 && allSame) return fail(`all lastmod identical=${latestIso}, age=${ageH.toFixed(1)}h`);
-  if (ageH > 24) return fail(`latest lastmod=${latestIso}, age=${ageH.toFixed(1)}h (>24h)`);
-  return pass(`latest lastmod=${latestIso} (${ageH.toFixed(1)}h ago, ${dates.length} urls)`);
+  // Catalogue content does not change daily — only flag a genuinely stale or
+  // future-dated sitemap (SITEMAP_MAX_AGE_H = 30 days).
+  const SITEMAP_MAX_AGE_H = 30 * 24;
+  if (ageH < -24) return fail(`latest lastmod=${latestIso} is in the future`);
+  if (ageH > SITEMAP_MAX_AGE_H)
+    return fail(`latest lastmod=${latestIso}, age=${ageH.toFixed(1)}h (>${SITEMAP_MAX_AGE_H}h)`);
+  return pass(`latest lastmod=${latestIso} (${(ageH / 24).toFixed(1)}d ago, ${dates.length} urls)`);
+
 }
 
 async function checkPrerender(): Promise<Check> {
