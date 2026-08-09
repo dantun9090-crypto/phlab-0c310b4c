@@ -181,7 +181,7 @@ export default function PaymentMethodOptions({
    * (gentle, block: 'nearest') once it's expanded.
    */
   const handleSelect = (
-    next: "pay_by_bank" | "bank_transfer" | "wallid",
+    next: PaymentMethodValue,
     clickTarget: HTMLElement | null,
   ) => {
     if (next === value) return;
