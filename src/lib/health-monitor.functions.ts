@@ -55,7 +55,7 @@ async function probeOrigin(): Promise<{
   ok: boolean;
 }> {
   const t0 = Date.now();
-  const res = await fetch(`${ORIGIN}/?cb=${Date.now()}`, {
+  const res = await fetch(`${ORIGIN}/`, {
     method: 'GET',
     headers: { 'User-Agent': BROWSER_UA, Accept: 'text/html' },
     redirect: 'follow',
@@ -63,10 +63,18 @@ async function probeOrigin(): Promise<{
   });
   const ttfbMs = Date.now() - t0;
   const html = await res.text().catch(() => '');
+  // The Worker caches HTML itself and returns `no-store` downstream, so
+  // cf-cache-status is absent by design — derive the status from X-PHL-Via.
+  const via = (res.headers.get('x-phl-via') || '').toLowerCase();
   const cfCacheStatus =
     res.headers.get('cf-cache-status') ||
     res.headers.get('x-cache-status') ||
-    'UNKNOWN';
+    (via.includes('edge-html-hit')
+      ? 'HIT'
+      : via.includes('edge-html-miss')
+        ? 'MISS'
+        : 'UNKNOWN');
+
   const edgeAgeSeconds = Number(res.headers.get('age') || '0') || 0;
   const headerBuildId = res.headers.get('x-build-id') || '';
   const metaMatch = html.match(
