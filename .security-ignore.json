@@ -1,8 +1,3 @@
 {
-  "ignore": [
-    {
-      "id": "GHSA-qwww-vcr4-c8h2",
-      "reason": "react-router v7 RSC-mode CSRF bypass. Not exploitable here: the storefront uses react-router-dom v7 in declarative SPA mode only (Link/useNavigate in a few legacy components); no RSC/data-mode server is deployed. Upgrading to react-router v8 is a separate major migration tracked in the dependency backlog."
-    }
-  ]
+  "ignore": []
 }
