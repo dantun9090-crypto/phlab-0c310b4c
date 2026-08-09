@@ -157,7 +157,7 @@ function buildStrictCsp(nonce: string): string {
 const CSP_TEMPLATE_PREVIEW = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:",
-  "script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' https: data:",
+  "script-src-elem 'self' 'unsafe-inline' https: data:",
   "style-src 'self' 'unsafe-inline' https:",
   "style-src-elem 'self' 'unsafe-inline' https:",
   "style-src-attr 'unsafe-inline'",
