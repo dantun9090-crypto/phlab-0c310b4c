@@ -30,8 +30,11 @@ export interface PaymentMethodOptionsProps {
   options: CheckoutPaymentOptions | null;
   /** Wallid Pay-by-Bank kill switch from admin panel (default false). */
   wallidEnabled?: boolean;
-  value: "pay_by_bank" | "bank_transfer" | "wallid";
-  onChange: (next: "pay_by_bank" | "bank_transfer" | "wallid") => void;
+  /** PeptidePay (card / Apple Pay / Google Pay / crypto) availability. */
+  peptidepayEnabled?: boolean;
+  value: PaymentMethodValue;
+  onChange: (next: PaymentMethodValue) => void;
+
 }
 
 const WHAT_HAPPENS_NEXT = [

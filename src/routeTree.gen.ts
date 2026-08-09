@@ -91,6 +91,7 @@ import { Route as ApiPublicPublishStatusRouteImport } from './routes/api/public/
 import { Route as ApiPublicPublishHoldRouteImport } from './routes/api/public/publish-hold'
 import { Route as ApiPublicPostPublishStatusRouteImport } from './routes/api/public/post-publish-status'
 import { Route as ApiPublicPostPublishCheckRouteImport } from './routes/api/public/post-publish-check'
+import { Route as ApiPublicPeptidepayWebhookRouteImport } from './routes/api/public/peptidepay-webhook'
 import { Route as ApiPublicMonitorLogRouteImport } from './routes/api/public/monitor-log'
 import { Route as ApiPublicMonitorHeadGetRouteImport } from './routes/api/public/monitor-head-get'
 import { Route as ApiPublicLiveOrdersRouteImport } from './routes/api/public/live-orders'
@@ -107,6 +108,7 @@ import { Route as ApiPublicCacheConfigRouteImport } from './routes/api/public/ca
 import { Route as ApiPublicAuditReportRouteImport } from './routes/api/public/audit-report'
 import { Route as ApiPublicAdminErrorsRouteImport } from './routes/api/public/admin-errors'
 import { Route as ApiPaymentsStatusRouteImport } from './routes/api/payments/status'
+import { Route as ApiPaymentsPeptidepayCreateRouteImport } from './routes/api/payments/peptidepay-create'
 import { Route as ApiPaymentsCreateRouteImport } from './routes/api/payments/create'
 import { Route as ApiPaymentsCancelRouteImport } from './routes/api/payments/cancel'
 import { Route as ApiDsrProcessRouteImport } from './routes/api/dsr/process'
@@ -567,6 +569,12 @@ const ApiPublicPostPublishCheckRoute =
     path: '/api/public/post-publish-check',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicPeptidepayWebhookRoute =
+  ApiPublicPeptidepayWebhookRouteImport.update({
+    id: '/api/public/peptidepay-webhook',
+    path: '/api/public/peptidepay-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicMonitorLogRoute = ApiPublicMonitorLogRouteImport.update({
   id: '/api/public/monitor-log',
   path: '/api/public/monitor-log',
@@ -649,6 +657,12 @@ const ApiPaymentsStatusRoute = ApiPaymentsStatusRouteImport.update({
   path: '/api/payments/status',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPaymentsPeptidepayCreateRoute =
+  ApiPaymentsPeptidepayCreateRouteImport.update({
+    id: '/api/payments/peptidepay-create',
+    path: '/api/payments/peptidepay-create',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPaymentsCreateRoute = ApiPaymentsCreateRouteImport.update({
   id: '/api/payments/create',
   path: '/api/payments/create',
@@ -931,6 +945,7 @@ export interface FileRoutesByFullPath {
   '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
+  '/api/payments/peptidepay-create': typeof ApiPaymentsPeptidepayCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
   '/api/public/audit-report': typeof ApiPublicAuditReportRoute
@@ -947,6 +962,7 @@ export interface FileRoutesByFullPath {
   '/api/public/live-orders': typeof ApiPublicLiveOrdersRoute
   '/api/public/monitor-head-get': typeof ApiPublicMonitorHeadGetRoute
   '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
+  '/api/public/peptidepay-webhook': typeof ApiPublicPeptidepayWebhookRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/post-publish-status': typeof ApiPublicPostPublishStatusRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
@@ -1065,6 +1081,7 @@ export interface FileRoutesByTo {
   '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
+  '/api/payments/peptidepay-create': typeof ApiPaymentsPeptidepayCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
   '/api/public/audit-report': typeof ApiPublicAuditReportRoute
@@ -1081,6 +1098,7 @@ export interface FileRoutesByTo {
   '/api/public/live-orders': typeof ApiPublicLiveOrdersRoute
   '/api/public/monitor-head-get': typeof ApiPublicMonitorHeadGetRoute
   '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
+  '/api/public/peptidepay-webhook': typeof ApiPublicPeptidepayWebhookRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/post-publish-status': typeof ApiPublicPostPublishStatusRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
@@ -1202,6 +1220,7 @@ export interface FileRoutesById {
   '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
+  '/api/payments/peptidepay-create': typeof ApiPaymentsPeptidepayCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
   '/api/public/audit-report': typeof ApiPublicAuditReportRoute
@@ -1218,6 +1237,7 @@ export interface FileRoutesById {
   '/api/public/live-orders': typeof ApiPublicLiveOrdersRoute
   '/api/public/monitor-head-get': typeof ApiPublicMonitorHeadGetRoute
   '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
+  '/api/public/peptidepay-webhook': typeof ApiPublicPeptidepayWebhookRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/post-publish-status': typeof ApiPublicPostPublishStatusRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
@@ -1339,6 +1359,7 @@ export interface FileRouteTypes {
     | '/api/dsr/process'
     | '/api/payments/cancel'
     | '/api/payments/create'
+    | '/api/payments/peptidepay-create'
     | '/api/payments/status'
     | '/api/public/admin-errors'
     | '/api/public/audit-report'
@@ -1355,6 +1376,7 @@ export interface FileRouteTypes {
     | '/api/public/live-orders'
     | '/api/public/monitor-head-get'
     | '/api/public/monitor-log'
+    | '/api/public/peptidepay-webhook'
     | '/api/public/post-publish-check'
     | '/api/public/post-publish-status'
     | '/api/public/publish-hold'
@@ -1473,6 +1495,7 @@ export interface FileRouteTypes {
     | '/api/dsr/process'
     | '/api/payments/cancel'
     | '/api/payments/create'
+    | '/api/payments/peptidepay-create'
     | '/api/payments/status'
     | '/api/public/admin-errors'
     | '/api/public/audit-report'
@@ -1489,6 +1512,7 @@ export interface FileRouteTypes {
     | '/api/public/live-orders'
     | '/api/public/monitor-head-get'
     | '/api/public/monitor-log'
+    | '/api/public/peptidepay-webhook'
     | '/api/public/post-publish-check'
     | '/api/public/post-publish-status'
     | '/api/public/publish-hold'
@@ -1609,6 +1633,7 @@ export interface FileRouteTypes {
     | '/api/dsr/process'
     | '/api/payments/cancel'
     | '/api/payments/create'
+    | '/api/payments/peptidepay-create'
     | '/api/payments/status'
     | '/api/public/admin-errors'
     | '/api/public/audit-report'
@@ -1625,6 +1650,7 @@ export interface FileRouteTypes {
     | '/api/public/live-orders'
     | '/api/public/monitor-head-get'
     | '/api/public/monitor-log'
+    | '/api/public/peptidepay-webhook'
     | '/api/public/post-publish-check'
     | '/api/public/post-publish-status'
     | '/api/public/publish-hold'
@@ -1729,6 +1755,7 @@ export interface RootRouteChildren {
   ApiDsrProcessRoute: typeof ApiDsrProcessRoute
   ApiPaymentsCancelRoute: typeof ApiPaymentsCancelRoute
   ApiPaymentsCreateRoute: typeof ApiPaymentsCreateRoute
+  ApiPaymentsPeptidepayCreateRoute: typeof ApiPaymentsPeptidepayCreateRoute
   ApiPaymentsStatusRoute: typeof ApiPaymentsStatusRoute
   ApiPublicAdminErrorsRoute: typeof ApiPublicAdminErrorsRoute
   ApiPublicAuditReportRoute: typeof ApiPublicAuditReportRoute
@@ -1745,6 +1772,7 @@ export interface RootRouteChildren {
   ApiPublicLiveOrdersRoute: typeof ApiPublicLiveOrdersRoute
   ApiPublicMonitorHeadGetRoute: typeof ApiPublicMonitorHeadGetRoute
   ApiPublicMonitorLogRoute: typeof ApiPublicMonitorLogRoute
+  ApiPublicPeptidepayWebhookRoute: typeof ApiPublicPeptidepayWebhookRoute
   ApiPublicPostPublishCheckRoute: typeof ApiPublicPostPublishCheckRoute
   ApiPublicPostPublishStatusRoute: typeof ApiPublicPostPublishStatusRoute
   ApiPublicPublishHoldRoute: typeof ApiPublicPublishHoldRoute
@@ -2358,6 +2386,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPostPublishCheckRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/peptidepay-webhook': {
+      id: '/api/public/peptidepay-webhook'
+      path: '/api/public/peptidepay-webhook'
+      fullPath: '/api/public/peptidepay-webhook'
+      preLoaderRoute: typeof ApiPublicPeptidepayWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/monitor-log': {
       id: '/api/public/monitor-log'
       path: '/api/public/monitor-log'
@@ -2468,6 +2503,13 @@ declare module '@tanstack/react-router' {
       path: '/api/payments/status'
       fullPath: '/api/payments/status'
       preLoaderRoute: typeof ApiPaymentsStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/payments/peptidepay-create': {
+      id: '/api/payments/peptidepay-create'
+      path: '/api/payments/peptidepay-create'
+      fullPath: '/api/payments/peptidepay-create'
+      preLoaderRoute: typeof ApiPaymentsPeptidepayCreateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/payments/create': {
@@ -2879,6 +2921,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDsrProcessRoute: ApiDsrProcessRoute,
   ApiPaymentsCancelRoute: ApiPaymentsCancelRoute,
   ApiPaymentsCreateRoute: ApiPaymentsCreateRoute,
+  ApiPaymentsPeptidepayCreateRoute: ApiPaymentsPeptidepayCreateRoute,
   ApiPaymentsStatusRoute: ApiPaymentsStatusRoute,
   ApiPublicAdminErrorsRoute: ApiPublicAdminErrorsRoute,
   ApiPublicAuditReportRoute: ApiPublicAuditReportRoute,
@@ -2895,6 +2938,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicLiveOrdersRoute: ApiPublicLiveOrdersRoute,
   ApiPublicMonitorHeadGetRoute: ApiPublicMonitorHeadGetRoute,
   ApiPublicMonitorLogRoute: ApiPublicMonitorLogRoute,
+  ApiPublicPeptidepayWebhookRoute: ApiPublicPeptidepayWebhookRoute,
   ApiPublicPostPublishCheckRoute: ApiPublicPostPublishCheckRoute,
   ApiPublicPostPublishStatusRoute: ApiPublicPostPublishStatusRoute,
   ApiPublicPublishHoldRoute: ApiPublicPublishHoldRoute,
