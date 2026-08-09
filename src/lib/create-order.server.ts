@@ -90,7 +90,7 @@ export const createOrderInputSchema = z.object({
   items: z.array(itemSchema).min(1).max(50),
   customer: customerSchema,
   shippingMethod: z.enum(['standard', 'next_day_12']),
-  paymentMethod: z.enum(['bank_transfer', 'pay_by_bank', 'wallid']),
+  paymentMethod: z.enum(['bank_transfer', 'pay_by_bank', 'wallid', 'peptidepay']),
   ageVerified: z.literal(true),
   termsAccepted: z.literal(true),
   couponCode: z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/).optional().nullable(),
@@ -202,9 +202,10 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
   const orderId = 'PHP-' + Date.now().toString(36).toUpperCase();
   const btRef = `PHP-${orderId.slice(4)}-BT`;
   const nowIso = new Date();
-  const paymentToken = input.paymentMethod === 'wallid' && !userId
-    ? createPaymentToken()
-    : null;
+  const paymentToken =
+    (input.paymentMethod === 'wallid' || input.paymentMethod === 'peptidepay') && !userId
+      ? createPaymentToken()
+      : null;
   const paymentTokenHash = paymentToken ? await hashPaymentToken(paymentToken) : null;
 
   // Rebuild items using server-validated unit prices.
