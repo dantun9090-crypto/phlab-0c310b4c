@@ -193,7 +193,7 @@ const SCANNER_PATH_PREFIXES = [
   "/license.txt",
   "/sitemap.txt",
   "//",            // double-slash prefix probes (//.bash_history, //redmine/*)
-  // 2026-08-03 error-monitor burst (25 events / 5 min) — framework & server
+  // 2026-08-03 error-monitor burst (25 events/5 min) — framework & server
   // config probes: JS bundler configs, Laravel storage, nginx/apache vhosts,
   // credential dumps. All 404 on this app; block at edge so they never reach
   // the origin error monitor or prerender.io.
