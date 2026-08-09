@@ -1453,7 +1453,7 @@ export default function CheckoutPage() {
       try {
         const purchaseFlagKey = `php_ga_purchase_${orderId}`;
         if (localStorage.getItem(purchaseFlagKey) !== '1') {
-          trackPurchase(orderId, Number(totalAmount) || 0, cartToGaItems(), {
+          const fired = await trackPurchase(orderId, Number(totalAmount) || 0, cartToGaItems(), {
             shipping: Number(serverResult.shippingCost ?? 0) || 0,
             userData: {
               email: form.email,
@@ -1471,7 +1471,9 @@ export default function CheckoutPage() {
             email: form.email,
             deliveryCountry: form.country === 'Germany' ? 'DE' : form.country === 'Poland' ? 'PL' : form.country === 'Ireland' ? 'IE' : 'GB',
           });
-          localStorage.setItem(purchaseFlagKey, '1');
+          // Only latch when the conversion actually reached the tag.
+          if (fired) localStorage.setItem(purchaseFlagKey, '1');
+
         }
       } catch { /* analytics never blocks checkout */ }
 
