@@ -55,7 +55,7 @@ async function probeOrigin(): Promise<{
   ok: boolean;
 }> {
   const t0 = Date.now();
-  const res = await fetch(`${ORIGIN}/?cb=${Date.now()}`, {
+  const res = await fetch(`${ORIGIN}/`, {
     method: 'GET',
     headers: { 'User-Agent': BROWSER_UA, Accept: 'text/html' },
     redirect: 'follow',
