@@ -108,7 +108,7 @@ export async function recoverPendingPurchase(): Promise<void> {
     const shipping = Number(data.shipping ?? data.shippingCost ?? 0) || 0;
     const ship = (data.shippingAddress ?? data.shipping_address ?? {}) as Record<string, unknown>;
 
-    trackPurchase(orderId, Number.isFinite(value) ? value : 0, toItems(data), {
+    const fired = await trackPurchase(orderId, Number.isFinite(value) ? value : 0, toItems(data), {
       tax,
       shipping,
       userData: {
@@ -121,12 +121,16 @@ export async function recoverPendingPurchase(): Promise<void> {
       },
     });
     trackBingPurchase(orderId);
+    // Leave the pending marker in place when the tag never became ready, so
+    // the next page load retries instead of losing the conversion forever.
+    if (!fired) return;
     try {
       localStorage.setItem(firedKey(orderId), "1");
     } catch {
       /* ignore */
     }
     clearPending();
+
   } catch {
     /* analytics must never break the page */
   }
