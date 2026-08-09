@@ -20,7 +20,8 @@ import { z } from "zod";
 import { checkRateLimit, getClientIp, rateLimitedResponse } from "@/lib/rate-limit";
 import { verifyFirebaseIdToken } from "@/lib/server/firebase-auth-admin";
 import { buildOrderCtxForPayment } from "@/lib/payments/dispatch.server";
-import { updateDocAdmin } from "@/lib/server/firestore-admin";
+import { updateDocAdmin, getDocAdmin } from "@/lib/server/firestore-admin";
+
 import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
 import {
   createPeptidePaySession,
