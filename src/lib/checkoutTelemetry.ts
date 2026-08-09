@@ -35,7 +35,7 @@ export type CheckoutEvent =
   | {
       stage: 'gateway_error';
       cartId: string;
-      gateway: 'wallid';
+      gateway: 'wallid' | 'peptidepay';
       errorCode: string;
       errorMessage: string;
       timestamp: number;
