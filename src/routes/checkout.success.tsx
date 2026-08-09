@@ -58,12 +58,16 @@ async function fireGaPurchaseOnce(
       country: String(ship.country ?? ship.countryCode ?? "GB") || undefined,
       postalCode: String(ship.postalCode ?? ship.postcode ?? ship.zip ?? "") || undefined,
     };
-    trackPurchase(orderId, Number.isFinite(value) ? value : 0, items, {
+    const fired = await trackPurchase(orderId, Number.isFinite(value) ? value : 0, items, {
       tax: Number.isFinite(tax) ? tax : 0,
       shipping: Number.isFinite(shipping) ? shipping : 0,
       userData,
     });
     trackBingPurchase(orderId);
+    // Only latch the idempotency flag / ack the server when the event really
+    // reached the tag. Marking a dropped event as fired used to disable BOTH
+    // the client retry and the Measurement Protocol backfill for that order.
+    if (!fired) return;
     try { localStorage.setItem(key, "1"); } catch { /* ignore */ }
     // Ack to the server so the Measurement Protocol backfill (reconcile
     // cron, +2h) skips this order. Covers the onSnapshot path where the
@@ -83,6 +87,7 @@ async function fireGaPurchaseOnce(
         });
       }
     } catch { /* ignore */ }
+
   } catch { /* ignore — analytics must never break the success page */ }
 }
 
