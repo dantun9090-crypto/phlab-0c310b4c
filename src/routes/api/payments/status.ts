@@ -150,6 +150,34 @@ export const Route = createFileRoute("/api/payments/status")({
           return json({ ok: true });
         }
 
+
+        // Non-Wallid providers (e.g. PeptidePay card / Apple Pay / Google Pay /
+        // crypto) have no `wallid_payments` row. Their webhook writes the
+        // terminal state straight to the Firestore order, so answer the owner
+        // from Firestore instead of falling through to the Wallid lookup
+        // (which would 404 forever and leave the success page spinning).
+        const provider = String((order as { paymentProvider?: unknown }).paymentProvider ?? "").toLowerCase();
+        const answerFromFirestore = () => {
+          const mapped = terminalMap[firestoreStatusLower];
+          if (!mapped) return json({ status: "PENDING", order_id: orderId, found: true });
+          if (mapped === "SUCCESS") {
+            try {
+              void import("@/lib/server/firestore-admin").then(({ updateDocAdmin }) =>
+                updateDocAdmin("orders", orderId, { gaClientPurchaseAt: new Date() }),
+              );
+            } catch { /* analytics must never break payments */ }
+          }
+          return json({
+            status: mapped,
+            order_id: orderId,
+            found: true,
+            tracking: buildTracking(order as Record<string, unknown>),
+          });
+        };
+        if (provider && provider !== "wallid" && provider !== "pay_by_bank") {
+          return answerFromFirestore();
+        }
+
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: rows, error } = await supabaseAdmin
           .from("wallid_payments")
@@ -164,7 +192,9 @@ export const Route = createFileRoute("/api/payments/status")({
         }
         const row = rows?.[0];
         if (!row || !row.api_payment_id) {
-          return json({ status: "unknown", found: false }, 404);
+          // No Wallid session for this order — fall back to whatever the
+          // Firestore order says rather than a permanent 404.
+          return answerFromFirestore();
         }
 
         try {
