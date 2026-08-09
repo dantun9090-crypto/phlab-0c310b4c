@@ -31,6 +31,8 @@ import { callPreflightWithRetry } from '@/lib/checkoutPreflightRetry';
 import { toast, Toaster as SonnerToaster } from 'sonner';
 
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
+import { usePeptidePayEnabled } from '@/lib/peptidepay-toggle';
+
 import NoCacheHead from '@/components/NoCacheHead';
 import PostcodeLookup from '@/components/checkout/PostcodeLookup';
 
@@ -149,6 +151,8 @@ export default function CheckoutPage() {
   const [fenaOrderId, setFenaOrderId] = useState<string>('');
   const [paymentOptions, setPaymentOptions] = useState<CheckoutPaymentOptions | null>(null);
   const [wallidEnabled, setWallidEnabled] = useState<boolean>(false);
+  const { enabled: peptidepayEnabled } = usePeptidePayEnabled();
+
   const [, setSummaryExpanded] = useState(false);
   const [paymentRecoveryVisible, setPaymentRecoveryVisible] = useState(false);
   const [pendingPaymentUrl, setPendingPaymentUrl] = useState<string | null>(null);
@@ -2140,7 +2144,10 @@ export default function CheckoutPage() {
                     <PaymentMethodOptions
                       options={paymentOptions}
                       wallidEnabled={wallidEnabled}
-                      peptidepayEnabled={import.meta.env['VITE_PEPTIDEPAY_ENABLED'] === 'true'}
+                      peptidepayEnabled={
+                        import.meta.env['VITE_PEPTIDEPAY_ENABLED'] === 'true' && peptidepayEnabled
+                      }
+
 
                       value={form.paymentMethod}
                       onChange={(v) => setField('paymentMethod', v)}

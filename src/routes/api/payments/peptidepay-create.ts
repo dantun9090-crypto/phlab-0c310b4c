@@ -20,7 +20,8 @@ import { z } from "zod";
 import { checkRateLimit, getClientIp, rateLimitedResponse } from "@/lib/rate-limit";
 import { verifyFirebaseIdToken } from "@/lib/server/firebase-auth-admin";
 import { buildOrderCtxForPayment } from "@/lib/payments/dispatch.server";
-import { updateDocAdmin } from "@/lib/server/firestore-admin";
+import { updateDocAdmin, getDocAdmin } from "@/lib/server/firestore-admin";
+
 import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
 import {
   createPeptidePaySession,
@@ -57,6 +58,19 @@ export const Route = createFileRoute("/api/payments/peptidepay-create")({
         if (!isPeptidePayConfigured()) {
           return json({ error: "Card payments are currently unavailable" }, 403);
         }
+
+        // Admin on/off switch (site_config/peptidepay). Enforced server-side so
+        // hiding the checkout card cannot be bypassed by calling this route.
+        try {
+          const cfg = await getDocAdmin("site_config", "peptidepay");
+          if (!cfg || cfg["enabled"] !== true) {
+            return json({ error: "Card payments are currently unavailable" }, 403);
+          }
+        } catch (err) {
+          console.error("[PeptidePay] toggle read failed:", err);
+          return json({ error: "Payment service unavailable" }, 503);
+        }
+
 
         let body: unknown;
         try {
