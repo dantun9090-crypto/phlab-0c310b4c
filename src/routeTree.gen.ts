@@ -119,6 +119,7 @@ import { Route as ApiAdminRoyalMailDeliveriesRouteImport } from './routes/api/ad
 import { Route as ApiAdminOrderRemindersRouteImport } from './routes/api/admin/order-reminders'
 import { Route as ApiAdminCustomerDeleteRouteImport } from './routes/api/admin/customer-delete'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicHooksWatchdogRouteImport } from './routes/api/public/hooks/watchdog'
@@ -715,6 +716,11 @@ const Char91DotmcpChar93InvokeToolToolRoute =
     path: '/.mcp/invoke-tool/$tool',
     getParentRoute: () => rootRouteImport,
   } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -935,6 +941,7 @@ export interface FileRoutesByFullPath {
   '/downloads/': typeof DownloadsIndexRoute
   '/research/': typeof ResearchIndexRoute
   '/resources/': typeof ResourcesIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/customer-delete': typeof ApiAdminCustomerDeleteRoute
   '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute
@@ -1071,6 +1078,7 @@ export interface FileRoutesByTo {
   '/downloads': typeof DownloadsIndexRoute
   '/research': typeof ResearchIndexRoute
   '/resources': typeof ResourcesIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/customer-delete': typeof ApiAdminCustomerDeleteRoute
   '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute
@@ -1210,6 +1218,7 @@ export interface FileRoutesById {
   '/downloads/': typeof DownloadsIndexRoute
   '/research/': typeof ResearchIndexRoute
   '/resources/': typeof ResourcesIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/customer-delete': typeof ApiAdminCustomerDeleteRoute
   '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute
@@ -1349,6 +1358,7 @@ export interface FileRouteTypes {
     | '/downloads/'
     | '/research/'
     | '/resources/'
+    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/admin/customer-delete'
     | '/api/admin/order-reminders'
@@ -1485,6 +1495,7 @@ export interface FileRouteTypes {
     | '/downloads'
     | '/research'
     | '/resources'
+    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/admin/customer-delete'
     | '/api/admin/order-reminders'
@@ -1623,6 +1634,7 @@ export interface FileRouteTypes {
     | '/downloads/'
     | '/research/'
     | '/resources/'
+    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/admin/customer-delete'
     | '/api/admin/order-reminders'
@@ -1745,6 +1757,7 @@ export interface RootRouteChildren {
   ResourcesPeptideCategoriesUkResearchRoute: typeof ResourcesPeptideCategoriesUkResearchRoute
   DownloadsIndexRoute: typeof DownloadsIndexRoute
   ResourcesIndexRoute: typeof ResourcesIndexRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiAdminCustomerDeleteRoute: typeof ApiAdminCustomerDeleteRoute
   ApiAdminOrderRemindersRoute: typeof ApiAdminOrderRemindersRoute
@@ -2582,6 +2595,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
       path: '/lovable/email/queue/process'
@@ -2911,6 +2931,7 @@ const rootRouteChildren: RootRouteChildren = {
     ResourcesPeptideCategoriesUkResearchRoute,
   DownloadsIndexRoute: DownloadsIndexRoute,
   ResourcesIndexRoute: ResourcesIndexRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiAdminCustomerDeleteRoute: ApiAdminCustomerDeleteRoute,
   ApiAdminOrderRemindersRoute: ApiAdminOrderRemindersRoute,
