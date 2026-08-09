@@ -302,6 +302,58 @@ export default function PaymentMethodOptions({
         </div>
       )}
 
+      {/* SECONDARY: PeptidePay — card / Apple Pay / Google Pay / crypto */}
+      {peptidepayEnabled && (
+        <div>
+          <button
+            type="button"
+            data-testid="peptidepay-button"
+            onClick={(e) => handleSelect("peptidepay", e.currentTarget)}
+            role="radio"
+            aria-checked={value === "peptidepay"}
+            aria-describedby={value === "peptidepay" ? "peptidepay-instructions" : undefined}
+            className={`relative rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5 cursor-pointer transition-all hover:bg-white/10 text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 ${
+              value === "peptidepay" ? "ring-2 ring-emerald-500/50" : ""
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <Radio checked={value === "peptidepay"} tone="slate" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-lg font-semibold text-white">Card, Apple Pay, Google Pay or crypto</span>
+                  {value === "peptidepay" && (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
+                      <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                      Selected
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-slate-300 mt-1">
+                  Pay on a secure hosted checkout page — we never see or store your card details.
+                </p>
+              </div>
+            </div>
+
+            {value === "peptidepay" && (
+              <div
+                id="peptidepay-instructions"
+                className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs leading-relaxed text-slate-300"
+              >
+                <p>
+                  You will be redirected to a secure payment page to complete your order. Once the
+                  payment is confirmed you will receive an email with your order details.
+                </p>
+                <p className="mt-2 flex items-center gap-2 text-slate-400">
+                  <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
+                  Card details are handled entirely by the payment provider.
+                </p>
+              </div>
+            )}
+          </button>
+        </div>
+      )}
+
+
       {/* SECONDARY: Manual Bank Transfer */}
       <div>
         <button
