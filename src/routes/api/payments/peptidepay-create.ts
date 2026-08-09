@@ -59,6 +59,19 @@ export const Route = createFileRoute("/api/payments/peptidepay-create")({
           return json({ error: "Card payments are currently unavailable" }, 403);
         }
 
+        // Admin on/off switch (site_config/peptidepay). Enforced server-side so
+        // hiding the checkout card cannot be bypassed by calling this route.
+        try {
+          const cfg = await getDocAdmin("site_config", "peptidepay");
+          if (!cfg || cfg["enabled"] !== true) {
+            return json({ error: "Card payments are currently unavailable" }, 403);
+          }
+        } catch (err) {
+          console.error("[PeptidePay] toggle read failed:", err);
+          return json({ error: "Payment service unavailable" }, 503);
+        }
+
+
         let body: unknown;
         try {
           body = await request.json();
