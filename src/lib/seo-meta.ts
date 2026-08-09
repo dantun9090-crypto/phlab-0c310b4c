@@ -112,7 +112,20 @@ export function metaForPath(splat: string): PageMeta {
     };
   }
 
+  // Per-slug overrides for articles where the generic pattern under-performs
+  // in search (low CTR despite impressions).
+  const articleMetaOverrides: Record<string, PageMeta> = {
+    "hplc-testing-explained": {
+      title: `HPLC Purity Testing Explained | ${BRAND}`,
+      description:
+        "How HPLC verifies research peptide purity: chromatogram peaks, % purity thresholds, and how to read a certificate of analysis. For Research Use Only.",
+      ogType: "article",
+    },
+  };
+
   if ((first === "research" || first === "resources") && segments.length > 1) {
+    const override = articleMetaOverrides[last];
+    if (override) return override;
     const name = titleize(last);
     const parent = first === "research" ? "Research" : "Resource";
     return {
@@ -124,6 +137,7 @@ export function metaForPath(splat: string): PageMeta {
       ogType: "article",
     };
   }
+
 
   const presets: Record<string, PageMeta> = {
     products: {
