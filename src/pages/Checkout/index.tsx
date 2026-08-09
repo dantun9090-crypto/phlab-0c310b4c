@@ -31,6 +31,8 @@ import { callPreflightWithRetry } from '@/lib/checkoutPreflightRetry';
 import { toast, Toaster as SonnerToaster } from 'sonner';
 
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
+import { usePeptidePayEnabled } from '@/lib/peptidepay-toggle';
+
 import NoCacheHead from '@/components/NoCacheHead';
 import PostcodeLookup from '@/components/checkout/PostcodeLookup';
 
