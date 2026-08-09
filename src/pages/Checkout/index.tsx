@@ -2144,9 +2144,8 @@ export default function CheckoutPage() {
                     <PaymentMethodOptions
                       options={paymentOptions}
                       wallidEnabled={wallidEnabled}
-                      peptidepayEnabled={
-                        import.meta.env['VITE_PEPTIDEPAY_ENABLED'] === 'true' && peptidepayEnabled
-                      }
+                      peptidepayEnabled={peptidepayEnabled}
+
 
 
                       value={form.paymentMethod}
