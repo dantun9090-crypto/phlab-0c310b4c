@@ -143,9 +143,13 @@ function readStoredConsent(): { analytics: boolean; marketing: boolean } {
   }
 }
 
-function gtag(...args: unknown[]) {
+function gtag(..._args: unknown[]) {
   window.dataLayer = window.dataLayer || [];
-  window.dataLayer.push(args);
+  // Push the Arguments object, NOT a rest-param Array — gtag.js silently
+  // ignores plain-Array dataLayer entries (official stub: dataLayer.push(arguments)).
+  // An array-style stub here killed all GA4/Ads hits (zero /g/collect on 2026-08-10).
+  // eslint-disable-next-line prefer-rest-params
+  window.dataLayer.push(arguments);
 }
 
 function injectScript(id: string): Promise<void> {
@@ -236,7 +240,10 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
   debugMode = isDebug();
 
   window.dataLayer = window.dataLayer || [];
-  window.gtag = function (...args: unknown[]) { window.dataLayer!.push(args); };
+  // Official gtag stub — forward the Arguments object, not a rest array
+  // (gtag.js only replays Arguments-shaped queued entries).
+  // eslint-disable-next-line prefer-rest-params
+  window.gtag = function () { window.dataLayer!.push(arguments); };
 
   // GDPR Consent Mode v2 — defaults BEFORE any tag load
   const consent = readStoredConsent();
