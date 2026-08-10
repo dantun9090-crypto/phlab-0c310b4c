@@ -55,7 +55,7 @@
     "scan:landings": "bun scripts/landing-banned-tokens-scan.ts"
   },
   "dependencies": {
-    "@ai-sdk/openai-compatible": "^2.0.48",
+    "@ai-sdk/openai-compatible": "^3.0.25",
     "@cloudflare/vite-plugin": "^1.25.5",
     "@fontsource-variable/space-grotesk": "^5.2.10",
     "@hookform/resolvers": "^5.2.2",
