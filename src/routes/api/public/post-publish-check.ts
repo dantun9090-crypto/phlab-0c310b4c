@@ -533,9 +533,11 @@ async function runCheck(request: Request): Promise<Response> {
         });
 
         if (stored === currentBuildId && !needsInvalidation) {
+          settledBuildIds.add(currentBuildId);
           await logPostPublishStep(currentBuildId, 'handler.noop_already_invalidated');
           return Response.json({ ok: true, changed: false, invalidated: true, buildId: currentBuildId });
         }
+
 
         if (stored !== currentBuildId) {
           // Atomically claim this build id BEFORE firing invalidation so two
