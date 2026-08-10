@@ -606,13 +606,29 @@ export const Route = createFileRoute('/api/public/post-publish-check')({
         // navigation always lands the purge request (an in-flight fetch is
         // aborted the moment the page unloads). Run the full check first,
         // then bounce the visitor home. Same-origin paths only.
+        //
+        // The redirect must happen even when the check itself was rate
+        // limited (429) or errored — otherwise a stale visitor lands on an
+        // error body instead of the site. Marked no-store so neither the
+        // browser nor Cloudflare caches the bounce.
         const next = new URL(request.url).searchParams.get('next');
-        const res = await runCheck(request);
-        if (next && next.startsWith('/') && !next.startsWith('//')) {
-          return new Response(null, { status: 302, headers: { Location: next } });
+        const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : null;
+        let res: Response;
+        try {
+          res = await runCheck(request);
+        } catch (e) {
+          if (!safeNext) throw e;
+          res = Response.json({ ok: false, error: 'check_failed' });
+        }
+        if (safeNext) {
+          return new Response(null, {
+            status: 302,
+            headers: { Location: safeNext, 'cache-control': 'no-store' },
+          });
         }
         return res;
       },
+
 
     },
   },
