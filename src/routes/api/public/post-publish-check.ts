@@ -442,6 +442,19 @@ async function runInvalidation(buildId: string): Promise<{
 type InvalidationResult = Awaited<ReturnType<typeof runInvalidation>>;
 const inFlight = new Map<string, Promise<InvalidationResult>>();
 
+// Per-isolate memo of build ids this isolate has already confirmed as fully
+// invalidated. Lets repeat polls short-circuit BEFORE the rate limiter and
+// before any Firestore read, so a burst of recovery hits (browsers + SSR
+// triggers) can no longer exhaust the shared bucket.
+const settledBuildIds = new Set<string>();
+
+// Internal callers (the SSR trigger in src/server.ts and the post-purge
+// probes) arrive as Worker subrequests with no cf-connecting-ip, so they all
+// collapsed into the single `unknown` IP bucket and 429'd each other after 30
+// hits/min. Give them their own generous bucket, keyed separately from real
+// visitor traffic.
+const INTERNAL_UA = /phlabs-(ssr-post-publish|post-publish-(probe|force-refresh))/i;
+
 async function runCheck(request: Request): Promise<Response> {
         const requestUrl = new URL(request.url);
         if (requestUrl.hostname !== 'phlabs.co.uk') {
@@ -455,15 +468,34 @@ async function runCheck(request: Request): Promise<Response> {
           });
         }
 
+        const buildIdNow = typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'unknown';
+        if (settledBuildIds.has(buildIdNow)) {
+          return Response.json({
+            ok: true,
+            changed: false,
+            invalidated: true,
+            cached: true,
+            buildId: buildIdNow,
+          });
+        }
+
         // Per-IP rate limit — endpoint is public and triggers Firestore reads
         // on every call. Matches the pattern used by other /api/public/* routes.
-        const limited = await enforceRateLimit(request, '/api/public/post-publish-check', {
-          limit: 30,
-          windowMs: 60_000,
-          retryAfterSec: 60,
-        });
+        const isInternal = INTERNAL_UA.test(request.headers.get('user-agent') || '');
+        const limited = await enforceRateLimit(
+          request,
+          isInternal
+            ? '/api/public/post-publish-check#internal'
+            : '/api/public/post-publish-check',
+          {
+            limit: isInternal ? 300 : 30,
+            windowMs: 60_000,
+            retryAfterSec: 60,
+          },
+        );
         if (limited) return limited;
-        const currentBuildId = typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'unknown';
+        const currentBuildId = buildIdNow;
+
         const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || null;
         await logPostPublishStep(currentBuildId, 'handler.start', {
           workerBuildId: currentBuildId,
@@ -501,9 +533,11 @@ async function runCheck(request: Request): Promise<Response> {
         });
 
         if (stored === currentBuildId && !needsInvalidation) {
+          settledBuildIds.add(currentBuildId);
           await logPostPublishStep(currentBuildId, 'handler.noop_already_invalidated');
           return Response.json({ ok: true, changed: false, invalidated: true, buildId: currentBuildId });
         }
+
 
         if (stored !== currentBuildId) {
           // Atomically claim this build id BEFORE firing invalidation so two
@@ -536,8 +570,10 @@ async function runCheck(request: Request): Promise<Response> {
         });
         inFlight.set(currentBuildId, work);
         const result = await work;
+        settledBuildIds.add(currentBuildId);
         await logPostPublishStep(currentBuildId, 'handler.done', {
           cfOk: result.cloudflare.ok,
+
           workerOk: result.worker.ok,
           prerenderOk: result.prerender.ok,
           probeOk: result.probe.ok,
@@ -570,13 +606,29 @@ export const Route = createFileRoute('/api/public/post-publish-check')({
         // navigation always lands the purge request (an in-flight fetch is
         // aborted the moment the page unloads). Run the full check first,
         // then bounce the visitor home. Same-origin paths only.
+        //
+        // The redirect must happen even when the check itself was rate
+        // limited (429) or errored — otherwise a stale visitor lands on an
+        // error body instead of the site. Marked no-store so neither the
+        // browser nor Cloudflare caches the bounce.
         const next = new URL(request.url).searchParams.get('next');
-        const res = await runCheck(request);
-        if (next && next.startsWith('/') && !next.startsWith('//')) {
-          return new Response(null, { status: 302, headers: { Location: next } });
+        const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : null;
+        let res: Response;
+        try {
+          res = await runCheck(request);
+        } catch (e) {
+          if (!safeNext) throw e;
+          res = Response.json({ ok: false, error: 'check_failed' });
+        }
+        if (safeNext) {
+          return new Response(null, {
+            status: 302,
+            headers: { Location: safeNext, 'cache-control': 'no-store' },
+          });
         }
         return res;
       },
+
 
     },
   },
