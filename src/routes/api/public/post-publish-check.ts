@@ -442,6 +442,19 @@ async function runInvalidation(buildId: string): Promise<{
 type InvalidationResult = Awaited<ReturnType<typeof runInvalidation>>;
 const inFlight = new Map<string, Promise<InvalidationResult>>();
 
+// Per-isolate memo of build ids this isolate has already confirmed as fully
+// invalidated. Lets repeat polls short-circuit BEFORE the rate limiter and
+// before any Firestore read, so a burst of recovery hits (browsers + SSR
+// triggers) can no longer exhaust the shared bucket.
+const settledBuildIds = new Set<string>();
+
+// Internal callers (the SSR trigger in src/server.ts and the post-purge
+// probes) arrive as Worker subrequests with no cf-connecting-ip, so they all
+// collapsed into the single `unknown` IP bucket and 429'd each other after 30
+// hits/min. Give them their own generous bucket, keyed separately from real
+// visitor traffic.
+const INTERNAL_UA = /phlabs-(ssr-post-publish|post-publish-(probe|force-refresh))/i;
+
 async function runCheck(request: Request): Promise<Response> {
         const requestUrl = new URL(request.url);
         if (requestUrl.hostname !== 'phlabs.co.uk') {
@@ -455,15 +468,34 @@ async function runCheck(request: Request): Promise<Response> {
           });
         }
 
+        const buildIdNow = typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'unknown';
+        if (settledBuildIds.has(buildIdNow)) {
+          return Response.json({
+            ok: true,
+            changed: false,
+            invalidated: true,
+            cached: true,
+            buildId: buildIdNow,
+          });
+        }
+
         // Per-IP rate limit — endpoint is public and triggers Firestore reads
         // on every call. Matches the pattern used by other /api/public/* routes.
-        const limited = await enforceRateLimit(request, '/api/public/post-publish-check', {
-          limit: 30,
-          windowMs: 60_000,
-          retryAfterSec: 60,
-        });
+        const isInternal = INTERNAL_UA.test(request.headers.get('user-agent') || '');
+        const limited = await enforceRateLimit(
+          request,
+          isInternal
+            ? '/api/public/post-publish-check#internal'
+            : '/api/public/post-publish-check',
+          {
+            limit: isInternal ? 300 : 30,
+            windowMs: 60_000,
+            retryAfterSec: 60,
+          },
+        );
         if (limited) return limited;
-        const currentBuildId = typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'unknown';
+        const currentBuildId = buildIdNow;
+
         const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || null;
         await logPostPublishStep(currentBuildId, 'handler.start', {
           workerBuildId: currentBuildId,
