@@ -691,7 +691,7 @@ export default function HomePage() {
         className="relative overflow-hidden"
         style={{
           background: 'radial-gradient(ellipse 120% 80% at 60% 40%, #061428 0%, #030a14 60%)',
-          minHeight: '100svh',
+          minHeight: 'min(100svh, 940px)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
@@ -751,7 +751,7 @@ export default function HomePage() {
                   maxWidth: '100%',
                   overflowWrap: 'break-word',
                 }}>
-                  <span style={{ display: 'block' }}>Pro Peptide Research Lab </span>
+                  <span style={{ display: 'block', textWrap: 'balance' }}>Pro Peptide Research Lab</span>
                   <span className="phl-gradient-text" style={{ display: 'block' }}>For In-Vitro Research</span>
                   <span style={{ display: 'block', color: '#c9d8f0', fontWeight: 400, fontSize: '0.72em', overflowWrap: 'break-word' }}>HPLC-Verified ≥99% Purity · CoA Per Batch</span>
                 </h1>
@@ -800,7 +800,7 @@ export default function HomePage() {
             <div className="hidden lg:block animate-fade-in" style={{ animationDelay: '0.2s' }}>
               <div className="relative">
                 {/* Main card */}
-                <div className="rounded-2xl p-8 space-y-6" style={{
+                <div className="rounded-2xl p-8 xl:p-10 space-y-6 xl:space-y-7" style={{
                   background: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(255,255,255,0.07)',
                 }}>
@@ -1228,12 +1228,12 @@ export default function HomePage() {
                       <CheckCircle2 style={{ width: 28, height: 28, color: '#10b981' }} />
                     </div>
                     <p className="font-bold text-base mb-1" style={{ color: '#e4f0ff' }}>
-                      {emailStatus === 'sent' ? 'Protocol Library sent!' : 'You\u2019ve already claimed this'}
+                      {emailStatus === 'sent' ? 'Protocol Library sent!' : 'You’ve already claimed this'}
                     </p>
                     <p className="text-sm mb-5" style={{ color: '#7a98b8' }}>
                       {emailStatus === 'sent'
                         ? 'Check your inbox for the PDF download link.'
-                        : 'Your discount code is still valid \u2014 use it at checkout.'}
+                        : 'Your discount code is still valid — use it at checkout.'}
                     </p>
                     <div className="rounded-xl p-5" style={{ background: 'rgba(16,185,129,0.06)', border: '1px dashed rgba(16,185,129,0.35)' }}>
                       <p className="text-[9px] sm:text-[10px] text-emerald-300/90 font-medium tracking-widest uppercase shadow-none mb-2">Your 10% Discount Code</p>
@@ -1438,7 +1438,7 @@ export default function HomePage() {
       {/* ════════════════════════════════
           MOBILE STICKY BAR
       ════════════════════════════════ */}
-      <div data-mobile-sticky-bar className="fixed left-0 right-0 z-[97]" style={{
+      <div data-mobile-sticky-bar className="fixed left-0 right-0 z-[97] lg:hidden" style={{
         bottom: 'calc(env(safe-area-inset-bottom, 0px) + 42px)',
         background: 'rgba(3,10,20,0.97)',
         borderTop: '1px solid rgba(16,185,129,0.15)',
@@ -1478,4 +1478,3 @@ export default function HomePage() {
     </div>
   );
 }
-
