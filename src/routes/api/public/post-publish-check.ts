@@ -570,8 +570,10 @@ async function runCheck(request: Request): Promise<Response> {
         });
         inFlight.set(currentBuildId, work);
         const result = await work;
+        settledBuildIds.add(currentBuildId);
         await logPostPublishStep(currentBuildId, 'handler.done', {
           cfOk: result.cloudflare.ok,
+
           workerOk: result.worker.ok,
           prerenderOk: result.prerender.ok,
           probeOk: result.probe.ok,
