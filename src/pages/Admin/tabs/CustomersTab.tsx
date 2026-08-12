@@ -505,6 +505,15 @@ export default function CustomersTab() {
                             </button>
                           )}
                           <button
+                            onClick={() => openPassword(c)}
+                            disabled={saving === c.uid}
+                            title="Password help (reset link or temporary password)"
+                            aria-label="Password help"
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded transition-colors disabled:opacity-50"
+                          >
+                            <KeyRound className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
+                          </button>
+                          <button
                             onClick={() => openRemove(c)}
                             disabled={saving === c.uid}
                             title="Remove customer permanently"
