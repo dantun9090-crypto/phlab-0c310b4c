@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  Users, Search, DollarSign, ShoppingBag, UserX, RefreshCw, Shield, ChevronDown, Crown, Trash2, AlertTriangle, X
+  Users, Search, DollarSign, ShoppingBag, UserX, RefreshCw, Shield, ChevronDown, Crown, Trash2, AlertTriangle, X, KeyRound
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db, collection, getDocs, updateDoc, doc, auth } from '@/lib/firebase';
