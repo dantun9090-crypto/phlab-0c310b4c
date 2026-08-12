@@ -163,6 +163,69 @@ export default function CustomersTab() {
     }
   };
 
+  const openPassword = (c: CustomerProfile) => {
+    setPwTarget(c);
+    setPwMode('reset-link');
+    setPwValue('');
+    setPwReason('');
+    setPwError(null);
+    setPwResult(null);
+  };
+
+  /**
+   * Admin-assisted password recovery. "reset-link" emails the customer a
+   * Firebase reset link; "set" writes a password directly (blank = server
+   * generates an easy one) and revokes the customer's existing sessions.
+   */
+  const handlePassword = async () => {
+    const target = pwTarget;
+    if (!target) return;
+    setPwBusy(true);
+    setPwError(null);
+    setPwResult(null);
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Not signed in');
+      const idToken = await user.getIdToken();
+      const res = await fetch('/api/admin/customer-password', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          idToken,
+          uid: target.uid,
+          mode: pwMode,
+          password: pwMode === 'set' && pwValue.trim() ? pwValue.trim() : undefined,
+          reason: pwReason || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || `Failed (${res.status})`);
+
+      setPwResult(
+        pwMode === 'reset-link'
+          ? `Reset email sent to ${target.email}. The link expires after 1 hour.`
+          : `New password: ${data.password}\nAll their existing sessions were signed out. Share this once and ask them to change it in Account → Security.`,
+      );
+      if (pwMode === 'set') setPwValue('');
+    } catch (err: any) {
+      const code = err?.message || 'unknown_error';
+      const friendly: Record<string, string> = {
+        forbidden: 'Your account is not an admin.',
+        unauthorized: 'Session expired — sign in again.',
+        not_found: 'Customer record no longer exists.',
+        no_email: 'This customer has no email address on file.',
+        auth_user_not_found: 'No sign-in account exists for this customer.',
+        weak_password: 'Password too weak — use at least 6 characters.',
+        cannot_set_admin_password: 'Cannot set another admin’s password — send a reset link instead.',
+        reset_link_failed: 'Firebase refused to send the reset email — try again.',
+        password_update_failed: 'Password update failed — try again.',
+      };
+      setPwError(friendly[code] || code);
+    } finally {
+      setPwBusy(false);
+    }
+  };
+
   const openRemove = (c: CustomerProfile) => {
     setRemoveTarget(c);
     setRemoveMode('full');
