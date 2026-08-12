@@ -534,8 +534,19 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
             limit: 200,
             rangeFilter: { field: "paidAt", gte: mpHorizon, lte: mpCutoff },
           });
+          // Any post-payment status counts — orders move on to processing /
+          // shipped / delivered quickly, so requiring status==="paid" here
+          // silently skipped almost every real sale.
+          const PAID_STATUSES = new Set([
+            "paid",
+            "processing",
+            "shipped",
+            "delivered",
+            "completed",
+          ]);
           for (const order of candidates) {
-            if (String(order.status ?? "").toLowerCase() !== "paid") continue;
+            if (!PAID_STATUSES.has(String(order.status ?? "").toLowerCase())) continue;
+
             {
               const prov = String((order as { paymentProvider?: unknown }).paymentProvider ?? "").toLowerCase();
               if (prov !== "wallid" && prov !== "peptidepay") continue;
