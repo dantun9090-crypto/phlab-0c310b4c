@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  Users, Search, DollarSign, ShoppingBag, UserX, RefreshCw, Shield, ChevronDown, Crown, Trash2, AlertTriangle, X
+  Users, Search, DollarSign, ShoppingBag, UserX, RefreshCw, Shield, ChevronDown, Crown, Trash2, AlertTriangle, X, KeyRound
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db, collection, getDocs, updateDoc, doc, auth } from '@/lib/firebase';
@@ -51,6 +51,14 @@ export default function CustomersTab() {
   const [removeBusy, setRemoveBusy] = useState(false);
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [removeResult, setRemoveResult] = useState<string | null>(null);
+  // Password assistance (reset link / set temporary password)
+  const [pwTarget, setPwTarget] = useState<CustomerProfile | null>(null);
+  const [pwMode, setPwMode] = useState<'reset-link' | 'set'>('reset-link');
+  const [pwValue, setPwValue] = useState('');
+  const [pwReason, setPwReason] = useState('');
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwError, setPwError] = useState<string | null>(null);
+  const [pwResult, setPwResult] = useState<string | null>(null);
 
 
   const fetchData = async () => {
@@ -152,6 +160,69 @@ export default function CustomersTab() {
       console.error(err);
     } finally {
       setSaving(null);
+    }
+  };
+
+  const openPassword = (c: CustomerProfile) => {
+    setPwTarget(c);
+    setPwMode('reset-link');
+    setPwValue('');
+    setPwReason('');
+    setPwError(null);
+    setPwResult(null);
+  };
+
+  /**
+   * Admin-assisted password recovery. "reset-link" emails the customer a
+   * Firebase reset link; "set" writes a password directly (blank = server
+   * generates an easy one) and revokes the customer's existing sessions.
+   */
+  const handlePassword = async () => {
+    const target = pwTarget;
+    if (!target) return;
+    setPwBusy(true);
+    setPwError(null);
+    setPwResult(null);
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Not signed in');
+      const idToken = await user.getIdToken();
+      const res = await fetch('/api/admin/customer-password', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          idToken,
+          uid: target.uid,
+          mode: pwMode,
+          password: pwMode === 'set' && pwValue.trim() ? pwValue.trim() : undefined,
+          reason: pwReason || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || `Failed (${res.status})`);
+
+      setPwResult(
+        pwMode === 'reset-link'
+          ? `Reset email sent to ${target.email}. The link expires after 1 hour.`
+          : `New password: ${data.password}\nAll their existing sessions were signed out. Share this once and ask them to change it in Account → Security.`,
+      );
+      if (pwMode === 'set') setPwValue('');
+    } catch (err: any) {
+      const code = err?.message || 'unknown_error';
+      const friendly: Record<string, string> = {
+        forbidden: 'Your account is not an admin.',
+        unauthorized: 'Session expired — sign in again.',
+        not_found: 'Customer record no longer exists.',
+        no_email: 'This customer has no email address on file.',
+        auth_user_not_found: 'No sign-in account exists for this customer.',
+        weak_password: 'Password too weak — use at least 6 characters.',
+        cannot_set_admin_password: 'Cannot set another admin’s password — send a reset link instead.',
+        reset_link_failed: 'Firebase refused to send the reset email — try again.',
+        password_update_failed: 'Password update failed — try again.',
+      };
+      setPwError(friendly[code] || code);
+    } finally {
+      setPwBusy(false);
     }
   };
 
@@ -434,6 +505,15 @@ export default function CustomersTab() {
                             </button>
                           )}
                           <button
+                            onClick={() => openPassword(c)}
+                            disabled={saving === c.uid}
+                            title="Password help (reset link or temporary password)"
+                            aria-label="Password help"
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded transition-colors disabled:opacity-50"
+                          >
+                            <KeyRound className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
+                          </button>
+                          <button
                             onClick={() => openRemove(c)}
                             disabled={saving === c.uid}
                             title="Remove customer permanently"
@@ -450,6 +530,113 @@ export default function CustomersTab() {
                 </AnimatePresence>
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Password help modal */}
+      {pwTarget && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70">
+          <div className="w-full max-w-lg bg-[#0b1a30] border border-blue-500/30 rounded-2xl p-5 sm:p-6 max-h-[90dvh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex items-center gap-2">
+                <KeyRound className="w-5 h-5 text-blue-400" />
+                <h3 className="text-white font-bold text-lg">Password help</h3>
+              </div>
+              <button
+                onClick={() => setPwTarget(null)}
+                aria-label="Close"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#9cb8d9] hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-[#9cb8d9] text-sm mb-4">
+              {pwTarget.email || 'no email on file'}
+            </p>
+
+            <div className="space-y-2 mb-4">
+              <label className="flex items-start gap-2 text-sm text-[#cfe0f5]">
+                <input
+                  type="radio"
+                  name="pw-mode"
+                  checked={pwMode === 'reset-link'}
+                  onChange={() => setPwMode('reset-link')}
+                  className="mt-1"
+                />
+                <span>
+                  <strong className="text-white">Send reset link</strong> — the customer gets an
+                  email and chooses their own new password. Recommended.
+                </span>
+              </label>
+              <label className="flex items-start gap-2 text-sm text-[#cfe0f5]">
+                <input
+                  type="radio"
+                  name="pw-mode"
+                  checked={pwMode === 'set'}
+                  onChange={() => setPwMode('set')}
+                  className="mt-1"
+                />
+                <span>
+                  <strong className="text-white">Set a temporary password</strong> — use when the
+                  customer cannot receive email. Signs them out everywhere.
+                </span>
+              </label>
+            </div>
+
+            {pwMode === 'set' && (
+              <div className="mb-4">
+                <label htmlFor="pw-value" className="block text-xs text-[#9cb8d9] mb-1">
+                  New password (leave blank to generate an easy one)
+                </label>
+                <input
+                  id="pw-value"
+                  type="text"
+                  value={pwValue}
+                  onChange={e => setPwValue(e.target.value)}
+                  placeholder="e.g. Lab-4821-Peptide"
+                  className="w-full px-3 py-2 bg-slate-800 border-2 border-slate-600 rounded-lg text-white text-sm min-h-[48px] focus:outline-none focus:border-blue-500"
+                />
+              </div>
+            )}
+
+            <div className="mb-4">
+              <label htmlFor="pw-reason" className="block text-xs text-[#9cb8d9] mb-1">
+                Reason (stored in the audit log)
+              </label>
+              <input
+                id="pw-reason"
+                type="text"
+                value={pwReason}
+                onChange={e => setPwReason(e.target.value)}
+                placeholder="Customer phoned — forgot password"
+                className="w-full px-3 py-2 bg-slate-800 border-2 border-slate-600 rounded-lg text-white text-sm min-h-[48px] focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            {pwError && (
+              <p className="text-red-300 text-sm mb-3">{pwError}</p>
+            )}
+            {pwResult && (
+              <p className="text-emerald-300 text-sm mb-3 whitespace-pre-line break-words">{pwResult}</p>
+            )}
+
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setPwTarget(null)}
+                className="px-4 min-h-[44px] rounded-lg bg-[#0f2640] text-[#cfe0f5] text-sm"
+              >
+                Close
+              </button>
+              <button
+                onClick={handlePassword}
+                disabled={pwBusy}
+                className="px-4 min-h-[44px] rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold disabled:opacity-50"
+              >
+                {pwBusy ? 'Working…' : pwMode === 'reset-link' ? 'Send reset email' : 'Set password'}
+              </button>
+            </div>
           </div>
         </div>
       )}
