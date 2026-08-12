@@ -117,6 +117,7 @@ import { Route as ApiAdminWeeklyBriefingRouteImport } from './routes/api/admin/w
 import { Route as ApiAdminSendPaymentLinkRouteImport } from './routes/api/admin/send-payment-link'
 import { Route as ApiAdminRoyalMailDeliveriesRouteImport } from './routes/api/admin/royal-mail-deliveries'
 import { Route as ApiAdminOrderRemindersRouteImport } from './routes/api/admin/order-reminders'
+import { Route as ApiAdminCustomerPasswordRouteImport } from './routes/api/admin/customer-password'
 import { Route as ApiAdminCustomerDeleteRouteImport } from './routes/api/admin/customer-delete'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
@@ -705,6 +706,12 @@ const ApiAdminOrderRemindersRoute = ApiAdminOrderRemindersRouteImport.update({
   path: '/api/admin/order-reminders',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminCustomerPasswordRoute =
+  ApiAdminCustomerPasswordRouteImport.update({
+    id: '/api/admin/customer-password',
+    path: '/api/admin/customer-password',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminCustomerDeleteRoute = ApiAdminCustomerDeleteRouteImport.update({
   id: '/api/admin/customer-delete',
   path: '/api/admin/customer-delete',
@@ -944,6 +951,7 @@ export interface FileRoutesByFullPath {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/customer-delete': typeof ApiAdminCustomerDeleteRoute
+  '/api/admin/customer-password': typeof ApiAdminCustomerPasswordRoute
   '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute
   '/api/admin/royal-mail-deliveries': typeof ApiAdminRoyalMailDeliveriesRoute
   '/api/admin/send-payment-link': typeof ApiAdminSendPaymentLinkRoute
@@ -1081,6 +1089,7 @@ export interface FileRoutesByTo {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/customer-delete': typeof ApiAdminCustomerDeleteRoute
+  '/api/admin/customer-password': typeof ApiAdminCustomerPasswordRoute
   '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute
   '/api/admin/royal-mail-deliveries': typeof ApiAdminRoyalMailDeliveriesRoute
   '/api/admin/send-payment-link': typeof ApiAdminSendPaymentLinkRoute
@@ -1221,6 +1230,7 @@ export interface FileRoutesById {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/customer-delete': typeof ApiAdminCustomerDeleteRoute
+  '/api/admin/customer-password': typeof ApiAdminCustomerPasswordRoute
   '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute
   '/api/admin/royal-mail-deliveries': typeof ApiAdminRoyalMailDeliveriesRoute
   '/api/admin/send-payment-link': typeof ApiAdminSendPaymentLinkRoute
@@ -1361,6 +1371,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/admin/customer-delete'
+    | '/api/admin/customer-password'
     | '/api/admin/order-reminders'
     | '/api/admin/royal-mail-deliveries'
     | '/api/admin/send-payment-link'
@@ -1498,6 +1509,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/admin/customer-delete'
+    | '/api/admin/customer-password'
     | '/api/admin/order-reminders'
     | '/api/admin/royal-mail-deliveries'
     | '/api/admin/send-payment-link'
@@ -1637,6 +1649,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/admin/customer-delete'
+    | '/api/admin/customer-password'
     | '/api/admin/order-reminders'
     | '/api/admin/royal-mail-deliveries'
     | '/api/admin/send-payment-link'
@@ -1760,6 +1773,7 @@ export interface RootRouteChildren {
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiAdminCustomerDeleteRoute: typeof ApiAdminCustomerDeleteRoute
+  ApiAdminCustomerPasswordRoute: typeof ApiAdminCustomerPasswordRoute
   ApiAdminOrderRemindersRoute: typeof ApiAdminOrderRemindersRoute
   ApiAdminRoyalMailDeliveriesRoute: typeof ApiAdminRoyalMailDeliveriesRoute
   ApiAdminSendPaymentLinkRoute: typeof ApiAdminSendPaymentLinkRoute
@@ -2581,6 +2595,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminOrderRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/customer-password': {
+      id: '/api/admin/customer-password'
+      path: '/api/admin/customer-password'
+      fullPath: '/api/admin/customer-password'
+      preLoaderRoute: typeof ApiAdminCustomerPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/customer-delete': {
       id: '/api/admin/customer-delete'
       path: '/api/admin/customer-delete'
@@ -2934,6 +2955,7 @@ const rootRouteChildren: RootRouteChildren = {
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiAdminCustomerDeleteRoute: ApiAdminCustomerDeleteRoute,
+  ApiAdminCustomerPasswordRoute: ApiAdminCustomerPasswordRoute,
   ApiAdminOrderRemindersRoute: ApiAdminOrderRemindersRoute,
   ApiAdminRoyalMailDeliveriesRoute: ApiAdminRoyalMailDeliveriesRoute,
   ApiAdminSendPaymentLinkRoute: ApiAdminSendPaymentLinkRoute,
