@@ -534,6 +534,113 @@ export default function CustomersTab() {
         </div>
       )}
 
+      {/* Password help modal */}
+      {pwTarget && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70">
+          <div className="w-full max-w-lg bg-[#0b1a30] border border-blue-500/30 rounded-2xl p-5 sm:p-6 max-h-[90dvh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex items-center gap-2">
+                <KeyRound className="w-5 h-5 text-blue-400" />
+                <h3 className="text-white font-bold text-lg">Password help</h3>
+              </div>
+              <button
+                onClick={() => setPwTarget(null)}
+                aria-label="Close"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#9cb8d9] hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-[#9cb8d9] text-sm mb-4">
+              {pwTarget.email || 'no email on file'}
+            </p>
+
+            <div className="space-y-2 mb-4">
+              <label className="flex items-start gap-2 text-sm text-[#cfe0f5]">
+                <input
+                  type="radio"
+                  name="pw-mode"
+                  checked={pwMode === 'reset-link'}
+                  onChange={() => setPwMode('reset-link')}
+                  className="mt-1"
+                />
+                <span>
+                  <strong className="text-white">Send reset link</strong> — the customer gets an
+                  email and chooses their own new password. Recommended.
+                </span>
+              </label>
+              <label className="flex items-start gap-2 text-sm text-[#cfe0f5]">
+                <input
+                  type="radio"
+                  name="pw-mode"
+                  checked={pwMode === 'set'}
+                  onChange={() => setPwMode('set')}
+                  className="mt-1"
+                />
+                <span>
+                  <strong className="text-white">Set a temporary password</strong> — use when the
+                  customer cannot receive email. Signs them out everywhere.
+                </span>
+              </label>
+            </div>
+
+            {pwMode === 'set' && (
+              <div className="mb-4">
+                <label htmlFor="pw-value" className="block text-xs text-[#9cb8d9] mb-1">
+                  New password (leave blank to generate an easy one)
+                </label>
+                <input
+                  id="pw-value"
+                  type="text"
+                  value={pwValue}
+                  onChange={e => setPwValue(e.target.value)}
+                  placeholder="e.g. Lab-4821-Peptide"
+                  className="w-full px-3 py-2 bg-slate-800 border-2 border-slate-600 rounded-lg text-white text-sm min-h-[48px] focus:outline-none focus:border-blue-500"
+                />
+              </div>
+            )}
+
+            <div className="mb-4">
+              <label htmlFor="pw-reason" className="block text-xs text-[#9cb8d9] mb-1">
+                Reason (stored in the audit log)
+              </label>
+              <input
+                id="pw-reason"
+                type="text"
+                value={pwReason}
+                onChange={e => setPwReason(e.target.value)}
+                placeholder="Customer phoned — forgot password"
+                className="w-full px-3 py-2 bg-slate-800 border-2 border-slate-600 rounded-lg text-white text-sm min-h-[48px] focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            {pwError && (
+              <p className="text-red-300 text-sm mb-3">{pwError}</p>
+            )}
+            {pwResult && (
+              <p className="text-emerald-300 text-sm mb-3 whitespace-pre-line break-words">{pwResult}</p>
+            )}
+
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setPwTarget(null)}
+                className="px-4 min-h-[44px] rounded-lg bg-[#0f2640] text-[#cfe0f5] text-sm"
+              >
+                Close
+              </button>
+              <button
+                onClick={handlePassword}
+                disabled={pwBusy}
+                className="px-4 min-h-[44px] rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold disabled:opacity-50"
+              >
+                {pwBusy ? 'Working…' : pwMode === 'reset-link' ? 'Send reset email' : 'Set password'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Permanent removal modal */}
       {removeTarget && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70">
