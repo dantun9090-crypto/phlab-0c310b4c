@@ -51,6 +51,14 @@ export default function CustomersTab() {
   const [removeBusy, setRemoveBusy] = useState(false);
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [removeResult, setRemoveResult] = useState<string | null>(null);
+  // Password assistance (reset link / set temporary password)
+  const [pwTarget, setPwTarget] = useState<CustomerProfile | null>(null);
+  const [pwMode, setPwMode] = useState<'reset-link' | 'set'>('reset-link');
+  const [pwValue, setPwValue] = useState('');
+  const [pwReason, setPwReason] = useState('');
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwError, setPwError] = useState<string | null>(null);
+  const [pwResult, setPwResult] = useState<string | null>(null);
 
 
   const fetchData = async () => {
