@@ -665,12 +665,17 @@ export default function HomePage() {
           Wrapper always reserves banner height to prevent CLS shift
           when async Firestore adverts arrive (banner is h-48/h-72 + py-6).
       ════════════════════════════════ */}
-      {(!advertsResolved || reserveHeroAdvert || heroAdverts.length > 0) && <div
+      {(reserveHeroAdvert || heroAdverts.length > 0) && <div
         className="container mx-auto px-6 py-6"
         // Reserve must cover the tallest rendered campaign block (mobile
         // block ~340px incl. padding) or the late Firestore render shifts
         // the hero down — measured as CLS 0.136 on mobile Lighthouse.
-        style={{ minHeight: (!advertsResolved || heroAdverts.length > 0) ? 'clamp(300px, 34vw, 380px)' : 0 }}
+        // CLS: reserve ONLY when a hero advert is EXPECTED (cached
+        // php_adverts_hero_count === '1' or adverts already present). The
+        // previous `!advertsResolved` reserve painted 300px on every cold
+        // visit and collapsed to 0 when Firestore returned no hero advert —
+        // a deterministic 0.1233 mobile CLS (hero pushed 224px).
+        style={{ minHeight: 'clamp(300px, 34vw, 380px)' }}
         data-advert-reserve="homepage_hero"
       >
         {heroAdverts.length > 0 && (
