@@ -29,12 +29,16 @@
  *   Google Click ID,Conversion Name,Conversion Time,Conversion Value,Conversion Currency
  * Conversion Name must EXACTLY match the conversion action name in Google
  * Ads — override via ADS_IMPORT_CONVERSION_NAME if the action is renamed.
+ * The default points at the IMPORT-type action "Purchase (offline import)":
+ * Google rejects offline uploads into WEBSITE (tag) conversion actions
+ * ("isn't set up for uploading conversions") — imports require an action
+ * created via Goals → Conversions → New conversion action → Import.
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
 
 const CONVERSION_NAME =
-  (process.env.ADS_IMPORT_CONVERSION_NAME || "").trim() || "Purchase (website)";
+  (process.env.ADS_IMPORT_CONVERSION_NAME || "").trim() || "Purchase (offline import)";
 const LOOKBACK_MS = 90 * 24 * 60 * 60_000;
 
 const PAID_STATUSES = new Set([
