@@ -1126,7 +1126,7 @@ export default function CheckoutPage() {
               country: form.country,
             },
             shippingMethod: form.shippingMethod,
-            paymentMethod: form.paymentMethod,
+            paymentMethod: form.paymentMethod as Exclude<CheckoutForm['paymentMethod'], ''>,
             ageVerified: true,
             termsAccepted: true,
             couponCode: appliedCoupon?.code ?? null,
