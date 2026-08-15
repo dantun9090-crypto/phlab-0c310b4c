@@ -2147,8 +2147,12 @@ export default function CheckoutPage() {
                       onChange={(v) => setField('paymentMethod', v)}
                     />
 
-                    {/* Selected-method info is now rendered inside PaymentMethodOptions cards to remove duplication. */}
-
+                    {errors.paymentMethod && (
+                      <p className="text-red-400 text-sm flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                        {errors.paymentMethod}
+                      </p>
+                    )}
 
                     {/* Discount code */}
                     <div>
