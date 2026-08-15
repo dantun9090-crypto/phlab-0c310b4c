@@ -41,13 +41,16 @@ describe("/research route source-of-truth", () => {
         /(^|\/|\.)research(\.index)?\.(tsx?|jsx?)$/.test(rel) ||
         /(^|\/|\.)research\/index\.(tsx?|jsx?)$/.test(rel);
       if (!claimsResearch) continue;
-      // Allowed shape: mounts LegacyApp (directly or via LegacyMount helper),
-      // which renders src/pages/Research/index.tsx through react-router.
+      // Allowed shapes: (a) mounts LegacyApp / LegacyMount, which renders
+      // src/pages/Research/index.tsx through react-router, or (b) is a
+      // head-less layout parent that only renders <Outlet /> (research.tsx).
       const mountsLegacy =
         /LegacyApp/.test(src) || /LegacyMount/.test(src) || /legacy-mount/.test(src);
-      if (!mountsLegacy) {
+      const isOutletOnlyLayout = /<Outlet\s*\/>/.test(src) && !/head:\s*\(/.test(src);
+      if (!mountsLegacy && !isOutletOnlyLayout) {
         offenders.push(`${rel} (claims /research but does NOT mount LegacyApp)`);
       }
+
     }
     expect(
       offenders,
@@ -72,12 +75,14 @@ describe("/research route source-of-truth", () => {
 
   });
 
-  it("splat catch-all ($.tsx) mounts LegacyApp", () => {
+  it("splat catch-all ($.tsx) mounts the legacy app", () => {
     const p = join(ROUTES_DIR, "$.tsx");
     const src = readFileSync(p, "utf8");
     expect(src).toMatch(/createFileRoute\(\s*["']\/\$["']/);
-    expect(src).toMatch(/LegacyApp/);
+    // LegacyMount (@/lib/legacy-mount) is the current wrapper around LegacyApp.
+    expect(src).toMatch(/LegacyApp|LegacyMount|legacy-mount/);
   });
+
 });
 
 describe("/compound route source-of-truth", () => {

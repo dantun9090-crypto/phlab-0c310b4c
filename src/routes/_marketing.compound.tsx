@@ -61,16 +61,12 @@ export const Route = createFileRoute("/_marketing/compound")({
         imagesizes: "100vw",
         fetchpriority: "high",
       },
-      // Preload the Cormorant Garamond 400 woff2 used by the hero <h1> so
-      // the LCP text can paint without waiting for the Google Fonts CSS
-      // round-trip. Weight 400 is the file the hero uses.
-      {
-        rel: "preload",
-        as: "font",
-        type: "font/woff2",
-        href: "https://fonts.gstatic.com/s/cormorantgaramond/v16/co3bmX5slCNuHLi8bLeY9MK7whWMhyjornFLsS6V7w.woff2",
-        crossOrigin: "anonymous",
-      },
+      // NOTE: no hard-pinned Cormorant Garamond woff2 preload here.
+      // Google rotates the versioned gstatic filenames, and the previously
+      // pinned v16 URL started returning 404 — a wasted preload plus a
+      // console error on every visit. The font arrives via the Google Fonts
+      // stylesheet in __root; fonts.gstatic.com is already preconnected.
+
     ],
 
     scripts: [
