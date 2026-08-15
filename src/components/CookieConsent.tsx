@@ -157,16 +157,30 @@ export function CookieConsent() {
       aria-modal="true"
       aria-label="Cookie consent"
     >
-      <div className="w-full sm:max-w-2xl bg-[#0b1a30] border border-white/[0.08] sm:rounded-2xl shadow-2xl shadow-black/60 overflow-hidden">
+      <div className="w-full sm:max-w-3xl bg-[#0b1a30]/95 backdrop-blur-md border border-white/[0.08] sm:rounded-2xl shadow-2xl shadow-black/60 overflow-hidden">
 
-        <div className="flex items-start sm:items-center gap-3 px-4 sm:px-5 py-4 border-b border-white/[0.06]">
-          <div className="w-8 h-8 rounded-lg bg-blue-600/20 flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
-            <Cookie className="w-4 h-4 text-blue-400" />
-          </div>
+        <div className="flex items-start gap-3 px-4 sm:px-5 pt-4 pb-3">
+          {/* Friendly cookie mark */}
+          <span
+            aria-hidden="true"
+            className="w-10 h-10 rounded-full bg-amber-400/15 border border-amber-300/25 flex items-center justify-center shrink-0"
+          >
+            <svg viewBox="0 0 32 32" className="w-6 h-6" role="presentation">
+              <circle cx="16" cy="16" r="12" fill="#d9a15b" />
+              <path d="M16 4a12 12 0 1 0 12 12 6 6 0 0 1-7-5 6 6 0 0 1-5-7z" fill="#c78b45" />
+              <circle cx="12" cy="12.5" r="1.7" fill="#6b4423" />
+              <circle cx="19.5" cy="18.5" r="1.7" fill="#6b4423" />
+              <circle cx="13" cy="20" r="1.3" fill="#6b4423" />
+              <circle cx="20" cy="11.5" r="1.1" fill="#6b4423" />
+            </svg>
+          </span>
           <div className="flex-1 min-w-0">
-            <p className="text-[#f0f6ff] text-sm font-semibold leading-snug">We use cookies</p>
-            <p className="text-[#9cb8d9] text-xs mt-0.5 leading-relaxed">
-              Essential cookies only by default. We never sell your data.{" "}
+            <p className="text-[#f0f6ff] text-sm font-semibold leading-snug">
+              We use cookies to make your experience smoother
+            </p>
+            <p className="text-[#9cb8d9] text-xs mt-1 leading-relaxed">
+              Accept to unlock the best, most personalised version of the site. You can change your
+              mind any time.{" "}
               <Link to="/privacy-policy" onClick={() => setVisible(false)} className="text-blue-300 underline hover:text-blue-200">
                 Privacy Policy
               </Link>
