@@ -389,9 +389,18 @@ export default function PaymentMethodOptions({
         >
           <div className="flex items-start gap-3">
             <Radio checked={manualSelected} tone="slate" />
+            <span
+              aria-hidden="true"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5"
+            >
+              <ArrowLeftRight className="h-4 w-4 text-slate-300" />
+            </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-base font-medium text-white">Manual Bank Transfer</span>
+                <span className="text-base font-semibold text-white leading-tight">Manual Bank Transfer</span>
+                <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-300">
+                  48h hold
+                </span>
                 {manualSelected && (
                   <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
                     <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
