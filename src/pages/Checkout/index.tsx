@@ -1036,7 +1036,7 @@ export default function CheckoutPage() {
       trackAddPaymentInfo(
         cartToGaItems(),
         Number(total) || 0,
-        form.paymentMethod === 'wallid' ? 'Wallid Pay by Bank' : form.paymentMethod === 'pay_by_bank' ? 'Open Banking' : 'Bank Transfer',
+        form.paymentMethod === 'wallid' ? 'Wallid Pay by Bank' : form.paymentMethod === 'pay_by_bank' ? 'Open Banking' : form.paymentMethod === 'peptidepay' ? 'Card / Apple Pay / Google Pay' : 'Bank Transfer',
       );
     } catch { /* analytics never blocks payment */ }
 
