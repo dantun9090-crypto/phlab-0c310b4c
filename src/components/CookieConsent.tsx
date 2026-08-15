@@ -257,32 +257,32 @@ export function CookieConsent() {
           </div>
         </div>
 
-        <div className="px-4 sm:px-5 py-3 flex flex-col sm:flex-row gap-2">
+        <div className="px-4 sm:px-5 pb-4 pt-1 flex flex-col sm:flex-row sm:items-center gap-2">
           <button
             onClick={acceptAll}
-            className="w-full sm:flex-1 min-h-[44px] bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors"
+            className="w-full sm:flex-[2] min-h-[52px] bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-[#04180f] text-[15px] font-bold rounded-xl shadow-lg shadow-emerald-500/25 transition-all hover:shadow-emerald-400/35 hover:-translate-y-[1px]"
           >
-            Accept All
+            Accept all &amp; continue
           </button>
           <button
             onClick={rejectAll}
-            className="w-full sm:flex-1 min-h-[44px] text-[#9cb8d9] hover:text-[#f0f6ff] text-sm font-semibold border border-white/[0.12] hover:border-white/[0.25] rounded-xl transition-colors"
+            className="w-full sm:flex-1 min-h-[44px] px-4 text-[#9cb8d9] hover:text-[#f0f6ff] text-[13px] font-medium bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.1] rounded-xl transition-colors"
           >
-            Reject All
+            Only necessary
           </button>
           {showDetails ? (
             <button
               onClick={acceptSelected}
-              className="w-full sm:flex-1 min-h-[44px] text-[#9cb8d9] hover:text-[#f0f6ff] text-sm font-medium border border-white/[0.1] hover:border-white/[0.2] rounded-xl transition-colors"
+              className="w-full sm:w-auto min-h-[44px] px-4 text-[#9cb8d9] hover:text-[#f0f6ff] text-[13px] font-medium border border-white/[0.1] hover:border-white/[0.2] rounded-xl transition-colors"
             >
-              Save My Choices
+              Save my choices
             </button>
           ) : (
             <button
               onClick={() => setShowDetails(true)}
-              className="w-full sm:flex-1 min-h-[44px] text-[#9cb8d9] hover:text-[#f0f6ff] text-sm font-medium border border-white/[0.1] hover:border-white/[0.2] rounded-xl transition-colors"
+              className="w-full sm:w-auto min-h-[44px] px-3 text-[#7f9bbc] hover:text-[#f0f6ff] text-[13px] font-medium rounded-xl transition-colors"
             >
-              Manage Cookies
+              Customise
             </button>
           )}
         </div>
