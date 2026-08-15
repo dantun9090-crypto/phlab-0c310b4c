@@ -46,8 +46,8 @@ test.describe("PaymentMethodOptions — a11y + keyboard", () => {
     await expect(payByBank).toHaveAttribute("role", "radio");
     await expect(manual).toHaveAttribute("role", "radio");
 
-    // Initial harness state selects pay_by_bank.
-    await expect(payByBank).toHaveAttribute("aria-checked", "true");
+    // Both options are collapsed by default until the user makes a choice.
+    await expect(payByBank).toHaveAttribute("aria-checked", "false");
     await expect(manual).toHaveAttribute("aria-checked", "false");
   });
 
