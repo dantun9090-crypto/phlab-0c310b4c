@@ -2,6 +2,9 @@
  * Google Ads OFFLINE CONVERSION feed (click conversions / gclid import).
  *
  * URL: GET https://phlabs.co.uk/api/public/hooks/offline-conversions?key=<CRON_SECRET>
+ * Alias (identical CSV): /api/public/hooks/offline-conversions.csv — required
+ * by the Ads Data Manager "Set up import" flow, which validates the file
+ * format from the URL extension and rejects extension-less URLs.
  *
  * Google Ads → Goals → Conversions → Uploads → Schedules fetches this URL
  * daily (source type HTTPS) and matches each `gclid` back to the original
@@ -133,90 +136,94 @@ function csvCell(value: string): string {
   return /[",\n\r]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
 }
 
+/** Shared CSV builder — also used by the .csv-suffixed alias route
+ * (offline-conversions[.]csv.ts) that the Ads Data Manager flow requires. */
+export async function getOfflineConversionsCsv(request: Request): Promise<Response> {
+  // ---- auth ---------------------------------------------------
+  const expected = process.env.CRON_SECRET || "";
+  const provided = extractProvidedSecret(request);
+  if (!expected || !constantTimeEqual(provided, expected)) {
+    return new Response("forbidden", { status: 403, headers: NO_STORE_HEADERS });
+  }
+
+  const rows: string[] = [
+    "Google Click ID,Conversion Name,Conversion Time,Conversion Value,Conversion Currency",
+  ];
+
+  try {
+    const { listDocsAdmin } = await import("@/lib/server/firestore-admin");
+    const since = new Date(Date.now() - LOOKBACK_MS);
+    const orders = await listDocsAdmin("orders", {
+      orderBy: "paidAt",
+      direction: "DESCENDING",
+      limit: 500,
+      rangeFilter: { field: "paidAt", gte: since },
+    });
+
+    for (const order of orders) {
+      if (!PAID_STATUSES.has(String(order.status ?? "").toLowerCase())) continue;
+      const provider = String(
+        (order as { paymentProvider?: unknown }).paymentProvider ?? "",
+      ).toLowerCase();
+      if (provider !== "wallid" && provider !== "peptidepay") continue;
+      // Skip orders whose browser Ads conversion was confirmed —
+      // importing those would double count.
+      if ((order as { adsClientConversionAt?: unknown }).adsClientConversionAt) continue;
+
+      const clickIds = (order as { adClickIds?: unknown }).adClickIds as
+        | { gclid?: unknown }
+        | undefined;
+      const gclid = typeof clickIds?.gclid === "string" ? clickIds.gclid : "";
+      if (!gclid) continue;
+
+      const paidAt =
+        toDate((order as { paidAt?: unknown }).paidAt) ??
+        toDate((order as { createdAt?: unknown }).createdAt);
+      if (!paidAt) continue;
+
+      const value = Number(
+        (order as { totalAmount?: unknown }).totalAmount ??
+          (order as { total?: unknown }).total ??
+          0,
+      );
+      if (!Number.isFinite(value) || value <= 0) continue;
+
+      rows.push(
+        [
+          csvCell(gclid),
+          csvCell(CONVERSION_NAME),
+          csvCell(formatAdsTime(paidAt)),
+          value.toFixed(2),
+          "GBP",
+        ].join(","),
+      );
+    }
+  } catch (e) {
+    console.error(
+      "[offline-conversions] export failed:",
+      e instanceof Error ? e.message : e,
+    );
+    // Still return a valid (header-only) CSV so a transient Firestore
+    // error doesn't fail the scheduled upload in the Ads UI — the next
+    // daily fetch retries automatically.
+  }
+
+  return new Response(rows.join("\n") + "\n", {
+    status: 200,
+    headers: {
+      "content-type": "text/csv; charset=utf-8",
+      "content-disposition": 'attachment; filename="offline-conversions.csv"',
+      ...NO_STORE_HEADERS,
+    },
+  });
+}
+
 export const Route = createFileRoute("/api/public/hooks/offline-conversions")({
   server: {
     handlers: {
       POST: async () =>
         new Response("Method Not Allowed", { status: 405, headers: NO_STORE_HEADERS }),
-      GET: async ({ request }) => {
-        // ---- auth ---------------------------------------------------
-        const expected = process.env.CRON_SECRET || "";
-        const provided = extractProvidedSecret(request);
-        if (!expected || !constantTimeEqual(provided, expected)) {
-          return new Response("forbidden", { status: 403, headers: NO_STORE_HEADERS });
-        }
-
-        const rows: string[] = [
-          "Google Click ID,Conversion Name,Conversion Time,Conversion Value,Conversion Currency",
-        ];
-
-        try {
-          const { listDocsAdmin } = await import("@/lib/server/firestore-admin");
-          const since = new Date(Date.now() - LOOKBACK_MS);
-          const orders = await listDocsAdmin("orders", {
-            orderBy: "paidAt",
-            direction: "DESCENDING",
-            limit: 500,
-            rangeFilter: { field: "paidAt", gte: since },
-          });
-
-          for (const order of orders) {
-            if (!PAID_STATUSES.has(String(order.status ?? "").toLowerCase())) continue;
-            const provider = String(
-              (order as { paymentProvider?: unknown }).paymentProvider ?? "",
-            ).toLowerCase();
-            if (provider !== "wallid" && provider !== "peptidepay") continue;
-            // Skip orders whose browser Ads conversion was confirmed —
-            // importing those would double count.
-            if ((order as { adsClientConversionAt?: unknown }).adsClientConversionAt) continue;
-
-            const clickIds = (order as { adClickIds?: unknown }).adClickIds as
-              | { gclid?: unknown }
-              | undefined;
-            const gclid = typeof clickIds?.gclid === "string" ? clickIds.gclid : "";
-            if (!gclid) continue;
-
-            const paidAt =
-              toDate((order as { paidAt?: unknown }).paidAt) ??
-              toDate((order as { createdAt?: unknown }).createdAt);
-            if (!paidAt) continue;
-
-            const value = Number(
-              (order as { totalAmount?: unknown }).totalAmount ??
-                (order as { total?: unknown }).total ??
-                0,
-            );
-            if (!Number.isFinite(value) || value <= 0) continue;
-
-            rows.push(
-              [
-                csvCell(gclid),
-                csvCell(CONVERSION_NAME),
-                csvCell(formatAdsTime(paidAt)),
-                value.toFixed(2),
-                "GBP",
-              ].join(","),
-            );
-          }
-        } catch (e) {
-          console.error(
-            "[offline-conversions] export failed:",
-            e instanceof Error ? e.message : e,
-          );
-          // Still return a valid (header-only) CSV so a transient Firestore
-          // error doesn't fail the scheduled upload in the Ads UI — the next
-          // daily fetch retries automatically.
-        }
-
-        return new Response(rows.join("\n") + "\n", {
-          status: 200,
-          headers: {
-            "content-type": "text/csv; charset=utf-8",
-            "content-disposition": 'attachment; filename="offline-conversions.csv"',
-            ...NO_STORE_HEADERS,
-          },
-        });
-      },
+      GET: async ({ request }) => getOfflineConversionsCsv(request),
     },
   },
 });
