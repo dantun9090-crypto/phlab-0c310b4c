@@ -72,15 +72,15 @@ function Radio({ checked, tone = "emerald" }: { checked: boolean; tone?: "emeral
 
 function TrustBadgesRow() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4 pt-4 border-t border-emerald-500/20">
+    <div className="mt-4 pt-3 border-t border-emerald-500/20 flex flex-wrap gap-1.5">
       {TRUST_ITEMS.map(({ icon: Icon, label }) => (
-        <div
+        <span
           key={label}
-          className="flex items-center gap-2 text-[11px] sm:text-xs text-slate-200 whitespace-nowrap"
+          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/[0.07] px-2.5 py-1 text-[10.5px] font-medium text-slate-200 whitespace-nowrap"
         >
-          <Icon className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-          <span>{label}</span>
-        </div>
+          <Icon className="w-3 h-3 text-emerald-400 shrink-0" />
+          {label}
+        </span>
       ))}
     </div>
   );
