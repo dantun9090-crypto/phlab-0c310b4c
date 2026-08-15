@@ -269,7 +269,7 @@ export default function PaymentMethodOptions({
                 aria-hidden="true"
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/25 bg-emerald-500/10"
               >
-                <Landmark className="h-4.5 w-4.5 text-emerald-300" />
+                <Landmark className="h-4 w-4 text-emerald-300" />
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
