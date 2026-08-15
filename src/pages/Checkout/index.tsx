@@ -120,7 +120,7 @@ export default function CheckoutPage() {
     city: '',
     postcode: '',
     country: 'United Kingdom',
-    paymentMethod: 'wallid',
+    paymentMethod: '',
     acceptedTerms: false,
     ageVerified: false,
     createAccount: false,
