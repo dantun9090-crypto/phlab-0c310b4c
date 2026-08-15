@@ -211,8 +211,24 @@ export default function PaymentMethodOptions({
 
   };
 
+  const methodCount = (showPrimary ? 1 : 0) + (peptidepayEnabled ? 1 : 0) + 1;
+
   return (
     <>
+    <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-white">
+          Payment method
+        </h3>
+        <p className="text-xs text-slate-400 mt-0.5">
+          {methodCount} secure ways to pay — choose one below
+        </p>
+      </div>
+      <span className="inline-flex items-center gap-1.5 shrink-0 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-[10.5px] font-semibold text-emerald-300">
+        <Lock className="w-3 h-3" aria-hidden="true" />
+        Secure
+      </span>
+    </div>
     <div
       ref={rootRef}
       role="radiogroup"
