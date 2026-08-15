@@ -97,9 +97,13 @@ function toDate(value: unknown): Date | null {
   return null;
 }
 
-/** Google's accepted timestamp format, e.g. "08/13/2026 09:14:32 PM".
- * Rendered in Europe/London — the Ads account runs on United Kingdom Time,
- * and template-less uploads are interpreted in the account time zone. */
+/** Google's accepted timestamp format, e.g. "08/13/2026 09:14:32 PM +0100".
+ * Rendered in Europe/London with the GMT offset appended to EVERY row —
+ * Google's click-conversion import rejects rows whose Conversion Time has
+ * no timezone ("requires a timezone to be specified in the parameter row
+ * or the date field"). The offset is computed per conversion date: +0100
+ * during BST, +0000 in GMT months — a static Parameters:TimeZone row would
+ * be wrong for half the year. */
 function formatAdsTime(d: Date): string {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "Europe/London",
@@ -112,7 +116,13 @@ function formatAdsTime(d: Date): string {
     hour12: true,
   }).formatToParts(d);
   const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
-  return `${get("month")}/${get("day")}/${get("year")} ${get("hour")}:${get("minute")}:${get("second")} ${get("dayPeriod")}`;
+  const londonMs = Date.parse(d.toLocaleString("en-US", { timeZone: "Europe/London" }));
+  const utcMs = Date.parse(d.toLocaleString("en-US", { timeZone: "UTC" }));
+  const offsetMin = Math.round((londonMs - utcMs) / 60_000);
+  const sign = offsetMin >= 0 ? "+" : "-";
+  const abs = Math.abs(offsetMin);
+  const offset = `${sign}${String(Math.floor(abs / 60)).padStart(2, "0")}${String(abs % 60).padStart(2, "0")}`;
+  return `${get("month")}/${get("day")}/${get("year")} ${get("hour")}:${get("minute")}:${get("second")} ${get("dayPeriod")} ${offset}`;
 }
 
 function csvCell(value: string): string {
