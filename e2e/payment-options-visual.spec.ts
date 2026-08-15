@@ -178,7 +178,7 @@ test.describe("PaymentMethodOptions — visual regression", () => {
   );
 
   for (const vp of VIEWPORTS) {
-    test(`snapshot @ ${vp.name} — default (pay-by-bank selected)`, async ({
+    test(`snapshot @ ${vp.name} — default (collapsed)`, async ({
       page,
     }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
