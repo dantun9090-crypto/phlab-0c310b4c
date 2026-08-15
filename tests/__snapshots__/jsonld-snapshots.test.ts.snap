@@ -1,1 +1,2985 @@
-SNAP_CONTENT_PLACEHOLDER
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Article JSON-LD snapshots > /resources/bpc-157-tissue-repair 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/bpc-157-tissue-repair#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-02-20",
+    "description": "Bpc 157 Tissue Repair: resource notes and references from PH Labs UK.",
+    "headline": "BPC-157 Research and Human Studies: Tissue Repair Mechanisms",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/bpc-157-tissue-repair",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT13M",
+    "url": "https://phlabs.co.uk/resources/bpc-157-tissue-repair",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/bpc-157-tissue-repair",
+        "name": "BPC-157 Research and Human Studies: Tissue Repair Mechanisms",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/bpc-157-vs-tb-500 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/bpc-157-vs-tb-500#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-06-08",
+    "description": "Bpc 157 Vs Tb 500: resource notes and references from PH Labs UK.",
+    "headline": "BPC-157 vs TB-500: Mechanisms, Pathways and Research Comparison",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/bpc-157-vs-tb-500",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT12M",
+    "url": "https://phlabs.co.uk/resources/bpc-157-vs-tb-500",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/bpc-157-vs-tb-500",
+        "name": "BPC-157 vs TB-500: Mechanisms, Pathways and Research Comparison",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/bpc-157-vs-tb-500-comparison 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/bpc-157-vs-tb-500-comparison#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-05-03",
+    "description": "Bpc 157 Vs Tb 500 Comparison: resource notes and references from PH Labs UK.",
+    "headline": "BPC-157 vs TB-500: Which Peptide for Tissue Repair Research? Complete UK Comparison 2025",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/bpc-157-vs-tb-500-comparison",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT9M",
+    "url": "https://phlabs.co.uk/resources/bpc-157-vs-tb-500-comparison",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/bpc-157-vs-tb-500-comparison",
+        "name": "BPC-157 vs TB-500: Which Peptide for Tissue Repair Research? Complete UK Comparison 2025",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/cjc-1295-mod-grf-ghrh-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/cjc-1295-mod-grf-ghrh-research#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-04-09",
+    "description": "Cjc 1295 Mod Grf Ghrh Research: resource notes and references from PH Labs UK.",
+    "headline": "CJC-1295 and MOD GRF(1-29): GHRH Analogue Research for GH Pulse Amplification",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/cjc-1295-mod-grf-ghrh-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT9M",
+    "url": "https://phlabs.co.uk/resources/cjc-1295-mod-grf-ghrh-research",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/cjc-1295-mod-grf-ghrh-research",
+        "name": "CJC-1295 and MOD GRF(1-29): GHRH Analogue Research for GH Pulse Amplification",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/complete-uk-peptide-guide-2025 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/complete-uk-peptide-guide-2025#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-05-03",
+    "description": "Complete Uk Peptide Guide 2025: resource notes and references from PH Labs UK.",
+    "headline": "Complete UK Research Peptide Guide 2025: BPC-157, TB-500, Semaglutide & GLP-1 Agonists for Laboratory Use",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/complete-uk-peptide-guide-2025",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT12M",
+    "url": "https://phlabs.co.uk/resources/complete-uk-peptide-guide-2025",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/complete-uk-peptide-guide-2025",
+        "name": "Complete UK Research Peptide Guide 2025: BPC-157, TB-500, Semaglutide & GLP-1 Agonists for Laboratory Use",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/epithalon-telomere-epigenetic-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/epithalon-telomere-epigenetic-research#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-04-07",
+    "description": "Epithalon Telomere Epigenetic Research: resource notes and references from PH Labs UK.",
+    "headline": "Epithalon: Telomerase Activation, Epigenetic Remodelling, and Longevity Research",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/epithalon-telomere-epigenetic-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT10M",
+    "url": "https://phlabs.co.uk/resources/epithalon-telomere-epigenetic-research",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/epithalon-telomere-epigenetic-research",
+        "name": "Epithalon: Telomerase Activation, Epigenetic Remodelling, and Longevity Research",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/epithalon-telomere-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/epithalon-telomere-research#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-01-15",
+    "description": "Epithalon Telomere Research: resource notes and references from PH Labs UK.",
+    "headline": "Epithalon (Epitalon): Telomerase Activation and Cellular Ageing Research",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/epithalon-telomere-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT10M",
+    "url": "https://phlabs.co.uk/resources/epithalon-telomere-research",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/epithalon-telomere-research",
+        "name": "Epithalon (Epitalon): Telomerase Activation and Cellular Ageing Research",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/follistatin-344-myostatin-inhibition-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/follistatin-344-myostatin-inhibition-research#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-04-10",
+    "description": "Follistatin 344 Myostatin Inhibition Research: resource notes and references from PH Labs UK.",
+    "headline": "Follistatin-344: Myostatin Inhibition, Muscle Hypertrophy Research, and TGF-beta Superfamily Antagonism",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/follistatin-344-myostatin-inhibition-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT9M",
+    "url": "https://phlabs.co.uk/resources/follistatin-344-myostatin-inhibition-research",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/follistatin-344-myostatin-inhibition-research",
+        "name": "Follistatin-344: Myostatin Inhibition, Muscle Hypertrophy Research, and TGF-beta Superfamily Antagonism",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/ghk-cu-copper-peptide-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/ghk-cu-copper-peptide-research#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-03-28",
+    "description": "Ghk Cu Copper Peptide Research: resource notes and references from PH Labs UK.",
+    "headline": "GHK-Cu: The Copper Tripeptide at the Intersection of Wound Healing, Gene Regulation, and Anti-Ageing Biology",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/ghk-cu-copper-peptide-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT9M",
+    "url": "https://phlabs.co.uk/resources/ghk-cu-copper-peptide-research",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/ghk-cu-copper-peptide-research",
+        "name": "GHK-Cu: The Copper Tripeptide at the Intersection of Wound Healing, Gene Regulation, and Anti-Ageing Biology",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/ghk-cu-research-guide 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/ghk-cu-research-guide#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-05-12",
+    "description": "Ghk Cu Research Guide: resource notes and references from PH Labs UK.",
+    "headline": "GHK-Cu Peptide: A Technical Research Guide for UK Laboratories",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/ghk-cu-research-guide",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT8M",
+    "url": "https://phlabs.co.uk/resources/ghk-cu-research-guide",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/ghk-cu-research-guide",
+        "name": "GHK-Cu Peptide: A Technical Research Guide for UK Laboratories",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/glow-blend-skin-peptide-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/glow-blend-skin-peptide-research#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-04-05",
+    "description": "Glow Blend Skin Peptide Research: resource notes and references from PH Labs UK.",
+    "headline": "GLOW Blend: A Multi-Peptide Complex for Skin Biology and Photoprotection Research",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/glow-blend-skin-peptide-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT16M",
+    "url": "https://phlabs.co.uk/resources/glow-blend-skin-peptide-research",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/glow-blend-skin-peptide-research",
+        "name": "GLOW Blend: A Multi-Peptide Complex for Skin Biology and Photoprotection Research",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/how-to-read-hplc-certificate-of-analysis 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/how-to-read-hplc-certificate-of-analysis#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-05-03",
+    "description": "How To Read Hplc Certificate Of Analysis: resource notes and references from PH Labs UK.",
+    "headline": "How to Read an HPLC Certificate of Analysis (CoA): UK Guide for Research Peptides",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/how-to-read-hplc-certificate-of-analysis",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT7M",
+    "url": "https://phlabs.co.uk/resources/how-to-read-hplc-certificate-of-analysis",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/how-to-read-hplc-certificate-of-analysis",
+        "name": "How to Read an HPLC Certificate of Analysis (CoA): UK Guide for Research Peptides",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/hplc-testing-explained 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/hplc-testing-explained#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-03-05",
+    "description": "How to verify research peptide purity from an HPLC chromatogram: peak-area %, retention time, system suitability limits and LC-MS batch CoA checks.",
+    "headline": "HPLC Testing Explained: How Peptide Purity Is Verified",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/hplc-testing-explained",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT11M",
+    "url": "https://phlabs.co.uk/resources/hplc-testing-explained",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/hplc-testing-explained",
+        "name": "HPLC Testing Explained: How Peptide Purity Is Verified",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/ipamorelin-ghrp-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/ipamorelin-ghrp-research#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-01-30",
+    "description": "Ipamorelin Ghrp Research: resource notes and references from PH Labs UK.",
+    "headline": "GHRP-2 vs Ipamorelin: A Comparative Research Guide",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/ipamorelin-ghrp-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT11M",
+    "url": "https://phlabs.co.uk/resources/ipamorelin-ghrp-research",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/ipamorelin-ghrp-research",
+        "name": "GHRP-2 vs Ipamorelin: A Comparative Research Guide",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/klow-blend-cognitive-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/klow-blend-cognitive-research#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-04-06",
+    "description": "Klow Blend Cognitive Research: resource notes and references from PH Labs UK.",
+    "headline": "KLOW Blend: BPC-157, TB-500, GHK-Cu & KPV — A Multi-Peptide Recovery and Repair Research Complex",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/klow-blend-cognitive-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT16M",
+    "url": "https://phlabs.co.uk/resources/klow-blend-cognitive-research",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/klow-blend-cognitive-research",
+        "name": "KLOW Blend: BPC-157, TB-500, GHK-Cu & KPV — A Multi-Peptide Recovery and Repair Research Complex",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/kpv-tripeptide-anti-inflammatory-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/kpv-tripeptide-anti-inflammatory-research#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-03-28",
+    "description": "Kpv Tripeptide Anti Inflammatory Research: resource notes and references from PH Labs UK.",
+    "headline": "KPV Tripeptide: Alpha-MSH-Derived Anti-Inflammatory Signalling in Preclinical Research",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/kpv-tripeptide-anti-inflammatory-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT13M",
+    "url": "https://phlabs.co.uk/resources/kpv-tripeptide-anti-inflammatory-research",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/kpv-tripeptide-anti-inflammatory-research",
+        "name": "KPV Tripeptide: Alpha-MSH-Derived Anti-Inflammatory Signalling in Preclinical Research",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/mass-spectrometry-peptide-identity-verification 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/mass-spectrometry-peptide-identity-verification#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-04-10",
+    "description": "Mass Spectrometry Peptide Identity Verification: resource notes and references from PH Labs UK.",
+    "headline": "Mass Spectrometry for Peptide Identity Verification: ESI-MS, MALDI-TOF, and How to Read a Mass Spec Report",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/mass-spectrometry-peptide-identity-verification",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT8M",
+    "url": "https://phlabs.co.uk/resources/mass-spectrometry-peptide-identity-verification",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/mass-spectrometry-peptide-identity-verification",
+        "name": "Mass Spectrometry for Peptide Identity Verification: ESI-MS, MALDI-TOF, and How to Read a Mass Spec Report",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/melanotan-2-melanocortin-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/melanotan-2-melanocortin-research#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-02-14",
+    "description": "Melanotan 2 Melanocortin Research: resource notes and references from PH Labs UK.",
+    "headline": "Melanotan II and Melanocortin Receptor Research",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/melanotan-2-melanocortin-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT10M",
+    "url": "https://phlabs.co.uk/resources/melanotan-2-melanocortin-research",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/melanotan-2-melanocortin-research",
+        "name": "Melanotan II and Melanocortin Receptor Research",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/mots-c-mitochondrial-derived-peptide 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/mots-c-mitochondrial-derived-peptide#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-04-01",
+    "description": "Mots C Mitochondrial Derived Peptide: resource notes and references from PH Labs UK.",
+    "headline": "MOTS-C: The Mitochondrial-Derived Peptide Regulating Metabolic Homeostasis and Exercise Adaptation",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/mots-c-mitochondrial-derived-peptide",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT14M",
+    "url": "https://phlabs.co.uk/resources/mots-c-mitochondrial-derived-peptide",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/mots-c-mitochondrial-derived-peptide",
+        "name": "MOTS-C: The Mitochondrial-Derived Peptide Regulating Metabolic Homeostasis and Exercise Adaptation",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/nad-nicotinamide-adenine-dinucleotide-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/nad-nicotinamide-adenine-dinucleotide-research#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-04-03",
+    "description": "Nad Nicotinamide Adenine Dinucleotide Research: resource notes and references from PH Labs UK.",
+    "headline": "NAD+: Cellular Energy Currency, Sirtuin Activation, and the Biochemistry of Ageing",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/nad-nicotinamide-adenine-dinucleotide-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT16M",
+    "url": "https://phlabs.co.uk/resources/nad-nicotinamide-adenine-dinucleotide-research",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/nad-nicotinamide-adenine-dinucleotide-research",
+        "name": "NAD+: Cellular Energy Currency, Sirtuin Activation, and the Biochemistry of Ageing",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/peptide-categories-uk-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/peptide-categories-uk-research#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-06-28",
+    "description": "Peptide Categories Uk Research: resource notes and references from PH Labs UK.",
+    "headline": "Peptide Categories in UK Laboratory Research: 7 Classes Studied in Modern Labs",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/peptide-categories-uk-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT12M",
+    "url": "https://phlabs.co.uk/resources/peptide-categories-uk-research",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/peptide-categories-uk-research",
+        "name": "Peptide Categories in UK Laboratory Research: 7 Classes Studied in Modern Labs",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/peptide-reconstitution-guide 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/peptide-reconstitution-guide#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-07-05",
+    "description": "Peptide Reconstitution Guide: resource notes and references from PH Labs UK.",
+    "headline": "Peptide Reconstitution Guide for UK Laboratories: Bacteriostatic Water Protocol",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/peptide-reconstitution-guide",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT10M",
+    "url": "https://phlabs.co.uk/resources/peptide-reconstitution-guide",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/peptide-reconstitution-guide",
+        "name": "Peptide Reconstitution Guide for UK Laboratories: Bacteriostatic Water Protocol",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/peptide-safety-legality-uk 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/peptide-safety-legality-uk#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-06-19",
+    "description": "Peptide Safety Legality Uk: resource notes and references from PH Labs UK.",
+    "headline": "The Safety and Legality of Buying Research Peptides in the UK",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/peptide-safety-legality-uk",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT10M",
+    "url": "https://phlabs.co.uk/resources/peptide-safety-legality-uk",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/peptide-safety-legality-uk",
+        "name": "The Safety and Legality of Buying Research Peptides in the UK",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/peptide-storage-lyophilisation-science 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/peptide-storage-lyophilisation-science#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-04-02",
+    "description": "Peptide Storage Lyophilisation Science: resource notes and references from PH Labs UK.",
+    "headline": "Peptide Storage Science: Lyophilisation, Reconstitution, and Stability Maximisation",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/peptide-storage-lyophilisation-science",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT8M",
+    "url": "https://phlabs.co.uk/resources/peptide-storage-lyophilisation-science",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/peptide-storage-lyophilisation-science",
+        "name": "Peptide Storage Science: Lyophilisation, Reconstitution, and Stability Maximisation",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/peptide-storage-reconstitution 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/peptide-storage-reconstitution#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-03-10",
+    "description": "Peptide Storage Reconstitution: resource notes and references from PH Labs UK.",
+    "headline": "Peptide Storage and Reconstitution: A Laboratory Protocol Guide",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/peptide-storage-reconstitution",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT9M",
+    "url": "https://phlabs.co.uk/resources/peptide-storage-reconstitution",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/peptide-storage-reconstitution",
+        "name": "Peptide Storage and Reconstitution: A Laboratory Protocol Guide",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/pt-141-bremelanotide-melanocortin-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/pt-141-bremelanotide-melanocortin-research#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-04-05",
+    "description": "Pt 141 Bremelanotide Melanocortin Research: resource notes and references from PH Labs UK.",
+    "headline": "PT-141 (Bremelanotide): Melanocortin Receptor Pharmacology and Central Arousal Pathway Research",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/pt-141-bremelanotide-melanocortin-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT12M",
+    "url": "https://phlabs.co.uk/resources/pt-141-bremelanotide-melanocortin-research",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/pt-141-bremelanotide-melanocortin-research",
+        "name": "PT-141 (Bremelanotide): Melanocortin Receptor Pharmacology and Central Arousal Pathway Research",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/research-peptides-uk 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/research-peptides-uk#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-05-24",
+    "description": "Research Peptides Uk: resource notes and references from PH Labs UK.",
+    "headline": "Research Peptides UK: The 2026 Sourcing Guide for British Laboratories",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/research-peptides-uk",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT12M",
+    "url": "https://phlabs.co.uk/resources/research-peptides-uk",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/research-peptides-uk",
+        "name": "Research Peptides UK: The 2026 Sourcing Guide for British Laboratories",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/retatrutide-research-guide 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/retatrutide-research-guide#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-06-16",
+    "description": "Retatrutide Research Guide: resource notes and references from PH Labs UK.",
+    "headline": "Retatrutide Research Peptide: An Analytical Profile for UK Laboratories",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/retatrutide-research-guide",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT16M",
+    "url": "https://phlabs.co.uk/resources/retatrutide-research-guide",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/retatrutide-research-guide",
+        "name": "Retatrutide Research Peptide: An Analytical Profile for UK Laboratories",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/retatrutide-vs-tirzepatide-vs-semaglutide 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/retatrutide-vs-tirzepatide-vs-semaglutide#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-03-28",
+    "description": "Retatrutide Vs Tirzepatide Vs Semaglutide: resource notes and references from PH Labs UK.",
+    "headline": "Retatrutide vs Tirzepatide vs Semaglutide: A Research Comparison",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/retatrutide-vs-tirzepatide-vs-semaglutide",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT15M",
+    "url": "https://phlabs.co.uk/resources/retatrutide-vs-tirzepatide-vs-semaglutide",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/retatrutide-vs-tirzepatide-vs-semaglutide",
+        "name": "Retatrutide vs Tirzepatide vs Semaglutide: A Research Comparison",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/selank-anxiolytic-nootropic-peptide 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/selank-anxiolytic-nootropic-peptide#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-04-05",
+    "description": "Selank Anxiolytic Nootropic Peptide: resource notes and references from PH Labs UK.",
+    "headline": "Selank: The Synthetic Tuftsin Analogue at the Frontier of Anxiolytic Peptide Research",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/selank-anxiolytic-nootropic-peptide",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT9M",
+    "url": "https://phlabs.co.uk/resources/selank-anxiolytic-nootropic-peptide",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/selank-anxiolytic-nootropic-peptide",
+        "name": "Selank: The Synthetic Tuftsin Analogue at the Frontier of Anxiolytic Peptide Research",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/semax-cognitive-neuroprotective-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/semax-cognitive-neuroprotective-research#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-04-08",
+    "description": "Semax Cognitive Neuroprotective Research: resource notes and references from PH Labs UK.",
+    "headline": "Semax: ACTH-Derived Neuropeptide Research in Cognition, BDNF Signalling, and Neuroprotection",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/semax-cognitive-neuroprotective-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT10M",
+    "url": "https://phlabs.co.uk/resources/semax-cognitive-neuroprotective-research",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/semax-cognitive-neuroprotective-research",
+        "name": "Semax: ACTH-Derived Neuropeptide Research in Cognition, BDNF Signalling, and Neuroprotection",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/tb-500-thymosin-beta-4 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/tb-500-thymosin-beta-4#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-02-08",
+    "description": "Tb 500 Thymosin Beta 4: resource notes and references from PH Labs UK.",
+    "headline": "TB-500 and Thymosin Beta-4: Actin Sequestration and Tissue Regeneration Research",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/tb-500-thymosin-beta-4",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT12M",
+    "url": "https://phlabs.co.uk/resources/tb-500-thymosin-beta-4",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/tb-500-thymosin-beta-4",
+        "name": "TB-500 and Thymosin Beta-4: Actin Sequestration and Tissue Regeneration Research",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/tb-500-thymosin-beta-4-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/tb-500-thymosin-beta-4-research#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-03-20",
+    "description": "Tb 500 Thymosin Beta 4 Research: resource notes and references from PH Labs UK.",
+    "headline": "TB-500 and Thymosin Beta-4: Actin Sequestration and Tissue Remodelling Research",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/tb-500-thymosin-beta-4-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT10M",
+    "url": "https://phlabs.co.uk/resources/tb-500-thymosin-beta-4-research",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/tb-500-thymosin-beta-4-research",
+        "name": "TB-500 and Thymosin Beta-4: Actin Sequestration and Tissue Remodelling Research",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/tirzepatide-dual-agonist-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/tirzepatide-dual-agonist-research#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-03-22",
+    "description": "Tirzepatide Dual Agonist Research: resource notes and references from PH Labs UK.",
+    "headline": "Tirzepatide: Dual GIP/GLP-1 Receptor Agonism and Its Role in Metabolic Research",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/tirzepatide-dual-agonist-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT15M",
+    "url": "https://phlabs.co.uk/resources/tirzepatide-dual-agonist-research",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/tirzepatide-dual-agonist-research",
+        "name": "Tirzepatide: Dual GIP/GLP-1 Receptor Agonism and Its Role in Metabolic Research",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/tirzepatide-vs-retatrutide-mechanism 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/tirzepatide-vs-retatrutide-mechanism#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-06-25",
+    "description": "Tirzepatide Vs Retatrutide Mechanism: resource notes and references from PH Labs UK.",
+    "headline": "Tirzepatide vs Retatrutide: Dual vs Triple Receptor Agonism in Research Models",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/tirzepatide-vs-retatrutide-mechanism",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT11M",
+    "url": "https://phlabs.co.uk/resources/tirzepatide-vs-retatrutide-mechanism",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/tirzepatide-vs-retatrutide-mechanism",
+        "name": "Tirzepatide vs Retatrutide: Dual vs Triple Receptor Agonism in Research Models",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/what-are-peptides 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/what-are-peptides#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-06-24",
+    "description": "What Are Peptides: resource notes and references from PH Labs UK.",
+    "headline": "What Are Peptides? A Comprehensive Guide for UK Researchers",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/what-are-peptides",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT13M",
+    "url": "https://phlabs.co.uk/resources/what-are-peptides",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/what-are-peptides",
+        "name": "What Are Peptides? A Comprehensive Guide for UK Researchers",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/what-is-retatrutide 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/what-is-retatrutide#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "datePublished": "2026-03-18",
+    "description": "What Is Retatrutide: resource notes and references from PH Labs UK.",
+    "headline": "What is Retatrutide and How Does It Work in Research?",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/what-is-retatrutide",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT14M",
+    "url": "https://phlabs.co.uk/resources/what-is-retatrutide",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/what-is-retatrutide",
+        "name": "What is Retatrutide and How Does It Work in Research?",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Product JSON-LD snapshots > /products/bpc-157 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/products/bpc-157#product",
+    "@type": "Product",
+    "additionalProperty": [
+      {
+        "@type": "PropertyValue",
+        "name": "identifier_exists",
+        "value": "false",
+      },
+      {
+        "@type": "PropertyValue",
+        "name": "unit_pricing_measure",
+        "value": "5 mg",
+      },
+    ],
+    "brand": {
+      "@type": "Brand",
+      "name": "PH Labs",
+      "url": "https://phlabs.co.uk",
+    },
+    "category": "Tissue Repair Research",
+    "description": "BPC-157 UK research peptide. HPLC-tested ≥99% purity, batch Certificate of Analysis. For laboratory research only — not for human consumption.",
+    "image": "https://phlabs.co.uk/products/bpc-157.jpg",
+    "manufacturer": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "mpn": "PHP-157",
+    "name": "BPC-157 5mg",
+    "offers": {
+      "@type": "Offer",
+      "availability": "https://schema.org/OutOfStock",
+      "eligibleQuantity": {
+        "@type": "QuantitativeValue",
+        "unitCode": "MGM",
+        "value": 5,
+      },
+      "hasMerchantReturnPolicy": {
+        "@type": "MerchantReturnPolicy",
+        "applicableCountry": "GB",
+        "merchantReturnDays": 14,
+        "returnFees": "https://schema.org/FreeReturn",
+        "returnMethod": "https://schema.org/ReturnByMail",
+        "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+      },
+      "itemCondition": "https://schema.org/NewCondition",
+      "price": "29.99",
+      "priceCurrency": "GBP",
+      "priceValidUntil": "2027-07-01",
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 1,
+            "minValue": 0,
+            "unitCode": "DAY",
+          },
+          "transitTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 2,
+            "minValue": 1,
+            "unitCode": "DAY",
+          },
+        },
+        "shippingDestination": {
+          "@type": "DefinedRegion",
+          "addressCountry": "GB",
+        },
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "currency": "GBP",
+          "value": "3.20",
+        },
+      },
+      "url": "https://phlabs.co.uk/products/bpc-157",
+      "validFrom": "2026-07-01",
+    },
+    "size": "5 mg",
+    "sku": "PHP-157",
+    "url": "https://phlabs.co.uk/products/bpc-157",
+    "weight": {
+      "@type": "QuantitativeValue",
+      "unitCode": "MGM",
+      "value": 5,
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products",
+        "name": "Products",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products/bpc-157",
+        "name": "BPC-157 5mg",
+        "position": 3,
+      },
+    ],
+  },
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/products/bpc-157#faq",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Gly-Glu-Pro-Pro-Pro-Gly-Lys-Pro-Ala-Asp-Asp-Ala-Gly-Leu-Val (15 residues).",
+        },
+        "name": "What is the amino-acid sequence of BPC-157?",
+      },
+      {
+        "@type": "Question",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "137525-51-0; molecular formula C62H98N16O22, monoisotopic mass ≈ 1419.5 Da.",
+        },
+        "name": "What CAS number is associated with BPC-157?",
+      },
+      {
+        "@type": "Question",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "≥99.0% by RP-HPLC at 220 nm; lot-specific value on the CoA.",
+        },
+        "name": "What HPLC purity is released per batch?",
+      },
+      {
+        "@type": "Question",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Scratch-closure assays in HUVEC and tendon fibroblasts and Matrigel tube-formation studies for angiogenesis research.",
+        },
+        "name": "Which in-vitro assays use BPC-157 as a reference?",
+      },
+      {
+        "@type": "Question",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "1 ng/mL to 10 µg/mL for dose-response curves in fibroblast migration and tube-formation assays.",
+        },
+        "name": "What concentration range is typical for in-vitro work?",
+      },
+      {
+        "@type": "Question",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "TB-500 for parallel cell-migration work and GHK-Cu for matrix-remodelling endpoints.",
+        },
+        "name": "Which related compounds are paired with BPC-157 in research?",
+      },
+      {
+        "@type": "Question",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Up to 30 days at 2–8 °C; longer storage as single-use −20 °C aliquots.",
+        },
+        "name": "How long does reconstituted BPC-157 remain stable?",
+      },
+      {
+        "@type": "Question",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Standard laboratory PPE (nitrile gloves, lab coat, eye protection); aseptic technique during reconstitution; for in-vitro research use only.",
+        },
+        "name": "What handling precautions apply?",
+      },
+    ],
+  },
+]
+`;
+
+exports[`Product JSON-LD snapshots > /products/ghk-cu 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/products/ghk-cu#product",
+    "@type": "Product",
+    "additionalProperty": [
+      {
+        "@type": "PropertyValue",
+        "name": "identifier_exists",
+        "value": "false",
+      },
+      {
+        "@type": "PropertyValue",
+        "name": "unit_pricing_measure",
+        "value": "50 mg",
+      },
+    ],
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "bestRating": 5,
+      "ratingValue": "4.8",
+      "reviewCount": 42,
+      "worstRating": 1,
+    },
+    "brand": {
+      "@type": "Brand",
+      "name": "PH Labs",
+      "url": "https://phlabs.co.uk",
+    },
+    "category": "Cosmetic Research",
+    "description": "Copper-binding tripeptide for skin and tissue research.",
+    "image": "https://phlabs.co.uk/products/ghk-cu.jpg",
+    "manufacturer": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "mpn": "GHK-001",
+    "name": "GHK-Cu 50mg",
+    "offers": {
+      "@type": "Offer",
+      "availability": "https://schema.org/InStock",
+      "eligibleQuantity": {
+        "@type": "QuantitativeValue",
+        "unitCode": "MGM",
+        "value": 50,
+      },
+      "hasMerchantReturnPolicy": {
+        "@type": "MerchantReturnPolicy",
+        "applicableCountry": "GB",
+        "merchantReturnDays": 14,
+        "returnFees": "https://schema.org/FreeReturn",
+        "returnMethod": "https://schema.org/ReturnByMail",
+        "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+      },
+      "itemCondition": "https://schema.org/NewCondition",
+      "price": "24.00",
+      "priceCurrency": "GBP",
+      "priceValidUntil": "2027-07-01",
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 1,
+            "minValue": 0,
+            "unitCode": "DAY",
+          },
+          "transitTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 2,
+            "minValue": 1,
+            "unitCode": "DAY",
+          },
+        },
+        "shippingDestination": {
+          "@type": "DefinedRegion",
+          "addressCountry": "GB",
+        },
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "currency": "GBP",
+          "value": "3.20",
+        },
+      },
+      "url": "https://phlabs.co.uk/products/ghk-cu",
+      "validFrom": "2026-07-01",
+    },
+    "review": [
+      {
+        "@type": "Review",
+        "author": {
+          "@type": "Person",
+          "name": "Dr. A. Researcher",
+        },
+        "datePublished": "2026-03-15",
+        "reviewBody": "Consistent purity across batches; reliable for our in-vitro assays.",
+        "reviewRating": {
+          "@type": "Rating",
+          "bestRating": 5,
+          "ratingValue": "5.0",
+          "worstRating": 1,
+        },
+      },
+    ],
+    "size": "50 mg",
+    "sku": "GHK-001",
+    "url": "https://phlabs.co.uk/products/ghk-cu",
+    "weight": {
+      "@type": "QuantitativeValue",
+      "unitCode": "MGM",
+      "value": 50,
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products",
+        "name": "Products",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products/ghk-cu",
+        "name": "GHK-Cu 50mg",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Product JSON-LD snapshots > /products/retatrutide 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/products/retatrutide#product",
+    "@type": "Product",
+    "additionalProperty": [
+      {
+        "@type": "PropertyValue",
+        "name": "identifier_exists",
+        "value": "false",
+      },
+      {
+        "@type": "PropertyValue",
+        "name": "unit_pricing_measure",
+        "value": "5 mg",
+      },
+    ],
+    "brand": {
+      "@type": "Brand",
+      "name": "PH Labs",
+      "url": "https://phlabs.co.uk",
+    },
+    "category": "Metabolic Research",
+    "description": "Triple-agonist research peptide (GIP/GLP-1/glucagon).",
+    "image": "https://phlabs.co.uk/products/retatrutide.jpg",
+    "manufacturer": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "mpn": "RET-001",
+    "name": "Retatrutide 5mg",
+    "offers": {
+      "@type": "Offer",
+      "availability": "https://schema.org/InStock",
+      "eligibleQuantity": {
+        "@type": "QuantitativeValue",
+        "unitCode": "MGM",
+        "value": 5,
+      },
+      "hasMerchantReturnPolicy": {
+        "@type": "MerchantReturnPolicy",
+        "applicableCountry": "GB",
+        "merchantReturnDays": 14,
+        "returnFees": "https://schema.org/FreeReturn",
+        "returnMethod": "https://schema.org/ReturnByMail",
+        "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+      },
+      "itemCondition": "https://schema.org/NewCondition",
+      "price": "79.00",
+      "priceCurrency": "GBP",
+      "priceValidUntil": "2027-07-01",
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 1,
+            "minValue": 0,
+            "unitCode": "DAY",
+          },
+          "transitTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 2,
+            "minValue": 1,
+            "unitCode": "DAY",
+          },
+        },
+        "shippingDestination": {
+          "@type": "DefinedRegion",
+          "addressCountry": "GB",
+        },
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "currency": "GBP",
+          "value": "3.20",
+        },
+      },
+      "url": "https://phlabs.co.uk/products/retatrutide",
+      "validFrom": "2026-07-01",
+    },
+    "size": "5 mg",
+    "sku": "RET-001",
+    "url": "https://phlabs.co.uk/products/retatrutide",
+    "weight": {
+      "@type": "QuantitativeValue",
+      "unitCode": "MGM",
+      "value": 5,
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products",
+        "name": "Products",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products/retatrutide",
+        "name": "Retatrutide 5mg",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Product JSON-LD snapshots > /products/tb-500 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/products/tb-500#product",
+    "@type": "Product",
+    "additionalProperty": [
+      {
+        "@type": "PropertyValue",
+        "name": "identifier_exists",
+        "value": "false",
+      },
+      {
+        "@type": "PropertyValue",
+        "name": "unit_pricing_measure",
+        "value": "5 mg",
+      },
+    ],
+    "brand": {
+      "@type": "Brand",
+      "name": "PH Labs",
+      "url": "https://phlabs.co.uk",
+    },
+    "category": "Tissue Repair Research",
+    "description": "Thymosin Beta-4 fragment for regenerative research.",
+    "image": "https://phlabs.co.uk/products/tb-500.jpg",
+    "manufacturer": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "mpn": "TB5-001",
+    "name": "TB-500 5mg",
+    "offers": {
+      "@type": "Offer",
+      "availability": "https://schema.org/InStock",
+      "eligibleQuantity": {
+        "@type": "QuantitativeValue",
+        "unitCode": "MGM",
+        "value": 5,
+      },
+      "hasMerchantReturnPolicy": {
+        "@type": "MerchantReturnPolicy",
+        "applicableCountry": "GB",
+        "merchantReturnDays": 14,
+        "returnFees": "https://schema.org/FreeReturn",
+        "returnMethod": "https://schema.org/ReturnByMail",
+        "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+      },
+      "itemCondition": "https://schema.org/NewCondition",
+      "price": "34.50",
+      "priceCurrency": "GBP",
+      "priceValidUntil": "2027-07-01",
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 1,
+            "minValue": 0,
+            "unitCode": "DAY",
+          },
+          "transitTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 2,
+            "minValue": 1,
+            "unitCode": "DAY",
+          },
+        },
+        "shippingDestination": {
+          "@type": "DefinedRegion",
+          "addressCountry": "GB",
+        },
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "currency": "GBP",
+          "value": "3.20",
+        },
+      },
+      "url": "https://phlabs.co.uk/products/tb-500",
+      "validFrom": "2026-07-01",
+    },
+    "size": "5 mg",
+    "sku": "TB5-001",
+    "url": "https://phlabs.co.uk/products/tb-500",
+    "weight": {
+      "@type": "QuantitativeValue",
+      "unitCode": "MGM",
+      "value": 5,
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products",
+        "name": "Products",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products/tb-500",
+        "name": "TB-500 5mg",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Product JSON-LD snapshots > /products/tirzepatide 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/products/tirzepatide#product",
+    "@type": "Product",
+    "additionalProperty": [
+      {
+        "@type": "PropertyValue",
+        "name": "identifier_exists",
+        "value": "false",
+      },
+      {
+        "@type": "PropertyValue",
+        "name": "unit_pricing_measure",
+        "value": "10 mg",
+      },
+    ],
+    "brand": {
+      "@type": "Brand",
+      "name": "PH Labs",
+      "url": "https://phlabs.co.uk",
+    },
+    "category": "Metabolic Research",
+    "description": "Research-grade tirzepatide, ≥99% HPLC verified.",
+    "image": "https://phlabs.co.uk/products/tirzepatide.jpg",
+    "manufacturer": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "mpn": "TZP-001",
+    "name": "Tirzepatide 10mg",
+    "offers": {
+      "@type": "Offer",
+      "availability": "https://schema.org/InStock",
+      "eligibleQuantity": {
+        "@type": "QuantitativeValue",
+        "unitCode": "MGM",
+        "value": 10,
+      },
+      "hasMerchantReturnPolicy": {
+        "@type": "MerchantReturnPolicy",
+        "applicableCountry": "GB",
+        "merchantReturnDays": 14,
+        "returnFees": "https://schema.org/FreeReturn",
+        "returnMethod": "https://schema.org/ReturnByMail",
+        "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+      },
+      "itemCondition": "https://schema.org/NewCondition",
+      "price": "49.99",
+      "priceCurrency": "GBP",
+      "priceValidUntil": "2027-07-01",
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 1,
+            "minValue": 0,
+            "unitCode": "DAY",
+          },
+          "transitTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 2,
+            "minValue": 1,
+            "unitCode": "DAY",
+          },
+        },
+        "shippingDestination": {
+          "@type": "DefinedRegion",
+          "addressCountry": "GB",
+        },
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "currency": "GBP",
+          "value": "3.20",
+        },
+      },
+      "url": "https://phlabs.co.uk/products/tirzepatide",
+      "validFrom": "2026-07-01",
+    },
+    "size": "10 mg",
+    "sku": "TZP-001",
+    "url": "https://phlabs.co.uk/products/tirzepatide",
+    "weight": {
+      "@type": "QuantitativeValue",
+      "unitCode": "MGM",
+      "value": 10,
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products",
+        "name": "Products",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products/tirzepatide",
+        "name": "Tirzepatide 10mg",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
