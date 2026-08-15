@@ -1,0 +1,68 @@
+name: Refresh payment visual baselines
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: Branch to refresh baselines on
+        required: true
+        default: main
+
+permissions:
+  contents: write
+
+jobs:
+  snapshots:
+    name: Regenerate + commit visual baselines
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.target_branch }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.2.21"
+
+      - name: Cache Bun install store
+        uses: actions/cache@v5
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock', 'package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install deps
+        run: bash scripts/ci-bun-install.sh
+
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+
+      - name: Start local dev server
+        run: |
+          (bun run dev --host 127.0.0.1 --port 8080 > server.log 2>&1 &)
+          for i in $(seq 1 120); do
+            if curl -fsS -o /dev/null "http://127.0.0.1:8080/e2e/payment-options"; then exit 0; fi
+            sleep 1
+          done
+          tail -n 200 server.log; exit 1
+
+      - name: Regenerate baselines
+        env:
+          TEST_BASE_URL: http://127.0.0.1:8080
+        run: bunx playwright test e2e/payment-options-visual.spec.ts --project=chromium --update-snapshots
+
+      - name: Verify baselines pass as-is
+        env:
+          TEST_BASE_URL: http://127.0.0.1:8080
+        run: bunx playwright test e2e/payment-options-visual.spec.ts --project=chromium
+
+      - name: Commit refreshed baselines
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -z "$(git status --porcelain -- e2e/payment-options-visual.spec.ts-snapshots)" ]; then exit 0; fi
+          git add e2e/payment-options-visual.spec.ts-snapshots
+          git commit -m "test(e2e): refresh PaymentMethodOptions visual baselines (collapsed UI)"
+          git push origin "HEAD:${{ inputs.target_branch }}" || git push origin "HEAD:chore/visual-baselines-auto"
