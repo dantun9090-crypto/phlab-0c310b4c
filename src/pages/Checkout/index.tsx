@@ -992,13 +992,14 @@ export default function CheckoutPage() {
         postcode: 'Please enter a valid postcode for your country.',
         country: 'Please choose your country.',
         shippingMethod: 'Please choose a shipping method.',
+        paymentMethod: 'Please choose a payment method.',
       };
       setLoginError(friendly[firstKey] || 'Please complete the highlighted fields before paying.');
       // Jump back to the step containing the first error and scroll it into view.
       const stepForKey: Record<string, Step> = {
         firstName: 1, lastName: 1, email: 1, phone: 1, password: 1,
         address: 2, city: 2, postcode: 2, country: 2, shippingMethod: 2,
-        age: 3, terms: 3,
+        paymentMethod: 3, age: 3, terms: 3,
       };
       const targetStep = stepForKey[firstKey] ?? currentStep;
       setCurrentStep(targetStep);
