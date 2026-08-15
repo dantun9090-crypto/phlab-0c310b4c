@@ -112,8 +112,8 @@ The compound is currently progressing through Phase 3 evaluation (TRIUMPH progra
   {
     slug: 'hplc-testing-explained',
     title: 'HPLC Testing Explained: How Peptide Purity Is Verified',
-    seoTitle: 'What Is HPLC Testing? Peptide Purity Verified | PH Labs',
-    seoDescription: 'How reversed-phase HPLC verifies peptide purity: reading chromatograms, peak-area %, and LC-MS confirmation on every batch. For Research Use Only.',
+    seoTitle: 'HPLC Testing Explained: Peptide Purity & Batch CoA',
+    seoDescription: 'How to verify research peptide purity from an HPLC chromatogram: peak-area %, retention time, system suitability limits and LC-MS batch CoA checks.',
 
     subtitle: 'Understanding reversed-phase HPLC, analytical method development, and how chromatographic data validates research-grade peptide quality',
     category: 'Analytical Chemistry',
@@ -172,6 +172,68 @@ For a peptide such as BPC-157 (sequence: GEPPPGKPADDAGLV, MW 1419.5 Da), the cor
       {
         heading: 'What "Research Grade" Means in Practice',
         body: `In the context of research peptide suppliers, "research grade" typically implies that each batch has been tested by RP-HPLC and the result meets a defined purity specification — most commonly ≥98% peak area by UV at 214 nm. Reputable suppliers provide the actual chromatogram (not merely a stated percentage), along with the lot number, method parameters, and date of analysis. Batch analytical data should be available on request and traceable to a unique batch/lot identifier printed on the product vial.`
+      },
+      {
+        heading: 'System Suitability: Proving the Method Itself Is Valid',
+        body: `A purity number is only meaningful if the chromatographic system was performing correctly when the injection was made. Analytical methods for peptides are normally qualified against ICH Q2(R2) validation characteristics — specificity, linearity, range, accuracy, precision, and robustness — and each analytical run then begins with a system suitability test (SST) on a reference injection. If the SST fails, the batch result is invalid regardless of how clean the chromatogram looks.
+
+The acceptance limits below are the values most commonly applied to reversed-phase peptide assays. A complete batch record should state which limits were used and the measured values obtained, not simply that the run "passed".`,
+        table: {
+          headers: ['System suitability parameter', 'Typical acceptance limit', 'What a failure indicates'],
+          rows: [
+            ['Theoretical plates (N)', '≥ 2,000', 'Column degradation or void formation'],
+            ['Tailing factor (Tf)', '0.8 – 1.5', 'Secondary interactions, overloaded column'],
+            ['Resolution (Rs) vs nearest impurity', '≥ 1.5', 'Co-elution — purity may be overstated'],
+            ['Retention time RSD (5 injections)', '≤ 1.0%', 'Pump or gradient instability'],
+            ['Peak area RSD (5 injections)', '≤ 2.0%', 'Injector or detector variability'],
+            ['Signal-to-noise at reporting limit', '≥ 10:1', 'Impurities below detection, purity inflated'],
+          ]
+        },
+        callout: {
+          type: 'note',
+          text: 'Resolution is the parameter most often overlooked. If a synthesis-related impurity co-elutes with the main peak, its area is counted as target compound — an apparently higher purity result from a worse separation.'
+        }
+      },
+      {
+        heading: 'Impurity Profile: What the Extra Peaks Usually Are',
+        body: `Synthesis-related impurities in solid-phase peptide synthesis are predictable, and their retention behaviour relative to the target peak is a useful diagnostic. Mapping each secondary peak to a probable origin — rather than reporting only a total impurity figure — is what separates a genuine analytical report from a marketing certificate.`,
+        table: {
+          headers: ['Impurity class', 'Origin', 'Typical elution vs target'],
+          rows: [
+            ['Deletion / truncated sequences', 'Incomplete coupling during chain assembly', 'Earlier (less hydrophobic)'],
+            ['Oxidised Met / Trp', 'Air or peroxide exposure in solution or storage', 'Earlier, close to main peak'],
+            ['Deamidated Asn / Gln', 'Hydrolysis at neutral-to-basic pH', 'Very close, often a shoulder'],
+            ['Incomplete deprotection (tBu, Trt)', 'Insufficient cleavage cocktail time', 'Later (more hydrophobic)'],
+            ['Acetylated / capped chains', 'Capping steps or acetic acid carry-over', 'Later'],
+            ['Dimers and disulfide scrambles', 'Cys-containing sequences, oxidative folding', 'Markedly later'],
+            ['TFA and residual solvents', 'Ion-pairing agent and cleavage reagents', 'Not UV-active at 214 nm — needs separate testing'],
+          ]
+        }
+      },
+      {
+        heading: 'Batch Verification Standards: Auditing a Certificate of Analysis',
+        body: `Batch verification is a documentation problem as much as an analytical one. A certificate that reports "≥99% HPLC" with no chromatogram, no method, and no lot number cannot be audited and should be treated as an unverified claim. Use the checklist below to assess any research peptide CoA:
+
+<strong>1. Lot traceability.</strong> The lot or batch identifier on the certificate must match the identifier printed on the vial, and the analysis date must post-date the synthesis date.
+<strong>2. Raw chromatogram included.</strong> The trace itself, with a visible baseline, time axis, and integration marks — not a cropped image or a bare percentage.
+<strong>3. Full method statement.</strong> Column chemistry and dimensions, both mobile phases, gradient profile, flow rate, detection wavelength, and injection volume.
+<strong>4. Integration and reporting thresholds.</strong> The disregard limit (e.g. peaks below 0.05% not reported) must be stated, since a high threshold quietly removes impurities from the total.
+<strong>5. Orthogonal identity confirmation.</strong> An LC-MS or MALDI-TOF result giving the observed mass alongside the theoretical mass for the sequence.
+<strong>6. Water content and counter-ion.</strong> Peptides are typically supplied as TFA or acetate salts and are hygroscopic; net peptide content differs from HPLC purity, and only a Karl Fischer or elemental result quantifies it.
+<strong>7. Analyst and laboratory identification.</strong> A named laboratory, signature or reviewer, and the instrument used.
+<strong>8. Reproducibility across batches.</strong> Two batches with byte-identical chromatograms are a template, not two analyses.
+
+Where a supplier's data does not satisfy these points, independent third-party retesting is the only reliable route to verification. PH Labs batch records and chromatograms are available on request — see <a href="/quality-control" style="color: #10b981; text-decoration: underline;">quality control</a> and <a href="/lab-reports" style="color: #10b981; text-decoration: underline;">lab reports</a> for current documentation.`,
+        callout: {
+          type: 'warning',
+          text: 'For Research Use Only. Not for Human Consumption. Analytical purity data describes chemical composition only and carries no implication of suitability for any use in humans or animals.'
+        }
+      },
+      {
+        heading: 'Purity vs Net Peptide Content vs Assay',
+        body: `Three numbers are routinely conflated, and they answer different questions. <strong>HPLC purity</strong> is a relative measure: the proportion of UV-absorbing material that is the target compound. <strong>Net peptide content</strong> is an absolute measure: the mass fraction of the supplied powder that is peptide rather than water, counter-ion, or residual salt — commonly 70–90% for a lyophilised TFA salt. <strong>Assay or quantitative content</strong> is the amount of target peptide per vial, determined against a gravimetric or UV-calibrated standard.
+
+A vial can therefore be 99% pure by HPLC and still contain considerably less than the labelled mass of peptide. For quantitative work — receptor binding curves, EC50 determination, any concentration-dependent endpoint — the assay figure, not the purity figure, is the one that determines your stock concentration.`
       },
       {
         heading: 'Frequently Asked Questions about HPLC Testing',
