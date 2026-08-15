@@ -265,9 +265,15 @@ export default function PaymentMethodOptions({
 
             <div className="flex items-start gap-3 pr-24">
               <Radio checked={primarySelected} tone="emerald" />
+              <span
+                aria-hidden="true"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/25 bg-emerald-500/10"
+              >
+                <Landmark className="h-4.5 w-4.5 text-emerald-300" />
+              </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-lg font-semibold text-white">Pay by Bank</span>
+                  <span className="text-lg font-semibold text-white leading-tight">Pay by Bank</span>
                   {primarySelected && (
                     <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
                       <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
