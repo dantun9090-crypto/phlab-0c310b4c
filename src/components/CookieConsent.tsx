@@ -79,7 +79,7 @@ export function CookieConsent() {
       timer = setTimeout(() => {
         if (getCookiePreferences()) return;
         setVisible(true);
-      }, 600);
+      }, 1200);
     };
 
     const isGateBlocking = () => {
