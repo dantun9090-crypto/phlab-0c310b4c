@@ -871,6 +871,7 @@ export default function CheckoutPage() {
       if (!form.shippingMethod) e.shippingMethod = 'Please choose a shipping method';
     }
     if (step === 3) {
+      if (!form.paymentMethod) e.paymentMethod = 'Please choose a payment method';
       if (!form.ageVerified) e.age = 'You must confirm you are 18 or older to place this order';
       if (!form.acceptedTerms) e.terms = 'You must confirm Research Use Only and accept the Terms & Conditions';
     }
