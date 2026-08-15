@@ -47,7 +47,7 @@ interface CheckoutForm {
   city: string;
   postcode: string;
   country: string;
-  paymentMethod: 'bank_transfer' | 'pay_by_bank' | 'wallid' | 'peptidepay';
+  paymentMethod: '' | 'bank_transfer' | 'pay_by_bank' | 'wallid' | 'peptidepay';
   acceptedTerms: boolean;
   ageVerified: boolean;
   createAccount: boolean;
