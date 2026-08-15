@@ -72,15 +72,15 @@ function Radio({ checked, tone = "emerald" }: { checked: boolean; tone?: "emeral
 
 function TrustBadgesRow() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4 pt-4 border-t border-emerald-500/20">
+    <div className="mt-4 pt-3 border-t border-emerald-500/20 flex flex-wrap gap-1.5">
       {TRUST_ITEMS.map(({ icon: Icon, label }) => (
-        <div
+        <span
           key={label}
-          className="flex items-center gap-2 text-[11px] sm:text-xs text-slate-200 whitespace-nowrap"
+          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/[0.07] px-2.5 py-1 text-[10.5px] font-medium text-slate-200 whitespace-nowrap"
         >
-          <Icon className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-          <span>{label}</span>
-        </div>
+          <Icon className="w-3 h-3 text-emerald-400 shrink-0" />
+          {label}
+        </span>
       ))}
     </div>
   );
@@ -211,8 +211,24 @@ export default function PaymentMethodOptions({
 
   };
 
+  const methodCount = (showPrimary ? 1 : 0) + (peptidepayEnabled ? 1 : 0) + 1;
+
   return (
     <>
+    <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-white">
+          Payment method
+        </h3>
+        <p className="text-xs text-slate-400 mt-0.5">
+          {methodCount} secure ways to pay — choose one below
+        </p>
+      </div>
+      <span className="inline-flex items-center gap-1.5 shrink-0 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-[10.5px] font-semibold text-emerald-300">
+        <Lock className="w-3 h-3" aria-hidden="true" />
+        Secure
+      </span>
+    </div>
     <div
       ref={rootRef}
       role="radiogroup"
@@ -249,9 +265,15 @@ export default function PaymentMethodOptions({
 
             <div className="flex items-start gap-3 pr-24">
               <Radio checked={primarySelected} tone="emerald" />
+              <span
+                aria-hidden="true"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/25 bg-emerald-500/10"
+              >
+                <Landmark className="h-4 w-4 text-emerald-300" />
+              </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-lg font-semibold text-white">Pay by Bank</span>
+                  <span className="text-lg font-semibold text-white leading-tight">Pay by Bank</span>
                   {primarySelected && (
                     <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
                       <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
@@ -367,9 +389,18 @@ export default function PaymentMethodOptions({
         >
           <div className="flex items-start gap-3">
             <Radio checked={manualSelected} tone="slate" />
+            <span
+              aria-hidden="true"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5"
+            >
+              <ArrowLeftRight className="h-4 w-4 text-slate-300" />
+            </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-base font-medium text-white">Manual Bank Transfer</span>
+                <span className="text-base font-semibold text-white leading-tight">Manual Bank Transfer</span>
+                <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-300">
+                  48h hold
+                </span>
                 {manualSelected && (
                   <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
                     <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
