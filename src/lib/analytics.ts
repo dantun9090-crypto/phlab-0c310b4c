@@ -14,6 +14,8 @@
  * with `{ analytics: boolean, marketing: boolean }` — we listen here.
  */
 
+import { captureAdClickIdsFromUrl } from './gclid-capture';
+
 declare global {
   interface Window {
     dataLayer?: unknown[];
@@ -231,6 +233,12 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
   if (typeof window === 'undefined') return;
   if (loaded) return;
   if (isBot() || dntEnabled()) return;
+
+  // Capture ad click IDs (gclid/gbraid/wbraid) from the landing URL into
+  // localStorage. They live in the query string, not cookies, so they are
+  // available even when the visitor declines marketing cookies — they power
+  // the server-side Google Ads offline conversion import for those buyers.
+  captureAdClickIdsFromUrl();
 
   const id = (measurementId && measurementId.trim()) || DEFAULT_MEASUREMENT_ID;
   if (!/^G-[A-Z0-9]{6,}$/i.test(id)) return;
@@ -802,4 +810,16 @@ export function getAnalyticsStatus() {
     measurementId: currentId,
     consent: readStoredConsent(),
   };
+}
+
+/**
+ * True when the visitor has granted marketing (ads) consent in the cookie
+ * banner. Used by the success page to tell the server whether the Google
+ * Ads purchase conversion could actually leave the device — in
+ * consent-denied mode gtag still queues the event locally without sending
+ * it, so "queued" alone cannot distinguish real delivery. The server gates
+ * the offline gclid import dedup marker on this flag.
+ */
+export function hasMarketingConsent(): boolean {
+  return readStoredConsent().marketing;
 }

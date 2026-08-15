@@ -86,6 +86,20 @@ const customerSchema = z.object({
   }
 });
 
+// Ad click IDs (gclid/gbraid/wbraid) captured from the landing-page URL by
+// src/lib/gclid-capture.ts. They live in the query string, not cookies, so
+// they are available even when the visitor declines marketing cookies —
+// the server-side Google Ads offline conversion import (CSV feed at
+// /api/public/hooks/offline-conversions) uses them to attribute those
+// sales. Strict shape: these strings end up in a feed fetched by Google.
+const clickIdValue = z.string().regex(/^[A-Za-z0-9_.\-~]{10,500}$/);
+const adClickIdsSchema = z.object({
+  gclid: clickIdValue.optional(),
+  gbraid: clickIdValue.optional(),
+  wbraid: clickIdValue.optional(),
+  capturedAt: z.string().max(40).optional(),
+}).optional().nullable();
+
 export const createOrderInputSchema = z.object({
   items: z.array(itemSchema).min(1).max(50),
   customer: customerSchema,
@@ -96,6 +110,7 @@ export const createOrderInputSchema = z.object({
   couponCode: z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/).optional().nullable(),
   customerNote: z.string().trim().max(500).optional().nullable(),
   idToken: z.string().min(1).max(4096).optional().nullable(),
+  adClickIds: adClickIdsSchema,
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderInputSchema>;
@@ -292,6 +307,16 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
     ...(paymentToken ? {
       paymentTokenHash,
       paymentTokenCreatedAt: nowIso,
+    } : {}),
+    // Ad click IDs for the offline Google Ads conversion import. Stored on
+    // the order so the CSV feed can attribute consent-declined buyers.
+    ...(input.adClickIds && (input.adClickIds.gclid || input.adClickIds.gbraid || input.adClickIds.wbraid) ? {
+      adClickIds: {
+        ...(input.adClickIds.gclid ? { gclid: input.adClickIds.gclid } : {}),
+        ...(input.adClickIds.gbraid ? { gbraid: input.adClickIds.gbraid } : {}),
+        ...(input.adClickIds.wbraid ? { wbraid: input.adClickIds.wbraid } : {}),
+        capturedAt: input.adClickIds.capturedAt ?? nowIso,
+      },
     } : {}),
   };
 

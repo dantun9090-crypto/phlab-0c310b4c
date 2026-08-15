@@ -27,6 +27,7 @@ const BodySchema = z.object({
   idToken: z.string().min(10).max(4096).optional().nullable(),
   paymentToken: z.string().min(32).max(256).optional().nullable(),
   purchaseFired: z.boolean().optional(),
+  adsFired: z.boolean().optional(),
 });
 
 function json(body: unknown, status = 200): Response {
@@ -82,7 +83,7 @@ export const Route = createFileRoute("/api/payments/status")({
         try { raw = await request.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
         const parsed = BodySchema.safeParse(raw);
         if (!parsed.success) return json({ error: "Invalid request" }, 400);
-        const { orderId, idToken, paymentToken, purchaseFired } = parsed.data;
+        const { orderId, idToken, paymentToken, purchaseFired, adsFired } = parsed.data;
         // 1) Authenticate caller (idToken preferred; fall back to paymentToken).
         let userUid: string | null = null;
         if (idToken) {
@@ -145,7 +146,15 @@ export const Route = createFileRoute("/api/payments/status")({
         if (purchaseFired === true) {
           try {
             const { updateDocAdmin } = await import("@/lib/server/firestore-admin");
-            await updateDocAdmin("orders", orderId, { gaClientPurchaseAt: new Date() });
+            await updateDocAdmin("orders", orderId, {
+              gaClientPurchaseAt: new Date(),
+              // Only latch the Ads marker when the browser had marketing
+              // consent (adsFired === true). Without consent the gtag
+              // conversion is merely queued locally and never reaches
+              // Google, so the order must remain eligible for the offline
+              // gclid CSV import (which skips orders carrying this marker).
+              ...(adsFired === true ? { adsClientConversionAt: new Date() } : {}),
+            });
           } catch { /* analytics must never break payments */ }
           return json({ ok: true });
         }

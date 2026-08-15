@@ -756,7 +756,7 @@ exports[`Article JSON-LD snapshots > /resources/hplc-testing-explained 1`] = `
       "url": "https://phlabs.co.uk",
     },
     "datePublished": "2026-03-05",
-    "description": "Hplc Testing Explained: resource notes and references from PH Labs UK.",
+    "description": "How to verify research peptide purity from an HPLC chromatogram: peak-area %, retention time, system suitability limits and LC-MS batch CoA checks.",
     "headline": "HPLC Testing Explained: How Peptide Purity Is Verified",
     "image": [
       "https://phlabs.co.uk/og-image.jpg",

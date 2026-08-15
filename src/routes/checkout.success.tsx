@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader, CheckCircle2, AlertCircle, XCircle, RefreshCw, LifeBuoy } from "lucide-react";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import { trackPurchase, type GaItem } from "@/lib/analytics";
+import { trackPurchase, hasMarketingConsent, type GaItem } from "@/lib/analytics";
 import { trackBingPurchase } from "@/lib/bing-uet";
 
 /**
@@ -79,10 +79,16 @@ async function fireGaPurchaseOnce(
       let paymentToken: string | null = null;
       try { paymentToken = localStorage.getItem(`php_pt_${orderId}`); } catch { /* ignore */ }
       if (idToken || paymentToken) {
+        // adsFired tells the server whether the Google Ads conversion could
+        // really leave the browser (marketing consent granted). Without
+        // consent the gtag event is only queued locally and never reaches
+        // Google, so the order must stay eligible for the offline gclid
+        // CSV import — the server then withholds the dedup marker.
+        const adsFired = hasMarketingConsent();
         void fetch(`/api/payments/status`, {
           method: "POST",
           headers: { "content-type": "application/json", accept: "application/json" },
-          body: JSON.stringify({ orderId, idToken, paymentToken, purchaseFired: true }),
+          body: JSON.stringify({ orderId, idToken, paymentToken, purchaseFired: true, adsFired }),
           cache: "no-store",
         });
       }

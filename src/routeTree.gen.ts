@@ -135,6 +135,7 @@ import { Route as ApiPublicHooksSecurityCleanupRouteImport } from './routes/api/
 import { Route as ApiPublicHooksReindexRouteImport } from './routes/api/public/hooks/reindex'
 import { Route as ApiPublicHooksReconcilePaymentsRouteImport } from './routes/api/public/hooks/reconcile-payments'
 import { Route as ApiPublicHooksPrerenderRecacheRouteImport } from './routes/api/public/hooks/prerender-recache'
+import { Route as ApiPublicHooksOfflineConversionsRouteImport } from './routes/api/public/hooks/offline-conversions'
 import { Route as ApiPublicHooksMonitorProductUrlsRouteImport } from './routes/api/public/hooks/monitor-product-urls'
 import { Route as ApiPublicHooksLighthousePsiRouteImport } from './routes/api/public/hooks/lighthouse-psi'
 import { Route as ApiPublicHooksHealthCheckRouteImport } from './routes/api/public/hooks/health-check'
@@ -808,6 +809,12 @@ const ApiPublicHooksPrerenderRecacheRoute =
     path: '/api/public/hooks/prerender-recache',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksOfflineConversionsRoute =
+  ApiPublicHooksOfflineConversionsRouteImport.update({
+    id: '/api/public/hooks/offline-conversions',
+    path: '/api/public/hooks/offline-conversions',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksMonitorProductUrlsRoute =
   ApiPublicHooksMonitorProductUrlsRouteImport.update({
     id: '/api/public/hooks/monitor-product-urls',
@@ -991,7 +998,6 @@ export interface FileRoutesByFullPath {
   '/products/category/$slug': typeof ProductsCategorySlugRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
   '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
-  '/api/public/health/build': typeof ApiPublicHealthBuildRoute
   '/api/public/hooks/aftership': typeof ApiPublicHooksAftershipRoute
   '/api/public/hooks/backlink-watcher': typeof ApiPublicHooksBacklinkWatcherRoute
   '/api/public/hooks/compound-query-history': typeof ApiPublicHooksCompoundQueryHistoryRoute
@@ -1001,6 +1007,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/health-check': typeof ApiPublicHooksHealthCheckRoute
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
+  '/api/public/hooks/offline-conversions': typeof ApiPublicHooksOfflineConversionsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/hooks/reindex': typeof ApiPublicHooksReindexRoute
@@ -1038,6 +1045,7 @@ export interface FileRoutesByTo {
   '/quality-control': typeof QualityControlRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/request-catalog': typeof RequestCatalogRoute
+  '/research': typeof ResearchRouteWithChildren
   '/robots.txt': typeof RobotsDottxtRoute
   '/search': typeof SearchRoute
   '/sentry-test': typeof SentryTestRoute
@@ -1129,7 +1137,6 @@ export interface FileRoutesByTo {
   '/products/category/$slug': typeof ProductsCategorySlugRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
   '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
-  '/api/public/health/build': typeof ApiPublicHealthBuildRoute
   '/api/public/hooks/aftership': typeof ApiPublicHooksAftershipRoute
   '/api/public/hooks/backlink-watcher': typeof ApiPublicHooksBacklinkWatcherRoute
   '/api/public/hooks/compound-query-history': typeof ApiPublicHooksCompoundQueryHistoryRoute
@@ -1139,6 +1146,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/health-check': typeof ApiPublicHooksHealthCheckRoute
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
+  '/api/public/hooks/offline-conversions': typeof ApiPublicHooksOfflineConversionsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/hooks/reindex': typeof ApiPublicHooksReindexRoute
@@ -1158,7 +1166,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
-  '/_marketing': typeof MarketingRouteWithChildren
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
   '/admin': typeof AdminRouteWithChildren
@@ -1190,7 +1197,8 @@ export interface FileRoutesById {
   '/{$indexnowKey}.txt': typeof Char123indexnowKeyChar125DottxtRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  '/_marketing/compound': typeof MarketingCompoundRoute
+  '/_marketing': typeof MarketingRouteWithChildren
+  '/compound': typeof MarketingCompoundRoute
   '/admin/audit-report': typeof AdminAuditReportRoute
   '/admin/health': typeof AdminHealthRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
@@ -1212,7 +1220,7 @@ export interface FileRoutesById {
   '/order/success': typeof OrderSuccessRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
-  '/products_/$slug': typeof ProductsSlugRoute
+  '/products/$slug': typeof ProductsSlugRoute
   '/research/bpc-157-tb-500-synergy': typeof ResearchBpc157Tb500SynergyRoute
   '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
   '/research/bpc-157-vs-tb-500': typeof ResearchBpc157VsTb500Route
@@ -1268,9 +1276,9 @@ export interface FileRoutesById {
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/products/category/$slug': typeof ProductsCategorySlugRoute
+  '/products_/$slug': typeof ProductsSlugRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
   '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
-  '/api/public/health/build': typeof ApiPublicHealthBuildRoute
   '/api/public/hooks/aftership': typeof ApiPublicHooksAftershipRoute
   '/api/public/hooks/backlink-watcher': typeof ApiPublicHooksBacklinkWatcherRoute
   '/api/public/hooks/compound-query-history': typeof ApiPublicHooksCompoundQueryHistoryRoute
@@ -1280,6 +1288,7 @@ export interface FileRoutesById {
   '/api/public/hooks/health-check': typeof ApiPublicHooksHealthCheckRoute
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
+  '/api/public/hooks/offline-conversions': typeof ApiPublicHooksOfflineConversionsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/hooks/reindex': typeof ApiPublicHooksReindexRoute
@@ -1411,7 +1420,6 @@ export interface FileRouteTypes {
     | '/products/category/$slug'
     | '/api/public/diag/build-state'
     | '/api/public/diag/cache-headers'
-    | '/api/public/health/build'
     | '/api/public/hooks/aftership'
     | '/api/public/hooks/backlink-watcher'
     | '/api/public/hooks/compound-query-history'
@@ -1421,6 +1429,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/health-check'
     | '/api/public/hooks/lighthouse-psi'
     | '/api/public/hooks/monitor-product-urls'
+    | '/api/public/hooks/offline-conversions'
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/reconcile-payments'
     | '/api/public/hooks/reindex'
@@ -1458,6 +1467,7 @@ export interface FileRouteTypes {
     | '/quality-control'
     | '/refund-policy'
     | '/request-catalog'
+    | '/research'
     | '/robots.txt'
     | '/search'
     | '/sentry-test'
@@ -1549,7 +1559,6 @@ export interface FileRouteTypes {
     | '/products/category/$slug'
     | '/api/public/diag/build-state'
     | '/api/public/diag/cache-headers'
-    | '/api/public/health/build'
     | '/api/public/hooks/aftership'
     | '/api/public/hooks/backlink-watcher'
     | '/api/public/hooks/compound-query-history'
@@ -1559,6 +1568,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/health-check'
     | '/api/public/hooks/lighthouse-psi'
     | '/api/public/hooks/monitor-product-urls'
+    | '/api/public/hooks/offline-conversions'
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/reconcile-payments'
     | '/api/public/hooks/reindex'
@@ -1577,7 +1587,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$'
-    | '/_marketing'
     | '/about'
     | '/account'
     | '/admin'
@@ -1609,7 +1618,8 @@ export interface FileRouteTypes {
     | '/{$indexnowKey}.txt'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
-    | '/_marketing/compound'
+    | '/_marketing'
+    | '/compound'
     | '/admin/audit-report'
     | '/admin/health'
     | '/admin/merchant-feed-preview'
@@ -1631,7 +1641,7 @@ export interface FileRouteTypes {
     | '/order/success'
     | '/payment/cancel'
     | '/payment/success'
-    | '/products_/$slug'
+    | '/products/$slug'
     | '/research/bpc-157-tb-500-synergy'
     | '/research/bpc-157-uk'
     | '/research/bpc-157-vs-tb-500'
@@ -1687,9 +1697,9 @@ export interface FileRouteTypes {
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
     | '/products/category/$slug'
+    | '/products_/$slug'
     | '/api/public/diag/build-state'
     | '/api/public/diag/cache-headers'
-    | '/api/public/health/build'
     | '/api/public/hooks/aftership'
     | '/api/public/hooks/backlink-watcher'
     | '/api/public/hooks/compound-query-history'
@@ -1699,6 +1709,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/health-check'
     | '/api/public/hooks/lighthouse-psi'
     | '/api/public/hooks/monitor-product-urls'
+    | '/api/public/hooks/offline-conversions'
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/reconcile-payments'
     | '/api/public/hooks/reindex'
@@ -1821,6 +1832,7 @@ export interface RootRouteChildren {
   ApiPublicHooksHealthCheckRoute: typeof ApiPublicHooksHealthCheckRoute
   ApiPublicHooksLighthousePsiRoute: typeof ApiPublicHooksLighthousePsiRoute
   ApiPublicHooksMonitorProductUrlsRoute: typeof ApiPublicHooksMonitorProductUrlsRoute
+  ApiPublicHooksOfflineConversionsRoute: typeof ApiPublicHooksOfflineConversionsRoute
   ApiPublicHooksPrerenderRecacheRoute: typeof ApiPublicHooksPrerenderRecacheRoute
   ApiPublicHooksReconcilePaymentsRoute: typeof ApiPublicHooksReconcilePaymentsRoute
   ApiPublicHooksReindexRoute: typeof ApiPublicHooksReindexRoute
@@ -2044,8 +2056,8 @@ declare module '@tanstack/react-router' {
     }
     '/_marketing': {
       id: '/_marketing'
-      path: ''
-      fullPath: '/'
+      path: '/_marketing'
+      fullPath: ''
       preLoaderRoute: typeof MarketingRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -2065,7 +2077,7 @@ declare module '@tanstack/react-router' {
     }
     '/resources/': {
       id: '/resources/'
-      path: '/resources'
+      path: '/resources/'
       fullPath: '/resources/'
       preLoaderRoute: typeof ResourcesIndexRouteImport
       parentRoute: typeof rootRouteImport
@@ -2075,11 +2087,11 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/research/'
       preLoaderRoute: typeof ResearchIndexRouteImport
-      parentRoute: typeof ResearchRoute
+      parentRoute: typeof ResearchRouteImport
     }
     '/downloads/': {
       id: '/downloads/'
-      path: '/downloads'
+      path: '/downloads/'
       fullPath: '/downloads/'
       preLoaderRoute: typeof DownloadsIndexRouteImport
       parentRoute: typeof rootRouteImport
@@ -2103,63 +2115,63 @@ declare module '@tanstack/react-router' {
       path: '/tirzepatide-vs-retatrutide'
       fullPath: '/research/tirzepatide-vs-retatrutide'
       preLoaderRoute: typeof ResearchTirzepatideVsRetatrutideRouteImport
-      parentRoute: typeof ResearchRoute
+      parentRoute: typeof ResearchRouteImport
     }
     '/research/retatrutide-uk': {
       id: '/research/retatrutide-uk'
       path: '/retatrutide-uk'
       fullPath: '/research/retatrutide-uk'
       preLoaderRoute: typeof ResearchRetatrutideUkRouteImport
-      parentRoute: typeof ResearchRoute
+      parentRoute: typeof ResearchRouteImport
     }
     '/research/retatrutide-comprehensive-guide': {
       id: '/research/retatrutide-comprehensive-guide'
       path: '/retatrutide-comprehensive-guide'
       fullPath: '/research/retatrutide-comprehensive-guide'
       preLoaderRoute: typeof ResearchRetatrutideComprehensiveGuideRouteImport
-      parentRoute: typeof ResearchRoute
+      parentRoute: typeof ResearchRouteImport
     }
     '/research/pt-141-uk': {
       id: '/research/pt-141-uk'
       path: '/pt-141-uk'
       fullPath: '/research/pt-141-uk'
       preLoaderRoute: typeof ResearchPt141UkRouteImport
-      parentRoute: typeof ResearchRoute
+      parentRoute: typeof ResearchRouteImport
     }
     '/research/ghk-cu-guide': {
       id: '/research/ghk-cu-guide'
       path: '/ghk-cu-guide'
       fullPath: '/research/ghk-cu-guide'
       preLoaderRoute: typeof ResearchGhkCuGuideRouteImport
-      parentRoute: typeof ResearchRoute
+      parentRoute: typeof ResearchRouteImport
     }
     '/research/cjc-1295-ipamorelin-synergy': {
       id: '/research/cjc-1295-ipamorelin-synergy'
       path: '/cjc-1295-ipamorelin-synergy'
       fullPath: '/research/cjc-1295-ipamorelin-synergy'
       preLoaderRoute: typeof ResearchCjc1295IpamorelinSynergyRouteImport
-      parentRoute: typeof ResearchRoute
+      parentRoute: typeof ResearchRouteImport
     }
     '/research/bpc-157-vs-tb-500': {
       id: '/research/bpc-157-vs-tb-500'
       path: '/bpc-157-vs-tb-500'
       fullPath: '/research/bpc-157-vs-tb-500'
       preLoaderRoute: typeof ResearchBpc157VsTb500RouteImport
-      parentRoute: typeof ResearchRoute
+      parentRoute: typeof ResearchRouteImport
     }
     '/research/bpc-157-uk': {
       id: '/research/bpc-157-uk'
       path: '/bpc-157-uk'
       fullPath: '/research/bpc-157-uk'
       preLoaderRoute: typeof ResearchBpc157UkRouteImport
-      parentRoute: typeof ResearchRoute
+      parentRoute: typeof ResearchRouteImport
     }
     '/research/bpc-157-tb-500-synergy': {
       id: '/research/bpc-157-tb-500-synergy'
       path: '/bpc-157-tb-500-synergy'
       fullPath: '/research/bpc-157-tb-500-synergy'
       preLoaderRoute: typeof ResearchBpc157Tb500SynergyRouteImport
-      parentRoute: typeof ResearchRoute
+      parentRoute: typeof ResearchRouteImport
     }
     '/products_/$slug': {
       id: '/products_/$slug'
@@ -2278,49 +2290,49 @@ declare module '@tanstack/react-router' {
       path: '/purge'
       fullPath: '/admin/purge'
       preLoaderRoute: typeof AdminPurgeRouteImport
-      parentRoute: typeof AdminRoute
+      parentRoute: typeof AdminRouteImport
     }
     '/admin/publish-status': {
       id: '/admin/publish-status'
       path: '/publish-status'
       fullPath: '/admin/publish-status'
       preLoaderRoute: typeof AdminPublishStatusRouteImport
-      parentRoute: typeof AdminRoute
+      parentRoute: typeof AdminRouteImport
     }
     '/admin/newsletter': {
       id: '/admin/newsletter'
       path: '/newsletter'
       fullPath: '/admin/newsletter'
       preLoaderRoute: typeof AdminNewsletterRouteImport
-      parentRoute: typeof AdminRoute
+      parentRoute: typeof AdminRouteImport
     }
     '/admin/merchant-feed-preview': {
       id: '/admin/merchant-feed-preview'
       path: '/merchant-feed-preview'
       fullPath: '/admin/merchant-feed-preview'
       preLoaderRoute: typeof AdminMerchantFeedPreviewRouteImport
-      parentRoute: typeof AdminRoute
+      parentRoute: typeof AdminRouteImport
     }
     '/admin/health': {
       id: '/admin/health'
       path: '/health'
       fullPath: '/admin/health'
       preLoaderRoute: typeof AdminHealthRouteImport
-      parentRoute: typeof AdminRoute
+      parentRoute: typeof AdminRouteImport
     }
     '/admin/audit-report': {
       id: '/admin/audit-report'
       path: '/audit-report'
       fullPath: '/admin/audit-report'
       preLoaderRoute: typeof AdminAuditReportRouteImport
-      parentRoute: typeof AdminRoute
+      parentRoute: typeof AdminRouteImport
     }
     '/_marketing/compound': {
       id: '/_marketing/compound'
       path: '/compound'
       fullPath: '/compound'
       preLoaderRoute: typeof MarketingCompoundRouteImport
-      parentRoute: typeof MarketingRoute
+      parentRoute: typeof MarketingRouteImport
     }
     '/.well-known/oauth-protected-resource': {
       id: '/.well-known/oauth-protected-resource'
@@ -2341,7 +2353,7 @@ declare module '@tanstack/react-router' {
       path: '/category/$slug'
       fullPath: '/products/category/$slug'
       preLoaderRoute: typeof ProductsCategorySlugRouteImport
-      parentRoute: typeof ProductsRoute
+      parentRoute: typeof ProductsRouteImport
     }
     '/api/webhooks/wallid': {
       id: '/api/webhooks/wallid'
@@ -2721,6 +2733,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksPrerenderRecacheRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/offline-conversions': {
+      id: '/api/public/hooks/offline-conversions'
+      path: '/api/public/hooks/offline-conversions'
+      fullPath: '/api/public/hooks/offline-conversions'
+      preLoaderRoute: typeof ApiPublicHooksOfflineConversionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/monitor-product-urls': {
       id: '/api/public/hooks/monitor-product-urls'
       path: '/api/public/hooks/monitor-product-urls'
@@ -3004,6 +3023,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksHealthCheckRoute: ApiPublicHooksHealthCheckRoute,
   ApiPublicHooksLighthousePsiRoute: ApiPublicHooksLighthousePsiRoute,
   ApiPublicHooksMonitorProductUrlsRoute: ApiPublicHooksMonitorProductUrlsRoute,
+  ApiPublicHooksOfflineConversionsRoute: ApiPublicHooksOfflineConversionsRoute,
   ApiPublicHooksPrerenderRecacheRoute: ApiPublicHooksPrerenderRecacheRoute,
   ApiPublicHooksReconcilePaymentsRoute: ApiPublicHooksReconcilePaymentsRoute,
   ApiPublicHooksReindexRoute: ApiPublicHooksReindexRoute,
