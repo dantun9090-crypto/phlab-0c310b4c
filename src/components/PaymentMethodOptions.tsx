@@ -35,7 +35,8 @@ export interface PaymentMethodOptionsProps {
   wallidEnabled?: boolean;
   /** PeptidePay (card / Apple Pay / Google Pay / crypto) availability. */
   peptidepayEnabled?: boolean;
-  value: PaymentMethodValue;
+  /** Empty string means no method selected yet — both cards stay collapsed. */
+  value: PaymentMethodValue | "";
   onChange: (next: PaymentMethodValue) => void;
 }
 
