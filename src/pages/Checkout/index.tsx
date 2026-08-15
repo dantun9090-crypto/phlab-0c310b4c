@@ -653,18 +653,9 @@ export default function CheckoutPage() {
     return () => { cancelled = true; };
   }, []);
 
-  // Default payment method: Wallid first, then dynamic Pay by Bank, then manual fallback.
-  useEffect(() => {
-    if (wallidEnabled) {
-      setForm((prev) => ({ ...prev, paymentMethod: 'wallid' }));
-      return;
-    }
-    if (paymentOptions && (paymentOptions.primary || paymentOptions.backups.length > 0)) {
-      setForm((prev) => ({ ...prev, paymentMethod: 'pay_by_bank' }));
-      return;
-    }
-    setForm((prev) => ({ ...prev, paymentMethod: 'bank_transfer' }));
-  }, [paymentOptions, wallidEnabled]);
+  // No auto-selected payment method: both options stay collapsed by default
+  // so the user makes an explicit choice. Validation enforces a selection
+  // before the order can be placed.
 
   // Calculations
   const subtotal = cart.reduce((s, i) => s + i.priceNum * i.quantity, 0);
