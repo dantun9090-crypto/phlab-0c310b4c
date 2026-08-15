@@ -15,7 +15,7 @@ jobs:
   snapshots:
     name: Regenerate + commit visual baselines
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v5
         with:
@@ -51,7 +51,18 @@ jobs:
       - name: Regenerate baselines
         env:
           TEST_BASE_URL: http://127.0.0.1:8080
-        run: bunx playwright test e2e/payment-options-visual.spec.ts --project=chromium --update-snapshots
+        run: |
+          bunx playwright test e2e/payment-options-visual.spec.ts --project=chromium --update-snapshots || {
+            echo "==== first attempt failed; server.log tail: ===="
+            tail -n 100 server.log || true
+            echo "==== retrying once ===="
+            sleep 3
+            bunx playwright test e2e/payment-options-visual.spec.ts --project=chromium --update-snapshots || {
+              echo "==== second attempt failed; server.log tail: ===="
+              tail -n 200 server.log || true
+              exit 1
+            }
+          }
 
       - name: Verify baselines pass as-is
         env:
