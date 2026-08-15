@@ -47,7 +47,7 @@ interface CheckoutForm {
   city: string;
   postcode: string;
   country: string;
-  paymentMethod: 'bank_transfer' | 'pay_by_bank' | 'wallid' | 'peptidepay';
+  paymentMethod: '' | 'bank_transfer' | 'pay_by_bank' | 'wallid' | 'peptidepay';
   acceptedTerms: boolean;
   ageVerified: boolean;
   createAccount: boolean;
@@ -120,7 +120,7 @@ export default function CheckoutPage() {
     city: '',
     postcode: '',
     country: 'United Kingdom',
-    paymentMethod: 'wallid',
+    paymentMethod: '',
     acceptedTerms: false,
     ageVerified: false,
     createAccount: false,
@@ -653,18 +653,9 @@ export default function CheckoutPage() {
     return () => { cancelled = true; };
   }, []);
 
-  // Default payment method: Wallid first, then dynamic Pay by Bank, then manual fallback.
-  useEffect(() => {
-    if (wallidEnabled) {
-      setForm((prev) => ({ ...prev, paymentMethod: 'wallid' }));
-      return;
-    }
-    if (paymentOptions && (paymentOptions.primary || paymentOptions.backups.length > 0)) {
-      setForm((prev) => ({ ...prev, paymentMethod: 'pay_by_bank' }));
-      return;
-    }
-    setForm((prev) => ({ ...prev, paymentMethod: 'bank_transfer' }));
-  }, [paymentOptions, wallidEnabled]);
+  // No auto-selected payment method: both options stay collapsed by default
+  // so the user makes an explicit choice. Validation enforces a selection
+  // before the order can be placed.
 
   // Calculations
   const subtotal = cart.reduce((s, i) => s + i.priceNum * i.quantity, 0);
@@ -880,6 +871,7 @@ export default function CheckoutPage() {
       if (!form.shippingMethod) e.shippingMethod = 'Please choose a shipping method';
     }
     if (step === 3) {
+      if (!form.paymentMethod) e.paymentMethod = 'Please choose a payment method';
       if (!form.ageVerified) e.age = 'You must confirm you are 18 or older to place this order';
       if (!form.acceptedTerms) e.terms = 'You must confirm Research Use Only and accept the Terms & Conditions';
     }
@@ -1000,13 +992,14 @@ export default function CheckoutPage() {
         postcode: 'Please enter a valid postcode for your country.',
         country: 'Please choose your country.',
         shippingMethod: 'Please choose a shipping method.',
+        paymentMethod: 'Please choose a payment method.',
       };
       setLoginError(friendly[firstKey] || 'Please complete the highlighted fields before paying.');
       // Jump back to the step containing the first error and scroll it into view.
       const stepForKey: Record<string, Step> = {
         firstName: 1, lastName: 1, email: 1, phone: 1, password: 1,
         address: 2, city: 2, postcode: 2, country: 2, shippingMethod: 2,
-        age: 3, terms: 3,
+        paymentMethod: 3, age: 3, terms: 3,
       };
       const targetStep = stepForKey[firstKey] ?? currentStep;
       setCurrentStep(targetStep);
@@ -1043,7 +1036,7 @@ export default function CheckoutPage() {
       trackAddPaymentInfo(
         cartToGaItems(),
         Number(total) || 0,
-        form.paymentMethod === 'wallid' ? 'Wallid Pay by Bank' : form.paymentMethod === 'pay_by_bank' ? 'Open Banking' : 'Bank Transfer',
+        form.paymentMethod === 'wallid' ? 'Wallid Pay by Bank' : form.paymentMethod === 'pay_by_bank' ? 'Open Banking' : form.paymentMethod === 'peptidepay' ? 'Card / Apple Pay / Google Pay' : 'Bank Transfer',
       );
     } catch { /* analytics never blocks payment */ }
 
@@ -1133,7 +1126,7 @@ export default function CheckoutPage() {
               country: form.country,
             },
             shippingMethod: form.shippingMethod,
-            paymentMethod: form.paymentMethod,
+            paymentMethod: form.paymentMethod as Exclude<CheckoutForm['paymentMethod'], ''>,
             ageVerified: true,
             termsAccepted: true,
             couponCode: appliedCoupon?.code ?? null,
@@ -2154,8 +2147,12 @@ export default function CheckoutPage() {
                       onChange={(v) => setField('paymentMethod', v)}
                     />
 
-                    {/* Selected-method info is now rendered inside PaymentMethodOptions cards to remove duplication. */}
-
+                    {errors.paymentMethod && (
+                      <p className="text-red-400 text-sm flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                        {errors.paymentMethod}
+                      </p>
+                    )}
 
                     {/* Discount code */}
                     <div>
