@@ -120,24 +120,27 @@ export function CookieConsent() {
     };
   }, []);
 
+  /** Fade the bar out, then unmount once the 300ms transition finishes. */
+  const closeWithFade = () => {
+    setVisible(false);
+    window.setTimeout(() => setDismissed(true), 320);
+  };
+
   const acceptAll = () => {
     savePreferences({ essential: true, analytics: true, marketing: true });
-    setVisible(false);
-    setDismissed(true);
+    closeWithFade();
   };
 
   const rejectAll = () => {
     savePreferences({ essential: true, analytics: false, marketing: false });
     setAnalytics(false);
     setMarketing(false);
-    setVisible(false);
-    setDismissed(true);
+    closeWithFade();
   };
 
   const acceptSelected = () => {
     savePreferences({ essential: true, analytics, marketing });
-    setVisible(false);
-    setDismissed(true);
+    closeWithFade();
   };
 
   // Consent already stored → do not render the banner at all. The footer
