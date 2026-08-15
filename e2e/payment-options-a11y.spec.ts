@@ -59,9 +59,11 @@ test.describe("PaymentMethodOptions — a11y + keyboard", () => {
     const payByBank = page.getByTestId("pay-by-bank-button");
     const manual = page.getByTestId("manual-bank-transfer-button");
 
-    // Tab through the page until the manual transfer button is focused, then
-    // activate it with the keyboard (Space). This proves real keyboard users
-    // can reach + select it without a mouse.
+    // Start collapsed: neither option carries aria-describedby.
+    expect(await payByBank.getAttribute("aria-describedby")).toBeNull();
+    expect(await manual.getAttribute("aria-describedby")).toBeNull();
+
+    // Focus and activate the manual transfer button with the keyboard (Space).
     await manual.focus();
     await expect(manual).toBeFocused();
     await page.keyboard.press("Space");
@@ -69,8 +71,7 @@ test.describe("PaymentMethodOptions — a11y + keyboard", () => {
     await expect(manual).toHaveAttribute("aria-checked", "true");
     await expect(payByBank).toHaveAttribute("aria-checked", "false");
 
-    // aria-describedby must point to the currently-rendered instructions and
-    // must not linger on the now-unselected option.
+    // aria-describedby must point to the currently-rendered instructions.
     await expect(manual).toHaveAttribute(
       "aria-describedby",
       "manual-bank-transfer-details",
@@ -78,7 +79,7 @@ test.describe("PaymentMethodOptions — a11y + keyboard", () => {
     expect(await payByBank.getAttribute("aria-describedby")).toBeNull();
     await expect(page.locator("#manual-bank-transfer-details")).toBeVisible();
 
-    // Now switch back to pay-by-bank with Enter and re-check the wiring.
+    // Now switch to pay-by-bank with Enter and re-check the wiring.
     await payByBank.focus();
     await page.keyboard.press("Enter");
     await expect(payByBank).toHaveAttribute("aria-checked", "true");
