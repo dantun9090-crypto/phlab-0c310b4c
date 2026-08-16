@@ -329,11 +329,12 @@ test.describe("cache stability — page must not auto-refresh", () => {
         `${path}: ${repeatedDocGets.length} GETs to ${targetNorm} — reload loop detected`,
       ).toBeLessThanOrEqual(1);
 
-      // 3. Sane Cache-Control on the primary document.
+      // 3. Sane Cache-Control on the primary document (after retries).
       expect(
         cacheControlError,
-        `${path}: Cache-Control header invalid — ${cacheControlError}`,
+        `${path}: Cache-Control header invalid — ${cacheControlError}\nattempts:\n${attemptLog}`,
       ).toBeNull();
+
 
       // 4. Latest content still visible.
       await expect(page.locator("h1").first()).toBeVisible();
