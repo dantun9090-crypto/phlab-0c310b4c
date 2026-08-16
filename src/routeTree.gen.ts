@@ -135,6 +135,7 @@ import { Route as ApiPublicHooksSecurityCleanupRouteImport } from './routes/api/
 import { Route as ApiPublicHooksReindexRouteImport } from './routes/api/public/hooks/reindex'
 import { Route as ApiPublicHooksReconcilePaymentsRouteImport } from './routes/api/public/hooks/reconcile-payments'
 import { Route as ApiPublicHooksPrerenderRecacheRouteImport } from './routes/api/public/hooks/prerender-recache'
+import { Route as ApiPublicHooksOfflineConversionsDotcsvRouteImport } from './routes/api/public/hooks/offline-conversions[.]csv'
 import { Route as ApiPublicHooksOfflineConversionsRouteImport } from './routes/api/public/hooks/offline-conversions'
 import { Route as ApiPublicHooksMonitorProductUrlsRouteImport } from './routes/api/public/hooks/monitor-product-urls'
 import { Route as ApiPublicHooksLighthousePsiRouteImport } from './routes/api/public/hooks/lighthouse-psi'
@@ -809,6 +810,12 @@ const ApiPublicHooksPrerenderRecacheRoute =
     path: '/api/public/hooks/prerender-recache',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksOfflineConversionsDotcsvRoute =
+  ApiPublicHooksOfflineConversionsDotcsvRouteImport.update({
+    id: '/api/public/hooks/offline-conversions.csv',
+    path: '/api/public/hooks/offline-conversions.csv',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksOfflineConversionsRoute =
   ApiPublicHooksOfflineConversionsRouteImport.update({
     id: '/api/public/hooks/offline-conversions',
@@ -1009,6 +1016,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/offline-conversions': typeof ApiPublicHooksOfflineConversionsRoute
+  '/api/public/hooks/offline-conversions.csv': typeof ApiPublicHooksOfflineConversionsDotcsvRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/hooks/reindex': typeof ApiPublicHooksReindexRoute
@@ -1148,6 +1156,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/offline-conversions': typeof ApiPublicHooksOfflineConversionsRoute
+  '/api/public/hooks/offline-conversions.csv': typeof ApiPublicHooksOfflineConversionsDotcsvRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/hooks/reindex': typeof ApiPublicHooksReindexRoute
@@ -1290,6 +1299,7 @@ export interface FileRoutesById {
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/offline-conversions': typeof ApiPublicHooksOfflineConversionsRoute
+  '/api/public/hooks/offline-conversions.csv': typeof ApiPublicHooksOfflineConversionsDotcsvRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/hooks/reindex': typeof ApiPublicHooksReindexRoute
@@ -1432,6 +1442,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/lighthouse-psi'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/offline-conversions'
+    | '/api/public/hooks/offline-conversions.csv'
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/reconcile-payments'
     | '/api/public/hooks/reindex'
@@ -1571,6 +1582,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/lighthouse-psi'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/offline-conversions'
+    | '/api/public/hooks/offline-conversions.csv'
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/reconcile-payments'
     | '/api/public/hooks/reindex'
@@ -1712,6 +1724,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/lighthouse-psi'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/offline-conversions'
+    | '/api/public/hooks/offline-conversions.csv'
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/reconcile-payments'
     | '/api/public/hooks/reindex'
@@ -1835,6 +1848,7 @@ export interface RootRouteChildren {
   ApiPublicHooksLighthousePsiRoute: typeof ApiPublicHooksLighthousePsiRoute
   ApiPublicHooksMonitorProductUrlsRoute: typeof ApiPublicHooksMonitorProductUrlsRoute
   ApiPublicHooksOfflineConversionsRoute: typeof ApiPublicHooksOfflineConversionsRoute
+  ApiPublicHooksOfflineConversionsDotcsvRoute: typeof ApiPublicHooksOfflineConversionsDotcsvRoute
   ApiPublicHooksPrerenderRecacheRoute: typeof ApiPublicHooksPrerenderRecacheRoute
   ApiPublicHooksReconcilePaymentsRoute: typeof ApiPublicHooksReconcilePaymentsRoute
   ApiPublicHooksReindexRoute: typeof ApiPublicHooksReindexRoute
@@ -2735,6 +2749,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksPrerenderRecacheRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/offline-conversions.csv': {
+      id: '/api/public/hooks/offline-conversions.csv'
+      path: '/api/public/hooks/offline-conversions.csv'
+      fullPath: '/api/public/hooks/offline-conversions.csv'
+      preLoaderRoute: typeof ApiPublicHooksOfflineConversionsDotcsvRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/offline-conversions': {
       id: '/api/public/hooks/offline-conversions'
       path: '/api/public/hooks/offline-conversions'
@@ -3026,6 +3047,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksLighthousePsiRoute: ApiPublicHooksLighthousePsiRoute,
   ApiPublicHooksMonitorProductUrlsRoute: ApiPublicHooksMonitorProductUrlsRoute,
   ApiPublicHooksOfflineConversionsRoute: ApiPublicHooksOfflineConversionsRoute,
+  ApiPublicHooksOfflineConversionsDotcsvRoute:
+    ApiPublicHooksOfflineConversionsDotcsvRoute,
   ApiPublicHooksPrerenderRecacheRoute: ApiPublicHooksPrerenderRecacheRoute,
   ApiPublicHooksReconcilePaymentsRoute: ApiPublicHooksReconcilePaymentsRoute,
   ApiPublicHooksReindexRoute: ApiPublicHooksReindexRoute,
