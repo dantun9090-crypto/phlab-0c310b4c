@@ -207,7 +207,78 @@ test.describe("cache stability — page must not auto-refresh", () => {
       // Repeated top-level GETs to the same document URL = reload loop.
       const targetNorm = normalize(documentUrl);
       const repeatedDocGets = documentGets.filter((g) => normalize(g.url) === targetNorm);
-      const cacheControlError = validateCacheHeaders(primaryHeaders);
+
+      // Header probe with retries: a purge still propagating across PoPs can
+      // briefly replay cached HTML. Only those transient reasons are retried.
+      const attempts: AttemptLogEntry[] = [];
+      let probeHeaders: DocumentHeaders = primaryHeaders;
+      let probeStatus: number | undefined = primaryStatus;
+      let cacheControlError = validateCacheHeaders(primaryHeaders);
+      attempts.push({
+        attempt: 1,
+        url: documentUrl,
+        status: primaryStatus,
+        ...primaryHeaders,
+        failureReason: cacheControlError,
+      });
+
+      for (let attempt = 2; attempt <= HEADER_PROBE_ATTEMPTS; attempt += 1) {
+        if (!isTransientFailure(cacheControlError)) break;
+        await page.waitForTimeout(HEADER_PROBE_DELAY_MS);
+        const probeUrl = `${documentUrl}${documentUrl.includes("?") ? "&" : "?"}_cacheprobe=${Date.now()}`;
+        try {
+          const res = await page.request.get(probeUrl, {
+            headers: { "cache-control": "no-cache", pragma: "no-cache" },
+            maxRedirects: 0,
+          });
+          const h = res.headers();
+          probeHeaders = {
+            cacheControl: h["cache-control"],
+            cdnCacheControl: h["cdn-cache-control"] || h["cloudflare-cdn-cache-control"],
+            surrogateControl: h["surrogate-control"],
+            cfCacheStatus: h["cf-cache-status"],
+            age: h["age"],
+          };
+          probeStatus = res.status();
+          cacheControlError = validateCacheHeaders(probeHeaders);
+          attempts.push({
+            attempt,
+            url: probeUrl,
+            status: probeStatus,
+            ...probeHeaders,
+            failureReason: cacheControlError,
+          });
+        } catch (err) {
+          attempts.push({
+            attempt,
+            url: probeUrl,
+            failureReason: `probe request failed: ${(err as Error).message}`,
+          });
+          break;
+        }
+      }
+
+      const attemptLog = attempts
+        .map(
+          (a) =>
+            `#${a.attempt} ${a.status ?? "-"} cache-control="${a.cacheControl ?? ""}" cdn="${a.cdnCacheControl ?? a.surrogateControl ?? ""}" cf-cache-status="${a.cfCacheStatus ?? ""}" age="${a.age ?? ""}" → ${a.failureReason ?? "ok"}`,
+        )
+        .join("\n");
+
+      const diag = {
+        route: path,
+        baseUrl: BASE,
+        observedMs: Date.now() - startedAt,
+        loadCount,
+        navigationCount: unloadCount,
+        primaryDocument: {
+          url: documentUrl,
+          status: probeStatus,
+          ...probeHeaders,
+          cacheControlError,
+        },
+        attempts,
+
 
       const diag = {
         route: path,
