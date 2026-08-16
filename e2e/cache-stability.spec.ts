@@ -90,6 +90,35 @@ function validateCacheHeaders(headers: DocumentHeaders): string | null {
   return null;
 }
 
+/**
+ * Only edge-cache replay symptoms are transient — they happen when CI runs
+ * while a deploy + purge is still propagating across Cloudflare PoPs. Every
+ * other reason is a real policy break and must fail immediately.
+ */
+function isTransientFailure(reason: string | null): boolean {
+  if (!reason) return false;
+  return (
+    reason.startsWith("Cloudflare replayed cached HTML") ||
+    reason.startsWith("HTML Age header must be 0")
+  );
+}
+
+type AttemptLogEntry = {
+  attempt: number;
+  url: string;
+  status?: number;
+  cacheControl?: string;
+  cdnCacheControl?: string;
+  surrogateControl?: string;
+  cfCacheStatus?: string;
+  age?: string;
+  failureReason: string | null;
+};
+
+const HEADER_PROBE_ATTEMPTS = 5;
+const HEADER_PROBE_DELAY_MS = 30_000;
+
+
 const FALLBACK_TEXTS = [
   /Taking longer than usual/i,
   /Refresh needed/i,
