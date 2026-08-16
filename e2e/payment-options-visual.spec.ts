@@ -81,10 +81,15 @@ test.describe("PaymentMethodOptions — integration smoke", () => {
     // Filter out known noisy network 4xx-not-found logs we don't own (the
     // harness route doesn't make real payment API calls but the app shell
     // can emit unrelated dev-time warnings on some preview builds).
+    // Also excluded: the first-party tag-gateway loader (/metrics/gtag/js).
+    // The vite dev server has no /metrics proxy, so the loader 404s into the
+    // SPA fallback (text/html) and Chromium logs a strict-MIME refusal. On
+    // prod the phlabs-tag-gateway worker serves real JS (200) — verified.
     const meaningful = consoleErrors.filter(
       (msg) =>
         !/favicon|manifest|net::ERR_|workbox|preload/i.test(msg) &&
-        !/Failed to load resource/i.test(msg),
+        !/Failed to load resource/i.test(msg) &&
+        !/Refused to execute script.*\/metrics\//i.test(msg),
     );
 
     expect(
@@ -155,17 +160,25 @@ test.describe("PaymentMethodOptions — keyboard focus order @ small viewports",
         `No visible focus ring on ${focusedId} at ${vw}px (got: ${ring})`,
       ).not.toMatch(/^none\s*\|\s*none\s*\|\s*0/i);
 
-      // Shift+Tab must escape backward too — proves no trap. Press it a few
-      // times and confirm focus eventually leaves the radiogroup.
-      for (let i = 0; i < 10; i++) await page.keyboard.press("Shift+Tab");
-      const stillInsideGroup = await page.evaluate(() => {
-        const a = document.activeElement;
-        return !!a?.closest('[role="radiogroup"]');
-      });
+      // Shift+Tab must escape backward too — proves no trap. The harness
+      // page has no focusables outside the two radios, so headless Chromium
+      // wraps focus through <body> and back into the group; asserting the
+      // state after an EXACT press count is cycle arithmetic, not trap
+      // detection. A real trap (a focusin handler yanking focus back) never
+      // lets focus leave — so assert focus lands OUTSIDE the radiogroup at
+      // least once within 10 presses.
+      let escaped = false;
+      for (let i = 0; i < 10 && !escaped; i++) {
+        await page.keyboard.press("Shift+Tab");
+        escaped = await page.evaluate(() => {
+          const a = document.activeElement;
+          return !a?.closest('[role="radiogroup"]');
+        });
+      }
       expect(
-        stillInsideGroup,
-        `Shift+Tab failed to escape the radiogroup at ${vw}px (focus trap)`,
-      ).toBe(false);
+        escaped,
+        `Shift+Tab never left the radiogroup at ${vw}px (focus trap)`,
+      ).toBe(true);
     });
   }
 });
