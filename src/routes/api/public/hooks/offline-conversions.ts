@@ -26,10 +26,7 @@
  *
  * Auth: reuses CRON_SECRET (constant-time compare). Accepted either as the
  * `key` query param or as the HTTP Basic password (the Ads scheduled-upload
- * UI offers username/password fields; any username works). On failure the
- * route answers 401 with a WWW-Authenticate challenge — Google's HTTPS
- * connector only presents the stored Basic credentials after such a
- * challenge and reports a bare 403 as "Invalid credentials".
+ * UI offers username/password fields; any username works).
  *
  * CSV format follows Google's "Upload conversions from clicks" template:
  *   Google Click ID,Conversion Name,Conversion Time,Conversion Value,Conversion Currency
@@ -45,12 +42,15 @@ import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
 
 const CONVERSION_NAME =
   (process.env.ADS_IMPORT_CONVERSION_NAME || "").trim() || "Purchase (offline import)";
+const LOOKBACK_MS = 90 * 24 * 60 * 60_000;
 
-/** Only post-payment states are exported (see header comment). */
-const PAID_STATUSES = new Set(["paid", "processing", "shipped", "delivered", "completed"]);
-
-/** Providers whose conversions fire client-side are excluded from the import. */
-const OFFLINE_PROVIDERS = new Set(["wallid", "peptidepay"]);
+const PAID_STATUSES = new Set([
+  "paid",
+  "processing",
+  "shipped",
+  "delivered",
+  "completed",
+]);
 
 function constantTimeEqual(a: string, b: string): boolean {
   if (!a || !b || a.length !== b.length) return false;
@@ -93,26 +93,30 @@ function toDate(value: unknown): Date | null {
     if (typeof v.toDate === "function") {
       try {
         const d = (v.toDate as () => Date)();
-        return d instanceof Date && Number.isFinite(d.getTime()) ? d : null;
-      } catch {
-        return null;
-      }
+        return Number.isFinite(d.getTime()) ? d : null;
+      } catch { /* fall through */ }
     }
-    const secs = typeof v._seconds === "number" ? v._seconds : typeof v.seconds === "number" ? v.seconds : null;
+    const secs = typeof v._seconds === "number" ? v._seconds
+      : typeof v.seconds === "number" ? v.seconds
+      : null;
     if (secs !== null) return new Date(secs * 1000);
   }
   return null;
 }
 
-/** Google wants MM/DD/YYYY hh:mm:ss AM/PM plus an explicit zone. The account
- * runs on UK time, and the GMT/BST offset flips through the year, so each row
- * carries its own numeric offset (e.g. +0100 in summer, +0000 in winter). */
+/** Google's accepted timestamp format, e.g. "08/13/2026 09:14:32 PM +0100".
+ * Rendered in Europe/London with the GMT offset appended to EVERY row —
+ * Google's click-conversion import rejects rows whose Conversion Time has
+ * no timezone ("requires a timezone to be specified in the parameter row
+ * or the date field"). The offset is computed per conversion date: +0100
+ * during BST, +0000 in GMT months — a static Parameters:TimeZone row would
+ * be wrong for half the year. */
 function formatAdsTime(d: Date): string {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "Europe/London",
-    year: "numeric",
     month: "2-digit",
     day: "2-digit",
+    year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
@@ -159,55 +163,69 @@ export async function getOfflineConversionsCsv(request: Request): Promise<Respon
   ];
 
   try {
-    const { listDocs } = await import("@/lib/firestore-admin");
-    const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
-    const orders = await listDocs<Record<string, unknown>>("orders", {
-      where: [["paidAt", ">=", since]],
-      orderBy: [["paidAt", "desc"]],
+    const { listDocsAdmin } = await import("@/lib/server/firestore-admin");
+    const since = new Date(Date.now() - LOOKBACK_MS);
+    const orders = await listDocsAdmin("orders", {
+      orderBy: "paidAt",
+      direction: "DESCENDING",
       limit: 500,
+      rangeFilter: { field: "paidAt", gte: since },
     });
 
     for (const order of orders) {
-      const status = String(order.status || "").toLowerCase();
-      if (!PAID_STATUSES.has(status)) continue;
-      const provider = String(order.paymentProvider || "").toLowerCase();
-      if (!OFFLINE_PROVIDERS.has(provider)) continue;
-      if (order.adsClientConversionAt) continue; // browser tag already claimed it
+      if (!PAID_STATUSES.has(String(order.status ?? "").toLowerCase())) continue;
+      const provider = String(
+        (order as { paymentProvider?: unknown }).paymentProvider ?? "",
+      ).toLowerCase();
+      if (provider !== "wallid" && provider !== "peptidepay") continue;
+      // Skip orders whose browser Ads conversion was confirmed —
+      // importing those would double count.
+      if ((order as { adsClientConversionAt?: unknown }).adsClientConversionAt) continue;
 
-      const clickIds = (order.adClickIds || {}) as Record<string, unknown>;
-      const gclid = typeof clickIds.gclid === "string" ? clickIds.gclid.trim() : "";
+      const clickIds = (order as { adClickIds?: unknown }).adClickIds as
+        | { gclid?: unknown }
+        | undefined;
+      const gclid = typeof clickIds?.gclid === "string" ? clickIds.gclid : "";
       if (!gclid) continue;
 
-      const paidAt = toDate(order.paidAt);
+      const paidAt =
+        toDate((order as { paidAt?: unknown }).paidAt) ??
+        toDate((order as { createdAt?: unknown }).createdAt);
       if (!paidAt) continue;
 
-      const total =
-        typeof order.totalAmount === "number"
-          ? order.totalAmount
-          : typeof order.total === "number"
-            ? order.total
-            : null;
-      if (total === null || !Number.isFinite(total)) continue;
+      const value = Number(
+        (order as { totalAmount?: unknown }).totalAmount ??
+          (order as { total?: unknown }).total ??
+          0,
+      );
+      if (!Number.isFinite(value) || value <= 0) continue;
 
-      const currency = String(order.currency || "GBP").toUpperCase();
       rows.push(
-        [gclid, CONVERSION_NAME, formatAdsTime(paidAt), total.toFixed(2), currency]
-          .map(csvCell)
-          .join(","),
+        [
+          csvCell(gclid),
+          csvCell(CONVERSION_NAME),
+          csvCell(formatAdsTime(paidAt)),
+          value.toFixed(2),
+          "GBP",
+        ].join(","),
       );
     }
-  } catch (err) {
-    // Never hard-fail the Ads fetch: a header-only CSV simply imports zero rows,
-    // whereas a 5xx makes Google mark the whole scheduled upload as failed.
-    console.error("[offline-conversions] firestore read failed:", err);
+  } catch (e) {
+    console.error(
+      "[offline-conversions] export failed:",
+      e instanceof Error ? e.message : e,
+    );
+    // Still return a valid (header-only) CSV so a transient Firestore
+    // error doesn't fail the scheduled upload in the Ads UI — the next
+    // daily fetch retries automatically.
   }
 
   return new Response(rows.join("\n") + "\n", {
     status: 200,
     headers: {
-      ...NO_STORE_HEADERS,
       "content-type": "text/csv; charset=utf-8",
       "content-disposition": 'attachment; filename="offline-conversions.csv"',
+      ...NO_STORE_HEADERS,
     },
   });
 }
