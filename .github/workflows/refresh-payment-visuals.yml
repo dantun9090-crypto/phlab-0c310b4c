@@ -52,17 +52,38 @@ jobs:
         env:
           TEST_BASE_URL: http://127.0.0.1:8080
         run: |
-          bunx playwright test e2e/payment-options-visual.spec.ts --project=chromium --update-snapshots || {
-            echo "==== first attempt failed; server.log tail: ===="
-            tail -n 100 server.log || true
+          bunx playwright test e2e/payment-options-visual.spec.ts --project=chromium --update-snapshots --reporter=list 2>&1 | tee pw-attempt-1.log
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" -ne 0 ]; then
+            echo "==== first attempt failed (rc=$rc); server.log tail: ===="
+            tail -n 60 server.log || true
+            echo "==== PLAYWRIGHT output (attempt 1, last 80 lines — THE ACTUAL ERROR): ===="
+            tail -n 80 pw-attempt-1.log || true
             echo "==== retrying once ===="
             sleep 3
-            bunx playwright test e2e/payment-options-visual.spec.ts --project=chromium --update-snapshots || {
-              echo "==== second attempt failed; server.log tail: ===="
-              tail -n 200 server.log || true
-              exit 1
-            }
-          }
+            bunx playwright test e2e/payment-options-visual.spec.ts --project=chromium --update-snapshots --reporter=list 2>&1 | tee pw-attempt-2.log
+            rc=${PIPESTATUS[0]}
+          fi
+          if [ "$rc" -ne 0 ]; then
+            echo "==== second attempt failed (rc=$rc); server.log tail: ===="
+            tail -n 60 server.log || true
+            echo "==== PLAYWRIGHT output (attempt 2, last 120 lines — THE ACTUAL ERROR): ===="
+            tail -n 120 pw-attempt-2.log || true
+            exit 1
+          fi
+
+      - name: Upload Playwright diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: payment-visual-diagnostics
+          path: |
+            pw-attempt-*.log
+            server.log
+            playwright-report/**
+            test-results/**
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Verify baselines pass as-is
         env:
