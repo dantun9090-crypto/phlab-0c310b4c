@@ -279,7 +279,6 @@ test.describe("cache stability — page must not auto-refresh", () => {
         },
         attempts,
         repeatedDocumentGets: repeatedDocGets,
-
         documentGetCount: documentGets.length,
         consoleErrors,
         // Cap the all-GET log so the artifact stays diff-friendly.
