@@ -278,21 +278,8 @@ test.describe("cache stability — page must not auto-refresh", () => {
           cacheControlError,
         },
         attempts,
-
-
-      const diag = {
-        route: path,
-        baseUrl: BASE,
-        observedMs: Date.now() - startedAt,
-        loadCount,
-        navigationCount: unloadCount,
-        primaryDocument: {
-          url: documentUrl,
-          status: primaryStatus,
-          ...primaryHeaders,
-          cacheControlError,
-        },
         repeatedDocumentGets: repeatedDocGets,
+
         documentGetCount: documentGets.length,
         consoleErrors,
         // Cap the all-GET log so the artifact stays diff-friendly.
