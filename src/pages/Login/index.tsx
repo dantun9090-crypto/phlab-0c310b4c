@@ -176,6 +176,13 @@ export default function Login() {
 
 
 
+  // Tick the resend cooldown down to zero.
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
+
   const handleReset = async (e?: React.FormEvent) => {
     e?.preventDefault();
     setResetError('');
@@ -202,6 +209,7 @@ export default function Login() {
       } else {
         // Generic success message — never reveal whether the address is registered.
         setResetSent(true);
+        setResendCooldown(30);
       }
     } catch {
       setResetError('Unable to send reset email right now. Please try again later.');
