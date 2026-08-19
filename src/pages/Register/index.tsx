@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { User, Mail, Lock, Eye, EyeOff, CheckCircle2, Loader2, Gift, Phone, Calendar } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { registerUser, signInWithGoogle, ensureAppCheck, setAuthPersistence } from '@/lib/firebase';
+import { registerUser, signInWithGoogle, ensureAppCheck, setAuthPersistence, auth, sendEmailVerification } from '@/lib/firebase';
 import { evaluatePassword, summarisePolicyErrors, PASSWORD_RULES } from '@/lib/password-policy';
 
 
@@ -23,6 +23,25 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  // Per-field inline errors — clearer than one banner at the top of a long form.
+  type RegField = 'firstName' | 'lastName' | 'email' | 'password' | 'confirmPassword' | 'dateOfBirth' | 'acceptedTerms';
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<RegField, string>>>({});
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const setF = (patch: Partial<typeof formData>, field?: RegField) => {
+    setFormData(prev => ({ ...prev, ...patch }));
+    if (field) setFieldErrors(prev => ({ ...prev, [field]: undefined }));
+  };
+  const resendVerification = async () => {
+    setResendState('sending');
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('no-user');
+      await sendEmailVerification(user);
+      setResendState('sent');
+    } catch {
+      setResendState('error');
+    }
+  };
 
   // Noindex for SEO
   useEffect(() => {
@@ -76,40 +95,40 @@ export default function Register() {
     setError('');
     setSuccess(false);
 
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
-      setError('Please fill in all fields');
-      return;
+    const errors: Partial<Record<RegField, string>> = {};
+    if (!formData.firstName.trim()) errors.firstName = 'Please enter your first name.';
+    if (!formData.lastName.trim()) errors.lastName = 'Please enter your last name.';
+    if (!formData.email.trim()) errors.email = 'Please enter your email address.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(formData.email.trim())) errors.email = 'Please enter a valid email address.';
+    if (!formData.password) errors.password = 'Please choose a password.';
+    else {
+      const policy = evaluatePassword(formData.password);
+      if (!policy.ok) errors.password = summarisePolicyErrors(policy.errors);
     }
-    const policy = evaluatePassword(formData.password);
-    if (!policy.ok) {
-      setError(summarisePolicyErrors(policy.errors));
-      return;
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
+    if (formData.password && formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match.';
     }
     if (!formData.dateOfBirth) {
-      setError('Please enter your date of birth');
-      return;
-    }
-    {
+      errors.dateOfBirth = 'Please enter your date of birth.';
+    } else {
       const dob = new Date(formData.dateOfBirth + 'T00:00:00');
       const now = new Date();
       if (Number.isNaN(dob.getTime()) || dob > now || dob.getFullYear() < 1900) {
-        setError('Please enter a valid date of birth');
-        return;
-      }
-      let age = now.getFullYear() - dob.getFullYear();
-      const monthDiff = now.getMonth() - dob.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < dob.getDate())) age--;
-      if (age < 18) {
-        setError('You must be 18 or older to create an account');
-        return;
+        errors.dateOfBirth = 'Please enter a valid date of birth.';
+      } else {
+        let age = now.getFullYear() - dob.getFullYear();
+        const monthDiff = now.getMonth() - dob.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < dob.getDate())) age--;
+        if (age < 18) errors.dateOfBirth = 'You must be 18 or older to create an account.';
       }
     }
     if (!formData.acceptedTerms) {
-      setError('You must accept the Terms & Conditions to create an account');
+      errors.acceptedTerms = 'Please accept the Terms & Conditions to continue.';
+    }
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      const first = document.querySelector<HTMLElement>('[data-reg-error="true"]');
+      first?.scrollIntoView({ block: 'center', behavior: 'smooth' });
       return;
     }
 
@@ -134,11 +153,11 @@ export default function Register() {
     } catch (err: any) {
       console.error('Registration error:', err);
       if (err.code === 'auth/email-already-in-use' || err.message?.includes('Email already registered')) {
-        setError('An account with this email already exists. Please login instead.');
+        setFieldErrors(prev => ({ ...prev, email: 'An account with this email already exists — please sign in instead.' }));
       } else if (err.code === 'auth/invalid-email') {
-        setError('Please enter a valid email address');
+        setFieldErrors(prev => ({ ...prev, email: 'Please enter a valid email address.' }));
       } else if (err.code === 'auth/weak-password') {
-        setError('Password is too weak. Please use at least 8 characters');
+        setFieldErrors(prev => ({ ...prev, password: 'Password is too weak. Please use at least 8 characters.' }));
       } else if (err.code === 'auth/invalid-api-key') {
         setError('System configuration error. Please contact support.');
       } else if (err.code === 'auth/network-request-failed') {
@@ -196,7 +215,23 @@ export default function Register() {
                   <CheckCircle2 className="w-8 h-8 text-green-400" />
                 </div>
                 <h2 className="text-xl font-bold text-white mb-2">Account Created!</h2>
-                <p className="text-[#9cb8d9]">Redirecting to your account...</p>
+                <p className="text-[#9cb8d9]">
+                  We've sent a verification link to <span className="text-white font-medium">{formData.email}</span>.
+                  Please open it to confirm your email address.
+                </p>
+                <button
+                  type="button"
+                  onClick={resendVerification}
+                  disabled={resendState === 'sending' || resendState === 'sent'}
+                  className="mt-4 inline-flex items-center gap-2 px-4 min-h-[48px] rounded-lg border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10 text-sm font-semibold disabled:opacity-50"
+                >
+                  {resendState === 'sending' && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {resendState === 'sent' ? 'Verification link sent' : 'Resend verification link'}
+                </button>
+                {resendState === 'error' && (
+                  <p className="mt-2 text-amber-400 text-xs">Could not resend just now — you can request a new link from your account page.</p>
+                )}
+                <p className="text-[#3a5a82] text-xs mt-4">Redirecting to your account...</p>
               </div>
             ) : (
               <>
@@ -235,12 +270,13 @@ export default function Register() {
                       id="reg-firstName" name="given-name"
                       type="text"
                       value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      onChange={(e) => setF({ firstName: e.target.value }, 'firstName')}
                       style={{ background: '#0d1f38', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', width: '100%', borderRadius: '10px', padding: '12px 16px', fontSize: '14px', outline: 'none', display: 'block', boxSizing: 'border-box' }}
                       placeholder="John"
                       autoComplete="given-name"
                       required
                     />
+                    {fieldErrors.firstName && <p data-reg-error="true" className="mt-1.5 text-red-400 text-xs">{fieldErrors.firstName}</p>}
                   </div>
                   <div>
                     <label htmlFor="reg-lastName" className="block text-sm font-medium text-[#9cb8d9] mb-2">Last Name</label>
@@ -248,12 +284,13 @@ export default function Register() {
                       id="reg-lastName" name="family-name"
                       type="text"
                       value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      onChange={(e) => setF({ lastName: e.target.value }, 'lastName')}
                       style={{ background: '#0d1f38', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', width: '100%', borderRadius: '10px', padding: '12px 16px', fontSize: '14px', outline: 'none', display: 'block', boxSizing: 'border-box' }}
                       placeholder="Doe"
                       autoComplete="family-name"
                       required
                     />
+                    {fieldErrors.lastName && <p data-reg-error="true" className="mt-1.5 text-red-400 text-xs">{fieldErrors.lastName}</p>}
                   </div>
                 </div>
 
@@ -266,13 +303,14 @@ export default function Register() {
                       id="reg-email" name="email"
                       type="email"
                       value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      onChange={(e) => setF({ email: e.target.value }, 'email')}
                       style={{ background: '#0d1f38', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', width: '100%', borderRadius: '10px', padding: '12px 16px 12px 48px', fontSize: '14px', outline: 'none', display: 'block', boxSizing: 'border-box' }}
                       placeholder="john@example.com"
                       autoComplete="email"
                       required
                     />
                   </div>
+                    {fieldErrors.email && <p data-reg-error="true" className="mt-1.5 text-red-400 text-xs">{fieldErrors.email}</p>}
                 </div>
 
                 {/* Password */}
@@ -284,7 +322,7 @@ export default function Register() {
                       id="reg-password" name="new-password"
                       type={showPassword ? 'text' : 'password'}
                       value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      onChange={(e) => setF({ password: e.target.value }, 'password')}
                       style={{ background: '#0d1f38', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', width: '100%', borderRadius: '10px', padding: '12px 48px', fontSize: '14px', outline: 'none', display: 'block', boxSizing: 'border-box' }}
                       placeholder="Min. 6 characters"
                       autoComplete="new-password"
@@ -300,6 +338,7 @@ export default function Register() {
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
+                    {fieldErrors.password && <p data-reg-error="true" className="mt-1.5 text-red-400 text-xs">{fieldErrors.password}</p>}
                   {formData.password && (() => {
                     const p = evaluatePassword(formData.password);
                     return (
@@ -326,7 +365,7 @@ export default function Register() {
                       id="reg-confirmPassword" name="confirm-password"
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={formData.confirmPassword}
-                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                      onChange={(e) => setF({ confirmPassword: e.target.value }, 'confirmPassword')}
                       style={{ background: '#0d1f38', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', width: '100%', borderRadius: '10px', padding: '12px 48px', fontSize: '14px', outline: 'none', display: 'block', boxSizing: 'border-box' }}
                       placeholder="Confirm your password"
                       autoComplete="new-password"
@@ -341,6 +380,7 @@ export default function Register() {
                       {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
+                    {fieldErrors.confirmPassword && <p data-reg-error="true" className="mt-1.5 text-red-400 text-xs">{fieldErrors.confirmPassword}</p>}
                 </div>
 
                 {/* Phone (optional) */}
@@ -372,12 +412,13 @@ export default function Register() {
                       type="date"
                       required
                       value={formData.dateOfBirth}
-                      onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                      onChange={(e) => setF({ dateOfBirth: e.target.value }, 'dateOfBirth')}
                       style={{ background: '#0d1f38', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', width: '100%', borderRadius: '10px', padding: '12px 16px 12px 48px', fontSize: '14px', outline: 'none', display: 'block', boxSizing: 'border-box', colorScheme: 'dark' }}
                       autoComplete="bday"
                       max={new Date().toISOString().slice(0, 10)}
                     />
                   </div>
+                    {fieldErrors.dateOfBirth && <p data-reg-error="true" className="mt-1.5 text-red-400 text-xs">{fieldErrors.dateOfBirth}</p>}
                   <p className="text-xs text-[#3a5a82] mt-1.5">Required — we only use it to confirm you are 18 or older.</p>
                 </div>
 
@@ -388,7 +429,7 @@ export default function Register() {
                       <input
                         type="checkbox"
                         checked={formData.acceptedTerms}
-                        onChange={(e) => setFormData({ ...formData, acceptedTerms: e.target.checked })}
+                        onChange={(e) => setF({ acceptedTerms: e.target.checked }, 'acceptedTerms')}
                         className="sr-only"
                         id="reg-terms"
                       />
@@ -410,6 +451,7 @@ export default function Register() {
                       I confirm these products are for laboratory research use only.
                     </span>
                   </label>
+                  {fieldErrors.acceptedTerms && <p data-reg-error="true" className="mt-1.5 text-red-400 text-xs">{fieldErrors.acceptedTerms}</p>}
                 </div>
 
                 {/* Remember me */}
