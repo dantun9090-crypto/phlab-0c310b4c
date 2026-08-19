@@ -11,6 +11,7 @@
  * NEVER import this file from client code.
  */
 import { z } from 'zod';
+import { validateUkAddressLine } from './uk-address';
 import { runValidateCart, type ValidateCartResult } from './cart-validation.server';
 import { addDocAdmin, getDocAdmin, updateDocAdmin } from './server/firestore-admin';
 import { verifyFirebaseIdToken } from './server/firebase-auth-admin';
@@ -57,11 +58,19 @@ const customerSchema = z.object({
   city:      z.string().trim().min(1).max(80),
   postcode:  z.string().trim().min(1).max(20),
   country:   z.string().trim().min(1).max(80),
+  /** Explicit "named property, no house number" confirmation from the shopper. */
+  addressNoHouseNumber: z.boolean().optional().default(false),
 }).superRefine((c, ctx) => {
   const pc = normalisePostcode(c.postcode);
   if (c.country === 'United Kingdom') {
     if (!UK_POSTCODE_RE.test(pc)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['postcode'], message: 'Enter a valid UK postcode' });
+    }
+    // Royal Mail cannot label "High Street, London" — a house number (or an
+    // explicitly confirmed named property) is mandatory.
+    const addressError = validateUkAddressLine(c.address, c.addressNoHouseNumber);
+    if (addressError) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['address'], message: addressError });
     }
   } else if (c.country === 'Germany') {
     if (!DE_POSTCODE_RE.test(pc)) {

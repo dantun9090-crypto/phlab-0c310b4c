@@ -44,7 +44,11 @@ interface CheckoutForm {
   lastName: string;
   email: string;
   phone: string;
+  /** House number or property name — captured separately for Royal Mail labels. */
+  houseNumber: string;
   address: string;
+  /** Shopper confirmed the property genuinely has no number (named property). */
+  addressNoHouseNumber: boolean;
   city: string;
   postcode: string;
   country: string;
@@ -59,6 +63,7 @@ interface CheckoutForm {
 
 import { checkNextDayEligibility, SHIPPING_CONFIG, formatLondonDate } from '@/lib/shipping/next-day';
 import { formatShippingAddressInline, formatShippingAddressLines, shortPostcodeLabel } from '@/lib/format-address';
+import { joinAddressLine, validateUkAddressLine, NO_HOUSE_NUMBER_CHECKBOX_LABEL } from '@/lib/uk-address';
 import { suggestEmailTypo } from '@/lib/email-typo';
 
 
@@ -117,7 +122,9 @@ export default function CheckoutPage() {
     lastName: '',
     email: '',
     phone: '',
+    houseNumber: '',
     address: '',
+    addressNoHouseNumber: false,
     city: '',
     postcode: '',
     country: 'United Kingdom',
@@ -129,6 +136,10 @@ export default function CheckoutPage() {
     shippingMethod: '',
     customerNote: '',
   });
+
+  // Canonical first address line sent to the order API / label / invoice.
+  const addressLine1 = joinAddressLine(form.houseNumber, form.address);
+
 
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [completedSteps, setCompletedSteps] = useState<Set<Step>>(new Set());
