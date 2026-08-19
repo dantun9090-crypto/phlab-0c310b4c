@@ -1612,19 +1612,68 @@ export default function AccountPage() {
                       {/* Delivery address */}
                       <div>
                         <p className={sectionHeading}>Delivery Address</p>
+                        {/* Same order as checkout: postcode → house no. → street → city. */}
                         <div className="grid sm:grid-cols-2 gap-4">
+                          <div>
+                            <label htmlFor="profilePostcode" className="block text-xs text-[#9cb8d9] mb-1.5">Postcode</label>
+                            <input
+                              id="profilePostcode"
+                              value={editPostcode}
+                              onChange={e => { setEditPostcode(e.target.value.toUpperCase()); setFieldErrors(p => ({ ...p, postcode: undefined })); }}
+                              className={fieldErrors.postcode ? luxuryInputError : luxuryInput}
+                              style={fieldErrors.postcode ? inputErrorStyleBase : inputBaseStyle}
+                              placeholder="SW1A 1AA"
+                            />
+                            {fieldErrors.postcode && <p className="mt-1.5 text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3 shrink-0" />{fieldErrors.postcode}</p>}
+                          </div>
+                          <div>
+                            <label htmlFor="profileHouseNumber" className="block text-xs text-[#9cb8d9] mb-1.5">House no. / name</label>
+                            <input
+                              id="profileHouseNumber"
+                              value={editHouseNumber}
+                              onChange={e => { setEditHouseNumber(e.target.value.slice(0, 40)); setFieldErrors(p => ({ ...p, address: undefined })); }}
+                              className={luxuryInput}
+                              style={inputBaseStyle}
+                              placeholder="42"
+                            />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <PostcodeLookup
+                              postcode={editPostcode}
+                              house={editHouseNumber}
+                              onHouseChange={setEditHouseNumber}
+                              hideHouseInput
+                              onApply={patch => {
+                                if (patch.address) { setEditAddress(patch.address); setEditHouseNumber(''); setFieldErrors(p => ({ ...p, address: undefined })); }
+                                if (patch.city) setEditCity(patch.city);
+                              }}
+                            />
+                          </div>
                           <div className="sm:col-span-2">
                             <label htmlFor="profileAddress" className="block text-xs text-[#9cb8d9] mb-1.5">Street Address</label>
                             <input
                               id="profileAddress"
                               value={editAddress}
-                              onChange={e => setEditAddress(e.target.value)}
-                              className={luxuryInput}
-                              style={inputBaseStyle}
-                              placeholder="123 Example Street"
+                              onChange={e => { setEditAddress(e.target.value); setFieldErrors(p => ({ ...p, address: undefined })); }}
+                              className={fieldErrors.address ? luxuryInputError : luxuryInput}
+                              style={fieldErrors.address ? inputErrorStyleBase : inputBaseStyle}
+                              placeholder="Example Street"
                             />
+                            {fieldErrors.address && <p className="mt-1.5 text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3 shrink-0" />{fieldErrors.address}</p>}
                           </div>
-                          <div>
+                          <div className="sm:col-span-2">
+                            <label htmlFor="profileNoHouseNumber" className="flex items-start gap-2 text-xs text-[#9cb8d9] cursor-pointer">
+                              <input
+                                id="profileNoHouseNumber"
+                                type="checkbox"
+                                checked={editNoHouseNumber}
+                                onChange={e => { setEditNoHouseNumber(e.target.checked); setFieldErrors(p => ({ ...p, address: undefined })); }}
+                                className="mt-0.5 w-4 h-4 accent-emerald-500"
+                              />
+                              <span>{NO_HOUSE_NUMBER_CHECKBOX_LABEL}</span>
+                            </label>
+                          </div>
+                          <div className="sm:col-span-2">
                             <label htmlFor="profileCity" className="block text-xs text-[#9cb8d9] mb-1.5">City</label>
                             <input
                               id="profileCity"
@@ -1634,18 +1683,6 @@ export default function AccountPage() {
                               style={inputBaseStyle}
                               placeholder="London"
                             />
-                          </div>
-                          <div>
-                            <label htmlFor="profilePostcode" className="block text-xs text-[#9cb8d9] mb-1.5">Postcode</label>
-                            <input
-                              id="profilePostcode"
-                              value={editPostcode}
-                              onChange={e => { setEditPostcode(e.target.value); setFieldErrors(p => ({ ...p, postcode: undefined })); }}
-                              className={fieldErrors.postcode ? luxuryInputError : luxuryInput}
-                              style={fieldErrors.postcode ? inputErrorStyleBase : inputBaseStyle}
-                              placeholder="SW1A 1AA"
-                            />
-                            {fieldErrors.postcode && <p className="mt-1.5 text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3 shrink-0" />{fieldErrors.postcode}</p>}
                           </div>
                         </div>
                       </div>
