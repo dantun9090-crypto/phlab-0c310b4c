@@ -33,6 +33,8 @@ import {
   type InvoiceDocumentOptions,
 } from '@/lib/customer-invoice-document';
 import { formatShippingAddressLines } from '@/lib/format-address';
+import { joinAddressLine, validateUkAddressLine, NO_HOUSE_NUMBER_CHECKBOX_LABEL } from '@/lib/uk-address';
+import PostcodeLookup from '@/components/checkout/PostcodeLookup';
 
 /** Maps a Firestore order into the print-ready invoice document model. */
 function buildInvoiceOptions(order: any, reference: string): InvoiceDocumentOptions {
@@ -231,11 +233,13 @@ export default function AccountPage() {
   const [editFirstName, setEditFirstName] = useState('');
   const [editLastName, setEditLastName] = useState('');
   const [editPhone, setEditPhone] = useState('');
+  const [editHouseNumber, setEditHouseNumber] = useState('');
   const [editAddress, setEditAddress] = useState('');
+  const [editNoHouseNumber, setEditNoHouseNumber] = useState(false);
   const [editCity, setEditCity] = useState('');
   const [editPostcode, setEditPostcode] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<{ phone?: string; postcode?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{ phone?: string; postcode?: string; address?: string }>({});
 
   // Security
   const [changingPassword, setChangingPassword] = useState(false);
@@ -361,6 +365,8 @@ export default function AccountPage() {
             setEditLastName(data.lastName || '');
             setEditPhone(data.phone || '');
             setEditAddress(data.address || '');
+            setEditHouseNumber('');
+            setEditNoHouseNumber(Boolean((data as any).addressNoHouseNumber));
             setEditCity(data.city || '');
             setEditPostcode(data.postcode || '');
           }
@@ -501,7 +507,12 @@ export default function AccountPage() {
   const handleSaveProfile = async () => {
     if (!user) return;
     // Validate
-    const errors: { phone?: string; postcode?: string } = {};
+    const errors: { phone?: string; postcode?: string; address?: string } = {};
+    const addressLine = joinAddressLine(editHouseNumber, editAddress);
+    if (addressLine.trim()) {
+      const addressError = validateUkAddressLine(addressLine, editNoHouseNumber);
+      if (addressError) errors.address = addressError;
+    }
     if (editPhone && !/^(\+44\s?|0)[1-9]\d{8,10}$/.test(editPhone.replace(/\s/g, ''))) {
       errors.phone = 'Enter a valid UK phone number (e.g. +44 7700 900000)';
     }
@@ -516,11 +527,14 @@ export default function AccountPage() {
         firstName: editFirstName,
         lastName: editLastName,
         phone: editPhone,
-        address: editAddress,
+        address: addressLine,
+        addressNoHouseNumber: editNoHouseNumber,
         city: editCity,
         postcode: editPostcode,
       });
-      setProfile(prev => prev ? { ...prev, firstName: editFirstName, lastName: editLastName, phone: editPhone, address: editAddress, city: editCity, postcode: editPostcode } : prev);
+      setEditAddress(addressLine);
+      setEditHouseNumber('');
+      setProfile(prev => prev ? { ...prev, firstName: editFirstName, lastName: editLastName, phone: editPhone, address: addressLine, city: editCity, postcode: editPostcode } : prev);
       setEditingProfile(false);
       setSaveMsg('Profile updated successfully');
       setTimeout(() => setSaveMsg(''), 3000);
