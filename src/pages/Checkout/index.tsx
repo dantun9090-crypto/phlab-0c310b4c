@@ -849,7 +849,12 @@ export default function CheckoutPage() {
       }
     }
     if (step === 2) {
-      if (!form.address.trim()) e.address = 'Required';
+      if (!addressLine1.trim()) e.address = 'Required';
+      else if (form.country === 'United Kingdom') {
+        // Royal Mail labels need a house number (or a confirmed named property).
+        const addrError = validateUkAddressLine(addressLine1, form.addressNoHouseNumber);
+        if (addrError) e.address = addrError;
+      }
       else if (form.country === 'Germany') {
         // Mirror the server-side `superRefine` rule so Step 2 blocks the
         // shopper before we ever call the order API. German addresses need
@@ -1132,10 +1137,11 @@ export default function CheckoutPage() {
               lastName: form.lastName,
               email: form.email,
               phone: form.phone,
-              address: form.address,
+              address: addressLine1,
               city: form.city,
               postcode: form.postcode,
               country: form.country,
+              addressNoHouseNumber: form.addressNoHouseNumber,
             },
             shippingMethod: form.shippingMethod,
             paymentMethod: form.paymentMethod as Exclude<CheckoutForm['paymentMethod'], ''>,
@@ -1440,7 +1446,7 @@ export default function CheckoutPage() {
           shipping: serverResult.shippingCost,
           discount: serverResult.discount,
           total: totalAmount,
-          address: form.address,
+          address: addressLine1,
           city: form.city,
           postcode: form.postcode,
           country: form.country,
@@ -1580,7 +1586,7 @@ export default function CheckoutPage() {
             <div className="flex justify-between border-t border-white/10 pt-2 mt-2"><span className="text-gray-400">Amount due</span><span className="text-amber-400 font-bold">£{confirmedTotal || total}</span></div>
           </div>
 
-          {form.address && (
+          {addressLine1 && (
             <div className="bg-[#0b1a30] border border-white/10 rounded-xl p-4 mb-6 text-left text-sm">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[10px] uppercase tracking-wider text-emerald-400/80 font-semibold">Delivery Address</p>
@@ -1594,7 +1600,7 @@ export default function CheckoutPage() {
                 {formatShippingAddressLines({
                   firstName: form.firstName,
                   lastName: form.lastName,
-                  address: form.address,
+                  address: addressLine1,
                   city: form.city,
                   postcode: form.postcode,
                   country: form.country,
@@ -1622,8 +1628,8 @@ export default function CheckoutPage() {
 
   // ── Step summary labels ──
   const step1Summary = form.firstName ? `${form.firstName} ${form.lastName} · ${form.email}` : null;
-  const step2Summary = form.address
-    ? formatShippingAddressInline({ address: form.address, city: form.city, postcode: form.postcode, country: form.country })
+  const step2Summary = addressLine1
+    ? formatShippingAddressInline({ address: addressLine1, city: form.city, postcode: form.postcode, country: form.country })
     : null;
 
   return (
