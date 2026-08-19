@@ -44,6 +44,8 @@ export default function Login() {
   const [resetSent, setResetSent] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError] = useState('');
+  // Short cooldown so a customer can ask for a second link without spamming.
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [settings, setSettings] = useState<SiteSettings>({});
   const redirectTarget = (() => {
     const value = new URLSearchParams(location.search).get('redirect') || '/account';
@@ -174,8 +176,8 @@ export default function Login() {
 
 
 
-  const handleReset = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleReset = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     setResetError('');
     setResetLoading(true);
     try {
@@ -196,6 +198,7 @@ export default function Login() {
           if (err?.code !== 'auth/user-not-found') throw err;
         }
         setResetSent(true);
+        setResendCooldown(30);
       } else {
         // Generic success message — never reveal whether the address is registered.
         setResetSent(true);
