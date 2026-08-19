@@ -62,8 +62,12 @@ export default function PostcodeLookup({
       setSelected('');
       // Free mode has no street data — fill the town straight away.
       if (res.mode === 'outcode' && res.city) {
-        const h = house.trim();
-        onApply(h ? { city: res.city, address: `${h} ` } : { city: res.city });
+        // The house number lives in its own field — never prefix the street line.
+        if (controlled) onApply({ city: res.city });
+        else {
+          const h = house.trim();
+          onApply(h ? { city: res.city, address: `${h} ` } : { city: res.city });
+        }
       }
 
     } catch {
