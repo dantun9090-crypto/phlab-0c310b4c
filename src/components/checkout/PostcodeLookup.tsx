@@ -16,18 +16,28 @@ interface PostcodeLookupProps {
   /** Called with the fields the customer picked / that were found. */
   onApply: (patch: { address?: string; city?: string }) => void;
   disabled?: boolean;
+  /** Controlled house number / name (owned by the checkout form). */
+  house?: string;
+  onHouseChange?: (value: string) => void;
+  /** Hide the built-in house input when the parent renders its own field. */
+  hideHouseInput?: boolean;
 }
 
 const UK_POSTCODE_RE = /^(?:GIR0AA|[A-Z]{1,2}\d[A-Z\d]?\d[A-Z]{2})$/;
 const normalise = (v: string) => v.replace(/[\s\u00a0\u2007\u202f-]+/g, '').toUpperCase();
 
-export default function PostcodeLookup({ postcode, onApply, disabled }: PostcodeLookupProps) {
+export default function PostcodeLookup({
+  postcode, onApply, disabled, house: houseProp, onHouseChange, hideHouseInput,
+}: PostcodeLookupProps) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<PostcodeLookupResult | null>(null);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState('');
   const [manual, setManual] = useState(false);
-  const [house, setHouse] = useState('');
+  const [houseLocal, setHouseLocal] = useState('');
+  const controlled = houseProp !== undefined;
+  const house = controlled ? houseProp! : houseLocal;
+  const setHouse = (v: string) => (controlled ? onHouseChange?.(v) : setHouseLocal(v));
   const lastLookedUp = useRef('');
 
   const pc = normalise(postcode);
@@ -108,7 +118,7 @@ export default function PostcodeLookup({ postcode, onApply, disabled }: Postcode
   return (
     <div className="space-y-2" data-testid="postcode-lookup">
       <div className="flex items-center gap-2 flex-wrap">
-        <input
+        {!hideHouseInput && <input
           id="postcode-house-number"
           type="text"
           value={house}
@@ -116,7 +126,7 @@ export default function PostcodeLookup({ postcode, onApply, disabled }: Postcode
           placeholder="House no. / name"
           aria-label="House number or name"
           className="w-36 border-2 border-slate-600 bg-slate-800 text-white min-h-[48px] rounded-lg px-3 text-sm placeholder:text-gray-500"
-        />
+        />}
         <button
           type="button"
           onClick={() => { lastLookedUp.current = ''; void run(postcode); }}
