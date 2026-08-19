@@ -24,6 +24,25 @@ import { orderReceivedEmail } from '@/templates/orderReceivedEmail';
 
 import { getAdminIdToken } from '@/lib/auth-ready';
 import { toDateSafe, toMillisSafe } from '@/lib/to-date';
+import { hasHouseNumber } from '@/lib/uk-address';
+
+// ── "Check address" badge — order has no deliverable house number ──
+function CheckAddressBadge({ order, addressLine }: { order: any; addressLine: string }) {
+  const c = order?.customer;
+  const country = String(c?.country || order?.shippingCountry || 'United Kingdom');
+  if (country && country !== 'United Kingdom') return null;
+  if (c?.addressNoHouseNumber || order?.addressNoHouseNumber) return null;
+  const line = String(c?.address || addressLine || '');
+  if (!line.trim() || hasHouseNumber(line)) return null;
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-500/15 border border-orange-500/40 rounded text-xs text-orange-300 font-semibold"
+      title="No house number in the delivery address — confirm with the customer before printing a Royal Mail label."
+    >
+      ⚠ Check address
+    </span>
+  );
+}
 // ── Payment status config for bank transfer orders ──
 const PAYMENT_STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
   pending_bank_transfer: { label: 'Awaiting Payment', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', icon: Clock },
@@ -1865,6 +1884,7 @@ export default function OrdersTab() {
                     {isFenaOrder(order) && <FenaStatusBadge order={order} />}
                     <ProviderBadge order={order} />
                     <ReconciledCronBadge order={order} />
+                    <CheckAddressBadge order={order} addressLine={addressLine} />
                     {order.trackingNumber && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-400 font-mono">
                         <Hash className="w-3 h-3" />{order.trackingNumber}

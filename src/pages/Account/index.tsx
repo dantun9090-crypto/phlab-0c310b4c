@@ -33,6 +33,9 @@ import {
   type InvoiceDocumentOptions,
 } from '@/lib/customer-invoice-document';
 import { formatShippingAddressLines } from '@/lib/format-address';
+import { joinAddressLine, validateUkAddressLine, NO_HOUSE_NUMBER_CHECKBOX_LABEL } from '@/lib/uk-address';
+import PostcodeLookup from '@/components/checkout/PostcodeLookup';
+import DobGateModal from '@/components/DobGateModal';
 
 /** Maps a Firestore order into the print-ready invoice document model. */
 function buildInvoiceOptions(order: any, reference: string): InvoiceDocumentOptions {
@@ -231,11 +234,13 @@ export default function AccountPage() {
   const [editFirstName, setEditFirstName] = useState('');
   const [editLastName, setEditLastName] = useState('');
   const [editPhone, setEditPhone] = useState('');
+  const [editHouseNumber, setEditHouseNumber] = useState('');
   const [editAddress, setEditAddress] = useState('');
+  const [editNoHouseNumber, setEditNoHouseNumber] = useState(false);
   const [editCity, setEditCity] = useState('');
   const [editPostcode, setEditPostcode] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<{ phone?: string; postcode?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{ phone?: string; postcode?: string; address?: string }>({});
 
   // Security
   const [changingPassword, setChangingPassword] = useState(false);
@@ -361,6 +366,8 @@ export default function AccountPage() {
             setEditLastName(data.lastName || '');
             setEditPhone(data.phone || '');
             setEditAddress(data.address || '');
+            setEditHouseNumber('');
+            setEditNoHouseNumber(Boolean((data as any).addressNoHouseNumber));
             setEditCity(data.city || '');
             setEditPostcode(data.postcode || '');
           }
@@ -501,7 +508,12 @@ export default function AccountPage() {
   const handleSaveProfile = async () => {
     if (!user) return;
     // Validate
-    const errors: { phone?: string; postcode?: string } = {};
+    const errors: { phone?: string; postcode?: string; address?: string } = {};
+    const addressLine = joinAddressLine(editHouseNumber, editAddress);
+    if (addressLine.trim()) {
+      const addressError = validateUkAddressLine(addressLine, editNoHouseNumber);
+      if (addressError) errors.address = addressError;
+    }
     if (editPhone && !/^(\+44\s?|0)[1-9]\d{8,10}$/.test(editPhone.replace(/\s/g, ''))) {
       errors.phone = 'Enter a valid UK phone number (e.g. +44 7700 900000)';
     }
@@ -516,11 +528,14 @@ export default function AccountPage() {
         firstName: editFirstName,
         lastName: editLastName,
         phone: editPhone,
-        address: editAddress,
+        address: addressLine,
+        addressNoHouseNumber: editNoHouseNumber,
         city: editCity,
         postcode: editPostcode,
       });
-      setProfile(prev => prev ? { ...prev, firstName: editFirstName, lastName: editLastName, phone: editPhone, address: editAddress, city: editCity, postcode: editPostcode } : prev);
+      setEditAddress(addressLine);
+      setEditHouseNumber('');
+      setProfile(prev => prev ? { ...prev, firstName: editFirstName, lastName: editLastName, phone: editPhone, address: addressLine, city: editCity, postcode: editPostcode } : prev);
       setEditingProfile(false);
       setSaveMsg('Profile updated successfully');
       setTimeout(() => setSaveMsg(''), 3000);
@@ -686,6 +701,8 @@ export default function AccountPage() {
 
   return (
     <div className="min-h-screen bg-[#060f1e] pt-24 pb-20 relative overflow-hidden">
+      {/* 18+ gate for accounts created without a date of birth (Google sign-up). */}
+      <DobGateModal />
       {/* Ambient background */}
       <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full bg-blue-600/[0.04] pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full bg-violet-600/[0.04] pointer-events-none" />
@@ -1598,19 +1615,68 @@ export default function AccountPage() {
                       {/* Delivery address */}
                       <div>
                         <p className={sectionHeading}>Delivery Address</p>
+                        {/* Same order as checkout: postcode → house no. → street → city. */}
                         <div className="grid sm:grid-cols-2 gap-4">
+                          <div>
+                            <label htmlFor="profilePostcode" className="block text-xs text-[#9cb8d9] mb-1.5">Postcode</label>
+                            <input
+                              id="profilePostcode"
+                              value={editPostcode}
+                              onChange={e => { setEditPostcode(e.target.value.toUpperCase()); setFieldErrors(p => ({ ...p, postcode: undefined })); }}
+                              className={fieldErrors.postcode ? luxuryInputError : luxuryInput}
+                              style={fieldErrors.postcode ? inputErrorStyleBase : inputBaseStyle}
+                              placeholder="SW1A 1AA"
+                            />
+                            {fieldErrors.postcode && <p className="mt-1.5 text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3 shrink-0" />{fieldErrors.postcode}</p>}
+                          </div>
+                          <div>
+                            <label htmlFor="profileHouseNumber" className="block text-xs text-[#9cb8d9] mb-1.5">House no. / name</label>
+                            <input
+                              id="profileHouseNumber"
+                              value={editHouseNumber}
+                              onChange={e => { setEditHouseNumber(e.target.value.slice(0, 40)); setFieldErrors(p => ({ ...p, address: undefined })); }}
+                              className={luxuryInput}
+                              style={inputBaseStyle}
+                              placeholder="42"
+                            />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <PostcodeLookup
+                              postcode={editPostcode}
+                              house={editHouseNumber}
+                              onHouseChange={setEditHouseNumber}
+                              hideHouseInput
+                              onApply={patch => {
+                                if (patch.address) { setEditAddress(patch.address); setEditHouseNumber(''); setFieldErrors(p => ({ ...p, address: undefined })); }
+                                if (patch.city) setEditCity(patch.city);
+                              }}
+                            />
+                          </div>
                           <div className="sm:col-span-2">
                             <label htmlFor="profileAddress" className="block text-xs text-[#9cb8d9] mb-1.5">Street Address</label>
                             <input
                               id="profileAddress"
                               value={editAddress}
-                              onChange={e => setEditAddress(e.target.value)}
-                              className={luxuryInput}
-                              style={inputBaseStyle}
-                              placeholder="123 Example Street"
+                              onChange={e => { setEditAddress(e.target.value); setFieldErrors(p => ({ ...p, address: undefined })); }}
+                              className={fieldErrors.address ? luxuryInputError : luxuryInput}
+                              style={fieldErrors.address ? inputErrorStyleBase : inputBaseStyle}
+                              placeholder="Example Street"
                             />
+                            {fieldErrors.address && <p className="mt-1.5 text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3 shrink-0" />{fieldErrors.address}</p>}
                           </div>
-                          <div>
+                          <div className="sm:col-span-2">
+                            <label htmlFor="profileNoHouseNumber" className="flex items-start gap-2 text-xs text-[#9cb8d9] cursor-pointer">
+                              <input
+                                id="profileNoHouseNumber"
+                                type="checkbox"
+                                checked={editNoHouseNumber}
+                                onChange={e => { setEditNoHouseNumber(e.target.checked); setFieldErrors(p => ({ ...p, address: undefined })); }}
+                                className="mt-0.5 w-4 h-4 accent-emerald-500"
+                              />
+                              <span>{NO_HOUSE_NUMBER_CHECKBOX_LABEL}</span>
+                            </label>
+                          </div>
+                          <div className="sm:col-span-2">
                             <label htmlFor="profileCity" className="block text-xs text-[#9cb8d9] mb-1.5">City</label>
                             <input
                               id="profileCity"
@@ -1620,18 +1686,6 @@ export default function AccountPage() {
                               style={inputBaseStyle}
                               placeholder="London"
                             />
-                          </div>
-                          <div>
-                            <label htmlFor="profilePostcode" className="block text-xs text-[#9cb8d9] mb-1.5">Postcode</label>
-                            <input
-                              id="profilePostcode"
-                              value={editPostcode}
-                              onChange={e => { setEditPostcode(e.target.value); setFieldErrors(p => ({ ...p, postcode: undefined })); }}
-                              className={fieldErrors.postcode ? luxuryInputError : luxuryInput}
-                              style={fieldErrors.postcode ? inputErrorStyleBase : inputBaseStyle}
-                              placeholder="SW1A 1AA"
-                            />
-                            {fieldErrors.postcode && <p className="mt-1.5 text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3 shrink-0" />{fieldErrors.postcode}</p>}
                           </div>
                         </div>
                       </div>

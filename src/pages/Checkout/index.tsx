@@ -44,7 +44,11 @@ interface CheckoutForm {
   lastName: string;
   email: string;
   phone: string;
+  /** House number or property name — captured separately for Royal Mail labels. */
+  houseNumber: string;
   address: string;
+  /** Shopper confirmed the property genuinely has no number (named property). */
+  addressNoHouseNumber: boolean;
   city: string;
   postcode: string;
   country: string;
@@ -59,6 +63,7 @@ interface CheckoutForm {
 
 import { checkNextDayEligibility, SHIPPING_CONFIG, formatLondonDate } from '@/lib/shipping/next-day';
 import { formatShippingAddressInline, formatShippingAddressLines, shortPostcodeLabel } from '@/lib/format-address';
+import { joinAddressLine, validateUkAddressLine, NO_HOUSE_NUMBER_CHECKBOX_LABEL } from '@/lib/uk-address';
 import { suggestEmailTypo } from '@/lib/email-typo';
 
 
@@ -117,7 +122,9 @@ export default function CheckoutPage() {
     lastName: '',
     email: '',
     phone: '',
+    houseNumber: '',
     address: '',
+    addressNoHouseNumber: false,
     city: '',
     postcode: '',
     country: 'United Kingdom',
@@ -129,6 +136,10 @@ export default function CheckoutPage() {
     shippingMethod: '',
     customerNote: '',
   });
+
+  // Canonical first address line sent to the order API / label / invoice.
+  const addressLine1 = joinAddressLine(form.houseNumber, form.address);
+
 
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [completedSteps, setCompletedSteps] = useState<Set<Step>>(new Set());
@@ -838,7 +849,12 @@ export default function CheckoutPage() {
       }
     }
     if (step === 2) {
-      if (!form.address.trim()) e.address = 'Required';
+      if (!addressLine1.trim()) e.address = 'Required';
+      else if (form.country === 'United Kingdom') {
+        // Royal Mail labels need a house number (or a confirmed named property).
+        const addrError = validateUkAddressLine(addressLine1, form.addressNoHouseNumber);
+        if (addrError) e.address = addrError;
+      }
       else if (form.country === 'Germany') {
         // Mirror the server-side `superRefine` rule so Step 2 blocks the
         // shopper before we ever call the order API. German addresses need
@@ -1121,10 +1137,11 @@ export default function CheckoutPage() {
               lastName: form.lastName,
               email: form.email,
               phone: form.phone,
-              address: form.address,
+              address: addressLine1,
               city: form.city,
               postcode: form.postcode,
               country: form.country,
+              addressNoHouseNumber: form.addressNoHouseNumber,
             },
             shippingMethod: form.shippingMethod,
             paymentMethod: form.paymentMethod as Exclude<CheckoutForm['paymentMethod'], ''>,
@@ -1429,7 +1446,7 @@ export default function CheckoutPage() {
           shipping: serverResult.shippingCost,
           discount: serverResult.discount,
           total: totalAmount,
-          address: form.address,
+          address: addressLine1,
           city: form.city,
           postcode: form.postcode,
           country: form.country,
@@ -1569,7 +1586,7 @@ export default function CheckoutPage() {
             <div className="flex justify-between border-t border-white/10 pt-2 mt-2"><span className="text-gray-400">Amount due</span><span className="text-amber-400 font-bold">£{confirmedTotal || total}</span></div>
           </div>
 
-          {form.address && (
+          {addressLine1 && (
             <div className="bg-[#0b1a30] border border-white/10 rounded-xl p-4 mb-6 text-left text-sm">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[10px] uppercase tracking-wider text-emerald-400/80 font-semibold">Delivery Address</p>
@@ -1583,7 +1600,7 @@ export default function CheckoutPage() {
                 {formatShippingAddressLines({
                   firstName: form.firstName,
                   lastName: form.lastName,
-                  address: form.address,
+                  address: addressLine1,
                   city: form.city,
                   postcode: form.postcode,
                   country: form.country,
@@ -1611,8 +1628,8 @@ export default function CheckoutPage() {
 
   // ── Step summary labels ──
   const step1Summary = form.firstName ? `${form.firstName} ${form.lastName} · ${form.email}` : null;
-  const step2Summary = form.address
-    ? formatShippingAddressInline({ address: form.address, city: form.city, postcode: form.postcode, country: form.country })
+  const step2Summary = addressLine1
+    ? formatShippingAddressInline({ address: addressLine1, city: form.city, postcode: form.postcode, country: form.country })
     : null;
 
   return (
@@ -1976,59 +1993,97 @@ export default function CheckoutPage() {
 
                 {currentStep === 2 && (
                   <div className="px-5 pb-5 space-y-4">
+                    {/* Field order: postcode → house number → street → city.
+                        Matches how UK shoppers (and Royal Mail labels) read an
+                        address, and lets the postcode lookup fill the rest. */}
                     <div>
-                      <label htmlFor="address" className="block text-xs font-medium text-gray-300 mb-1">Street Address <span className="text-red-400">*</span></label>
-                      <div className="relative">
-                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                        <input id="address" type="text" autoComplete="street-address" value={form.address} onChange={e => setField('address', e.target.value)} placeholder="42 Baker Street, Flat 3" style={iconInputStyle(!!errors.address)} />
-                      </div>
-                      {errors.address && <p className="text-red-400 text-xs mt-1">{errors.address}</p>}
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label htmlFor="city" className="block text-xs font-medium text-gray-300 mb-1">City / Town <span className="text-red-400">*</span></label>
-                        <input id="city" type="text" autoComplete="address-level2" value={form.city} onChange={e => setField('city', e.target.value)} placeholder={form.country === 'Germany' ? 'Berlin' : form.country === 'Poland' ? 'Warszawa' : 'London'} style={inputStyle(!!errors.city)} />
-                        {errors.city && <p className="text-red-400 text-xs mt-1">{errors.city}</p>}
-                      </div>
-                      <div>
-                        <label htmlFor="postcode" className="block text-xs font-medium text-gray-300 mb-1">
-                          {form.country === 'Germany' ? 'PLZ (Postleitzahl)' : form.country === 'Poland' ? 'Kod pocztowy' : form.country === 'Ireland' ? 'Eircode' : 'Postcode'} <span className="text-red-400">*</span>
-                        </label>
-                        <input
-                          id="postcode"
-                          type="text"
-                          autoComplete="postal-code"
-                          value={form.postcode}
-                          onChange={e => {
-                            const raw = e.target.value;
-                            if (form.country === 'Germany') {
-                              setField('postcode', raw.replace(/\D/g, '').slice(0, 5));
-                            } else if (form.country === 'Poland') {
-                              // NN-NNN format — keep digits + optional single dash.
-                              const digits = raw.replace(/\D/g, '').slice(0, 5);
-                              setField('postcode', digits.length > 2 ? `${digits.slice(0, 2)}-${digits.slice(2)}` : digits);
-                            } else {
-                              setField('postcode', raw.toUpperCase());
-                            }
-                          }}
-                          placeholder={form.country === 'Germany' ? '10115' : form.country === 'Poland' ? '00-001' : form.country === 'Ireland' ? 'D02 XY45' : 'SW1A 1AA'}
-                          inputMode={form.country === 'Germany' || form.country === 'Poland' ? 'numeric' : 'text'}
-                          style={inputStyle(!!errors.postcode)}
-                        />
-                        {errors.postcode && <p className="text-red-400 text-xs mt-1">{errors.postcode}</p>}
-                      </div>
+                      <label htmlFor="postcode" className="block text-xs font-medium text-gray-300 mb-1">
+                        {form.country === 'Germany' ? 'PLZ (Postleitzahl)' : form.country === 'Poland' ? 'Kod pocztowy' : form.country === 'Ireland' ? 'Eircode' : 'Postcode'} <span className="text-red-400">*</span>
+                      </label>
+                      <input
+                        id="postcode"
+                        type="text"
+                        autoComplete="postal-code"
+                        value={form.postcode}
+                        onChange={e => {
+                          const raw = e.target.value;
+                          if (form.country === 'Germany') {
+                            setField('postcode', raw.replace(/\D/g, '').slice(0, 5));
+                          } else if (form.country === 'Poland') {
+                            // NN-NNN format — keep digits + optional single dash.
+                            const digits = raw.replace(/\D/g, '').slice(0, 5);
+                            setField('postcode', digits.length > 2 ? `${digits.slice(0, 2)}-${digits.slice(2)}` : digits);
+                          } else {
+                            setField('postcode', raw.toUpperCase());
+                          }
+                        }}
+                        placeholder={form.country === 'Germany' ? '10115' : form.country === 'Poland' ? '00-001' : form.country === 'Ireland' ? 'D02 XY45' : 'SW1A 1AA'}
+                        inputMode={form.country === 'Germany' || form.country === 'Poland' ? 'numeric' : 'text'}
+                        style={inputStyle(!!errors.postcode)}
+                      />
+                      {errors.postcode && <p className="text-red-400 text-xs mt-1">{errors.postcode}</p>}
                     </div>
 
                     {form.country === 'United Kingdom' && (
                       <PostcodeLookup
                         postcode={form.postcode}
+                        house={form.houseNumber}
+                        onHouseChange={value => setField('houseNumber', value)}
+                        hideHouseInput
                         onApply={patch => {
-                          if (patch.address) setField('address', patch.address);
+                          if (patch.address) {
+                            // A full PAF address already contains the number.
+                            setForm(prev => ({ ...prev, address: patch.address!, houseNumber: '' }));
+                            setErrors(prev => ({ ...prev, address: '' }));
+                          }
                           if (patch.city) setField('city', patch.city);
                         }}
                       />
                     )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,9rem)_1fr] gap-3">
+                      <div>
+                        <label htmlFor="houseNumber" className="block text-xs font-medium text-gray-300 mb-1">
+                          House no. / name {form.country === 'United Kingdom' && !form.addressNoHouseNumber && <span className="text-red-400">*</span>}
+                        </label>
+                        <input
+                          id="houseNumber"
+                          type="text"
+                          autoComplete="address-line2"
+                          value={form.houseNumber}
+                          onChange={e => { setField('houseNumber', e.target.value.slice(0, 40)); setErrors(prev => ({ ...prev, address: '' })); }}
+                          placeholder="42"
+                          style={inputStyle(!!errors.address && !form.address.trim())}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="address" className="block text-xs font-medium text-gray-300 mb-1">Street Address <span className="text-red-400">*</span></label>
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                          <input id="address" type="text" autoComplete="street-address" value={form.address} onChange={e => setField('address', e.target.value)} placeholder="Baker Street, Flat 3" style={iconInputStyle(!!errors.address)} />
+                        </div>
+                      </div>
+                    </div>
+                    {errors.address && <p className="text-red-400 text-xs -mt-2">{errors.address}</p>}
+
+                    {form.country === 'United Kingdom' && (
+                      <label htmlFor="addressNoHouseNumber" className="flex items-start gap-2 text-xs text-gray-400 cursor-pointer">
+                        <input
+                          id="addressNoHouseNumber"
+                          type="checkbox"
+                          checked={form.addressNoHouseNumber}
+                          onChange={e => { setField('addressNoHouseNumber', e.target.checked); setErrors(prev => ({ ...prev, address: '' })); }}
+                          className="mt-0.5 w-4 h-4 accent-emerald-500"
+                        />
+                        <span>{NO_HOUSE_NUMBER_CHECKBOX_LABEL}</span>
+                      </label>
+                    )}
+
+                    <div>
+                      <label htmlFor="city" className="block text-xs font-medium text-gray-300 mb-1">City / Town <span className="text-red-400">*</span></label>
+                      <input id="city" type="text" autoComplete="address-level2" value={form.city} onChange={e => setField('city', e.target.value)} placeholder={form.country === 'Germany' ? 'Berlin' : form.country === 'Poland' ? 'Warszawa' : 'London'} style={inputStyle(!!errors.city)} />
+                      {errors.city && <p className="text-red-400 text-xs mt-1">{errors.city}</p>}
+                    </div>
 
 
                     <div>
