@@ -63,7 +63,7 @@ interface CheckoutForm {
 
 import { checkNextDayEligibility, SHIPPING_CONFIG, formatLondonDate } from '@/lib/shipping/next-day';
 import { formatShippingAddressInline, formatShippingAddressLines, shortPostcodeLabel } from '@/lib/format-address';
-import { joinAddressLine, validateUkAddressLine, NO_HOUSE_NUMBER_CHECKBOX_LABEL } from '@/lib/uk-address';
+import { joinAddressLine, validateUkAddressLine, hasHouseNumber, NO_HOUSE_NUMBER_CHECKBOX_LABEL } from '@/lib/uk-address';
 import { suggestEmailTypo } from '@/lib/email-typo';
 
 
