@@ -63,7 +63,7 @@ interface CheckoutForm {
 
 import { checkNextDayEligibility, SHIPPING_CONFIG, formatLondonDate } from '@/lib/shipping/next-day';
 import { formatShippingAddressInline, formatShippingAddressLines, shortPostcodeLabel } from '@/lib/format-address';
-import { joinAddressLine, validateUkAddressLine, NO_HOUSE_NUMBER_CHECKBOX_LABEL } from '@/lib/uk-address';
+import { joinAddressLine, validateUkAddressLine, hasHouseNumber, NO_HOUSE_NUMBER_CHECKBOX_LABEL } from '@/lib/uk-address';
 import { suggestEmailTypo } from '@/lib/email-typo';
 
 
@@ -604,15 +604,26 @@ export default function CheckoutPage() {
       if (u && !u.isAnonymous) {
         getDoc(doc(db, 'customers', u.uid)).then(snap => {
           const d = snap.exists() ? snap.data() : {};
+          const savedAddress = d.address || '';
           setForm(prev => ({
             ...prev,
             firstName: d.firstName || prev.firstName,
             lastName: d.lastName || prev.lastName,
             email: u.email || prev.email,
             phone: d.phone || prev.phone,
-            address: d.address || prev.address,
+            address: savedAddress || prev.address,
             city: d.city || prev.city,
             postcode: d.postcode || prev.postcode,
+            // Restore the "named property" confirmation so returning shoppers
+            // with e.g. "Rose Cottage" are not blocked on step 2. If the flag
+            // was never stored, infer it from the saved (previously shipped)
+            // address line.
+            addressNoHouseNumber:
+              typeof d.addressNoHouseNumber === 'boolean'
+                ? d.addressNoHouseNumber
+                : savedAddress
+                  ? !hasHouseNumber(savedAddress)
+                  : prev.addressNoHouseNumber,
           }));
         }).catch(() => {
           setForm(prev => ({ ...prev, email: u.email || prev.email }));
