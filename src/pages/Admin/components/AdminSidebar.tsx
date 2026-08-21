@@ -37,6 +37,7 @@ const navGroups = [
       { id: 'featured', label: 'Featured', icon: Star },
       { id: 'qc', label: 'QC Dashboard', icon: ShieldCheck },
       { id: 'orders', label: 'Orders', icon: ShoppingCart },
+      { id: 'orderinvoices', label: 'Invoices / Faktury', icon: FileText },
       { id: 'customers', label: 'Customers', icon: Users },
       { id: 'compliance', label: 'Compliance', icon: Shield },
       { id: 'auditlog', label: 'Audit Log', icon: Shield },
