@@ -82,6 +82,24 @@ export default function OrderInvoicesTab() {
     );
   }, [rows, search]);
 
+  /**
+   * Human label for the invoice "Payment method" line, derived from the order
+   * itself. Manual bank transfers must never be labelled as open banking.
+   */
+  const paymentMethodLabel = (o: any): string => {
+    const provider = String(
+      o?.paymentProvider || o?.paymentMethod || o?.payment?.provider || '',
+    ).toLowerCase();
+    if (provider.includes('wallid') || provider.includes('open_banking') || provider.includes('pay_by_bank')) {
+      return 'Bank transfer (open banking)';
+    }
+    if (provider.includes('peptidepay') || provider.includes('card')) return 'Card payment';
+    if (provider.includes('bank_transfer') || provider.includes('manual')) {
+      return 'Bank transfer';
+    }
+    return 'Bank transfer';
+  };
+
   const handleDownload = async (row: Row) => {
     setBusy(row.order.id);
     try {
@@ -105,7 +123,7 @@ export default function OrderInvoicesTab() {
         shipping: Number(o.shippingCost ?? 0) || 0,
         total: Number(o.total ?? o.totalAmount ?? 0) || 0,
         currency: 'GBP',
-        paymentMethod: 'Bank transfer (open banking)',
+        paymentMethod: paymentMethodLabel(o),
       });
     } catch (e) {
       console.error('[OrderInvoicesTab] PDF generation failed', e);

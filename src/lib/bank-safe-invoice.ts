@@ -119,7 +119,7 @@ export function buildInvoiceRows(input: BankSafeInvoiceInput) {
  * Generates the invoice PDF and triggers a browser download.
  * jsPDF is imported dynamically so it never enters the main bundle.
  */
-export async function downloadBankSafeInvoicePdf(input: BankSafeInvoiceInput): Promise<void> {
+export async function renderBankSafeInvoiceDoc(input: BankSafeInvoiceInput) {
   const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const symbol = (input.currency || 'GBP').toUpperCase() === 'GBP' ? '£' : '';
@@ -235,5 +235,11 @@ export async function downloadBankSafeInvoicePdf(input: BankSafeInvoiceInput): P
   put('Total', money(input.total, symbol), true);
 
   // No footer, no disclaimers — the document ends with the totals.
+  return doc;
+}
+
+/** Generates the invoice PDF and triggers a browser download. */
+export async function downloadBankSafeInvoicePdf(input: BankSafeInvoiceInput): Promise<void> {
+  const doc = await renderBankSafeInvoiceDoc(input);
   doc.save(`${input.invoiceNumber}.pdf`);
 }
