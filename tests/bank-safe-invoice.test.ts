@@ -6,7 +6,7 @@ import {
   containsBannedToken,
   genericItemDescription,
   INVOICE_FOOTER_NOTE,
-} from '@/lib/bank-safe-invoice';
+} from '../src/lib/bank-safe-invoice';
 
 describe('bank-safe invoice', () => {
   it('never prints a trade name, only generic description + SKU', () => {
