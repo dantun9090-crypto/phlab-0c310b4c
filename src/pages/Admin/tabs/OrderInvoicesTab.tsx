@@ -94,6 +94,7 @@ export default function OrderInvoicesTab() {
         buyerAddressLines: addressLines(o),
         buyerEmail: (o as any).customer?.email || o.userEmail,
         items: (o.items || []).map((it) => ({
+          name: (it as any).name || (it as any).productName,
           sku: it.sku || it.variantId || it.productId,
           quantity: it.quantity,
           unitPrice: Number(it.price) || 0,
