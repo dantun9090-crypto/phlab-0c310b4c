@@ -1,45 +1,39 @@
 /**
- * Bank-safe invoice generation.
+ * Neutral invoice generation for bank / fintech verification.
  *
- * Banks / fintechs (Revolut, Payoneer, Zempler) routinely ask for sample
- * invoices during merchant verification. Those documents must read like a
- * laboratory-supply invoice, so this module deliberately NEVER prints trade
- * names of research compounds and never uses physiology/fitness vocabulary.
- *
- * Every line item is rendered as a neutral description plus the internal SKU,
- * which resolves back to the order in our own system only.
+ * The document must read like an ordinary online-shop invoice: no chemical or
+ * laboratory vocabulary, no disclaimers, no footer notes. Product names that
+ * contain research/chemical keywords are mapped to a neutral retail
+ * description; everything else keeps its original name. SKUs are printed as-is.
  */
 
-/** Neutral line descriptions, rotated so a multi-line invoice still reads naturally. */
-const GENERIC_DESCRIPTIONS = [
-  'Research Compound',
-  'Laboratory Reagent',
-  'Analytical Standard',
-] as const;
+/** Neutral retail descriptions used when a product name must be masked. */
+export const NEUTRAL_ITEM_DESCRIPTIONS = ['Health Supplement', 'Nutraceutical'] as const;
 
-/** Words that must never appear anywhere on a generated invoice. */
-export const BANNED_INVOICE_TOKENS = [
-  'steroid',
-  'steroids',
-  'hormone',
-  'hormones',
-  'growth',
-  'muscle',
-  'bodybuilding',
+/** Keywords that force a product name to be replaced with a neutral description. */
+export const MASKED_NAME_KEYWORDS = [
   'peptide',
-  'peptides',
   'sarm',
-  'sarms',
-  'dosage',
-  'injection',
-  'injectable',
+  'mk-',
+  'bpc-',
+  'tb-',
+  'rad-',
+  'lgd-',
+  'gw-',
+  'yk-',
+  's4',
+  's23',
+  'chemical',
+  'research',
+  'compound',
+  'lab',
+  'reagent',
 ] as const;
-
-export const INVOICE_FOOTER_NOTE =
-  'All products sold strictly for research purposes only. Not for human consumption.';
 
 export interface BankSafeInvoiceItem {
-  /** Internal SKU / product reference. Never a trade name. */
+  /** Original product name from the order. Masked when it hits a keyword. */
+  name?: string;
+  /** Internal SKU / product reference, printed unchanged. */
   sku?: string;
   quantity: number;
   unitPrice: number;
@@ -71,18 +65,23 @@ export const SELLER = {
   site: 'phlabs.co.uk',
 };
 
-/** Generic, bank-safe description for the nth line of an invoice. */
-export function genericItemDescription(index: number, sku?: string): string {
-  const base = GENERIC_DESCRIPTIONS[index % GENERIC_DESCRIPTIONS.length];
-  const ref = (sku || '').trim();
-  const safeRef = ref && !containsBannedToken(ref) ? ref : `ITEM-${index + 1}`;
-  return `${base} — Item #${index + 1} (SKU ${safeRef})`;
+/** True when a product name contains a keyword that must never be printed. */
+export function needsNeutralDescription(name?: string): boolean {
+  const lower = String(name || '').toLowerCase();
+  if (!lower.trim()) return true;
+  return MASKED_NAME_KEYWORDS.some((k) => lower.includes(k));
 }
 
-/** True when the supplied text contains any forbidden token. */
-export function containsBannedToken(text: string): boolean {
-  const lower = String(text || '').toLowerCase();
-  return BANNED_INVOICE_TOKENS.some((t) => new RegExp(`\\b${t}\\b`, 'i').test(lower));
+/**
+ * Invoice description for the nth line: the original product name when it is
+ * already neutral, otherwise a neutral retail description.
+ */
+export function invoiceItemDescription(index: number, name?: string, sku?: string): string {
+  const base = needsNeutralDescription(name)
+    ? NEUTRAL_ITEM_DESCRIPTIONS[index % NEUTRAL_ITEM_DESCRIPTIONS.length]
+    : String(name).trim();
+  const ref = (sku || '').trim();
+  return ref ? `${base} (SKU ${ref})` : base;
 }
 
 /**
@@ -108,7 +107,7 @@ export function buildInvoiceRows(input: BankSafeInvoiceInput) {
     const qty = it.quantity > 0 ? it.quantity : 1;
     const line = it.lineTotal ?? it.unitPrice * qty;
     return {
-      description: genericItemDescription(i, it.sku),
+      description: invoiceItemDescription(i, it.name, it.sku),
       quantity: qty,
       unitPrice: it.unitPrice,
       lineTotal: line,
@@ -235,16 +234,6 @@ export async function downloadBankSafeInvoicePdf(input: BankSafeInvoiceInput): P
   y += 2;
   put('Total', money(input.total, symbol), true);
 
-  // ── Footer ──
-  const footerY = 278;
-  doc.setDrawColor(210);
-  doc.setLineWidth(0.3);
-  doc.line(left, footerY - 8, right, footerY - 8);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(90);
-  doc.text(INVOICE_FOOTER_NOTE, left, footerY - 3);
-  doc.text(`${SELLER.name} · ${SELLER.site} · ${SELLER.email}`, left, footerY + 2);
-
+  // No footer, no disclaimers — the document ends with the totals.
   doc.save(`${input.invoiceNumber}.pdf`);
 }

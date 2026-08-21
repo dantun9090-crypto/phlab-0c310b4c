@@ -2,11 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { FileText, Download, RefreshCw, Search, Loader2, ShieldCheck } from 'lucide-react';
 import { getAllOrders, Order } from '@/lib/firebase';
 import { toDateSafe, toMillisSafe } from '@/lib/to-date';
-import {
-  buildInvoiceNumber,
-  downloadBankSafeInvoicePdf,
-  INVOICE_FOOTER_NOTE,
-} from '@/lib/bank-safe-invoice';
+import { buildInvoiceNumber, downloadBankSafeInvoicePdf } from '@/lib/bank-safe-invoice';
 
 interface Row {
   order: Order;
@@ -98,6 +94,7 @@ export default function OrderInvoicesTab() {
         buyerAddressLines: addressLines(o),
         buyerEmail: (o as any).customer?.email || o.userEmail,
         items: (o.items || []).map((it) => ({
+          name: (it as any).name || (it as any).productName,
           sku: it.sku || it.variantId || it.productId,
           quantity: it.quantity,
           unitPrice: Number(it.price) || 0,
@@ -143,8 +140,8 @@ export default function OrderInvoicesTab() {
       <div className="flex items-start gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-4 text-sm text-emerald-200">
         <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0" />
         <p>
-          Line items print as neutral laboratory descriptions plus the internal SKU — no trade names.
-          Footer: “{INVOICE_FOOTER_NOTE}”
+          Names matching research/chemical keywords print as “Health Supplement” or “Nutraceutical”
+          plus the SKU; all other names print unchanged. No footer, no disclaimers.
         </p>
       </div>
 
