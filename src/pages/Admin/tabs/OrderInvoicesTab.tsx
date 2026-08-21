@@ -123,7 +123,7 @@ export default function OrderInvoicesTab() {
         shipping: Number(o.shippingCost ?? 0) || 0,
         total: Number(o.total ?? o.totalAmount ?? 0) || 0,
         currency: 'GBP',
-        paymentMethod: 'Bank transfer (open banking)',
+        paymentMethod: paymentMethodLabel(o),
       });
     } catch (e) {
       console.error('[OrderInvoicesTab] PDF generation failed', e);
