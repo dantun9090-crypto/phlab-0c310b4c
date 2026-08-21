@@ -2,11 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { FileText, Download, RefreshCw, Search, Loader2, ShieldCheck } from 'lucide-react';
 import { getAllOrders, Order } from '@/lib/firebase';
 import { toDateSafe, toMillisSafe } from '@/lib/to-date';
-import {
-  buildInvoiceNumber,
-  downloadBankSafeInvoicePdf,
-  INVOICE_FOOTER_NOTE,
-} from '@/lib/bank-safe-invoice';
+import { buildInvoiceNumber, downloadBankSafeInvoicePdf } from '@/lib/bank-safe-invoice';
 
 interface Row {
   order: Order;
