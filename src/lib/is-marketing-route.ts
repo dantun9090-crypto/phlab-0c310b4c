@@ -3,7 +3,7 @@
 // installation work on standalone marketing landings.
 //
 // Marketing landings render under the `_marketing` pathless layout
-// (e.g. /compound). They do NOT need the e-commerce app shell, the
+// (e.g. /compound, /landingad). They do NOT need the e-commerce app shell, the
 // Firebase auth listener, the legacy router, web-vitals reporting, or
 // the service-worker cleanup — keeping those off these routes is what
 // gives us the mobile-Lighthouse TBT win.
@@ -13,6 +13,7 @@
 
 const MARKETING_PATH_PREFIXES = [
   "/compound",
+  "/landingad",
 ] as const;
 
 export function isMarketingRoute(): boolean {
