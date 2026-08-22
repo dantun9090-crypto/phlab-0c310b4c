@@ -59,6 +59,7 @@ export const NEVER_INDEX_EXACT = new Set<string>([
   "/request-catalog",
   "/sentry-test",
   "/watchdog-panel",
+  "/landingad",          // Google Ads copy of /compound — served noindex,follow by design
 ]);
 
 export interface RobotsRule {

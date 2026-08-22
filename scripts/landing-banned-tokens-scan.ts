@@ -1,14 +1,16 @@
 #!/usr/bin/env bun
 /**
  * Build-time guard: fail if Google-Ads-restricted molecule names appear in
- * the /compound or /landing/phlabs landing page source. These pages are
- * Google Ads destinations and must stay free of pharma classifier triggers.
+ * the /compound, /landingad or /landing/phlabs landing page source. These
+ * pages are Google Ads destinations and must stay free of pharma classifier
+ * triggers.
  *
  * Scans:
- *   - src/components/PremiumLanding.tsx          (/compound body)
+ *   - src/components/PremiumLanding.tsx          (/compound + /landingad body)
  *   - src/components/EditorialLanding.tsx        (/landing/phlabs body)
  *   - src/components/LandingPromoStrip.tsx       (shared promo strip)
  *   - src/routes/_marketing.compound.tsx         (/compound head)
+ *   - src/routes/_marketing.landingad.tsx        (/landingad head)
  *   - src/routes/landing.phlabs.tsx              (/landing/phlabs head)
  *
  * Exits 0 clean / 1 on any hit.
@@ -21,6 +23,7 @@ const FILES = [
   "src/components/EditorialLanding.tsx",
   "src/components/LandingPromoStrip.tsx",
   "src/routes/_marketing.compound.tsx",
+  "src/routes/_marketing.landingad.tsx",
   "src/routes/landing.phlabs.tsx",
   "src/routes/uk-research-store.tsx",
 ];
@@ -62,17 +65,16 @@ for (const rel of FILES) {
   for (const re of BANNED) {
     const m = src.match(re);
     if (m) {
-      const idx = src.indexOf(m[0]);
-      const ctx = src.slice(Math.max(0, idx - 50), idx + m[0].length + 50)
-        .replace(/\s+/g, " ");
+      const i = m.index ?? 0;
+      const ctx = src.slice(Math.max(0, i - 40), i + 60).replace(/\s+/g, " ");
       console.error(`❌ ${rel} — "${m[0]}" → …${ctx}…`);
       failed++;
     }
   }
 }
 
-if (failed > 0) {
+if (failed) {
   console.error(`\nFAIL: ${failed} banned token(s) in Ads landing source.`);
   process.exit(1);
 }
-console.log(`✅ Ads landings clean (${FILES.length} files scanned).`);
+console.log("✅ Ads landing sources clean (no banned tokens).");
