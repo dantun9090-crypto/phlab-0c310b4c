@@ -147,10 +147,8 @@ const routes = [
   // shop Layout during emergency CSR boot so it never falls through to 404
   // or renders a duplicate storefront header.
   { path: '/compound', element: <PremiumLanding eyebrow="UK Laboratory Supply" /> },
-  // /landingad (Google Ads copy of /compound) — same deal: the client boots
-  // in emergency CSR mode, which wipes the SSR HTML and mounts LegacyApp.
-  // Without this entry the legacy router falls through to <NotFound /> and
-  // every visitor lands on a fake 404 on top of the correct SSR HTML.
+  // /landingad (Google Ads copy of /compound) — same deal: without this entry
+  // the legacy router falls through to <NotFound /> during emergency CSR boot.
   { path: '/landingad', element: <PremiumLanding eyebrow="UK Laboratory Supply" /> },
   // /uk-research-store is an SSR-first landing page (own <main>, own SEO
   // head). Registered here too so the legacy client-side router does NOT
