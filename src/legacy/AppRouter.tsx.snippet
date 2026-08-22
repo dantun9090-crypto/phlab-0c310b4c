@@ -1,0 +1,9 @@
+  // /compound is a dedicated marketing route. Keep it outside the legacy
+  // shop Layout during emergency CSR boot so it never falls through to 404
+  // or renders a duplicate storefront header.
+  { path: '/compound', element: <PremiumLanding eyebrow="UK Laboratory Supply" /> },
+  // /landingad (Google Ads copy of /compound) — same deal: the client boots
+  // in emergency CSR mode, which wipes the SSR HTML and mounts LegacyApp.
+  // Without this entry the legacy router falls through to <NotFound /> and
+  // every visitor lands on a fake 404 on top of the correct SSR HTML.
+  { path: '/landingad', element: <PremiumLanding eyebrow="UK Laboratory Supply" /> },
