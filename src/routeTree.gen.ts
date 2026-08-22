@@ -77,6 +77,7 @@ import { Route as AdminNewsletterRouteImport } from './routes/admin.newsletter'
 import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.merchant-feed-preview'
 import { Route as AdminHealthRouteImport } from './routes/admin.health'
 import { Route as AdminAuditReportRouteImport } from './routes/admin.audit-report'
+import { Route as MarketingLandingadRouteImport } from './routes/_marketing.landingad'
 import { Route as MarketingCompoundRouteImport } from './routes/_marketing.compound'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
@@ -497,6 +498,11 @@ const AdminAuditReportRoute = AdminAuditReportRouteImport.update({
   id: '/audit-report',
   path: '/audit-report',
   getParentRoute: () => AdminRoute,
+} as any)
+const MarketingLandingadRoute = MarketingLandingadRouteImport.update({
+  id: '/landingad',
+  path: '/landingad',
+  getParentRoute: () => MarketingRoute,
 } as any)
 const MarketingCompoundRoute = MarketingCompoundRouteImport.update({
   id: '/compound',
@@ -926,6 +932,7 @@ export interface FileRoutesByFullPath {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/compound': typeof MarketingCompoundRoute
+  '/landingad': typeof MarketingLandingadRoute
   '/admin/audit-report': typeof AdminAuditReportRoute
   '/admin/health': typeof AdminHealthRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
@@ -1066,6 +1073,7 @@ export interface FileRoutesByTo {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/compound': typeof MarketingCompoundRoute
+  '/landingad': typeof MarketingLandingadRoute
   '/admin/audit-report': typeof AdminAuditReportRoute
   '/admin/health': typeof AdminHealthRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
@@ -1209,6 +1217,7 @@ export interface FileRoutesById {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_marketing/compound': typeof MarketingCompoundRoute
+  '/_marketing/landingad': typeof MarketingLandingadRoute
   '/admin/audit-report': typeof AdminAuditReportRoute
   '/admin/health': typeof AdminHealthRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
@@ -1352,6 +1361,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/compound'
+    | '/landingad'
     | '/admin/audit-report'
     | '/admin/health'
     | '/admin/merchant-feed-preview'
@@ -1492,6 +1502,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/compound'
+    | '/landingad'
     | '/admin/audit-report'
     | '/admin/health'
     | '/admin/merchant-feed-preview'
@@ -1634,6 +1645,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/_marketing/compound'
+    | '/_marketing/landingad'
     | '/admin/audit-report'
     | '/admin/health'
     | '/admin/merchant-feed-preview'
@@ -2343,6 +2355,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAuditReportRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_marketing/landingad': {
+      id: '/_marketing/landingad'
+      path: '/landingad'
+      fullPath: '/landingad'
+      preLoaderRoute: typeof MarketingLandingadRouteImport
+      parentRoute: typeof MarketingRoute
+    }
     '/_marketing/compound': {
       id: '/_marketing/compound'
       path: '/compound'
@@ -2852,10 +2871,12 @@ declare module '@tanstack/react-router' {
 
 interface MarketingRouteChildren {
   MarketingCompoundRoute: typeof MarketingCompoundRoute
+  MarketingLandingadRoute: typeof MarketingLandingadRoute
 }
 
 const MarketingRouteChildren: MarketingRouteChildren = {
   MarketingCompoundRoute: MarketingCompoundRoute,
+  MarketingLandingadRoute: MarketingLandingadRoute,
 }
 
 const MarketingRouteWithChildren = MarketingRoute._addFileChildren(
