@@ -241,12 +241,20 @@ export default function PaymentMethodOptions({
               aria-describedby={primarySelected ? primaryInstructionsId : undefined}
               className={primaryCardClass}
             >
-              {/* Recommended badge */}
-              <span className="absolute top-3 right-3 inline-flex items-center rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-900 shadow-sm">
-                Recommended
-              </span>
+              {/* Badge row in normal flow */}
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <span className="inline-flex items-center rounded-full bg-emerald-500 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-900 shadow-sm">
+                  Recommended
+                </span>
+                <ChevronDown
+                  className={`w-4 h-4 shrink-0 text-slate-400 transition-transform ${
+                    primarySelected ? "rotate-180" : ""
+                  }`}
+                  aria-hidden="true"
+                />
+              </div>
 
-              <div className="flex items-start gap-3 pr-24">
+              <div className="flex items-start gap-3">
                 <Radio checked={primarySelected} tone="emerald" />
                 <span
                   aria-hidden="true"
@@ -254,32 +262,23 @@ export default function PaymentMethodOptions({
                 >
                   <Landmark className="h-5 w-5 text-emerald-300" />
                 </span>
-                <div className="min-w-0 flex-1 pt-0.5">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-base font-semibold text-white leading-tight">
-                      Pay by Bank
+                <div className="min-w-0 flex-1">
+                  <span className="block text-base font-semibold leading-snug text-white">
+                    Pay by Bank{" "}
+                    <span className="text-xs font-medium text-emerald-300/90">— Open Banking</span>
+                  </span>
+                  {primarySelected && (
+                    <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
+                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                      Selected
                     </span>
-                    <span className="text-xs font-medium text-emerald-300/90">
-                      — Open Banking
-                    </span>
-                    {primarySelected && (
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
-                        <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
-                        Selected
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-300 mt-1">
+                  )}
+                  <p className="mt-1 text-xs leading-relaxed text-slate-300">
                     Instant UK bank transfer — no card needed.
                   </p>
                 </div>
-                <ChevronDown
-                  className={`w-4 h-4 text-slate-400 shrink-0 mt-2 transition-transform ${
-                    primarySelected ? "rotate-180" : ""
-                  }`}
-                  aria-hidden="true"
-                />
               </div>
+
             </button>
 
             <Drawer open={primarySelected} id={primaryInstructionsId}>
