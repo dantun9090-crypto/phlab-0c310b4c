@@ -92,6 +92,32 @@ export function buildInvoiceNumber(year: number, sequence: number): string {
   return `INV-${year}-${String(sequence).padStart(4, '0')}`;
 }
 
+/**
+ * Stable invoice number for an order. It never depends on how many other
+ * orders exist, so deleting an order cannot renumber the rest.
+ *
+ * 1. If the order already carries an `INV-...` bank transfer reference, that
+ *    exact value is used — the paperwork then matches the customer's bank
+ *    narrative.
+ * 2. Otherwise it is derived deterministically from the order reference.
+ */
+export function invoiceNumberForOrder(order: {
+  id?: string;
+  orderId?: string;
+  bankTransferReference?: string;
+  year?: number;
+}): string {
+  const existing = String(order.bankTransferReference || '').trim().toUpperCase();
+  if (/^INV-\d{4}-[A-Z0-9-]+$/.test(existing)) return existing;
+  const year = order.year ?? new Date().getFullYear();
+  const ref = String(order.orderId || order.id || '')
+    .trim()
+    .toUpperCase()
+    .replace(/^PHP-/, '')
+    .replace(/[^A-Z0-9]/g, '');
+  return `INV-${year}-${ref || '0000'}`;
+}
+
 function money(value: number, symbol = '£'): string {
   return `${symbol}${(Number.isFinite(value) ? value : 0).toFixed(2)}`;
 }
