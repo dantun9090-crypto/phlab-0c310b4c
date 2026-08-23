@@ -163,6 +163,18 @@ export default function PaymentMethodOptions({
 
   const methodCount = (showPrimary ? 1 : 0) + (peptidepayEnabled ? 1 : 0) + 1;
 
+  /**
+   * Manual Bank Transfer is the ONLY method available. Customers were tapping
+   * the card and thinking "nothing happens" (there was no other option to
+   * switch to), so we pre-select it, give it the premium emerald treatment and
+   * spell out the next step instead of leaving it looking like a dead choice.
+   */
+  const soleManual = methodCount === 1;
+
+  useEffect(() => {
+    if (soleManual && value === "") onChange("bank_transfer");
+  }, [soleManual, value, onChange]);
+
   const baseCardClass =
     "group relative rounded-2xl border p-4 sm:p-5 cursor-pointer transition-all text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70";
 
