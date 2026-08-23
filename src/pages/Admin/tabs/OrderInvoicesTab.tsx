@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { FileText, Download, RefreshCw, Search, Loader2, ShieldCheck } from 'lucide-react';
 import { getAllOrders, Order } from '@/lib/firebase';
 import { toDateSafe, toMillisSafe } from '@/lib/to-date';
-import { buildInvoiceNumber, downloadBankSafeInvoicePdf } from '@/lib/bank-safe-invoice';
+import { invoiceNumberForOrder, downloadBankSafeInvoicePdf } from '@/lib/bank-safe-invoice';
 
 interface Row {
   order: Order;
@@ -39,25 +39,24 @@ export default function OrderInvoicesTab() {
     setLoading(true);
     try {
       const orders = await getAllOrders();
-      // Deterministic invoice numbering: oldest order in a year gets 0001.
-      const ascending = [...orders].sort((a, b) => toMillisSafe(a.orderDate) - toMillisSafe(b.orderDate));
-      const perYear = new Map<number, number>();
-      const numbered = new Map<string, string>();
-      ascending.forEach((o) => {
-        const d = toDateSafe(o.orderDate);
-        const year = d ? d.getFullYear() : new Date().getFullYear();
-        const next = (perYear.get(year) || 0) + 1;
-        perYear.set(year, next);
-        numbered.set(o.id, buildInvoiceNumber(year, next));
-      });
       setRows(
         [...orders]
           .sort((a, b) => toMillisSafe(b.orderDate) - toMillisSafe(a.orderDate))
-          .map((order) => ({
-            order,
-            invoiceNumber: numbered.get(order.id) || buildInvoiceNumber(new Date().getFullYear(), 1),
-            date: toDateSafe(order.orderDate),
-          })),
+          .map((order) => {
+            const d = toDateSafe(order.orderDate);
+            return {
+              order,
+              // Stable per-order number: reuses the customer's bank transfer
+              // reference when present, otherwise derived from the order ref.
+              invoiceNumber: invoiceNumberForOrder({
+                id: order.id,
+                orderId: order.orderId,
+                bankTransferReference: (order as any).bankTransferReference,
+                year: d ? d.getFullYear() : new Date().getFullYear(),
+              }),
+              date: d,
+            };
+          }),
       );
     } catch (e) {
       console.error('[OrderInvoicesTab] failed to load orders', e);

@@ -224,12 +224,11 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
   }
 
   const orderId = 'PHP-' + Date.now().toString(36).toUpperCase();
-  // Manual bank transfer reference — invoice style, e.g. INV-2026-1042.
-  // 4 digits derived from the timestamp (+ random low digit) keep it unique
-  // while staying short enough for bank narrative fields.
+  // Manual bank transfer reference — invoice style, e.g. INV-2026-MT32LX6S.
+  // Derived 1:1 from orderId so it is globally unique and the admin invoice
+  // number for the same order always matches this reference exactly.
   const refYear = new Date().getFullYear();
-  const refSeq = String((Math.floor(Date.now() / 1000) * 10 + Math.floor(Math.random() * 10)) % 10000).padStart(4, '0');
-  const btRef = `INV-${refYear}-${refSeq}`;
+  const btRef = `INV-${refYear}-${orderId.replace(/^PHP-/, '')}`;
 
   const nowIso = new Date();
   const paymentToken =
