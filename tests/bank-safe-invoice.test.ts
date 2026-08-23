@@ -4,6 +4,7 @@ import {
   buildInvoiceRows,
   invoiceItemDescription,
   MASKED_NAME_KEYWORDS,
+  invoiceNumberForOrder,
   needsNeutralDescription,
 } from '../src/lib/bank-safe-invoice';
 
@@ -41,5 +42,20 @@ describe('invoice line descriptions', () => {
   it('formats deterministic invoice numbers', () => {
     expect(buildInvoiceNumber(2026, 1)).toBe('INV-2026-0001');
     expect(buildInvoiceNumber(2026, 137)).toBe('INV-2026-0137');
+  });
+});
+
+describe('stable invoice numbers', () => {
+  it('reuses the bank transfer reference when present', () => {
+    expect(
+      invoiceNumberForOrder({ id: 'x', orderId: 'PHP-MT32LX6S', bankTransferReference: 'INV-2026-MT32LX6S', year: 2026 }),
+    ).toBe('INV-2026-MT32LX6S');
+  });
+
+  it('derives a per-order number that does not depend on other orders', () => {
+    const a = invoiceNumberForOrder({ orderId: 'PHP-MT32LX6S', year: 2026 });
+    expect(a).toBe('INV-2026-MT32LX6S');
+    expect(invoiceNumberForOrder({ orderId: 'PHP-MT32LX6S', year: 2026 })).toBe(a);
+    expect(invoiceNumberForOrder({ orderId: 'PHP-MSM59LP8', year: 2026 })).not.toBe(a);
   });
 });
