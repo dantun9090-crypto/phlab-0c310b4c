@@ -9,7 +9,7 @@
  * routing) is owned by the parent Checkout page. No external logo images —
  * text + Tailwind + Lucide icons only, safe on the pre-rendered dark theme.
  */
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   CheckCircle2,
   ChevronDown,
@@ -138,8 +138,13 @@ export default function PaymentMethodOptions({
     next: PaymentMethodValue,
     clickTarget: HTMLElement | null,
   ) => {
-    if (next === value) return;
     console.log(`[PAYMENT] select method=${next}`);
+    if (next === value) {
+      // Re-tapping the already selected card must not feel like a dead click:
+      // re-emit the selection so the parent clears any validation error.
+      onChange(next);
+      return;
+    }
     const anchorTop = clickTarget?.getBoundingClientRect().top ?? null;
     onChange(next);
     if (typeof window === "undefined") return;
@@ -158,6 +163,18 @@ export default function PaymentMethodOptions({
 
   const methodCount = (showPrimary ? 1 : 0) + (peptidepayEnabled ? 1 : 0) + 1;
 
+  /**
+   * Manual Bank Transfer is the ONLY method available. Customers were tapping
+   * the card and thinking "nothing happens" (there was no other option to
+   * switch to), so we pre-select it, give it the premium emerald treatment and
+   * spell out the next step instead of leaving it looking like a dead choice.
+   */
+  const soleManual = methodCount === 1;
+
+  useEffect(() => {
+    if (soleManual && value === "") onChange("bank_transfer");
+  }, [soleManual, value, onChange]);
+
   const baseCardClass =
     "group relative rounded-2xl border p-4 sm:p-5 cursor-pointer transition-all text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70";
 
@@ -165,9 +182,11 @@ export default function PaymentMethodOptions({
     primarySelected ? "ring-2 ring-emerald-500/50 shadow-lg shadow-emerald-900/20" : ""
   }`;
 
-  const manualCardClass = `${baseCardClass} border-slate-700/50 bg-slate-900/60 hover:bg-slate-800/60 ${
-    manualSelected ? "ring-2 ring-emerald-500/40" : ""
-  }`;
+  const manualCardClass = soleManual
+    ? `${baseCardClass} border-emerald-500/40 bg-gradient-to-br from-emerald-500/[0.14] to-emerald-900/[0.10] shadow-lg shadow-emerald-900/25 ring-2 ring-emerald-500/50`
+    : `${baseCardClass} border-slate-700/50 bg-slate-900/60 hover:bg-slate-800/60 ${
+        manualSelected ? "ring-2 ring-emerald-500/40" : ""
+      }`;
 
   const peptidepayCardClass = `${baseCardClass} border-slate-700/50 bg-slate-900/60 hover:bg-slate-800/60 ${
     value === "peptidepay" ? "ring-2 ring-emerald-500/40" : ""
@@ -181,7 +200,9 @@ export default function PaymentMethodOptions({
             Payment method
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            {methodCount} secure way{methodCount === 1 ? "" : "s"} to pay — choose one below
+            {soleManual
+              ? "Manual Bank Transfer — already selected for you"
+              : `${methodCount} secure ways to pay — choose one below`}
           </p>
         </div>
         <span className="inline-flex items-center gap-1.5 shrink-0 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-[10.5px] font-semibold text-emerald-300">
@@ -381,23 +402,39 @@ export default function PaymentMethodOptions({
             aria-describedby={manualSelected ? "manual-bank-transfer-details" : undefined}
             className={manualCardClass}
           >
-            {/* 48H HOLD badge */}
-            <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full border border-slate-600 bg-slate-800 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-300">
+            {/* Badge: highlight exclusivity when it is the only method */}
+            <span
+              className={
+                soleManual
+                  ? "absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-900 shadow-sm"
+                  : "absolute top-3 right-3 inline-flex items-center gap-1 rounded-full border border-slate-600 bg-slate-800 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-300"
+              }
+            >
               <Clock className="w-3 h-3" aria-hidden="true" />
-              48h hold
+              {soleManual ? "Only option · 48h hold" : "48h hold"}
             </span>
 
-            <div className="flex items-start gap-3 pr-20">
-              <Radio checked={manualSelected} tone="slate" />
+            <div className="flex items-start gap-3 pr-24">
+              <Radio checked={manualSelected} tone={soleManual ? "emerald" : "slate"} />
               <span
                 aria-hidden="true"
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5"
+                className={
+                  soleManual
+                    ? "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10"
+                    : "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5"
+                }
               >
-                <ArrowLeftRight className="h-5 w-5 text-slate-300" />
+                <ArrowLeftRight
+                  className={soleManual ? "h-5 w-5 text-emerald-300" : "h-5 w-5 text-slate-300"}
+                />
               </span>
               <div className="min-w-0 flex-1 pt-0.5">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-base font-semibold text-white leading-tight">
+                  <span
+                    className={`font-semibold text-white leading-tight ${
+                      soleManual ? "text-lg" : "text-base"
+                    }`}
+                  >
                     Manual Bank Transfer
                   </span>
                   {manualSelected && (
@@ -410,6 +447,12 @@ export default function PaymentMethodOptions({
                 <p className="text-xs text-slate-300 mt-1">
                   Receive bank details by email and transfer manually within 48 hours.
                 </p>
+                {soleManual && (
+                  <p className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1.5 text-[11.5px] font-medium text-emerald-200">
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    Nothing to choose — continue to “Place Order” below
+                  </p>
+                )}
               </div>
               <ChevronDown
                 className={`w-4 h-4 text-slate-400 shrink-0 mt-2 transition-transform ${
