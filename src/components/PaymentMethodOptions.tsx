@@ -182,9 +182,11 @@ export default function PaymentMethodOptions({
     primarySelected ? "ring-2 ring-emerald-500/50 shadow-lg shadow-emerald-900/20" : ""
   }`;
 
-  const manualCardClass = `${baseCardClass} border-slate-700/50 bg-slate-900/60 hover:bg-slate-800/60 ${
-    manualSelected ? "ring-2 ring-emerald-500/40" : ""
-  }`;
+  const manualCardClass = soleManual
+    ? `${baseCardClass} border-emerald-500/40 bg-gradient-to-br from-emerald-500/[0.14] to-emerald-900/[0.10] shadow-lg shadow-emerald-900/25 ring-2 ring-emerald-500/50`
+    : `${baseCardClass} border-slate-700/50 bg-slate-900/60 hover:bg-slate-800/60 ${
+        manualSelected ? "ring-2 ring-emerald-500/40" : ""
+      }`;
 
   const peptidepayCardClass = `${baseCardClass} border-slate-700/50 bg-slate-900/60 hover:bg-slate-800/60 ${
     value === "peptidepay" ? "ring-2 ring-emerald-500/40" : ""
