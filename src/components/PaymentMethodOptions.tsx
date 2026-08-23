@@ -9,7 +9,7 @@
  * routing) is owned by the parent Checkout page. No external logo images —
  * text + Tailwind + Lucide icons only, safe on the pre-rendered dark theme.
  */
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   CheckCircle2,
   ChevronDown,
