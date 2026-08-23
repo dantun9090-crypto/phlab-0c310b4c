@@ -12,6 +12,10 @@
 import { getDocAdmin, updateDocAdmin } from "@/lib/server/firestore-admin";
 import { fenaCreateAndProcess } from "@/lib/fena.server";
 import { truelayerCreatePayment } from "./truelayer.server";
+import {
+  nowpaymentsCreateInvoice,
+  nowpaymentsCreatePayment,
+} from "./nowpayments.server";
 
 import {
   getGatewayConfig,
@@ -109,6 +113,70 @@ async function runAdapter(gateway: GatewayId, ctx: OrderCtx, sandbox: boolean): 
     };
   }
 
+  if (gateway === "nowpayments") {
+    const cfg = await getGatewayConfig("nowpayments");
+    const flow = cfg.flow ?? "invoice";
+    const ipnCallbackUrl = `${SITE_ORIGIN}/api/public/hooks/nowpayments`;
+    const description = `PH Labs order ${ctx.reference}`;
+
+    if (flow === "payment") {
+      // Direct deposit-address payment. The customer is sent to our own
+      // crypto status page — that page is phase-2 work, so until it ships
+      // the admin panel should keep this gateway on the "invoice" flow.
+      const result = await nowpaymentsCreatePayment({
+        priceAmount: ctx.amountGbp,
+        priceCurrency: "gbp",
+        orderId: ctx.orderId,
+        orderDescription: description,
+        ipnCallbackUrl,
+        sandbox,
+      });
+      await updateDocAdmin("orders", ctx.orderId, {
+        paymentProvider: "nowpayments",
+        nowpaymentsFlow: "payment",
+        nowpaymentsPaymentId: result.payment_id,
+        nowpaymentsPayAddress: result.pay_address,
+        nowpaymentsPayAmount: result.pay_amount,
+        nowpaymentsPayCurrency: result.pay_currency,
+        nowpaymentsStatus: result.payment_status,
+        nowpaymentsSandbox: sandbox,
+        nowpaymentsCreatedAt: new Date(),
+      });
+      return {
+        gateway: "nowpayments",
+        hppUrl: `${SITE_ORIGIN}/payment/crypto?orderId=${encodeURIComponent(ctx.orderId)}`,
+        externalPaymentId: result.payment_id,
+        sandbox,
+      };
+    }
+
+    // Hosted invoice page — the customer picks the coin on NOWPayments' page.
+    const invoice = await nowpaymentsCreateInvoice({
+      priceAmount: ctx.amountGbp,
+      priceCurrency: "gbp",
+      orderId: ctx.orderId,
+      orderDescription: description,
+      ipnCallbackUrl,
+      successUrl: `${SITE_ORIGIN}/payment/success?orderId=${encodeURIComponent(ctx.orderId)}`,
+      cancelUrl: `${SITE_ORIGIN}/payment/cancel?orderId=${encodeURIComponent(ctx.orderId)}`,
+      sandbox,
+    });
+    await updateDocAdmin("orders", ctx.orderId, {
+      paymentProvider: "nowpayments",
+      nowpaymentsFlow: "invoice",
+      nowpaymentsInvoiceId: invoice.id,
+      nowpaymentsInvoiceUrl: invoice.invoice_url,
+      nowpaymentsStatus: "waiting",
+      nowpaymentsSandbox: sandbox,
+      nowpaymentsCreatedAt: new Date(),
+    });
+    return {
+      gateway: "nowpayments",
+      hppUrl: invoice.invoice_url,
+      externalPaymentId: invoice.id,
+      sandbox,
+    };
+  }
 
   throw new Error(`Unknown gateway: ${gateway}`);
 }

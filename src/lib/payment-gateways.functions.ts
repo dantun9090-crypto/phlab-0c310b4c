@@ -19,11 +19,13 @@ import {
 import {
   listGatewayConfigs,
   setGatewayEnabled,
+  setGatewayFlow,
   setGatewayPriority,
   setGatewaySandbox,
   recordGatewayTest,
   resolveActiveGateways,
 } from "@/lib/payments/gateway-config.server";
+import { nowpaymentsTestConnection } from "@/lib/payments/nowpayments.server";
 import { truelayerTestConnection } from "@/lib/payments/truelayer.server";
 import { fenaListBankAccounts } from "@/lib/fena.server";
 
@@ -31,7 +33,7 @@ import type { CheckoutPaymentOptions, GatewayId, PaymentGatewayConfig } from "@/
 import { GATEWAY_DISPLAY } from "@/lib/payments/types";
 
 const TokenInput = z.object({ idToken: z.string().min(10).max(4096) });
-const GatewayIdSchema = z.enum(["fena", "truelayer"]);
+const GatewayIdSchema = z.enum(["fena", "truelayer", "nowpayments"]);
 
 export const listPaymentGateways = createServerFn({ method: "POST" })
   .validator((d) => TokenInput.parse(d))
@@ -116,6 +118,19 @@ export const testPaymentGateway = createServerFn({ method: "POST" })
             message: `OK — TrueLayer ${cfg?.sandbox ? "sandbox" : "live"} auth handshake successful`,
           };
         }
+        if (data.gateway === "nowpayments") {
+          const rows = await listGatewayConfigs(true);
+          const cfg = rows.find((r) => r.id === "nowpayments");
+          const { statusMessage, currenciesCount } = await nowpaymentsTestConnection(
+            cfg?.sandbox ?? false,
+          );
+          await recordGatewayTest("nowpayments", { ok: true });
+          return {
+            ok: true,
+            durationMs: Date.now() - t0,
+            message: `OK — NOWPayments ${cfg?.sandbox ? "sandbox" : "live"} (${statusMessage}), ${currenciesCount} payout currencies enabled`,
+          };
+        }
         return { ok: false, durationMs: Date.now() - t0, message: "Unknown gateway" };
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
@@ -124,6 +139,24 @@ export const testPaymentGateway = createServerFn({ method: "POST" })
       }
     },
   );
+
+const FlowInput = z.object({
+  idToken: z.string().min(10).max(4096),
+  gateway: z.literal("nowpayments"),
+  flow: z.enum(["invoice", "payment"]),
+});
+
+/**
+ * Admin: choose how NOWPayments creates the checkout — hosted "invoice"
+ * page or direct deposit-address "payment".
+ */
+export const setPaymentGatewayFlow = createServerFn({ method: "POST" })
+  .validator((d) => FlowInput.parse(d))
+  .handler(async ({ data }) => {
+    await requireFirebaseAdmin(data.idToken);
+    await setGatewayFlow(data.gateway, data.flow);
+    return { success: true, gateways: await listGatewayConfigs(true) };
+  });
 
 // ---------- Checkout-facing ----------
 
