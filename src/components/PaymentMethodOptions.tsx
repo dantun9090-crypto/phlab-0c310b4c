@@ -138,8 +138,13 @@ export default function PaymentMethodOptions({
     next: PaymentMethodValue,
     clickTarget: HTMLElement | null,
   ) => {
-    if (next === value) return;
     console.log(`[PAYMENT] select method=${next}`);
+    if (next === value) {
+      // Re-tapping the already selected card must not feel like a dead click:
+      // re-emit the selection so the parent clears any validation error.
+      onChange(next);
+      return;
+    }
     const anchorTop = clickTarget?.getBoundingClientRect().top ?? null;
     onChange(next);
     if (typeof window === "undefined") return;
