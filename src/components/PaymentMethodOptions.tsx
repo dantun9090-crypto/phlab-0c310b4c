@@ -402,23 +402,39 @@ export default function PaymentMethodOptions({
             aria-describedby={manualSelected ? "manual-bank-transfer-details" : undefined}
             className={manualCardClass}
           >
-            {/* 48H HOLD badge */}
-            <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full border border-slate-600 bg-slate-800 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-300">
+            {/* Badge: highlight exclusivity when it is the only method */}
+            <span
+              className={
+                soleManual
+                  ? "absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-900 shadow-sm"
+                  : "absolute top-3 right-3 inline-flex items-center gap-1 rounded-full border border-slate-600 bg-slate-800 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-300"
+              }
+            >
               <Clock className="w-3 h-3" aria-hidden="true" />
-              48h hold
+              {soleManual ? "Only option · 48h hold" : "48h hold"}
             </span>
 
-            <div className="flex items-start gap-3 pr-20">
-              <Radio checked={manualSelected} tone="slate" />
+            <div className="flex items-start gap-3 pr-24">
+              <Radio checked={manualSelected} tone={soleManual ? "emerald" : "slate"} />
               <span
                 aria-hidden="true"
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5"
+                className={
+                  soleManual
+                    ? "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10"
+                    : "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5"
+                }
               >
-                <ArrowLeftRight className="h-5 w-5 text-slate-300" />
+                <ArrowLeftRight
+                  className={soleManual ? "h-5 w-5 text-emerald-300" : "h-5 w-5 text-slate-300"}
+                />
               </span>
               <div className="min-w-0 flex-1 pt-0.5">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-base font-semibold text-white leading-tight">
+                  <span
+                    className={`font-semibold text-white leading-tight ${
+                      soleManual ? "text-lg" : "text-base"
+                    }`}
+                  >
                     Manual Bank Transfer
                   </span>
                   {manualSelected && (
@@ -431,6 +447,12 @@ export default function PaymentMethodOptions({
                 <p className="text-xs text-slate-300 mt-1">
                   Receive bank details by email and transfer manually within 48 hours.
                 </p>
+                {soleManual && (
+                  <p className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1.5 text-[11.5px] font-medium text-emerald-200">
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    Nothing to choose — continue to “Place Order” below
+                  </p>
+                )}
               </div>
               <ChevronDown
                 className={`w-4 h-4 text-slate-400 shrink-0 mt-2 transition-transform ${
