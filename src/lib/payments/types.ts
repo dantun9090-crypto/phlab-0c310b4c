@@ -3,7 +3,16 @@
  * Safe to import on the client (no server-only modules referenced).
  */
 
-export type GatewayId = "fena" | "truelayer";
+export type GatewayId = "fena" | "truelayer" | "nowpayments";
+
+/**
+ * NOWPayments integration mode, selectable in Admin → Payment Gateways:
+ *  - "invoice": the customer is redirected to the hosted NOWPayments invoice
+ *    page and picks the coin there (fully hosted, simplest).
+ *  - "payment": a deposit-address payment is created via the API and the
+ *    address/QR is rendered on our own page (phase 2 checkout work).
+ */
+export type NowpaymentsFlow = "invoice" | "payment";
 
 export type GatewayPriority = "primary" | "backup" | "disabled";
 
@@ -24,6 +33,8 @@ export interface PaymentGatewayConfig {
   webhookUrl: string;
   /** True when the required server-side secrets are populated. */
   credentialsConfigured: boolean;
+  /** NOWPayments-only: which creation flow checkout uses. Ignored by other gateways. */
+  flow?: NowpaymentsFlow;
 }
 
 export interface CheckoutPaymentOption {
@@ -50,5 +61,10 @@ export const GATEWAY_DISPLAY: Record<GatewayId, { name: string; label: string; d
     name: "TrueLayer",
     label: "Pay by Bank",
     description: "Instant Open Banking transfer via TrueLayer. FCA-regulated.",
+  },
+  nowpayments: {
+    name: "NOWPayments",
+    label: "Pay with Crypto",
+    description: "Crypto payments (BTC, ETH, USDT and 300+ coins) via NOWPayments. Non-custodial.",
   },
 };
