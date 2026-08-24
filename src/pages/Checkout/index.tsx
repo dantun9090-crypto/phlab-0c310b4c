@@ -163,6 +163,7 @@ export default function CheckoutPage() {
   const [fenaOrderId, setFenaOrderId] = useState<string>('');
   const [paymentOptions, setPaymentOptions] = useState<CheckoutPaymentOptions | null>(null);
   const [wallidEnabled, setWallidEnabled] = useState<boolean>(false);
+  const [manualTransferEnabled, setManualTransferEnabled] = useState<boolean>(true);
   const { enabled: peptidepayEnabled } = usePeptidePayEnabled();
 
   const [, setSummaryExpanded] = useState(false);
