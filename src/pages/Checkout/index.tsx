@@ -2214,6 +2214,8 @@ export default function CheckoutPage() {
                       options={paymentOptions}
                       wallidEnabled={wallidEnabled}
                       peptidepayEnabled={peptidepayEnabled}
+                      manualEnabled={manualTransferEnabled}
+
 
 
 
