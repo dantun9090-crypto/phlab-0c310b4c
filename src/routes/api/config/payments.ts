@@ -7,14 +7,19 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { readWallidEnabled } from "@/lib/wallid-config.server";
+import { readManualTransferEnabled } from "@/lib/manual-transfer-config.server";
 
 export const Route = createFileRoute("/api/config/payments")({
   server: {
     handlers: {
       GET: async () => {
-        const wallid_enabled = await readWallidEnabled();
+        const [wallid_enabled, manual_transfer_enabled] = await Promise.all([
+          readWallidEnabled(),
+          readManualTransferEnabled(),
+        ]);
         const body = {
           wallid_enabled,
+          manual_transfer_enabled,
           // Other gateways are managed by `/lib/payments/gateway-config.server`
           // and exposed via `getCheckoutPaymentOptions`. Surfaced here as
           // booleans for parity / future use.
