@@ -398,7 +398,20 @@ export default function PaymentMethodOptions({
           </div>
         )}
 
+        {/* Manual Bank Transfer temporarily suspended by admin */}
+        {!manualEnabled && (
+          <div
+            data-testid="manual-suspended-notice"
+            role="status"
+            className="rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 leading-relaxed"
+          >
+            Manual Bank Transfer is temporarily suspended. Please pay securely with Pay by Bank
+            above — it is instant and confirms your order straight away.
+          </div>
+        )}
+
         {/* SECONDARY: Manual Bank Transfer */}
+        {manualEnabled && (
         <div className="relative">
           <button
             type="button"
