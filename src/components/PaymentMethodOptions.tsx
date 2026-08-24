@@ -502,6 +502,7 @@ export default function PaymentMethodOptions({
             </div>
           </Drawer>
         </div>
+        )}
       </div>
     </>
   );
