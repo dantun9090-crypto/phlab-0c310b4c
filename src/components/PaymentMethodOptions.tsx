@@ -35,6 +35,8 @@ export interface PaymentMethodOptionsProps {
   wallidEnabled?: boolean;
   /** PeptidePay (card / Apple Pay / Google Pay / crypto) availability. */
   peptidepayEnabled?: boolean;
+  /** Manual Bank Transfer kill switch from admin panel (default true). */
+  manualEnabled?: boolean;
   /** Empty string means no method selected yet — both cards stay collapsed. */
   value: PaymentMethodValue | "";
   onChange: (next: PaymentMethodValue) => void;
@@ -109,12 +111,13 @@ export default function PaymentMethodOptions({
   options,
   wallidEnabled = false,
   peptidepayEnabled = false,
+  manualEnabled = true,
   value,
   onChange,
 }: PaymentMethodOptionsProps) {
   const hasOnline = Boolean(options && (options.primary || options.backups.length > 0));
   const noOnline = Boolean(
-    !wallidEnabled && options && !options.primary && options.backups.length === 0,
+    manualEnabled && !wallidEnabled && options && !options.primary && options.backups.length === 0,
   );
 
   const showPrimary = hasOnline || wallidEnabled;
@@ -161,7 +164,8 @@ export default function PaymentMethodOptions({
     });
   };
 
-  const methodCount = (showPrimary ? 1 : 0) + (peptidepayEnabled ? 1 : 0) + 1;
+  const methodCount =
+    (showPrimary ? 1 : 0) + (peptidepayEnabled ? 1 : 0) + (manualEnabled ? 1 : 0);
 
   /**
    * Manual Bank Transfer is the ONLY method available. Customers were tapping
@@ -169,11 +173,20 @@ export default function PaymentMethodOptions({
    * switch to), so we pre-select it, give it the premium emerald treatment and
    * spell out the next step instead of leaving it looking like a dead choice.
    */
-  const soleManual = methodCount === 1;
+  const soleManual = manualEnabled && methodCount === 1;
+  const solePrimary = !manualEnabled && showPrimary && methodCount === 1;
 
   useEffect(() => {
-    if (soleManual && value === "") onChange("bank_transfer");
-  }, [soleManual, value, onChange]);
+    // Manual transfer suspended while it was selected — move to Pay by Bank.
+    if (!manualEnabled && value === "bank_transfer" && showPrimary) {
+      onChange(primaryValue);
+      return;
+    }
+    if (value !== "") return;
+    if (soleManual) onChange("bank_transfer");
+    else if (solePrimary) onChange(primaryValue);
+  }, [manualEnabled, showPrimary, soleManual, solePrimary, primaryValue, value, onChange]);
+
 
   const baseCardClass =
     "group relative rounded-2xl border p-4 sm:p-5 cursor-pointer transition-all text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70";
@@ -390,7 +403,20 @@ export default function PaymentMethodOptions({
           </div>
         )}
 
+        {/* Manual Bank Transfer temporarily suspended by admin */}
+        {!manualEnabled && (
+          <div
+            data-testid="manual-suspended-notice"
+            role="status"
+            className="rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 leading-relaxed"
+          >
+            Manual Bank Transfer is temporarily suspended. Please pay securely with Pay by Bank
+            above — it is instant and confirms your order straight away.
+          </div>
+        )}
+
         {/* SECONDARY: Manual Bank Transfer */}
+        {manualEnabled && (
         <div className="relative">
           <button
             type="button"
@@ -481,6 +507,7 @@ export default function PaymentMethodOptions({
             </div>
           </Drawer>
         </div>
+        )}
       </div>
     </>
   );

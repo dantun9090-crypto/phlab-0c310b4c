@@ -163,6 +163,7 @@ export default function CheckoutPage() {
   const [fenaOrderId, setFenaOrderId] = useState<string>('');
   const [paymentOptions, setPaymentOptions] = useState<CheckoutPaymentOptions | null>(null);
   const [wallidEnabled, setWallidEnabled] = useState<boolean>(false);
+  const [manualTransferEnabled, setManualTransferEnabled] = useState<boolean>(true);
   const { enabled: peptidepayEnabled } = usePeptidePayEnabled();
 
   const [, setSummaryExpanded] = useState(false);
@@ -660,18 +661,20 @@ export default function CheckoutPage() {
     return () => { cancelled = true; };
   }, []);
 
-  // Wallid Pay-by-Bank kill switch — admin toggle from Payment Gateways panel.
+  // Payment kill switches — admin toggles from the Payment Gateways panel.
   useEffect(() => {
     let cancelled = false;
     fetch('/api/config/payments', { cache: 'no-store' })
-      .then((r) => r.ok ? r.json() : { wallid_enabled: false })
-      .then((cfg: { wallid_enabled?: boolean }) => {
+      .then((r) => r.ok ? r.json() : { wallid_enabled: false, manual_transfer_enabled: true })
+      .then((cfg: { wallid_enabled?: boolean; manual_transfer_enabled?: boolean }) => {
         if (cancelled) return;
         setWallidEnabled(Boolean(cfg?.wallid_enabled));
+        setManualTransferEnabled(cfg?.manual_transfer_enabled !== false);
       })
       .catch(() => {
         if (cancelled) return;
         setWallidEnabled(false);
+        setManualTransferEnabled(true);
       });
     return () => { cancelled = true; };
   }, []);
@@ -2211,6 +2214,8 @@ export default function CheckoutPage() {
                       options={paymentOptions}
                       wallidEnabled={wallidEnabled}
                       peptidepayEnabled={peptidepayEnabled}
+                      manualEnabled={manualTransferEnabled}
+
 
 
 

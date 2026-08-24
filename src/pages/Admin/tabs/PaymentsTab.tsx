@@ -13,6 +13,7 @@ import {
 } from '@/lib/payment-gateways.functions';
 import type { PaymentGatewayConfig } from '@/lib/payments/types';
 import WallidKillSwitchCard from '../components/WallidKillSwitchCard';
+import ManualTransferKillSwitchCard from '../components/ManualTransferKillSwitchCard';
 import WallidTestPaymentCard from '../components/WallidTestPaymentCard';
 import WallidSyncCard from '../components/WallidSyncCard';
 import WallidReconcileCard from '../components/WallidReconcileCard';
@@ -130,6 +131,7 @@ export default function PaymentsTab() {
       </div>
 
       <WallidKillSwitchCard />
+      <ManualTransferKillSwitchCard />
       <WallidTestPaymentCard />
       <WallidSyncCard />
       <WallidReconcileCard />

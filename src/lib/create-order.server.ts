@@ -223,6 +223,14 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
     }
   }
 
+  // Manual bank transfer can be temporarily suspended by an admin kill switch.
+  if (input.paymentMethod === 'bank_transfer') {
+    const { readManualTransferEnabled } = await import('@/lib/manual-transfer-config.server');
+    if (!(await readManualTransferEnabled())) {
+      throw new Error('Manual bank transfer is temporarily unavailable. Please pay by bank.');
+    }
+  }
+
   const orderId = 'PHP-' + Date.now().toString(36).toUpperCase();
   // Manual bank transfer reference — invoice style, e.g. INV-2026-MT32LX6S.
   // Derived 1:1 from orderId so it is globally unique and the admin invoice
