@@ -111,12 +111,13 @@ export default function PaymentMethodOptions({
   options,
   wallidEnabled = false,
   peptidepayEnabled = false,
+  manualEnabled = true,
   value,
   onChange,
 }: PaymentMethodOptionsProps) {
   const hasOnline = Boolean(options && (options.primary || options.backups.length > 0));
   const noOnline = Boolean(
-    !wallidEnabled && options && !options.primary && options.backups.length === 0,
+    manualEnabled && !wallidEnabled && options && !options.primary && options.backups.length === 0,
   );
 
   const showPrimary = hasOnline || wallidEnabled;
