@@ -177,10 +177,15 @@ export default function PaymentMethodOptions({
   const solePrimary = !manualEnabled && showPrimary && methodCount === 1;
 
   useEffect(() => {
+    // Manual transfer suspended while it was selected — move to Pay by Bank.
+    if (!manualEnabled && value === "bank_transfer" && showPrimary) {
+      onChange(primaryValue);
+      return;
+    }
     if (value !== "") return;
     if (soleManual) onChange("bank_transfer");
     else if (solePrimary) onChange(primaryValue);
-  }, [soleManual, solePrimary, primaryValue, value, onChange]);
+  }, [manualEnabled, showPrimary, soleManual, solePrimary, primaryValue, value, onChange]);
 
 
   const baseCardClass =
