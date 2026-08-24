@@ -35,6 +35,8 @@ export interface PaymentMethodOptionsProps {
   wallidEnabled?: boolean;
   /** PeptidePay (card / Apple Pay / Google Pay / crypto) availability. */
   peptidepayEnabled?: boolean;
+  /** Manual Bank Transfer kill switch from admin panel (default true). */
+  manualEnabled?: boolean;
   /** Empty string means no method selected yet — both cards stay collapsed. */
   value: PaymentMethodValue | "";
   onChange: (next: PaymentMethodValue) => void;
