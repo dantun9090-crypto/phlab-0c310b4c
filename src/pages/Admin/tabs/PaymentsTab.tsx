@@ -130,6 +130,7 @@ export default function PaymentsTab() {
       </div>
 
       <WallidKillSwitchCard />
+      <ManualTransferKillSwitchCard />
       <WallidTestPaymentCard />
       <WallidSyncCard />
       <WallidReconcileCard />
