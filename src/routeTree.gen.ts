@@ -93,6 +93,7 @@ import { Route as ApiPublicPublishHoldRouteImport } from './routes/api/public/pu
 import { Route as ApiPublicPostPublishStatusRouteImport } from './routes/api/public/post-publish-status'
 import { Route as ApiPublicPostPublishCheckRouteImport } from './routes/api/public/post-publish-check'
 import { Route as ApiPublicPeptidepayWebhookRouteImport } from './routes/api/public/peptidepay-webhook'
+import { Route as ApiPublicNowpaymentsWebhookRouteImport } from './routes/api/public/nowpayments-webhook'
 import { Route as ApiPublicMonitorLogRouteImport } from './routes/api/public/monitor-log'
 import { Route as ApiPublicMonitorHeadGetRouteImport } from './routes/api/public/monitor-head-get'
 import { Route as ApiPublicLiveOrdersRouteImport } from './routes/api/public/live-orders'
@@ -110,6 +111,7 @@ import { Route as ApiPublicAuditReportRouteImport } from './routes/api/public/au
 import { Route as ApiPublicAdminErrorsRouteImport } from './routes/api/public/admin-errors'
 import { Route as ApiPaymentsStatusRouteImport } from './routes/api/payments/status'
 import { Route as ApiPaymentsPeptidepayCreateRouteImport } from './routes/api/payments/peptidepay-create'
+import { Route as ApiPaymentsNowpaymentsCreateRouteImport } from './routes/api/payments/nowpayments-create'
 import { Route as ApiPaymentsCreateRouteImport } from './routes/api/payments/create'
 import { Route as ApiPaymentsCancelRouteImport } from './routes/api/payments/cancel'
 import { Route as ApiDsrProcessRouteImport } from './routes/api/dsr/process'
@@ -585,6 +587,12 @@ const ApiPublicPeptidepayWebhookRoute =
     path: '/api/public/peptidepay-webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicNowpaymentsWebhookRoute =
+  ApiPublicNowpaymentsWebhookRouteImport.update({
+    id: '/api/public/nowpayments-webhook',
+    path: '/api/public/nowpayments-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicMonitorLogRoute = ApiPublicMonitorLogRouteImport.update({
   id: '/api/public/monitor-log',
   path: '/api/public/monitor-log',
@@ -671,6 +679,12 @@ const ApiPaymentsPeptidepayCreateRoute =
   ApiPaymentsPeptidepayCreateRouteImport.update({
     id: '/api/payments/peptidepay-create',
     path: '/api/payments/peptidepay-create',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPaymentsNowpaymentsCreateRoute =
+  ApiPaymentsNowpaymentsCreateRouteImport.update({
+    id: '/api/payments/nowpayments-create',
+    path: '/api/payments/nowpayments-create',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPaymentsCreateRoute = ApiPaymentsCreateRouteImport.update({
@@ -981,6 +995,7 @@ export interface FileRoutesByFullPath {
   '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
+  '/api/payments/nowpayments-create': typeof ApiPaymentsNowpaymentsCreateRoute
   '/api/payments/peptidepay-create': typeof ApiPaymentsPeptidepayCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
@@ -998,6 +1013,7 @@ export interface FileRoutesByFullPath {
   '/api/public/live-orders': typeof ApiPublicLiveOrdersRoute
   '/api/public/monitor-head-get': typeof ApiPublicMonitorHeadGetRoute
   '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
+  '/api/public/nowpayments-webhook': typeof ApiPublicNowpaymentsWebhookRoute
   '/api/public/peptidepay-webhook': typeof ApiPublicPeptidepayWebhookRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/post-publish-status': typeof ApiPublicPostPublishStatusRoute
@@ -1122,6 +1138,7 @@ export interface FileRoutesByTo {
   '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
+  '/api/payments/nowpayments-create': typeof ApiPaymentsNowpaymentsCreateRoute
   '/api/payments/peptidepay-create': typeof ApiPaymentsPeptidepayCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
@@ -1139,6 +1156,7 @@ export interface FileRoutesByTo {
   '/api/public/live-orders': typeof ApiPublicLiveOrdersRoute
   '/api/public/monitor-head-get': typeof ApiPublicMonitorHeadGetRoute
   '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
+  '/api/public/nowpayments-webhook': typeof ApiPublicNowpaymentsWebhookRoute
   '/api/public/peptidepay-webhook': typeof ApiPublicPeptidepayWebhookRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/post-publish-status': typeof ApiPublicPostPublishStatusRoute
@@ -1266,6 +1284,7 @@ export interface FileRoutesById {
   '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
+  '/api/payments/nowpayments-create': typeof ApiPaymentsNowpaymentsCreateRoute
   '/api/payments/peptidepay-create': typeof ApiPaymentsPeptidepayCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
@@ -1283,6 +1302,7 @@ export interface FileRoutesById {
   '/api/public/live-orders': typeof ApiPublicLiveOrdersRoute
   '/api/public/monitor-head-get': typeof ApiPublicMonitorHeadGetRoute
   '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
+  '/api/public/nowpayments-webhook': typeof ApiPublicNowpaymentsWebhookRoute
   '/api/public/peptidepay-webhook': typeof ApiPublicPeptidepayWebhookRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/post-publish-status': typeof ApiPublicPostPublishStatusRoute
@@ -1410,6 +1430,7 @@ export interface FileRouteTypes {
     | '/api/dsr/process'
     | '/api/payments/cancel'
     | '/api/payments/create'
+    | '/api/payments/nowpayments-create'
     | '/api/payments/peptidepay-create'
     | '/api/payments/status'
     | '/api/public/admin-errors'
@@ -1427,6 +1448,7 @@ export interface FileRouteTypes {
     | '/api/public/live-orders'
     | '/api/public/monitor-head-get'
     | '/api/public/monitor-log'
+    | '/api/public/nowpayments-webhook'
     | '/api/public/peptidepay-webhook'
     | '/api/public/post-publish-check'
     | '/api/public/post-publish-status'
@@ -1551,6 +1573,7 @@ export interface FileRouteTypes {
     | '/api/dsr/process'
     | '/api/payments/cancel'
     | '/api/payments/create'
+    | '/api/payments/nowpayments-create'
     | '/api/payments/peptidepay-create'
     | '/api/payments/status'
     | '/api/public/admin-errors'
@@ -1568,6 +1591,7 @@ export interface FileRouteTypes {
     | '/api/public/live-orders'
     | '/api/public/monitor-head-get'
     | '/api/public/monitor-log'
+    | '/api/public/nowpayments-webhook'
     | '/api/public/peptidepay-webhook'
     | '/api/public/post-publish-check'
     | '/api/public/post-publish-status'
@@ -1694,6 +1718,7 @@ export interface FileRouteTypes {
     | '/api/dsr/process'
     | '/api/payments/cancel'
     | '/api/payments/create'
+    | '/api/payments/nowpayments-create'
     | '/api/payments/peptidepay-create'
     | '/api/payments/status'
     | '/api/public/admin-errors'
@@ -1711,6 +1736,7 @@ export interface FileRouteTypes {
     | '/api/public/live-orders'
     | '/api/public/monitor-head-get'
     | '/api/public/monitor-log'
+    | '/api/public/nowpayments-webhook'
     | '/api/public/peptidepay-webhook'
     | '/api/public/post-publish-check'
     | '/api/public/post-publish-status'
@@ -1820,6 +1846,7 @@ export interface RootRouteChildren {
   ApiDsrProcessRoute: typeof ApiDsrProcessRoute
   ApiPaymentsCancelRoute: typeof ApiPaymentsCancelRoute
   ApiPaymentsCreateRoute: typeof ApiPaymentsCreateRoute
+  ApiPaymentsNowpaymentsCreateRoute: typeof ApiPaymentsNowpaymentsCreateRoute
   ApiPaymentsPeptidepayCreateRoute: typeof ApiPaymentsPeptidepayCreateRoute
   ApiPaymentsStatusRoute: typeof ApiPaymentsStatusRoute
   ApiPublicAdminErrorsRoute: typeof ApiPublicAdminErrorsRoute
@@ -1837,6 +1864,7 @@ export interface RootRouteChildren {
   ApiPublicLiveOrdersRoute: typeof ApiPublicLiveOrdersRoute
   ApiPublicMonitorHeadGetRoute: typeof ApiPublicMonitorHeadGetRoute
   ApiPublicMonitorLogRoute: typeof ApiPublicMonitorLogRoute
+  ApiPublicNowpaymentsWebhookRoute: typeof ApiPublicNowpaymentsWebhookRoute
   ApiPublicPeptidepayWebhookRoute: typeof ApiPublicPeptidepayWebhookRoute
   ApiPublicPostPublishCheckRoute: typeof ApiPublicPostPublishCheckRoute
   ApiPublicPostPublishStatusRoute: typeof ApiPublicPostPublishStatusRoute
@@ -2467,6 +2495,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPeptidepayWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/nowpayments-webhook': {
+      id: '/api/public/nowpayments-webhook'
+      path: '/api/public/nowpayments-webhook'
+      fullPath: '/api/public/nowpayments-webhook'
+      preLoaderRoute: typeof ApiPublicNowpaymentsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/monitor-log': {
       id: '/api/public/monitor-log'
       path: '/api/public/monitor-log'
@@ -2584,6 +2619,13 @@ declare module '@tanstack/react-router' {
       path: '/api/payments/peptidepay-create'
       fullPath: '/api/payments/peptidepay-create'
       preLoaderRoute: typeof ApiPaymentsPeptidepayCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/payments/nowpayments-create': {
+      id: '/api/payments/nowpayments-create'
+      path: '/api/payments/nowpayments-create'
+      fullPath: '/api/payments/nowpayments-create'
+      preLoaderRoute: typeof ApiPaymentsNowpaymentsCreateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/payments/create': {
@@ -3027,6 +3069,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDsrProcessRoute: ApiDsrProcessRoute,
   ApiPaymentsCancelRoute: ApiPaymentsCancelRoute,
   ApiPaymentsCreateRoute: ApiPaymentsCreateRoute,
+  ApiPaymentsNowpaymentsCreateRoute: ApiPaymentsNowpaymentsCreateRoute,
   ApiPaymentsPeptidepayCreateRoute: ApiPaymentsPeptidepayCreateRoute,
   ApiPaymentsStatusRoute: ApiPaymentsStatusRoute,
   ApiPublicAdminErrorsRoute: ApiPublicAdminErrorsRoute,
@@ -3044,6 +3087,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicLiveOrdersRoute: ApiPublicLiveOrdersRoute,
   ApiPublicMonitorHeadGetRoute: ApiPublicMonitorHeadGetRoute,
   ApiPublicMonitorLogRoute: ApiPublicMonitorLogRoute,
+  ApiPublicNowpaymentsWebhookRoute: ApiPublicNowpaymentsWebhookRoute,
   ApiPublicPeptidepayWebhookRoute: ApiPublicPeptidepayWebhookRoute,
   ApiPublicPostPublishCheckRoute: ApiPublicPostPublishCheckRoute,
   ApiPublicPostPublishStatusRoute: ApiPublicPostPublishStatusRoute,

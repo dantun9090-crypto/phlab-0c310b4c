@@ -18,6 +18,7 @@ import WallidTestPaymentCard from '../components/WallidTestPaymentCard';
 import WallidSyncCard from '../components/WallidSyncCard';
 import WallidReconcileCard from '../components/WallidReconcileCard';
 import PeptidePayToggleCard from '../components/PeptidePayToggleCard';
+import NowPaymentsToggleCard from '../components/NowPaymentsToggleCard';
 
 
 import { getAdminIdToken } from '@/lib/auth-ready';
@@ -136,6 +137,7 @@ export default function PaymentsTab() {
       <WallidSyncCard />
       <WallidReconcileCard />
       <PeptidePayToggleCard />
+      <NowPaymentsToggleCard />
 
 
       {err && (
