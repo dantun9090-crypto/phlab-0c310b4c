@@ -3,7 +3,7 @@ import {
   mapNowPaymentsStatus,
   sortedJsonStringify,
   verifyNowPaymentsSignature,
-} from "@/lib/nowpayments.server";
+} from "./nowpayments.server";
 
 const SECRET = "test-ipn-secret";
 
