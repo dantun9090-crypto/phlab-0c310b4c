@@ -113,7 +113,7 @@ export const createOrderInputSchema = z.object({
   items: z.array(itemSchema).min(1).max(50),
   customer: customerSchema,
   shippingMethod: z.enum(['standard', 'next_day_12']),
-  paymentMethod: z.enum(['bank_transfer', 'pay_by_bank', 'wallid', 'peptidepay']),
+  paymentMethod: z.enum(['bank_transfer', 'pay_by_bank', 'wallid', 'peptidepay', 'nowpayments']),
   ageVerified: z.literal(true),
   termsAccepted: z.literal(true),
   couponCode: z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/).optional().nullable(),
@@ -240,7 +240,7 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
 
   const nowIso = new Date();
   const paymentToken =
-    (input.paymentMethod === 'wallid' || input.paymentMethod === 'peptidepay') && !userId
+    (input.paymentMethod === 'wallid' || input.paymentMethod === 'peptidepay' || input.paymentMethod === 'nowpayments') && !userId
       ? createPaymentToken()
       : null;
   const paymentTokenHash = paymentToken ? await hashPaymentToken(paymentToken) : null;

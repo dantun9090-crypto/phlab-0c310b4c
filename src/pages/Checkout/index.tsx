@@ -33,6 +33,7 @@ import { toast, Toaster as SonnerToaster } from 'sonner';
 
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
 import { usePeptidePayEnabled } from '@/lib/peptidepay-toggle';
+import { useNowPaymentsEnabled } from '@/lib/nowpayments-toggle';
 
 import NoCacheHead from '@/components/NoCacheHead';
 import PostcodeLookup from '@/components/checkout/PostcodeLookup';
@@ -52,7 +53,7 @@ interface CheckoutForm {
   city: string;
   postcode: string;
   country: string;
-  paymentMethod: '' | 'bank_transfer' | 'pay_by_bank' | 'wallid' | 'peptidepay';
+  paymentMethod: '' | 'bank_transfer' | 'pay_by_bank' | 'wallid' | 'peptidepay' | 'nowpayments';
   acceptedTerms: boolean;
   ageVerified: boolean;
   createAccount: boolean;
@@ -165,6 +166,7 @@ export default function CheckoutPage() {
   const [wallidEnabled, setWallidEnabled] = useState<boolean>(false);
   const [manualTransferEnabled, setManualTransferEnabled] = useState<boolean>(true);
   const { enabled: peptidepayEnabled } = usePeptidePayEnabled();
+  const { enabled: nowpaymentsEnabled } = useNowPaymentsEnabled();
 
   const [, setSummaryExpanded] = useState(false);
   const [paymentRecoveryVisible, setPaymentRecoveryVisible] = useState(false);
@@ -1067,7 +1069,7 @@ export default function CheckoutPage() {
       trackAddPaymentInfo(
         cartToGaItems(),
         Number(total) || 0,
-        form.paymentMethod === 'wallid' ? 'Wallid Pay by Bank' : form.paymentMethod === 'pay_by_bank' ? 'Open Banking' : form.paymentMethod === 'peptidepay' ? 'Card / Apple Pay / Google Pay' : 'Bank Transfer',
+        form.paymentMethod === 'wallid' ? 'Wallid Pay by Bank' : form.paymentMethod === 'pay_by_bank' ? 'Open Banking' : form.paymentMethod === 'peptidepay' ? 'Card / Apple Pay / Google Pay' : form.paymentMethod === 'nowpayments' ? 'Crypto (NOWPayments)' : 'Bank Transfer',
       );
     } catch { /* analytics never blocks payment */ }
 
@@ -1374,6 +1376,80 @@ export default function CheckoutPage() {
           const failMsg = err?.message || 'Card payment could not be started — please try again.';
           setLoginError(failMsg);
           console.error('[PAYMENT] gateway_fail method=peptidepay', err);
+          try { toast.error(failMsg); } catch { /* toast optional */ }
+          setIsPlacing(false);
+          return;
+        }
+      }
+
+
+
+      // NOWPayments (hosted crypto invoice — BTC / ETH / USDT / 300+ assets).
+      if (form.paymentMethod === 'nowpayments') {
+        setFenaOrderId(orderId);
+        setFenaStep('creating-link');
+        try {
+          const npIdToken = auth.currentUser
+            ? await auth.currentUser.getIdToken().catch(() => null)
+            : null;
+          const paymentToken = serverResult.paymentToken ?? null;
+          if (!npIdToken && !paymentToken) {
+            throw new Error('Could not secure your payment session. Please refresh and try again.');
+          }
+          const res = await fetch('/api/payments/nowpayments-create', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            signal: paymentAbortRef.current?.signal,
+            body: JSON.stringify({
+              idToken: npIdToken,
+              orderId,
+              paymentToken,
+              amount: Number(totalAmount),
+              currency: 'GBP',
+              customerEmail: form.email,
+            }),
+          });
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
+          const data = await res.json().catch(() => ({} as any));
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
+          if (!res.ok || !data.payment_link) {
+            throw new Error(data?.error || 'Could not start crypto payment.');
+          }
+          let parsed: URL;
+          try { parsed = new URL(data.payment_link); } catch { throw new Error('Invalid payment redirect URL.'); }
+          if (parsed.protocol !== 'https:') throw new Error('Unexpected payment redirect.');
+          try {
+            localStorage.setItem('php_pending_order', orderId);
+            localStorage.setItem('php_pending_order_at', String(Date.now()));
+            if (paymentToken) localStorage.setItem(`php_pt_${orderId}`, paymentToken);
+          } catch { /* ignore */ }
+
+          setFenaStep('redirecting');
+          logCheckoutEvent({
+            stage: 'redirect_target',
+            cartId: orderTelemetryCartId,
+            url: parsed.toString(),
+            timestamp: Date.now(),
+          });
+          const paymentUrl = parsed.toString();
+          setPendingPaymentUrl(paymentUrl);
+          setPaymentRecoveryVisible(true);
+          window.location.assign(paymentUrl);
+          return;
+        } catch (err: any) {
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
+          setFenaStep('failed');
+          logCheckoutEvent({
+            stage: 'gateway_error',
+            cartId: orderTelemetryCartId,
+            gateway: 'nowpayments',
+            errorCode: String(err?.code ?? err?.name ?? 'nowpayments_error'),
+            errorMessage: String(err?.message ?? 'unknown').slice(0, 300),
+            timestamp: Date.now(),
+          });
+          const failMsg = err?.message || 'Crypto payment could not be started — please try again.';
+          setLoginError(failMsg);
+          console.error('[PAYMENT] gateway_fail method=nowpayments', err);
           try { toast.error(failMsg); } catch { /* toast optional */ }
           setIsPlacing(false);
           return;
@@ -2214,6 +2290,7 @@ export default function CheckoutPage() {
                       options={paymentOptions}
                       wallidEnabled={wallidEnabled}
                       peptidepayEnabled={peptidepayEnabled}
+                      nowpaymentsEnabled={nowpaymentsEnabled}
                       manualEnabled={manualTransferEnabled}
 
 

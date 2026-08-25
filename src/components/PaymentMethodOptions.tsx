@@ -22,12 +22,18 @@ import {
   Activity,
   Wallet,
   Clock,
+  Bitcoin,
 } from "lucide-react";
 
 import UkBankBadges from "@/components/UkBankBadges";
 import type { CheckoutPaymentOptions } from "@/lib/payments/types";
 
-export type PaymentMethodValue = "pay_by_bank" | "bank_transfer" | "wallid" | "peptidepay";
+export type PaymentMethodValue =
+  | "pay_by_bank"
+  | "bank_transfer"
+  | "wallid"
+  | "peptidepay"
+  | "nowpayments";
 
 export interface PaymentMethodOptionsProps {
   options: CheckoutPaymentOptions | null;
@@ -35,6 +41,8 @@ export interface PaymentMethodOptionsProps {
   wallidEnabled?: boolean;
   /** PeptidePay (card / Apple Pay / Google Pay / crypto) availability. */
   peptidepayEnabled?: boolean;
+  /** NOWPayments crypto invoice availability (admin kill switch). */
+  nowpaymentsEnabled?: boolean;
   /** Manual Bank Transfer kill switch from admin panel (default true). */
   manualEnabled?: boolean;
   /** Empty string means no method selected yet — both cards stay collapsed. */
@@ -111,6 +119,7 @@ export default function PaymentMethodOptions({
   options,
   wallidEnabled = false,
   peptidepayEnabled = false,
+  nowpaymentsEnabled = false,
   manualEnabled = true,
   value,
   onChange,
@@ -165,7 +174,10 @@ export default function PaymentMethodOptions({
   };
 
   const methodCount =
-    (showPrimary ? 1 : 0) + (peptidepayEnabled ? 1 : 0) + (manualEnabled ? 1 : 0);
+    (showPrimary ? 1 : 0) +
+    (peptidepayEnabled ? 1 : 0) +
+    (nowpaymentsEnabled ? 1 : 0) +
+    (manualEnabled ? 1 : 0);
 
   /**
    * Manual Bank Transfer is the ONLY method available. Customers were tapping
@@ -203,6 +215,10 @@ export default function PaymentMethodOptions({
 
   const peptidepayCardClass = `${baseCardClass} border-slate-700/50 bg-slate-900/60 hover:bg-slate-800/60 ${
     value === "peptidepay" ? "ring-2 ring-emerald-500/40" : ""
+  }`;
+
+  const cryptoCardClass = `${baseCardClass} border-slate-700/50 bg-slate-900/60 hover:bg-slate-800/60 ${
+    value === "nowpayments" ? "ring-2 ring-emerald-500/40" : ""
   }`;
 
   return (
@@ -397,6 +413,71 @@ export default function PaymentMethodOptions({
                 <p className="mt-2 flex items-center gap-2 text-slate-400">
                   <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
                   Card details are handled entirely by the payment provider.
+                </p>
+              </div>
+            </Drawer>
+          </div>
+        )}
+
+
+        {/* SECONDARY: Crypto via NOWPayments (hosted invoice) */}
+        {nowpaymentsEnabled && (
+          <div className="relative">
+            <button
+              type="button"
+              data-testid="nowpayments-button"
+              onClick={(e) => handleSelect("nowpayments", e.currentTarget)}
+              role="radio"
+              aria-checked={value === "nowpayments"}
+              aria-describedby={value === "nowpayments" ? "nowpayments-instructions" : undefined}
+              className={cryptoCardClass}
+            >
+              <div className="flex items-start gap-3">
+                <Radio checked={value === "nowpayments"} tone="slate" />
+                <span
+                  aria-hidden="true"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5"
+                >
+                  <Bitcoin className="h-5 w-5 text-amber-300" />
+                </span>
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-base font-semibold text-white leading-tight">
+                      Pay with crypto
+                    </span>
+                    {value === "nowpayments" && (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
+                        <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                        Selected
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-300 mt-1">
+                    BTC, ETH, USDT and 300+ assets — priced in GBP.
+                  </p>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-slate-400 shrink-0 mt-2 transition-transform ${
+                    value === "nowpayments" ? "rotate-180" : ""
+                  }`}
+                  aria-hidden="true"
+                />
+              </div>
+            </button>
+
+            <Drawer open={value === "nowpayments"} id="nowpayments-instructions">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs leading-relaxed text-slate-300 space-y-2">
+                <p>
+                  You will be redirected to a secure hosted invoice where you pick your coin and
+                  network. The GBP total is locked to a live exchange rate for the invoice window.
+                </p>
+                <p>
+                  Your order is confirmed automatically once the network confirms the payment, and
+                  you will receive a confirmation email.
+                </p>
+                <p className="flex items-center gap-2 text-slate-400">
+                  <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
+                  Send the full amount in one transaction — underpayments are held for review.
                 </p>
               </div>
             </Drawer>
