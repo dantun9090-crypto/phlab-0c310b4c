@@ -92,13 +92,42 @@ export default function TidePayPanel({
             <ExternalLink className="h-4 w-4" aria-hidden="true" />
           </a>
 
-          {reference && (
-            <p className="rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-[11.5px] leading-snug text-amber-100">
-              Use reference{" "}
-              <span className="font-mono font-bold tracking-wider break-all">{reference}</span>{" "}
-              so we can match your payment.
+          {reference ? (
+            <div className="rounded-xl border-2 border-amber-400/50 bg-amber-500/10 px-3 py-2.5">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-200">
+                Required — payment reference
+              </p>
+              <div className="mt-1 flex items-center gap-2">
+                <span
+                  data-testid="tide-reference"
+                  className="font-mono text-base font-bold tracking-widest text-white break-all"
+                >
+                  {reference}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard?.writeText(reference)}
+                  className="ml-auto shrink-0 rounded-lg border border-amber-400/40 px-2.5 py-1.5 text-[11px] font-semibold text-amber-100 hover:bg-amber-500/15"
+                >
+                  Copy
+                </button>
+              </div>
+              <p className="mt-1.5 text-[11.5px] leading-snug text-amber-100">
+                Enter this reference in the payment reference / message field when you scan the QR
+                code or open the link, so we can match your payment.
+              </p>
+            </div>
+          ) : (
+            <p
+              data-testid="tide-reference-notice"
+              className="rounded-xl border-2 border-amber-400/50 bg-amber-500/10 px-3 py-2 text-[11.5px] leading-snug text-amber-100"
+            >
+              <span className="font-semibold">Reference number required.</span> After you place the
+              order we show your reference — you must type it into the payment reference field when
+              scanning the QR code or opening the Tide link, otherwise we cannot match your payment.
             </p>
           )}
+
 
           <p className="flex items-center gap-2 text-[11px] text-slate-400">
             <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-emerald-400" aria-hidden="true" />
