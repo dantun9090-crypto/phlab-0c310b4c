@@ -242,7 +242,13 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
   // Derived 1:1 from orderId so it is globally unique and the admin invoice
   // number for the same order always matches this reference exactly.
   const refYear = new Date().getFullYear();
-  const btRef = `INV-${refYear}-${orderId.replace(/^PHP-/, '')}`;
+  // Tide payments happen on a hosted page before the order exists, so the
+  // client reserves and displays the reference first; honour it verbatim so the
+  // bank narrative matches the stored order.
+  const btRef =
+    input.paymentMethod === 'tide' && input.clientReference
+      ? input.clientReference
+      : `INV-${refYear}-${orderId.replace(/^PHP-/, '')}`;
 
   const nowIso = new Date();
   const paymentToken =
