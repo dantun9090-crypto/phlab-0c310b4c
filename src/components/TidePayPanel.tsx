@@ -20,10 +20,13 @@ export const TIDE_PAYMENT_MESSAGE =
 export default function TidePayPanel({
   reference,
   compact = false,
+  preview = false,
 }: {
   /** Optional order/payment reference shown so we can match the payment. */
   reference?: string | null;
   compact?: boolean;
+  /** Checkout preview: explain the flow, no QR / reference until the order exists. */
+  preview?: boolean;
 }) {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
