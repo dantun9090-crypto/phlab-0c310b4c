@@ -17,19 +17,44 @@ export const TIDE_PAYMENT_URL =
 export const TIDE_PAYMENT_MESSAGE =
   "Ph Labs has requested a payment. Pay securely via Tide (QR code or Open Banking).";
 
+/**
+ * Build the Tide link with the reference + amount attached as query params.
+ * Tide's hosted page ignores params it doesn't understand, so the link keeps
+ * working either way — and the values travel with the QR code / shared link.
+ */
+export function buildTidePaymentUrl(reference?: string | null, amountGbp?: string | number | null) {
+  const url = new URL(TIDE_PAYMENT_URL);
+  if (reference) url.searchParams.set("reference", reference);
+  const amount = amountGbp == null ? null : Number(amountGbp);
+  if (amount != null && Number.isFinite(amount) && amount > 0) {
+    url.searchParams.set("amount", amount.toFixed(2));
+    url.searchParams.set("currency", "GBP");
+  }
+  return url.toString();
+}
+
 export default function TidePayPanel({
   reference,
+  amountGbp,
   compact = false,
   preview = false,
 }: {
   /** Optional order/payment reference shown so we can match the payment. */
   reference?: string | null;
+  /** Order total in GBP, attached to the link and shown to the customer. */
+  amountGbp?: string | number | null;
   compact?: boolean;
   /** Checkout preview: explain the flow, no QR / reference until the order exists. */
   preview?: boolean;
 }) {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [copiedRef, setCopiedRef] = useState(false);
+  const payUrl = buildTidePaymentUrl(reference, amountGbp);
+  const amountNumber = amountGbp == null ? null : Number(amountGbp);
+  const amountLabel =
+    amountNumber != null && Number.isFinite(amountNumber) && amountNumber > 0
+      ? `£${amountNumber.toFixed(2)}`
+      : null;
 
   useEffect(() => {
     if (!copiedRef) return;
