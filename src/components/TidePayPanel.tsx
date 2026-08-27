@@ -9,7 +9,7 @@
  * third-party QR service call and nothing to render during SSR/prerender.
  */
 import { useEffect, useState } from "react";
-import { ExternalLink, QrCode, ShieldCheck, Smartphone } from "lucide-react";
+import { Check, Copy, ExternalLink, QrCode, ShieldCheck, Smartphone } from "lucide-react";
 
 export const TIDE_PAYMENT_URL =
   "https://pay.tide.co/pay/f054694d-bfda-4f38-9e42-62d4177525cb";
@@ -29,6 +29,23 @@ export default function TidePayPanel({
   preview?: boolean;
 }) {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [copiedRef, setCopiedRef] = useState(false);
+
+  useEffect(() => {
+    if (!copiedRef) return;
+    const t = setTimeout(() => setCopiedRef(false), 2000);
+    return () => clearTimeout(t);
+  }, [copiedRef]);
+
+  const handleCopyReference = async () => {
+    if (!reference) return;
+    try {
+      await navigator.clipboard.writeText(reference);
+      setCopiedRef(true);
+    } catch {
+      /* clipboard blocked — the reference is still visible above */
+    }
+  };
 
   useEffect(() => {
     if (preview) return;
@@ -122,26 +139,39 @@ export default function TidePayPanel({
           </a>
 
           {reference ? (
-            <div className="rounded-xl border-2 border-amber-400/50 bg-amber-500/10 px-3 py-2.5">
+            <div className="min-w-0 rounded-xl border-2 border-amber-400/50 bg-amber-500/10 px-3 py-2.5">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-200">
                 Required — payment reference
               </p>
-              <div className="mt-1 flex items-center gap-2">
+              <div className="mt-1.5 rounded-lg border border-amber-400/30 bg-slate-950/50 px-2.5 py-2">
                 <span
                   data-testid="tide-reference"
-                  className="font-mono text-base font-bold tracking-widest text-white break-all"
+                  className="block font-mono text-[15px] font-bold tracking-wider text-white break-all"
                 >
                   {reference}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => navigator.clipboard?.writeText(reference)}
-                  className="ml-auto shrink-0 rounded-lg border border-amber-400/40 px-2.5 py-1.5 text-[11px] font-semibold text-amber-100 hover:bg-amber-500/15"
-                >
-                  Copy
-                </button>
               </div>
-              <p className="mt-1.5 text-[11.5px] leading-snug text-amber-100">
+              <button
+                type="button"
+                onClick={handleCopyReference}
+                onTouchStart={() => {
+                  /* iOS needs a touch listener for reliable tap handling */
+                }}
+                data-testid="tide-copy-reference"
+                aria-label={`Copy payment reference ${reference}`}
+                className="mt-2 inline-flex w-full min-h-[44px] items-center justify-center gap-2 rounded-lg border border-amber-400/50 bg-amber-400/15 px-3 py-2 text-xs font-semibold text-amber-50 transition-colors hover:bg-amber-400/25 active:bg-amber-400/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+              >
+                {copiedRef ? (
+                  <>
+                    <Check className="h-4 w-4" aria-hidden="true" /> Reference copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4" aria-hidden="true" /> Copy reference
+                  </>
+                )}
+              </button>
+              <p className="mt-2 text-[11.5px] leading-snug text-amber-100">
                 Enter this reference in the payment reference / message field when you scan the QR
                 code or open the link, so we can match your payment.
               </p>
