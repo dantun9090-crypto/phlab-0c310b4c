@@ -50,7 +50,32 @@ export default function TidePayPanel({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [preview]);
+
+  if (preview) {
+    return (
+      <div
+        data-testid="tide-pay-preview"
+        className="rounded-2xl border border-emerald-500/25 bg-slate-900/60 p-4 text-left"
+      >
+        <p className="text-sm leading-relaxed text-slate-200">{TIDE_PAYMENT_MESSAGE}</p>
+        <ul className="mt-3 space-y-2 text-xs leading-relaxed text-slate-300">
+          <li className="flex items-start gap-2">
+            <QrCode className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" aria-hidden="true" />
+            <span>After you place the order we show your QR code and a “Pay with Tide” link.</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <Smartphone className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" aria-hidden="true" />
+            <span>Your payment reference is shown on the confirmation screen — type it into the reference field when you pay.</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" aria-hidden="true" />
+            <span>Secure payment page hosted by Tide · QR code or Open Banking.</span>
+          </li>
+        </ul>
+      </div>
+    );
+  }
 
   return (
     <div
