@@ -78,7 +78,7 @@ export default function TidePayPanel({
     (async () => {
       try {
         const QRCode = (await import("qrcode")).default;
-        const url = await QRCode.toDataURL(TIDE_PAYMENT_URL, {
+        const url = await QRCode.toDataURL(payUrl, {
           errorCorrectionLevel: "M",
           margin: 1,
           width: 320,
