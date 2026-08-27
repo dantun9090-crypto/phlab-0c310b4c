@@ -1629,7 +1629,7 @@ export default function CheckoutPage() {
               <p className="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5" /> Pay with Tide
               </p>
-              <TidePayPanel reference={bankTransferRef} amountGbp={total} />
+              <TidePayPanel reference={bankTransferRef} amountGbp={confirmedTotal || total} />
             </div>
           )}
 
