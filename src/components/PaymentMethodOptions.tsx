@@ -23,9 +23,11 @@ import {
   Wallet,
   Clock,
   Bitcoin,
+  QrCode,
 } from "lucide-react";
 
 import UkBankBadges from "@/components/UkBankBadges";
+import TidePayPanel from "@/components/TidePayPanel";
 import type { CheckoutPaymentOptions } from "@/lib/payments/types";
 
 export type PaymentMethodValue =
@@ -33,7 +35,9 @@ export type PaymentMethodValue =
   | "bank_transfer"
   | "wallid"
   | "peptidepay"
-  | "nowpayments";
+  | "nowpayments"
+  | "tide";
+
 
 export interface PaymentMethodOptionsProps {
   options: CheckoutPaymentOptions | null;
@@ -221,6 +225,10 @@ export default function PaymentMethodOptions({
     value === "nowpayments" ? "ring-2 ring-emerald-500/40" : ""
   }`;
 
+  const tideCardClass = `${baseCardClass} border-slate-700/50 bg-slate-900/60 hover:bg-slate-800/60 ${
+    value === "tide" ? "ring-2 ring-emerald-500/40" : ""
+  }`;
+
   return (
     <>
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -230,8 +238,8 @@ export default function PaymentMethodOptions({
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
             {soleManual
-              ? "Manual Bank Transfer — already selected for you"
-              : `${methodCount} secure ways to pay — choose one below`}
+              ? "Manual Bank Transfer or Tide — choose one below"
+              : `${methodCount + 1} secure ways to pay — choose one below`}
           </p>
         </div>
         <span className="inline-flex items-center gap-1.5 shrink-0 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-[10.5px] font-semibold text-emerald-300">
@@ -483,6 +491,56 @@ export default function PaymentMethodOptions({
             </Drawer>
           </div>
         )}
+
+        {/* SECONDARY: Pay with Tide (QR code / Open Banking) */}
+        <div className="relative">
+          <button
+            type="button"
+            data-testid="tide-button"
+            onClick={(e) => handleSelect("tide", e.currentTarget)}
+            role="radio"
+            aria-checked={value === "tide"}
+            aria-describedby={value === "tide" ? "tide-instructions" : undefined}
+            className={tideCardClass}
+          >
+            <div className="flex items-start gap-3">
+              <Radio checked={value === "tide"} tone="slate" />
+              <span
+                aria-hidden="true"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5"
+              >
+                <QrCode className="h-5 w-5 text-emerald-300" />
+              </span>
+              <div className="min-w-0 flex-1 pt-0.5">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-base font-semibold text-white leading-tight">
+                    Pay with Tide
+                  </span>
+                  {value === "tide" && (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
+                      <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                      Selected
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-300 mt-1">
+                  Alternative payment — scan a QR code or pay via Open Banking.
+                </p>
+              </div>
+              <ChevronDown
+                className={`w-4 h-4 text-slate-400 shrink-0 mt-2 transition-transform ${
+                  value === "tide" ? "rotate-180" : ""
+                }`}
+                aria-hidden="true"
+              />
+            </div>
+          </button>
+
+          <Drawer open={value === "tide"} id="tide-instructions">
+            <TidePayPanel />
+          </Drawer>
+        </div>
+
 
         {/* Manual Bank Transfer temporarily suspended by admin */}
         {!manualEnabled && (

@@ -113,7 +113,7 @@ export const createOrderInputSchema = z.object({
   items: z.array(itemSchema).min(1).max(50),
   customer: customerSchema,
   shippingMethod: z.enum(['standard', 'next_day_12']),
-  paymentMethod: z.enum(['bank_transfer', 'pay_by_bank', 'wallid', 'peptidepay', 'nowpayments']),
+  paymentMethod: z.enum(['bank_transfer', 'pay_by_bank', 'wallid', 'peptidepay', 'nowpayments', 'tide']),
   ageVerified: z.literal(true),
   termsAccepted: z.literal(true),
   couponCode: z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/).optional().nullable(),

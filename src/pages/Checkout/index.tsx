@@ -34,6 +34,7 @@ import { toast, Toaster as SonnerToaster } from 'sonner';
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
 import { usePeptidePayEnabled } from '@/lib/peptidepay-toggle';
 import { useNowPaymentsEnabled } from '@/lib/nowpayments-toggle';
+import TidePayPanel from '@/components/TidePayPanel';
 
 import NoCacheHead from '@/components/NoCacheHead';
 import PostcodeLookup from '@/components/checkout/PostcodeLookup';
@@ -53,7 +54,7 @@ interface CheckoutForm {
   city: string;
   postcode: string;
   country: string;
-  paymentMethod: '' | 'bank_transfer' | 'pay_by_bank' | 'wallid' | 'peptidepay' | 'nowpayments';
+  paymentMethod: '' | 'bank_transfer' | 'pay_by_bank' | 'wallid' | 'peptidepay' | 'nowpayments' | 'tide';
   acceptedTerms: boolean;
   ageVerified: boolean;
   createAccount: boolean;
@@ -1069,7 +1070,7 @@ export default function CheckoutPage() {
       trackAddPaymentInfo(
         cartToGaItems(),
         Number(total) || 0,
-        form.paymentMethod === 'wallid' ? 'Wallid Pay by Bank' : form.paymentMethod === 'pay_by_bank' ? 'Open Banking' : form.paymentMethod === 'peptidepay' ? 'Card / Apple Pay / Google Pay' : form.paymentMethod === 'nowpayments' ? 'Crypto (NOWPayments)' : 'Bank Transfer',
+        form.paymentMethod === 'wallid' ? 'Wallid Pay by Bank' : form.paymentMethod === 'pay_by_bank' ? 'Open Banking' : form.paymentMethod === 'peptidepay' ? 'Card / Apple Pay / Google Pay' : form.paymentMethod === 'nowpayments' ? 'Crypto (NOWPayments)' : form.paymentMethod === 'tide' ? 'Tide (QR / Open Banking)' : 'Bank Transfer',
       );
     } catch { /* analytics never blocks payment */ }
 
@@ -1520,6 +1521,10 @@ export default function CheckoutPage() {
         }
       }
 
+      // Tide is paid on Tide's hosted page (QR / Open Banking), so we must not
+      // email our own manual bank details for it. The server already sends the
+      // "Order received" email; the Tide panel is shown on the success screen.
+      if (form.paymentMethod !== 'tide') {
       try {
         await sendPublicMail({
           template: 'order-confirmation',
@@ -1549,6 +1554,7 @@ export default function CheckoutPage() {
           bankInstructions: siteSettings.bankTransferInstructions,
         });
       } catch { /* non-blocking */ }
+      }
 
       // GA4 + Bing purchase tracking — manual bank transfer counts the order
       // PLACEMENT as the conversion (offline payment; the /payment|checkout
@@ -1614,7 +1620,16 @@ export default function CheckoutPage() {
           <h1 className="text-2xl font-bold text-white mb-2">Order Confirmed</h1>
           <p className="text-emerald-400 font-medium mb-6">Order reserved — payment pending</p>
 
-          {bankTransferRef && (
+          {form.paymentMethod === 'tide' && (
+            <div className="mb-6">
+              <p className="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Pay with Tide
+              </p>
+              <TidePayPanel reference={bankTransferRef || null} />
+            </div>
+          )}
+
+          {bankTransferRef && form.paymentMethod !== 'tide' && (
             <div className="bg-[#0b1a30] border border-white/10 rounded-2xl p-5 sm:p-6 mb-6 text-left">
               <p className="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5" /> Bank Transfer Details
