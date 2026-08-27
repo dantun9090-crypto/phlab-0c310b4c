@@ -532,7 +532,7 @@ export default function PaymentMethodOptions({
                   )}
                 </div>
                 <p className="text-xs text-slate-300 mt-1">
-                  Alternative payment — scan a QR code or pay via Open Banking.
+                  Pay by QR code or payment link — shown right after you place the order.
                 </p>
               </div>
               <ChevronDown
@@ -545,7 +545,7 @@ export default function PaymentMethodOptions({
           </button>
 
           <Drawer open={value === "tide"} id="tide-instructions">
-            <TidePayPanel reference={tideReference} />
+            <TidePayPanel preview />
           </Drawer>
         </div>
         )}
