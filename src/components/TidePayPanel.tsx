@@ -31,6 +31,7 @@ export default function TidePayPanel({
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    if (preview) return;
     let cancelled = false;
     (async () => {
       try {
