@@ -50,7 +50,6 @@ export interface PaymentMethodOptionsProps {
   /** Pay with Tide (hosted QR / Open Banking link) availability. */
   tideEnabled?: boolean;
   /** Reference reserved for this checkout, shown inside the Tide panel. */
-  tideReference?: string | null;
   /** Manual Bank Transfer kill switch from admin panel (default true). */
   manualEnabled?: boolean;
   /** Empty string means no method selected yet — both cards stay collapsed. */
@@ -129,7 +128,6 @@ export default function PaymentMethodOptions({
   peptidepayEnabled = false,
   nowpaymentsEnabled = false,
   tideEnabled = true,
-  tideReference = null,
   manualEnabled = true,
   value,
   onChange,
@@ -532,7 +530,7 @@ export default function PaymentMethodOptions({
                   )}
                 </div>
                 <p className="text-xs text-slate-300 mt-1">
-                  Alternative payment — scan a QR code or pay via Open Banking.
+                  Pay by QR code or payment link — shown right after you place the order.
                 </p>
               </div>
               <ChevronDown
@@ -545,7 +543,7 @@ export default function PaymentMethodOptions({
           </button>
 
           <Drawer open={value === "tide"} id="tide-instructions">
-            <TidePayPanel reference={tideReference} />
+            <TidePayPanel preview />
           </Drawer>
         </div>
         )}

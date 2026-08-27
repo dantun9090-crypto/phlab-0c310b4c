@@ -36,7 +36,6 @@ import { usePeptidePayEnabled } from '@/lib/peptidepay-toggle';
 import { useNowPaymentsEnabled } from '@/lib/nowpayments-toggle';
 import { useTideEnabled } from '@/lib/tide-toggle';
 import TidePayPanel from '@/components/TidePayPanel';
-import { getOrCreateTideReference, clearTideReference } from '@/lib/payment-reference';
 
 import NoCacheHead from '@/components/NoCacheHead';
 import PostcodeLookup from '@/components/checkout/PostcodeLookup';
@@ -153,7 +152,6 @@ export default function CheckoutPage() {
   const [bankTransferRef, setBankTransferRef] = useState('');
   // Reference reserved up-front so the Tide QR panel can show it before the
   // order exists; it is sent to createOrder so the stored order matches.
-  const [reservedTideRef] = useState<string>(() => getOrCreateTideReference());
   const [confirmedTotal, setConfirmedTotal] = useState('');
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
@@ -1170,7 +1168,6 @@ export default function CheckoutPage() {
             paymentMethod: form.paymentMethod as Exclude<CheckoutForm['paymentMethod'], ''>,
             ageVerified: true,
             termsAccepted: true,
-            clientReference: form.paymentMethod === 'tide' ? reservedTideRef : null,
             couponCode: appliedCoupon?.code ?? null,
             customerNote: (() => {
               const base = form.customerNote.trim();
@@ -1224,7 +1221,6 @@ export default function CheckoutPage() {
       // disconnects between order creation and the stock update.
 
       setBankTransferRef(btRef);
-      clearTideReference();
       setConfirmedTotal(totalAmount.toFixed(2));
 
       // Wallid Pay-by-Bank (new direct integration — calls our /api/payments/create).
@@ -1633,7 +1629,7 @@ export default function CheckoutPage() {
               <p className="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5" /> Pay with Tide
               </p>
-              <TidePayPanel reference={bankTransferRef || reservedTideRef} />
+              <TidePayPanel reference={bankTransferRef} />
             </div>
           )}
 
@@ -2315,7 +2311,6 @@ export default function CheckoutPage() {
                       peptidepayEnabled={peptidepayEnabled}
                       nowpaymentsEnabled={nowpaymentsEnabled}
                       tideEnabled={tideEnabled}
-                      tideReference={bankTransferRef || reservedTideRef}
                       manualEnabled={manualTransferEnabled}
 
 
