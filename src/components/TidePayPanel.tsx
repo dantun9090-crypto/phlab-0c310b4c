@@ -153,15 +153,24 @@ export default function TidePayPanel({
           </p>
 
           <a
-            href={TIDE_PAYMENT_URL}
+            href={payUrl}
             target="_blank"
             rel="noopener noreferrer"
             data-testid="tide-pay-button"
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 min-h-[48px]"
           >
-            Pay with Tide
+            {amountLabel ? `Pay ${amountLabel} with Tide` : "Pay with Tide"}
             <ExternalLink className="h-4 w-4" aria-hidden="true" />
           </a>
+
+          {amountLabel ? (
+            <p
+              data-testid="tide-amount"
+              className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100"
+            >
+              Amount to pay: <span className="font-semibold text-white">{amountLabel}</span> (GBP)
+            </p>
+          ) : null}
 
           {reference ? (
             <div className="min-w-0 rounded-xl border-2 border-amber-400/50 bg-amber-500/10 px-3 py-2.5">
