@@ -19,6 +19,8 @@ import WallidSyncCard from '../components/WallidSyncCard';
 import WallidReconcileCard from '../components/WallidReconcileCard';
 import PeptidePayToggleCard from '../components/PeptidePayToggleCard';
 import NowPaymentsToggleCard from '../components/NowPaymentsToggleCard';
+import TideToggleCard from '../components/TideToggleCard';
+
 
 
 import { getAdminIdToken } from '@/lib/auth-ready';
