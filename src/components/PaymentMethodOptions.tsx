@@ -47,6 +47,8 @@ export interface PaymentMethodOptionsProps {
   peptidepayEnabled?: boolean;
   /** NOWPayments crypto invoice availability (admin kill switch). */
   nowpaymentsEnabled?: boolean;
+  /** Pay with Tide (hosted QR / Open Banking link) availability. */
+  tideEnabled?: boolean;
   /** Manual Bank Transfer kill switch from admin panel (default true). */
   manualEnabled?: boolean;
   /** Empty string means no method selected yet — both cards stay collapsed. */
@@ -124,6 +126,7 @@ export default function PaymentMethodOptions({
   wallidEnabled = false,
   peptidepayEnabled = false,
   nowpaymentsEnabled = false,
+  tideEnabled = true,
   manualEnabled = true,
   value,
   onChange,
@@ -181,6 +184,7 @@ export default function PaymentMethodOptions({
     (showPrimary ? 1 : 0) +
     (peptidepayEnabled ? 1 : 0) +
     (nowpaymentsEnabled ? 1 : 0) +
+    (tideEnabled ? 1 : 0) +
     (manualEnabled ? 1 : 0);
 
   /**
@@ -493,6 +497,7 @@ export default function PaymentMethodOptions({
         )}
 
         {/* SECONDARY: Pay with Tide (QR code / Open Banking) */}
+        {tideEnabled && (
         <div className="relative">
           <button
             type="button"
