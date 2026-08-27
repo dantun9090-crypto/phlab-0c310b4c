@@ -545,6 +545,8 @@ export default function PaymentMethodOptions({
             <TidePayPanel />
           </Drawer>
         </div>
+        )}
+
 
 
         {/* Manual Bank Transfer temporarily suspended by admin */}
