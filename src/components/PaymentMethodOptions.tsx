@@ -242,8 +242,8 @@ export default function PaymentMethodOptions({
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
             {soleManual
-              ? "Manual Bank Transfer or Tide — choose one below"
-              : `${methodCount + 1} secure ways to pay — choose one below`}
+              ? "Manual Bank Transfer — the only option right now"
+              : `${methodCount} secure ${methodCount === 1 ? "way" : "ways"} to pay — choose one below`}
           </p>
         </div>
         <span className="inline-flex items-center gap-1.5 shrink-0 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-[10.5px] font-semibold text-emerald-300">
