@@ -92,7 +92,7 @@ export default function TidePayPanel({
     return () => {
       cancelled = true;
     };
-  }, [preview]);
+  }, [preview, payUrl]);
 
   if (preview) {
     return (
