@@ -66,7 +66,7 @@ export const Route = createFileRoute("/e2e/payment-options")({
 
 function PaymentOptionsHarness() {
   const [value, setValue] = useState<
-    "pay_by_bank" | "bank_transfer" | "wallid" | "peptidepay" | "nowpayments" | ""
+    "pay_by_bank" | "bank_transfer" | "wallid" | "peptidepay" | "nowpayments" | "tide" | ""
   >("");
   return (
     <main className="min-h-dvh bg-[#060f1e] p-6 text-white">
