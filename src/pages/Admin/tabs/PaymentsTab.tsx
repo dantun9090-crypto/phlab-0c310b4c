@@ -139,18 +139,9 @@ export default function PaymentsTab() {
       <PeptidePayToggleCard />
       <NowPaymentsToggleCard />
 
-      {/* Tide alternative payment — static hosted payment link (QR / Open Banking) */}
-      <div className="rounded-lg border-2 border-slate-600 bg-slate-800 p-4 text-sm text-slate-200">
-        <p className="font-semibold text-white">Pay with Tide (alternative payment)</p>
-        <p className="mt-1 text-slate-300">
-          Always visible at checkout. Customers scan a QR code or open the hosted Tide page
-          (QR code / Open Banking). Orders are created as <span className="font-mono">pending_payment</span>{' '}
-          with the invoice reference, and payments must be reconciled manually in Tide.
-        </p>
-        <p className="mt-2 break-all font-mono text-xs text-emerald-300">
-          https://pay.tide.co/pay/f054694d-bfda-4f38-9e42-62d4177525cb
-        </p>
-      </div>
+      {/* Tide alternative payment — hosted payment link (QR / Open Banking) */}
+      <TideToggleCard />
+
 
 
 
