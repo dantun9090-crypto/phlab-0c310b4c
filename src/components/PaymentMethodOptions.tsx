@@ -49,6 +49,8 @@ export interface PaymentMethodOptionsProps {
   nowpaymentsEnabled?: boolean;
   /** Pay with Tide (hosted QR / Open Banking link) availability. */
   tideEnabled?: boolean;
+  /** Reference reserved for this checkout, shown inside the Tide panel. */
+  tideReference?: string | null;
   /** Manual Bank Transfer kill switch from admin panel (default true). */
   manualEnabled?: boolean;
   /** Empty string means no method selected yet — both cards stay collapsed. */
