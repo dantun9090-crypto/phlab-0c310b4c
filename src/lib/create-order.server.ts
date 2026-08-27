@@ -120,6 +120,12 @@ export const createOrderInputSchema = z.object({
   customerNote: z.string().trim().max(500).optional().nullable(),
   idToken: z.string().min(1).max(4096).optional().nullable(),
   adClickIds: adClickIdsSchema,
+  /**
+   * Reference reserved on the client for Tide payments (shown in the QR panel
+   * before the order exists so the customer can type it into their bank's
+   * reference field). Only honoured for `paymentMethod: 'tide'`.
+   */
+  clientReference: z.string().regex(/^INV-\d{4}-[A-Z0-9]{6,12}$/).optional().nullable(),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderInputSchema>;
