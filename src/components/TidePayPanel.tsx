@@ -18,19 +18,16 @@ export const TIDE_PAYMENT_MESSAGE =
   "Ph Labs has requested a payment. Pay securely via Tide (QR code or Open Banking).";
 
 /**
- * Build the Tide link with the reference + amount attached as query params.
- * Tide's hosted page ignores params it doesn't understand, so the link keeps
- * working either way — and the values travel with the QR code / shared link.
+ * Tide's hosted payment page is configured inside Tide and does NOT accept
+ * amount/reference query parameters — appending them was ignored (and made the
+ * link look prefilled when it wasn't). Keep the link clean; the amount and the
+ * reference are shown in the panel for the customer to type in.
  */
-export function buildTidePaymentUrl(reference?: string | null, amountGbp?: string | number | null) {
-  const url = new URL(TIDE_PAYMENT_URL);
-  if (reference) url.searchParams.set("reference", reference);
-  const amount = amountGbp == null ? null : Number(amountGbp);
-  if (amount != null && Number.isFinite(amount) && amount > 0) {
-    url.searchParams.set("amount", amount.toFixed(2));
-    url.searchParams.set("currency", "GBP");
-  }
-  return url.toString();
+export function buildTidePaymentUrl(
+  _reference?: string | null,
+  _amountGbp?: string | number | null,
+) {
+  return TIDE_PAYMENT_URL;
 }
 
 export default function TidePayPanel({
@@ -168,7 +165,8 @@ export default function TidePayPanel({
               data-testid="tide-amount"
               className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100"
             >
-              Amount to pay: <span className="font-semibold text-white">{amountLabel}</span> (GBP)
+              Enter this amount in Tide:{" "}
+              <span className="font-semibold text-white">{amountLabel}</span> (GBP)
             </p>
           ) : null}
 
