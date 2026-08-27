@@ -33,7 +33,9 @@ export type PaymentMethodValue =
   | "bank_transfer"
   | "wallid"
   | "peptidepay"
-  | "nowpayments";
+  | "nowpayments"
+  | "tide";
+
 
 export interface PaymentMethodOptionsProps {
   options: CheckoutPaymentOptions | null;
