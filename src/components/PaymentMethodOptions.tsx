@@ -23,9 +23,11 @@ import {
   Wallet,
   Clock,
   Bitcoin,
+  QrCode,
 } from "lucide-react";
 
 import UkBankBadges from "@/components/UkBankBadges";
+import TidePayPanel from "@/components/TidePayPanel";
 import type { CheckoutPaymentOptions } from "@/lib/payments/types";
 
 export type PaymentMethodValue =
@@ -223,6 +225,10 @@ export default function PaymentMethodOptions({
     value === "nowpayments" ? "ring-2 ring-emerald-500/40" : ""
   }`;
 
+  const tideCardClass = `${baseCardClass} border-slate-700/50 bg-slate-900/60 hover:bg-slate-800/60 ${
+    value === "tide" ? "ring-2 ring-emerald-500/40" : ""
+  }`;
+
   return (
     <>
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -232,8 +238,8 @@ export default function PaymentMethodOptions({
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
             {soleManual
-              ? "Manual Bank Transfer — already selected for you"
-              : `${methodCount} secure ways to pay — choose one below`}
+              ? "Manual Bank Transfer or Tide — choose one below"
+              : `${methodCount + 1} secure ways to pay — choose one below`}
           </p>
         </div>
         <span className="inline-flex items-center gap-1.5 shrink-0 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-[10.5px] font-semibold text-emerald-300">
