@@ -129,6 +129,7 @@ export default function PaymentMethodOptions({
   peptidepayEnabled = false,
   nowpaymentsEnabled = false,
   tideEnabled = true,
+  tideReference = null,
   manualEnabled = true,
   value,
   onChange,
@@ -544,7 +545,7 @@ export default function PaymentMethodOptions({
           </button>
 
           <Drawer open={value === "tide"} id="tide-instructions">
-            <TidePayPanel />
+            <TidePayPanel reference={tideReference} />
           </Drawer>
         </div>
         )}
