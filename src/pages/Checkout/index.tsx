@@ -53,7 +53,7 @@ interface CheckoutForm {
   city: string;
   postcode: string;
   country: string;
-  paymentMethod: '' | 'bank_transfer' | 'pay_by_bank' | 'wallid' | 'peptidepay' | 'nowpayments';
+  paymentMethod: '' | 'bank_transfer' | 'pay_by_bank' | 'wallid' | 'peptidepay' | 'nowpayments' | 'tide';
   acceptedTerms: boolean;
   ageVerified: boolean;
   createAccount: boolean;
@@ -1069,7 +1069,7 @@ export default function CheckoutPage() {
       trackAddPaymentInfo(
         cartToGaItems(),
         Number(total) || 0,
-        form.paymentMethod === 'wallid' ? 'Wallid Pay by Bank' : form.paymentMethod === 'pay_by_bank' ? 'Open Banking' : form.paymentMethod === 'peptidepay' ? 'Card / Apple Pay / Google Pay' : form.paymentMethod === 'nowpayments' ? 'Crypto (NOWPayments)' : 'Bank Transfer',
+        form.paymentMethod === 'wallid' ? 'Wallid Pay by Bank' : form.paymentMethod === 'pay_by_bank' ? 'Open Banking' : form.paymentMethod === 'peptidepay' ? 'Card / Apple Pay / Google Pay' : form.paymentMethod === 'nowpayments' ? 'Crypto (NOWPayments)' : form.paymentMethod === 'tide' ? 'Tide (QR / Open Banking)' : 'Bank Transfer',
       );
     } catch { /* analytics never blocks payment */ }
 
