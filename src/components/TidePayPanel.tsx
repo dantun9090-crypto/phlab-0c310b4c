@@ -165,7 +165,8 @@ export default function TidePayPanel({
               data-testid="tide-amount"
               className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100"
             >
-              Amount to pay: <span className="font-semibold text-white">{amountLabel}</span> (GBP)
+              Enter this amount in Tide:{" "}
+              <span className="font-semibold text-white">{amountLabel}</span> (GBP)
             </p>
           ) : null}
 
