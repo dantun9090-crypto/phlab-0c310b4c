@@ -47,6 +47,8 @@ export interface PaymentMethodOptionsProps {
   peptidepayEnabled?: boolean;
   /** NOWPayments crypto invoice availability (admin kill switch). */
   nowpaymentsEnabled?: boolean;
+  /** Pay with Tide (hosted QR / Open Banking link) availability. */
+  tideEnabled?: boolean;
   /** Manual Bank Transfer kill switch from admin panel (default true). */
   manualEnabled?: boolean;
   /** Empty string means no method selected yet — both cards stay collapsed. */
@@ -124,6 +126,7 @@ export default function PaymentMethodOptions({
   wallidEnabled = false,
   peptidepayEnabled = false,
   nowpaymentsEnabled = false,
+  tideEnabled = true,
   manualEnabled = true,
   value,
   onChange,
@@ -181,6 +184,7 @@ export default function PaymentMethodOptions({
     (showPrimary ? 1 : 0) +
     (peptidepayEnabled ? 1 : 0) +
     (nowpaymentsEnabled ? 1 : 0) +
+    (tideEnabled ? 1 : 0) +
     (manualEnabled ? 1 : 0);
 
   /**
@@ -238,8 +242,8 @@ export default function PaymentMethodOptions({
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
             {soleManual
-              ? "Manual Bank Transfer or Tide — choose one below"
-              : `${methodCount + 1} secure ways to pay — choose one below`}
+              ? "Manual Bank Transfer — the only option right now"
+              : `${methodCount} secure ${methodCount === 1 ? "way" : "ways"} to pay — choose one below`}
           </p>
         </div>
         <span className="inline-flex items-center gap-1.5 shrink-0 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-[10.5px] font-semibold text-emerald-300">
@@ -493,6 +497,7 @@ export default function PaymentMethodOptions({
         )}
 
         {/* SECONDARY: Pay with Tide (QR code / Open Banking) */}
+        {tideEnabled && (
         <div className="relative">
           <button
             type="button"
@@ -540,6 +545,8 @@ export default function PaymentMethodOptions({
             <TidePayPanel />
           </Drawer>
         </div>
+        )}
+
 
 
         {/* Manual Bank Transfer temporarily suspended by admin */}
