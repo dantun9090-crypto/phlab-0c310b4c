@@ -11,7 +11,9 @@
 import { useEffect, useState } from "react";
 import { Check, Copy, ExternalLink, QrCode, ShieldCheck, Smartphone } from "lucide-react";
 
-export { TIDE_PAYMENT_URL, TIDE_PAYMENT_MESSAGE } from "@/lib/tide";
+import { TIDE_PAYMENT_URL, TIDE_PAYMENT_MESSAGE } from "@/lib/tide";
+
+export { TIDE_PAYMENT_URL, TIDE_PAYMENT_MESSAGE };
 
 /**
  * Tide's hosted payment page is configured inside Tide and does NOT accept
