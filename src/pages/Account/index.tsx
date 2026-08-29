@@ -26,6 +26,7 @@ import { revokeMyRefreshTokens } from '@/lib/revoke-refresh-tokens.functions';
 import { logSecurityEvent } from '@/lib/security-events';
 import { OrderTrackingBar } from '@/components/OrderTrackingBar';
 import { PayAgainCTA } from '@/components/PayAgainCTA';
+import TidePayPanel from '@/components/TidePayPanel';
 import { getDisplayStatus } from '@/lib/order-payment-retry';
 import {
   openCustomerInvoice,
@@ -1055,6 +1056,20 @@ export default function AccountPage() {
 
                                         {/* Pay Again — for unpaid Pay-by-Bank / Fena orders (incl. cancelled-at-bank) */}
                                         <PayAgainCTA order={order as any} />
+
+                                        {/* Tide — QR code, payment link and reference stay
+                                            recoverable after the confirmation screen is gone. */}
+                                        {(order as any).paymentMethod === 'tide' &&
+                                          ['pending', 'pending_payment', 'awaiting_payment'].includes(String(order.status)) && (
+                                          <div>
+                                            <p className={sectionHeading}>Pay with Tide</p>
+                                            <TidePayPanel
+                                              reference={(order as any).bankTransferReference || (order as any).bankTransferRef || null}
+                                              amountGbp={order.totalAmount || 0}
+                                              compact
+                                            />
+                                          </div>
+                                        )}
 
                                         {/* Tracking */}
                                         <div>
