@@ -18,6 +18,7 @@ import {
   sectionHeading,
   statusBadge,
 } from './emailBase';
+import { TIDE_PAYMENT_URL } from '@/lib/tide';
 
 export interface OrderReceivedEmailParams {
   firstName?: string;
@@ -38,6 +39,7 @@ export function orderReceivedEmail(p: OrderReceivedEmailParams): {
 } {
   const subject = `Order received — ${p.orderNumber}`;
   const totalStr = `£${Number(p.totalAmount || 0).toFixed(2)}`;
+  const isTide = p.paymentMethod === 'tide';
 
   const itemRows = (p.items ?? [])
     .map(
@@ -125,6 +127,13 @@ export function orderReceivedEmail(p: OrderReceivedEmailParams): {
     ``,
     ...(p.paymentPending
       ? [`We have not received your payment yet — you can pay from https://phlabs.co.uk/account`]
+      : []),
+    ...(isTide
+      ? [
+          `Pay with Tide (QR code or Open Banking): ${TIDE_PAYMENT_URL}`,
+          `Enter amount ${totalStr}${p.bankTransferReference ? ` and reference ${p.bankTransferReference}` : ''} when you pay.`,
+          ``,
+        ]
       : []),
     `View your order: https://phlabs.co.uk/account`,
     `Questions? info@phlabs.co.uk`,
