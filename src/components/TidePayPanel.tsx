@@ -11,11 +11,7 @@
 import { useEffect, useState } from "react";
 import { Check, Copy, ExternalLink, QrCode, ShieldCheck, Smartphone } from "lucide-react";
 
-export const TIDE_PAYMENT_URL =
-  "https://pay.tide.co/pay/f054694d-bfda-4f38-9e42-62d4177525cb";
-
-export const TIDE_PAYMENT_MESSAGE =
-  "Ph Labs has requested a payment. Pay securely via Tide (QR code or Open Banking).";
+export { TIDE_PAYMENT_URL, TIDE_PAYMENT_MESSAGE } from "@/lib/tide";
 
 /**
  * Tide's hosted payment page is configured inside Tide and does NOT accept
