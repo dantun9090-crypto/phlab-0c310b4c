@@ -87,6 +87,20 @@ export function orderReceivedEmail(p: OrderReceivedEmailParams): {
            </p>`
         : ''
     }
+    ${
+      isTide
+        ? `<p style="margin:0 0 14px;color:${C.text};font-size:14px;line-height:1.6;font-family:${EMAIL_FONT};">
+             Pay securely via Tide (QR code or Open Banking). When you pay, enter
+             the amount <strong style="color:${C.textBright};">${totalStr}</strong>
+             and this payment reference exactly as shown${
+               p.bankTransferReference
+                 ? `: <strong style="color:${C.textBright};font-family:monospace;">${esc(p.bankTransferReference)}</strong>`
+                 : ''
+             }, so we can match your payment.
+           </p>
+           ${ctaButton('Pay with Tide', TIDE_PAYMENT_URL)}`
+        : ''
+    }
     ${ctaButton('View your order', 'https://phlabs.co.uk/account')}
     ${divider()}
     <p style="margin:0;color:${C.textMuted};font-size:13px;line-height:1.6;font-family:${EMAIL_FONT};">
