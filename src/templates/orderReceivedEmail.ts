@@ -26,6 +26,9 @@ export interface OrderReceivedEmailParams {
   items?: Array<{ name: string; variantName?: string; quantity: number; total: number }>;
   bankTransferReference?: string;
   paymentPending?: boolean;
+  /** When 'tide', the email carries the Tide payment link + reference so the
+   *  customer can still pay after leaving the confirmation screen. */
+  paymentMethod?: string;
 }
 
 export function orderReceivedEmail(p: OrderReceivedEmailParams): {
