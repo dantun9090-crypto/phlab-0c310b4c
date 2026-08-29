@@ -377,6 +377,7 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
       })),
       bankTransferReference: btRef,
       paymentPending: true,
+      paymentMethod: input.paymentMethod,
     });
     await enqueueMailOnce(`order-received:${orderId}`, {
       to: input.customer.email,
