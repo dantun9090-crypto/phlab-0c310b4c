@@ -12,9 +12,9 @@
  * consent declined, ad-blocker, or a bank-app redirect that lost the tab.
  *
  * Which orders are exported:
- *   - paid (any post-payment status), paymentProvider wallid/peptidepay
- *     (bank_transfer fires client-side at checkout by design and is excluded
- *     to avoid double counting),
+ *   - paid (any post-payment status) on any payment route (see
+ *     ELIGIBLE_PROVIDERS — gateway `paymentProvider`, or `paymentMethod`
+ *     for manual bank transfer / Tide),
  *   - has a captured adClickIds.gclid (see src/lib/gclid-capture.ts),
  *   - NO adsClientConversionAt marker — i.e. the success page never
  *     confirmed a consented browser-side Ads conversion (see
