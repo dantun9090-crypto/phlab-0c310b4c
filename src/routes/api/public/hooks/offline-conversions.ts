@@ -12,9 +12,9 @@
  * consent declined, ad-blocker, or a bank-app redirect that lost the tab.
  *
  * Which orders are exported:
- *   - paid (any post-payment status), paymentProvider wallid/peptidepay
- *     (bank_transfer fires client-side at checkout by design and is excluded
- *     to avoid double counting),
+ *   - paid (any post-payment status) on any payment route (see
+ *     ELIGIBLE_PROVIDERS — gateway `paymentProvider`, or `paymentMethod`
+ *     for manual bank transfer / Tide),
  *   - has a captured adClickIds.gclid (see src/lib/gclid-capture.ts),
  *   - NO adsClientConversionAt marker — i.e. the success page never
  *     confirmed a consented browser-side Ads conversion (see
@@ -50,6 +50,18 @@ const PAID_STATUSES = new Set([
   "shipped",
   "delivered",
   "completed",
+]);
+
+/** paymentProvider (gateways) or paymentMethod (manual / Tide) values that
+ * may be exported. Dedup against the browser tag is handled by the
+ * adsClientConversionAt marker, not by excluding a payment route. */
+const ELIGIBLE_PROVIDERS = new Set([
+  "wallid",
+  "pay_by_bank",
+  "peptidepay",
+  "nowpayments",
+  "bank_transfer",
+  "tide",
 ]);
 
 function constantTimeEqual(a: string, b: string): boolean {
@@ -174,10 +186,16 @@ export async function getOfflineConversionsCsv(request: Request): Promise<Respon
 
     for (const order of orders) {
       if (!PAID_STATUSES.has(String(order.status ?? "").toLowerCase())) continue;
+      // Provider is only written by the gateway flows; manual bank transfer /
+      // Tide orders carry just `paymentMethod`. Fall back to it so those paid
+      // orders are exported too — they used to be dropped entirely, losing
+      // every conversion whose browser tag was blocked by consent/ad-blockers.
       const provider = String(
-        (order as { paymentProvider?: unknown }).paymentProvider ?? "",
+        (order as { paymentProvider?: unknown }).paymentProvider ||
+          (order as { paymentMethod?: unknown }).paymentMethod ||
+          "",
       ).toLowerCase();
-      if (provider !== "wallid" && provider !== "peptidepay") continue;
+      if (!ELIGIBLE_PROVIDERS.has(provider)) continue;
       // Skip orders whose browser Ads conversion was confirmed —
       // importing those would double count.
       if ((order as { adsClientConversionAt?: unknown }).adsClientConversionAt) continue;

@@ -1587,8 +1587,34 @@ export default function CheckoutPage() {
             deliveryCountry: form.country === 'Germany' ? 'DE' : form.country === 'Poland' ? 'PL' : form.country === 'Ireland' ? 'IE' : 'GB',
           });
           // Only latch when the conversion actually reached the tag.
-          if (fired) localStorage.setItem(purchaseFlagKey, '1');
-
+          if (fired) {
+            localStorage.setItem(purchaseFlagKey, '1');
+            // Ack to the server so the offline gclid CSV import + MP backfill
+            // know this order already produced a browser conversion. Without
+            // this, manual bank-transfer / Tide orders carried NO server-side
+            // marker at all, so they could never be safely exported.
+            try {
+              const { hasMarketingConsent } = await import('@/lib/analytics');
+              const ackIdToken = auth.currentUser
+                ? await auth.currentUser.getIdToken().catch(() => null)
+                : null;
+              const ackPaymentToken = serverResult.paymentToken ?? null;
+              if (ackIdToken || ackPaymentToken) {
+                void fetch('/api/payments/status', {
+                  method: 'POST',
+                  headers: { 'content-type': 'application/json', accept: 'application/json' },
+                  body: JSON.stringify({
+                    orderId,
+                    idToken: ackIdToken,
+                    paymentToken: ackPaymentToken,
+                    purchaseFired: true,
+                    adsFired: hasMarketingConsent(),
+                  }),
+                  cache: 'no-store',
+                });
+              }
+            } catch { /* analytics never blocks checkout */ }
+          }
         }
       } catch { /* analytics never blocks checkout */ }
 
