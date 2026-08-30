@@ -184,8 +184,40 @@ export const Route = createFileRoute("/api/payments/status")({
           });
         };
         if (provider && provider !== "wallid" && provider !== "pay_by_bank") {
+          // Webhook-miss safety net: if PeptidePay has not told us anything yet
+          // and the order is still non-terminal, ask the provider directly.
+          if (provider === "peptidepay" && !terminalMap[firestoreStatusLower]) {
+            const sessionId = String(
+              (order as { peptidepaySessionId?: unknown }).peptidepaySessionId ?? "",
+            );
+            if (/^[A-Za-z0-9_-]{6,128}$/.test(sessionId)) {
+              try {
+                const { pollAndSettlePeptidePay } = await import(
+                  "@/lib/payments/peptidepay-settle.server"
+                );
+                const outcome = await pollAndSettlePeptidePay(orderId, sessionId);
+                if (outcome === "paid") {
+                  return json({
+                    status: "SUCCESS",
+                    order_id: orderId,
+                    found: true,
+                    tracking: buildTracking(order as Record<string, unknown>),
+                  });
+                }
+                if (outcome === "failed" || outcome === "expired") {
+                  return json({ status: "FAILED", order_id: orderId, found: true });
+                }
+              } catch (err) {
+                console.warn(
+                  "[PeptidePay] status fallback failed:",
+                  err instanceof Error ? err.message : err,
+                );
+              }
+            }
+          }
           return answerFromFirestore();
         }
+
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: rows, error } = await supabaseAdmin
