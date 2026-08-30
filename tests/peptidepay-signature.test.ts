@@ -10,7 +10,7 @@ import {
   parsePeptidePaySignatureHeader,
   verifyPeptidePaySignature,
   PEPTIDEPAY_SIGNATURE_TOLERANCE_SEC,
-} from "@/lib/peptidepay.server";
+} from "../src/lib/peptidepay.server";
 
 const SECRET = "whsec_test_0123456789abcdef0123456789abcdef";
 const BODY = JSON.stringify({
