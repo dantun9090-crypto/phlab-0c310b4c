@@ -1006,7 +1006,9 @@ export default function ProductDetail() {
         price: product.price ?? 0,
         stock: product.stock ?? 0,
       } as ProductVariant);
-  const isOutOfStock = !variant || variant.stock === 0;
+  // Admin "temporarily out of stock" flag overrides live stock numbers.
+  const isTemporarilyUnavailable = (product as any).visibility === 'out_of_stock';
+  const isOutOfStock = isTemporarilyUnavailable || !variant || variant.stock === 0;
   const variantPrice = Number(variant?.price ?? product.price ?? 0);
   const displayPrice = Number.isFinite(variantPrice) ? variantPrice : 0;
 
