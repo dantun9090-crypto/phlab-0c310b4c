@@ -52,6 +52,18 @@ const PAID_STATUSES = new Set([
   "completed",
 ]);
 
+/** paymentProvider (gateways) or paymentMethod (manual / Tide) values that
+ * may be exported. Dedup against the browser tag is handled by the
+ * adsClientConversionAt marker, not by excluding a payment route. */
+const ELIGIBLE_PROVIDERS = new Set([
+  "wallid",
+  "pay_by_bank",
+  "peptidepay",
+  "nowpayments",
+  "bank_transfer",
+  "tide",
+]);
+
 function constantTimeEqual(a: string, b: string): boolean {
   if (!a || !b || a.length !== b.length) return false;
   let diff = 0;
