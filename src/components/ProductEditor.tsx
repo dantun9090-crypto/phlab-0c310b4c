@@ -865,7 +865,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                       className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all">
                       <option value="active">Active</option>
                       <option value="hidden">Hidden</option>
-                      <option value="out_of_stock">Out of Stock</option>
+                      <option value="out_of_stock">Temporarily Out of Stock (visible, not buyable)</option>
                     </select>
                   </div>
                 </div>
