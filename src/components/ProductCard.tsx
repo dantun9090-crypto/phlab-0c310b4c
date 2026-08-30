@@ -75,7 +75,10 @@ export function ProductCard({
   const vars = variants.length > 0 ? variants : [{ id: 'default', dosage: '', price: product.price ?? 0 }];
   const selectedVariant = vars.find(v => v.id === selectedVariantId) || vars[0];
   const price = selectedVariant.price ?? 0;
-  const isOutOfStock = (stock ?? 0) < 1;
+  // Admin can flag a product as temporarily out of stock (visibility) even
+  // when Firestore stock is still > 0 — treat both as unavailable.
+  const isTemporarilyUnavailable = product.visibility === 'out_of_stock';
+  const isOutOfStock = isTemporarilyUnavailable || (stock ?? 0) < 1;
   const slug = nameToSlug(name);
   const imgUrl = getProductImage(name, imageUrl, images);
   const categoryColor = CATEGORY_COLORS[category || ''] || '#3b82f6';
