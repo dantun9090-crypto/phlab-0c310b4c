@@ -204,8 +204,8 @@ export function ProductCard({
         {/* Out of stock overlay */}
         {isOutOfStock && (
           <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.72)' }}>
-            <span className="px-4 py-2 rounded-xl font-bold text-sm" style={{ background: 'rgba(0,0,0,0.85)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8' }}>
-              Out of Stock
+            <span className="px-4 py-2 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(0,0,0,0.85)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8' }}>
+              {isTemporarilyUnavailable ? 'Temporarily Out of Stock' : 'Out of Stock'}
             </span>
           </div>
         )}
