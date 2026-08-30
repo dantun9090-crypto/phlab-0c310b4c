@@ -174,10 +174,16 @@ export async function getOfflineConversionsCsv(request: Request): Promise<Respon
 
     for (const order of orders) {
       if (!PAID_STATUSES.has(String(order.status ?? "").toLowerCase())) continue;
+      // Provider is only written by the gateway flows; manual bank transfer /
+      // Tide orders carry just `paymentMethod`. Fall back to it so those paid
+      // orders are exported too — they used to be dropped entirely, losing
+      // every conversion whose browser tag was blocked by consent/ad-blockers.
       const provider = String(
-        (order as { paymentProvider?: unknown }).paymentProvider ?? "",
+        (order as { paymentProvider?: unknown }).paymentProvider ||
+          (order as { paymentMethod?: unknown }).paymentMethod ||
+          "",
       ).toLowerCase();
-      if (provider !== "wallid" && provider !== "peptidepay") continue;
+      if (!ELIGIBLE_PROVIDERS.has(provider)) continue;
       // Skip orders whose browser Ads conversion was confirmed —
       // importing those would double count.
       if ((order as { adsClientConversionAt?: unknown }).adsClientConversionAt) continue;
