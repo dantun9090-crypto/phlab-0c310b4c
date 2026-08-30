@@ -139,6 +139,7 @@ export default function PaymentsTab() {
       <WallidSyncCard />
       <WallidReconcileCard />
       <PeptidePayToggleCard />
+      <PeptidePayTestPaymentCard />
       <NowPaymentsToggleCard />
 
       {/* Tide alternative payment — hosted payment link (QR / Open Banking) */}
