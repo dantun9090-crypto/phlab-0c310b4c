@@ -18,6 +18,7 @@ import WallidTestPaymentCard from '../components/WallidTestPaymentCard';
 import WallidSyncCard from '../components/WallidSyncCard';
 import WallidReconcileCard from '../components/WallidReconcileCard';
 import PeptidePayToggleCard from '../components/PeptidePayToggleCard';
+import PeptidePayTestPaymentCard from '../components/PeptidePayTestPaymentCard';
 import NowPaymentsToggleCard from '../components/NowPaymentsToggleCard';
 import TideToggleCard from '../components/TideToggleCard';
 
@@ -139,6 +140,7 @@ export default function PaymentsTab() {
       <WallidSyncCard />
       <WallidReconcileCard />
       <PeptidePayToggleCard />
+      <PeptidePayTestPaymentCard />
       <NowPaymentsToggleCard />
 
       {/* Tide alternative payment — hosted payment link (QR / Open Banking) */}
