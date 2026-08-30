@@ -485,7 +485,10 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             const link = `${BASE_URL}/products/${merchantLinkId}`;
             const price = `${p.price.toFixed(2)} ${CURRENCY}`;
             const availability =
-              typeof p.stock === "number" && p.stock <= 0 ? "out of stock" : "in stock";
+              (p as any).visibility === "out_of_stock" ||
+              (typeof p.stock === "number" && p.stock <= 0)
+                ? "out of stock"
+                : "in stock";
             const sku = (highRisk ? skuCode : (p.sku || skuCode || docId)).trim();
             void p.gtin; // GTIN intentionally omitted — MPN-only per Google policy for lab reagents
 
@@ -589,7 +592,10 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               );
               if (!v || typeof v.price !== "number" || v.price <= 0) return [];
               const availability =
-                typeof v.stock === "number" && v.stock <= 0 ? "out of stock" : "in stock";
+                (p as any).visibility === "out_of_stock" ||
+                (typeof v.stock === "number" && v.stock <= 0)
+                  ? "out of stock"
+                  : "in stock";
               const title = highRisk
                 ? `${displaySku} ${compact} — Lyophilised Analytical Reference Standard ${e.variantName} (RUO) | PH Labs`
                 : `${clean} ${e.variantName} — Analytical Reference Standard | PH Labs`;

@@ -1290,7 +1290,7 @@ export default function ProductDetail() {
 
                       {isOutOfStock && (
                         <div className="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center pointer-events-none">
-                          <span className="bg-red-600/90 text-white px-6 py-2.5 rounded-xl font-semibold text-lg">Out of Stock</span>
+                          <span className="bg-red-600/90 text-white px-6 py-2.5 rounded-xl font-semibold text-lg text-center">{isTemporarilyUnavailable ? 'Temporarily Out of Stock' : 'Out of Stock'}</span>
                         </div>
                       )}
                     </button>
@@ -1786,7 +1786,7 @@ export default function ProductDetail() {
               {isOutOfStock && (
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-red-400 shrink-0" />
-                  <span className="text-red-400 text-sm font-medium">Currently out of stock</span>
+                  <span className="text-red-400 text-sm font-medium">{isTemporarilyUnavailable ? 'Temporarily out of stock — back in stock soon' : 'Currently out of stock'}</span>
                 </div>
               )}
             </div>
@@ -1820,7 +1820,7 @@ export default function ProductDetail() {
                     </motion.span>
                   ) : isOutOfStock ? (
                     <motion.span key="oos" className="flex items-center gap-2">
-                      <Package className="w-5 h-5" /> Out of Stock
+                      <Package className="w-5 h-5" /> {isTemporarilyUnavailable ? 'Temporarily Out of Stock' : 'Out of Stock'}
                     </motion.span>
                   ) : (
                     <motion.span key="buy" className="flex items-center gap-2">

@@ -119,7 +119,7 @@ export function QuickEditModal({ product, isOpen, onClose, onSave }: QuickEditMo
                 >
                   {vis === 'active' && <><Eye className="w-4 h-4 inline mr-1" />Active</>}
                   {vis === 'hidden' && <><EyeOff className="w-4 h-4 inline mr-1" />Hidden</>}
-                  {vis === 'out_of_stock' && 'Out of Stock'}
+                  {vis === 'out_of_stock' && 'Temp. Out of Stock'}
                 </button>
               ))}
             </div>
