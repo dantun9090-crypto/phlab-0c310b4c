@@ -586,7 +586,9 @@ export default function ProductDetail() {
                   : [];
                 return { ...rd, id: d.id, price: rp, imageUrl: toText(rd.imageUrl, rImages[0] || ''), images: rImages, variants: rVariants } as any;
               });
-            setRelatedProducts(related);
+            // Never surface VIP-exclusive compounds in "related products".
+            setRelatedProducts(excludeVipProducts(related));
+
           } catch { /* non-blocking */ }
         }
       } catch (error) {
