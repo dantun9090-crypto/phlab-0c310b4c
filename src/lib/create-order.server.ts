@@ -229,6 +229,29 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
     }
   }
 
+  // Fallback: a signed-in customer whose id token never reached the server
+  // (expired/refresh race, in-app browser) would otherwise get an order that
+  // never shows up under "My orders". Link it by the checkout email when that
+  // email belongs to exactly one registered customer account.
+  if (!userId) {
+    try {
+      const email = (input.customer?.email || '').trim().toLowerCase();
+      if (email) {
+        const { getAdminDb } = await import('@/lib/firebase-admin.server');
+        const db = await getAdminDb();
+        const matches = await db
+          .collection('customers')
+          .where('email', '==', email)
+          .limit(2)
+          .get();
+        if (matches.size === 1) userId = matches.docs[0]!.id;
+      }
+    } catch {
+      // Non-fatal: order is still created as a guest order.
+    }
+  }
+
+
   // Manual bank transfer can be temporarily suspended by an admin kill switch.
   if (input.paymentMethod === 'bank_transfer') {
     const { readManualTransferEnabled } = await import('@/lib/manual-transfer-config.server');
