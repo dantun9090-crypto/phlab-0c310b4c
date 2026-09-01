@@ -253,6 +253,10 @@ export default function ProductDetail() {
   const [selectedVariantIdx, setSelectedVariantIdx] = useState(0);
   const [added, setAdded] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  // VIP-exclusive products are only purchasable by VIP members (or admins).
+  const [isVipViewer, setIsVipViewer] = useState(false);
+  const [vipChecked, setVipChecked] = useState(false);
+
   const [editing, setEditing] = useState(false);
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -607,13 +611,17 @@ export default function ProductDetail() {
         try {
           const snap = await getDoc(doc(db, 'customers', user.uid));
           setIsAdmin(snap.data()?.isAdmin === true);
+          setIsVipViewer(snap.data()?.isVip === true);
         } catch { /* ignore */ }
       } else {
         setIsAdmin(false);
+        setIsVipViewer(false);
       }
+      setVipChecked(true);
     });
     return () => unsub();
   }, []);
+
 
   // Inject Product structured data schema for SEO
   useEffect(() => {
@@ -987,6 +995,33 @@ export default function ProductDetail() {
       </div>
     );
   }
+
+  // VIP-exclusive product opened directly by a non-VIP visitor: keep the URL
+  // out of the index and point members at the store instead of exposing it.
+  if ((product as any).isVip === true && vipChecked && !isVipViewer && !isAdmin) {
+    return (
+      <div className="min-h-screen bg-[#060f1e] pt-24 flex items-center justify-center px-4">
+        <head>
+          <meta name="robots" content="noindex, nofollow" />
+        </head>
+        <div className="text-center max-w-md">
+          <h2 className="text-2xl font-bold text-[#f0f6ff] mb-3">Members Only</h2>
+          <p className="text-[#9cb8d9] mb-6">
+            This compound is available exclusively to PH Labs VIP members.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link to="/vip-store" className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition-all">
+              VIP Store
+            </Link>
+            <Link to="/products" className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all">
+              <ArrowLeft className="w-4 h-4" /> Back to Products
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
 
   const displayProductName = merchantAliasInfo?.pageTitle || product.name;
   const allVariants = product.variants ?? [];

@@ -3,6 +3,8 @@ import { useParams, Link, Navigate } from 'react-router-dom';
 import { FlaskConical, ChevronRight, ArrowLeft, SlidersHorizontal } from 'lucide-react';
 import { subscribeToProducts } from '@/lib/firebase';
 import type { Product } from '@/lib/firebase';
+import { isVipProduct } from '@/lib/vip-visibility';
+
 import { ProductCard } from '@/components/ProductCard';
 import { dispatchAddToCart } from '@/components/Layout';
 import { useSEO } from '@/hooks/useSEO';
@@ -224,7 +226,9 @@ export default function CategoryPage() {
     const slugList = config?.productSlugs;
     const unsub = subscribeToProducts((all) => {
       const filtered = all.filter((p) => {
+        if (isVipProduct(p)) return false;
         if (p.isActive === false || p.stock <= 0) return false;
+
         if (slugList && slugList.length) return slugList.includes(p.slug ?? '');
         return p.category === slug;
       });

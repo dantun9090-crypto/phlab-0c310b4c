@@ -5,6 +5,8 @@ import {
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import type { Product } from '@/lib/firebase';
+import { isVipProduct } from '@/lib/vip-visibility';
+
 import InstallAppButton from '@/components/InstallAppButton';
 import TransactionalLink from '@/components/TransactionalLink';
 import LegacyHostNotice from '@/components/LegacyHostNotice';
@@ -59,7 +61,7 @@ function useNavLinks(): NavLink[] {
         .then(({ getAllProducts }) => getAllProducts())
         .then((prods: Product[]) => {
           if (cancelled) return;
-          const active = prods.filter(p => p.isActive !== false && p.stock > 0 && p.category);
+          const active = prods.filter(p => !isVipProduct(p) && p.isActive !== false && p.stock > 0 && p.category);
           const seen = new Set<string>();
           const cats: DropdownItem[] = [{ name: 'All Products', href: '/products' }];
           active.forEach(p => {
