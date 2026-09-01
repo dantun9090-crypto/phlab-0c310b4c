@@ -1010,7 +1010,7 @@ export default function ProductDetail() {
             This compound is available exclusively to PH Labs VIP members.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <Link to="/vip-store" className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition-all">
+            <Link to="/vip" className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition-all">
               VIP Store
             </Link>
             <Link to="/products" className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all">
