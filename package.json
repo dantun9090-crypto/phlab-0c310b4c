@@ -160,7 +160,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "fast-xml-parser": "^5.10.1",
-    "firebase-admin": "^13.10.0",
+    "firebase-admin": "^14.3.0",
     "globals": "^15.15.0",
     "happy-dom": "^20.10.6",
     "jsdom": "^29.1.1",
