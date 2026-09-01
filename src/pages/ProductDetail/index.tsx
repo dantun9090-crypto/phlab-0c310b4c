@@ -10,6 +10,7 @@ import { CoaButton } from '@/components/CoaButton';
 import MarketingAdvertSlot from '@/components/MarketingAdvertSlot';
 import ReviewForm from '@/components/ReviewForm';
 import { auth, db, doc, getDoc, getDocFromServer, collection, query, where, getDocsFromServer, limit, orderBy, onAuthStateChanged } from '@/lib/firebase';
+import { excludeVipProducts } from '@/lib/vip-visibility';
 
 import type { Product, ProductVariant } from '@/lib/firebase';
 import { getProductImage } from '@/lib/productImages';
@@ -586,7 +587,9 @@ export default function ProductDetail() {
                   : [];
                 return { ...rd, id: d.id, price: rp, imageUrl: toText(rd.imageUrl, rImages[0] || ''), images: rImages, variants: rVariants } as any;
               });
-            setRelatedProducts(related);
+            // Never surface VIP-exclusive compounds in "related products".
+            setRelatedProducts(excludeVipProducts(related));
+
           } catch { /* non-blocking */ }
         }
       } catch (error) {
@@ -996,31 +999,34 @@ export default function ProductDetail() {
     );
   }
 
-  // VIP-exclusive product opened directly by a non-VIP visitor: keep the URL
-  // out of the index and point members at the store instead of exposing it.
-  if ((product as any).isVip === true && vipChecked && !isVipViewer && !isAdmin) {
+  // VIP-exclusive product: completely invisible to non-members. While the
+  // membership check is in flight, render nothing (same silent shell as the
+  // loading state) so the compound never flashes to a non-member.
+  if ((product as any).isVip === true && !isVipViewer && !isAdmin) {
+    if (!vipChecked) {
+      return (
+        <div className="min-h-screen bg-[#060f1e] pt-24 flex items-center justify-center" aria-hidden="true">
+          <div className="w-12 h-12 rounded-full border-2 border-blue-600/20 border-t-blue-500 animate-spin" />
+        </div>
+      );
+    }
+    // Indistinguishable from a removed product — no mention of VIP at all.
     return (
       <div className="min-h-screen bg-[#060f1e] pt-24 flex items-center justify-center px-4">
         <head>
           <meta name="robots" content="noindex, nofollow" />
         </head>
-        <div className="text-center max-w-md">
-          <h2 className="text-2xl font-bold text-[#f0f6ff] mb-3">Members Only</h2>
-          <p className="text-[#9cb8d9] mb-6">
-            This compound is available exclusively to PH Labs VIP members.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <Link to="/vip" className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition-all">
-              VIP Store
-            </Link>
-            <Link to="/products" className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all">
-              <ArrowLeft className="w-4 h-4" /> Back to Products
-            </Link>
-          </div>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-[#f0f6ff] mb-4">Page Not Available</h2>
+          <p className="text-[#9cb8d9] mb-6">This product is no longer available or has been removed.</p>
+          <Link to="/products" className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all shadow-[0_2px_12px_rgba(37,99,235,0.3)]">
+            <ArrowLeft className="w-4 h-4" /> Back to Products
+          </Link>
         </div>
       </div>
     );
   }
+
 
 
   const displayProductName = merchantAliasInfo?.pageTitle || product.name;
