@@ -427,7 +427,18 @@ export default function PaymentMethodOptions({
                   <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
                   Card details are handled entirely by the payment provider.
                 </p>
+                <p className="mt-2">
+                  <a
+                    href="https://pay.qistdigital.com"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    className="text-[11px] font-medium text-slate-400 underline decoration-slate-600 underline-offset-2 hover:text-emerald-400"
+                  >
+                    Secured by PeptidePay
+                  </a>
+                </p>
               </div>
+
             </Drawer>
           </div>
         )}
