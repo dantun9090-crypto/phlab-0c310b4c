@@ -12,6 +12,8 @@ import {
 // the initial bundle. All runtime access goes through dynamic import()
 // inside effects (the SDK chunk loads once, on demand, after first paint).
 import type { FirebaseUser, Product } from '@/lib/firebase';
+import { excludeVipProducts } from '@/lib/vip-visibility';
+
 
 // Articles bundle (~196KB) is loaded lazily — only when the search panel opens —
 // to keep it off the critical path of every page render.
@@ -560,7 +562,7 @@ export function Layout({ children }: LayoutProps) {
     let cancelled = false;
     const load = () => {
       import('@/lib/firebase').then(({ getAllProducts }) => getAllProducts()).then((prods) => {
-        if (!cancelled) setSearchProducts(prods);
+        if (!cancelled) setSearchProducts(excludeVipProducts(prods));
       }).catch(() => {
         if (!cancelled) setSearchProducts([]);
       });

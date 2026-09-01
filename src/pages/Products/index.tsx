@@ -19,6 +19,8 @@ import { ProductEditor } from '@/components/ProductEditor';
 import { ProductCard } from '@/components/ProductCard';
 import MarketingAdvertSlot from '@/components/MarketingAdvertSlot';
 import type { Product } from '@/lib/firebase';
+import { excludeVipProducts } from '@/lib/vip-visibility';
+
 import { nameToSlug } from '@/lib/seedProducts';
 
 // Route-critical visuals are eager. Do not wrap route/page content in
@@ -211,9 +213,10 @@ export default function Products() {
         if (cancelled) return;
         clearTimeout(slowTimer);
         setSlowLoad(false);
-        const visible = filterProductsForHost(products)
+        const visible = excludeVipProducts(filterProductsForHost(products))
           .filter(p => p.isActive !== false && p.visibility !== 'hidden')
           .sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
+
         setAllProducts(visible);
         setLoading(false);
         // Flip prerenderReady only once real ProductCard markup is in the DOM.

@@ -3,6 +3,8 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { Search, FlaskConical, BookOpen, X, ChevronRight, ShoppingCart } from 'lucide-react';
 import { subscribeToProducts } from '@/lib/firebase';
 import type { Product } from '@/lib/firebase';
+import { excludeVipProducts } from '@/lib/vip-visibility';
+
 // Articles bundle (~291KB) is dynamically imported inside the component below
 // to keep it off the critical path when /search is prefetched.
 import type { articles as ArticlesValue } from '@/pages/Resources/data/articles';
@@ -293,7 +295,7 @@ export default function SearchPage() {
   // Subscribe to products
   useEffect(() => {
     const unsub = subscribeToProducts((prods) => {
-      setAllProducts(prods);
+      setAllProducts(excludeVipProducts(prods));
       setLoadingProducts(false);
     });
     return () => unsub();
