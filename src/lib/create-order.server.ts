@@ -271,10 +271,22 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
       : `INV-${refYear}-${orderId.replace(/^PHP-/, '')}`;
 
   const nowIso = new Date();
+  // Guest orders get a one-time token so the browser can prove ownership when
+  // polling status and when acking the GA4/Ads purchase conversion. Manual
+  // bank transfer and Tide need it too: without a token the analytics ack is
+  // refused (order is still pending_payment, so the terminal-status
+  // short-circuit doesn't apply), no adsClientConversionAt marker is written,
+  // and the offline gclid CSV import later exports the same purchase again —
+  // double-counting it in Google Ads.
   const paymentToken =
-    (input.paymentMethod === 'wallid' || input.paymentMethod === 'peptidepay' || input.paymentMethod === 'nowpayments') && !userId
+    (input.paymentMethod === 'wallid' ||
+      input.paymentMethod === 'peptidepay' ||
+      input.paymentMethod === 'nowpayments' ||
+      input.paymentMethod === 'bank_transfer' ||
+      input.paymentMethod === 'tide') && !userId
       ? createPaymentToken()
       : null;
+
   const paymentTokenHash = paymentToken ? await hashPaymentToken(paymentToken) : null;
 
   // Rebuild items using server-validated unit prices.
