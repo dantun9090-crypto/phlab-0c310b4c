@@ -104,6 +104,13 @@ export default function NowPaymentsToggleCard() {
             <code className="text-slate-300">NOWPAYMENTS_PAYOUT_CURRENCY=usdttrc20</code>).
             Underpaid (partially_paid) invoices are flagged for review and never auto-complete.
           </p>
+          <p>
+            Invoices open on <strong className="text-slate-200">USDT (TRC20)</strong> so shoppers
+            never land on a coin that shows &quot;currently unavailable&quot;. Override with{' '}
+            <code className="text-slate-300">NOWPAYMENTS_PAY_CURRENCY</code>. Orders under the
+            coin&apos;s network minimum (~£8) still show the full coin picker.
+          </p>
+
         </div>
       </div>
 
