@@ -11,13 +11,13 @@
  *
  * Money model: the shopper pays in the crypto of their choice; NOWPayments
  * auto-converts and settles to the payout wallet configured in the dashboard
- * (USDT TRC20 for PH Labs). Prices are always quoted in GBP.
+ * (USDT on Polygon for PH Labs). Prices are always quoted in GBP.
  *
  * Env (read INSIDE functions — Workers inject env per request):
  *   NOWPAYMENTS_API_KEY          dashboard → Settings → Payments → API keys
  *   NOWPAYMENTS_IPN_SECRET       dashboard → Settings → Payments → IPN secret
- *   NOWPAYMENTS_PAYOUT_CURRENCY  optional, e.g. `usdttrc20` (else account default)
- *   NOWPAYMENTS_PAY_CURRENCY     optional, coin the invoice opens on (default `usdttrc20`)
+ *   NOWPAYMENTS_PAYOUT_CURRENCY  optional, e.g. `usdtmatic` (else account default)
+ *   NOWPAYMENTS_PAY_CURRENCY     optional, coin the invoice opens on (default `usdtmatic`)
  */
 import { timingSafeEqualStr } from "@/lib/timing-safe-equal";
 
@@ -41,13 +41,13 @@ export interface NowPaymentsCredentials {
   apiKey: string | null;
   ipnSecret: string | null;
   payoutCurrency: string | null;
-  /** Coin the hosted invoice opens on (default `usdttrc20`). */
+  /** Coin the hosted invoice opens on (default `usdtmatic`). */
   payCurrency: string | null;
 }
 
 export function readNowPaymentsCredentials(): NowPaymentsCredentials {
   const payout = (process.env["NOWPAYMENTS_PAYOUT_CURRENCY"] || "").trim().toLowerCase();
-  const pay = (process.env["NOWPAYMENTS_PAY_CURRENCY"] || "usdttrc20").trim().toLowerCase();
+  const pay = (process.env["NOWPAYMENTS_PAY_CURRENCY"] || "usdtmatic").trim().toLowerCase();
   return {
     apiKey: process.env["NOWPAYMENTS_API_KEY"] || null,
     ipnSecret: process.env["NOWPAYMENTS_IPN_SECRET"] || null,
@@ -181,7 +181,8 @@ export async function createNowPaymentsInvoice(
   };
   if (input.partiallyPaidUrl) body.partially_paid_url = input.partiallyPaidUrl;
   if (payoutCurrency) body.payout_currency = payoutCurrency;
-  // Open the hosted invoice on a coin we know is live (USDT TRC20 by default).
+  // Open the hosted invoice on a coin we know is live (USDT on Polygon by default,
+  // matching the payout wallets configured in the NOWPayments dashboard).
   // Without this the page picks its own default — recently USDC, which renders
   // "This currency is currently unavailable. Try it in 2 hours". Only pin it
   // when the order total clears that coin's network minimum; below it the coin
