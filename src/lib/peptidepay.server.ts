@@ -48,6 +48,9 @@ export interface PeptidePaySession {
   amount?: number;
   currency?: string;
   expiresAt?: string | null;
+  /** Polygon settlement address — matches `address_in` in the webhook. */
+  trackingNumber?: string | null;
+
 }
 
 export class PeptidePayError extends Error {
