@@ -211,6 +211,8 @@ export async function createPeptidePaySession(
     amount: typeof parsed.amount === "number" ? parsed.amount : undefined,
     currency: typeof parsed.currency === "string" ? parsed.currency : undefined,
     expiresAt: typeof parsed.expires_at === "string" ? parsed.expires_at : null,
+    trackingNumber: typeof parsed.tracking_number === "string" ? parsed.tracking_number : null,
+
   };
 }
 
