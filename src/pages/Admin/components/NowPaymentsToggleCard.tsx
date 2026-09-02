@@ -54,7 +54,7 @@ export default function NowPaymentsToggleCard() {
           <h3 className="text-lg font-bold text-white">Crypto — NOWPayments</h3>
           <p className="text-sm text-slate-400 mt-1">
             Hosted crypto invoice (BTC, ETH, USDT and 300+ assets). Prices are quoted in GBP and
-            settled to the payout wallet configured in NOWPayments (USDT TRC20). Turning this off
+            settled to the payout wallet configured in NOWPayments (USDT on Polygon). Turning this off
             hides the option and blocks the payment endpoint. Pay by Bank is not affected.
           </p>
         </div>
@@ -101,11 +101,11 @@ export default function NowPaymentsToggleCard() {
           <p>
             Required secrets: <code className="text-slate-300">NOWPAYMENTS_API_KEY</code>,{' '}
             <code className="text-slate-300">NOWPAYMENTS_IPN_SECRET</code> (optional{' '}
-            <code className="text-slate-300">NOWPAYMENTS_PAYOUT_CURRENCY=usdttrc20</code>).
+            <code className="text-slate-300">NOWPAYMENTS_PAYOUT_CURRENCY=usdtmatic</code>).
             Underpaid (partially_paid) invoices are flagged for review and never auto-complete.
           </p>
           <p>
-            Invoices open on <strong className="text-slate-200">USDT (TRC20)</strong> so shoppers
+            Invoices open on <strong className="text-slate-200">USDT (Polygon)</strong> so shoppers
             never land on a coin that shows &quot;currently unavailable&quot;. Override with{' '}
             <code className="text-slate-300">NOWPAYMENTS_PAY_CURRENCY</code>. Orders under the
             coin&apos;s network minimum (~£8) still show the full coin picker.

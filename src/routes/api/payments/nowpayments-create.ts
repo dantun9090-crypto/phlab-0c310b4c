@@ -3,7 +3,7 @@
  *
  * Secondary payment option alongside Wallid Pay-by-Bank. The shopper pays in
  * BTC / ETH / USDT / … on NOWPayments' hosted invoice page; funds settle to our
- * payout wallet (USDT TRC20) after auto-conversion. We never handle keys or
+ * payout wallet (USDT on Polygon) after auto-conversion. We never handle keys or
  * wallet addresses.
  *
  * Security model (identical to /api/payments/create):
