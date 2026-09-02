@@ -48,6 +48,9 @@ export interface PeptidePaySession {
   amount?: number;
   currency?: string;
   expiresAt?: string | null;
+  /** Polygon settlement address — matches `address_in` in the webhook. */
+  trackingNumber?: string | null;
+
 }
 
 export class PeptidePayError extends Error {
@@ -208,6 +211,8 @@ export async function createPeptidePaySession(
     amount: typeof parsed.amount === "number" ? parsed.amount : undefined,
     currency: typeof parsed.currency === "string" ? parsed.currency : undefined,
     expiresAt: typeof parsed.expires_at === "string" ? parsed.expires_at : null,
+    trackingNumber: typeof parsed.tracking_number === "string" ? parsed.tracking_number : null,
+
   };
 }
 

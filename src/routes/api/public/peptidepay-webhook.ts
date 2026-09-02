@@ -34,6 +34,9 @@ interface PeptidePayWebhookBody {
   amount?: number;
   currency?: string;
   txid?: string;
+  order_id?: string;
+  address_in?: string;
+
   paid_at?: string;
   metadata?: Record<string, unknown>;
   [k: string]: unknown;
@@ -99,11 +102,13 @@ export const Route = createFileRoute("/api/public/peptidepay-webhook")({
         const mapped = mapStatus(rawStatus);
 
         const metadata = (ev.metadata ?? {}) as Record<string, unknown>;
-        const orderId = String(metadata.order_id ?? metadata.orderId ?? "");
+        // Docs echo `order_id` at the top level as well as inside metadata.
+        const orderId = String(metadata.order_id ?? metadata.orderId ?? ev.order_id ?? "");
         if (!/^[A-Za-z0-9_-]{3,128}$/.test(orderId)) {
           console.warn(`[PeptidePay webhook] no usable order_id for session=${sessionId}`);
           return textResp("ok", 200);
         }
+
 
         const {
           addDocAdmin,
