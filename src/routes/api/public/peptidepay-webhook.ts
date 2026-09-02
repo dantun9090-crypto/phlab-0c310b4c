@@ -34,6 +34,9 @@ interface PeptidePayWebhookBody {
   amount?: number;
   currency?: string;
   txid?: string;
+  order_id?: string;
+  address_in?: string;
+
   paid_at?: string;
   metadata?: Record<string, unknown>;
   [k: string]: unknown;
