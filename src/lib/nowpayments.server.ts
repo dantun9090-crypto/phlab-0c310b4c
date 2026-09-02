@@ -150,7 +150,7 @@ export interface NowPaymentsInvoice {
 export async function createNowPaymentsInvoice(
   input: CreateNowPaymentsInvoiceInput,
 ): Promise<NowPaymentsInvoice> {
-  const { apiKey, payoutCurrency } = readNowPaymentsCredentials();
+  const { apiKey, payoutCurrency, payCurrency } = readNowPaymentsCredentials();
   if (!apiKey) {
     throw new NowPaymentsError(
       500,
@@ -180,6 +180,18 @@ export async function createNowPaymentsInvoice(
   };
   if (input.partiallyPaidUrl) body.partially_paid_url = input.partiallyPaidUrl;
   if (payoutCurrency) body.payout_currency = payoutCurrency;
+  // Open the hosted invoice on a coin we know is live (USDT TRC20 by default).
+  // Without this the page picks its own default — recently USDC, which renders
+  // "This currency is currently unavailable. Try it in 2 hours". Only pin it
+  // when the order total clears that coin's network minimum; below it the coin
+  // really is unpayable and the shopper needs the full picker.
+  if (payCurrency) {
+    const minGbp = await payCurrencyMinGbp(payCurrency);
+    if (minGbp == null || amountMinor / 100 >= minGbp) {
+      body.pay_currency = payCurrency;
+    }
+  }
+
 
   const res = await npFetch("/invoice", { method: "POST", body: JSON.stringify(body) });
   const text = await res.text();
