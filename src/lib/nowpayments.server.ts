@@ -17,6 +17,7 @@
  *   NOWPAYMENTS_API_KEY          dashboard → Settings → Payments → API keys
  *   NOWPAYMENTS_IPN_SECRET       dashboard → Settings → Payments → IPN secret
  *   NOWPAYMENTS_PAYOUT_CURRENCY  optional, e.g. `usdttrc20` (else account default)
+ *   NOWPAYMENTS_PAY_CURRENCY     optional, coin the invoice opens on (default `usdttrc20`)
  */
 import { timingSafeEqualStr } from "@/lib/timing-safe-equal";
 
