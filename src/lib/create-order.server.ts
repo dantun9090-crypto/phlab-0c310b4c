@@ -229,10 +229,12 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
     }
   }
 
-  // Fallback: a signed-in customer whose id token never reached the server
-  // (expired/refresh race, in-app browser) would otherwise get an order that
-  // never shows up under "My orders". Link it by the checkout email when that
-  // email belongs to a registered customer account.
+  // A registered customer's email typed at guest checkout must NOT transfer
+  // ownership: anyone could type a stranger's address (or a typo) and pin the
+  // order to that account, while the actual buyer loses access to status
+  // polling and the conversion ack. Record the match as a non-authoritative
+  // hint only; ownership stays with the verified id token (or stays guest).
+  let emailLinkCandidateUid: string | null = null;
   if (!userId) {
     try {
       const email = (input.customer?.email || '').trim().toLowerCase();
@@ -240,12 +242,13 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
         const { findDocByFieldAdmin } = await import('@/lib/server/firestore-admin');
         const match = await findDocByFieldAdmin('customers', 'email', email);
         const uid = match?.__id;
-        if (typeof uid === 'string' && uid) userId = uid;
+        if (typeof uid === 'string' && uid) emailLinkCandidateUid = uid;
       }
     } catch {
       // Non-fatal: order is still created as a guest order.
     }
   }
+
 
 
 
