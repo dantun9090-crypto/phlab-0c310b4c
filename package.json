@@ -181,7 +181,7 @@
     "brace-expansion": "^5.0.9",
     "dompurify": "^3.4.13",
     "esbuild": "^0.28.1",
-    "fast-uri": "^3.1.5",
+    "fast-uri": "^3.1.6",
     "fast-xml-parser": "^5.10.1",
     "form-data": "^2.5.6",
     "hono": "^4.12.34",
@@ -196,7 +196,9 @@
     "react-router": "^7.18.2",
     "postcss": "^8.5.23",
     "glob": "^10.5.0",
-    "vite": "^7.3.5"
+    "vite": "^7.3.5",
+    "browserslist": "^4.28.7",
+    "qs": "^6.16.0"
   },
   "resolutions": {
     "@babel/core": "^7.29.6",
@@ -206,7 +208,7 @@
     "brace-expansion": "^5.0.9",
     "dompurify": "^3.4.13",
     "esbuild": "^0.28.1",
-    "fast-uri": "^3.1.5",
+    "fast-uri": "^3.1.6",
     "fast-xml-parser": "^5.10.1",
     "form-data": "^2.5.6",
     "hono": "^4.12.34",
@@ -221,6 +223,8 @@
     "react-router": "^7.18.2",
     "postcss": "^8.5.23",
     "glob": "^10.5.0",
-    "vite": "^7.3.5"
+    "vite": "^7.3.5",
+    "browserslist": "^4.28.7",
+    "qs": "^6.16.0"
   }
 }
