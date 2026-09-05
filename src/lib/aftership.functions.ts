@@ -101,11 +101,17 @@ export const bulkRegisterTrackers = createServerFn({ method: "POST" })
         summary.skipped++;
         continue;
       }
+      const customer = (o.customer || {}) as Record<string, unknown>;
+      const postcode =
+        typeof customer.postcode === "string"
+          ? customer.postcode.replace(/\s+/g, "").toUpperCase()
+          : undefined;
       const res = await registerAftershipTracking({
         trackingNumber: tracking,
         ...(data.slug ? { slug: data.slug } : {}),
         orderId: o.id,
         email: typeof o.userEmail === "string" ? o.userEmail : undefined,
+        postcode,
         title: `PH Labs order ${o.id}`,
       });
       if (res.ok) {
