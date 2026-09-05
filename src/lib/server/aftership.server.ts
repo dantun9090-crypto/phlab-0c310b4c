@@ -64,20 +64,28 @@ async function request<T>(
       | { data?: T; meta?: { code?: number; message?: string } }
       | null;
     if (!res.ok) {
+      const rawMsg = body?.meta?.message || "";
+      // Per-second rate limit → wait and retry (up to 3 extra attempts).
+      if (isRateLimit(res.status, rawMsg) && attempt < 3) {
+        await sleep(1200 * (attempt + 1));
+        return request<T>(path, init, attempt + 1);
+      }
       // 403 on a write means the API key was created without the
       // "Trackings: write" scope (reads still succeed) — surface that clearly.
-      // 429 means the free plan's daily API quota is used up.
-      const msg = (body?.meta?.message || "").toLowerCase();
+      const msg = rawMsg.toLowerCase();
       const hint =
         res.status === 403
           ? msg.includes("upgrade") || msg.includes("pro plan")
             ? "aftership_plan_required: the AfterShip account needs a paid (Pro) plan for API access"
             : "aftership_key_missing_write_permission"
           : res.status === 429
-            ? `aftership_daily_quota_exceeded: ${body?.meta?.message || ""}`.trim()
-            : body?.meta?.message || `aftership_status_${res.status}`;
+            ? isRateLimit(res.status, rawMsg)
+              ? `aftership_rate_limited: ${rawMsg}`.trim()
+              : `aftership_daily_quota_exceeded: ${rawMsg}`.trim()
+            : rawMsg || `aftership_status_${res.status}`;
       return { ok: false, status: res.status, data: null, error: hint };
     }
+
 
     return { ok: true, status: res.status, data: (body?.data ?? null) as T | null };
   } catch (err) {
