@@ -18,13 +18,39 @@ export function aftershipConfigured(): boolean {
   return apiKey().length > 0;
 }
 
+/**
+ * Client-side throttle: AfterShip allows 6 requests/second. We space calls
+ * ~220ms apart (≈4.5 req/s) so bulk loops never trip the rate limiter.
+ */
+const MIN_GAP_MS = 220;
+let nextSlot = 0;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+async function throttle(): Promise<void> {
+  const now = Date.now();
+  const start = Math.max(now, nextSlot);
+  nextSlot = start + MIN_GAP_MS;
+  if (start > now) await sleep(start - now);
+}
+
+/** True for the rate-limit (per-second) error, not the daily plan quota. */
+function isRateLimit(status: number, message: string): boolean {
+  return status === 429 && /rate limit/i.test(message);
+}
+
 async function request<T>(
   path: string,
   init: { method: string; body?: unknown },
+  attempt = 0,
 ): Promise<{ ok: boolean; status: number; data: T | null; error?: string }> {
   const key = apiKey();
   if (!key) return { ok: false, status: 0, data: null, error: "aftership_api_key_missing" };
+  await throttle();
   try {
+
     const res = await fetch(`${BASE}${path}`, {
       method: init.method,
       headers: {
@@ -38,20 +64,28 @@ async function request<T>(
       | { data?: T; meta?: { code?: number; message?: string } }
       | null;
     if (!res.ok) {
+      const rawMsg = body?.meta?.message || "";
+      // Per-second rate limit → wait and retry (up to 3 extra attempts).
+      if (isRateLimit(res.status, rawMsg) && attempt < 3) {
+        await sleep(1200 * (attempt + 1));
+        return request<T>(path, init, attempt + 1);
+      }
       // 403 on a write means the API key was created without the
       // "Trackings: write" scope (reads still succeed) — surface that clearly.
-      // 429 means the free plan's daily API quota is used up.
-      const msg = (body?.meta?.message || "").toLowerCase();
+      const msg = rawMsg.toLowerCase();
       const hint =
         res.status === 403
           ? msg.includes("upgrade") || msg.includes("pro plan")
             ? "aftership_plan_required: the AfterShip account needs a paid (Pro) plan for API access"
             : "aftership_key_missing_write_permission"
           : res.status === 429
-            ? `aftership_daily_quota_exceeded: ${body?.meta?.message || ""}`.trim()
-            : body?.meta?.message || `aftership_status_${res.status}`;
+            ? isRateLimit(res.status, rawMsg)
+              ? `aftership_rate_limited: ${rawMsg}`.trim()
+              : `aftership_daily_quota_exceeded: ${rawMsg}`.trim()
+            : rawMsg || `aftership_status_${res.status}`;
       return { ok: false, status: res.status, data: null, error: hint };
     }
+
 
     return { ok: true, status: res.status, data: (body?.data ?? null) as T | null };
   } catch (err) {
