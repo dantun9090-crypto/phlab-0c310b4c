@@ -18,13 +18,39 @@ export function aftershipConfigured(): boolean {
   return apiKey().length > 0;
 }
 
+/**
+ * Client-side throttle: AfterShip allows 6 requests/second. We space calls
+ * ~220ms apart (≈4.5 req/s) so bulk loops never trip the rate limiter.
+ */
+const MIN_GAP_MS = 220;
+let nextSlot = 0;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+async function throttle(): Promise<void> {
+  const now = Date.now();
+  const start = Math.max(now, nextSlot);
+  nextSlot = start + MIN_GAP_MS;
+  if (start > now) await sleep(start - now);
+}
+
+/** True for the rate-limit (per-second) error, not the daily plan quota. */
+function isRateLimit(status: number, message: string): boolean {
+  return status === 429 && /rate limit/i.test(message);
+}
+
 async function request<T>(
   path: string,
   init: { method: string; body?: unknown },
+  attempt = 0,
 ): Promise<{ ok: boolean; status: number; data: T | null; error?: string }> {
   const key = apiKey();
   if (!key) return { ok: false, status: 0, data: null, error: "aftership_api_key_missing" };
+  await throttle();
   try {
+
     const res = await fetch(`${BASE}${path}`, {
       method: init.method,
       headers: {
