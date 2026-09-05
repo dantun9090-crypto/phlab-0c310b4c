@@ -25,14 +25,27 @@ function json(data: unknown, status = 200): Response {
   });
 }
 
-function verifySignature(raw: string, provided: string | null): boolean {
-  const key = (process.env.AFTERSHIP_API_KEY || "").trim();
-  if (!key || !provided) return false;
-  const expected = createHmac("sha256", key).update(raw, "utf8").digest("base64");
+function matches(raw: string, secret: string, provided: string): boolean {
+  const expected = createHmac("sha256", secret).update(raw, "utf8").digest("base64");
   const a = Buffer.from(expected);
-  const b = Buffer.from(provided.trim());
+  const b = Buffer.from(provided);
   if (a.length !== b.length) return false;
   return timingSafeEqual(a, b);
+}
+
+/**
+ * AfterShip signs the raw body with HMAC-SHA256. Newer webhooks use the
+ * dedicated webhook secret (AFTERSHIP_WEBHOOK_SECRET); older ones use the
+ * API key. Accept either so the endpoint works in both setups.
+ */
+function verifySignature(raw: string, provided: string | null): boolean {
+  if (!provided) return false;
+  const sig = provided.trim();
+  const secrets = [
+    (process.env.AFTERSHIP_WEBHOOK_SECRET || "").trim(),
+    (process.env.AFTERSHIP_API_KEY || "").trim(),
+  ].filter((s) => s.length > 0);
+  return secrets.some((s) => matches(raw, s, sig));
 }
 
 interface WebhookBody {
