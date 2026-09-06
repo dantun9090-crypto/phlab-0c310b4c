@@ -56,6 +56,16 @@ async function loadPage(page: Page) {
   // tests can race the render and see 0 `a.inline-flex` elements.
   await page.locator("a.inline-flex").first().waitFor({ state: "attached", timeout: 15_000 });
   await page.waitForLoadState("load", { timeout: 15_000 }).catch(() => undefined);
+  // Wait for the very last section of the page. The hero + CTA checks above
+  // only prove above-the-fold hydration; below-the-fold sections stream in
+  // later, so a full-page screenshot taken right after the hero can catch a
+  // half-rendered (viewport-height) document — which is exactly how the
+  // 2026-07 seed ended up with blank 900/1400/1800px baselines. Waiting for
+  // the final "Research use disclaimer" heading makes the captured height
+  // deterministic across mobile/tablet/desktop.
+  await expect(
+    page.locator("h2").filter({ hasText: /research use disclaimer/i }).first(),
+  ).toBeVisible({ timeout: 25_000 });
   await page.waitForTimeout(400);
   // Collapse any open <details> so FAQ height is deterministic.
   await page.evaluate(() => {

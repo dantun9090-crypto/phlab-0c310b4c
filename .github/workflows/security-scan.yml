@@ -25,7 +25,10 @@ jobs:
   security-scan:
     name: Dependency vulnerability scan
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    # 8 min was too tight: cosign attest-blob (Rekor) intermittently hangs
+    # ~7 min, so runs died at the timeout during cleanup even when the
+    # audit gate itself passed. 15 min matches the real p95 of this job.
+    timeout-minutes: 15
     permissions:
       contents: read
       security-events: write
