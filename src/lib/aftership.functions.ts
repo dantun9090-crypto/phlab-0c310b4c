@@ -91,8 +91,9 @@ export const bulkRegisterTrackers = createServerFn({ method: "POST" })
     const { listDocsAdmin, updateDocAdmin } = await import("./server/firestore-admin");
     const shipped = (await listDocsAdmin("orders", {
       where: { field: "status", value: "shipped" },
-      limit: 200,
+      limit: 500,
     }).catch(() => [])) as Array<Record<string, unknown> & { id: string }>;
+
 
     const summary = { registered: [] as string[], skipped: 0, errors: [] as string[] };
     for (const o of shipped) {
