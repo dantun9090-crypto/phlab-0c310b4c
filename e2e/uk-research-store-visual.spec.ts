@@ -76,11 +76,28 @@ async function loadPage(page: Page) {
   // the seeded baselines ended up as blank 900/1400px shells on mobile and
   // tablet. Wait for the fallback to disappear, then require the disclaimer
   // once more, now guaranteed to be in the hydrated tree.
-  const bootFallback = page.getByText(/loading ph labs/i);
-  if (await bootFallback.count()) {
-    await expect(bootFallback.first()).toBeHidden({ timeout: 25_000 });
-  }
+  // Checking for the fallback *text* races the body wipe: on mobile the
+  // check runs during the SSR phase (count=0) and the screenshot still
+  // catches the boot skeleton. `.phl-boot` is the class shared by both boot
+  // UIs (the innerHTML shimmer skeleton and the React "Loading PH Labs…"
+  // fallback), so wait for it to appear AND detach instead. The attached
+  // wait is best-effort: on a warm chunk cache the skeleton may never show.
+  await page
+    .waitForSelector(".phl-boot", { state: "attached", timeout: 10_000 })
+    .catch(() => undefined);
+  await page.waitForSelector(".phl-boot", { state: "detached", timeout: 25_000 });
   await expect(disclaimer).toBeVisible({ timeout: 25_000 });
+  // Final insurance: the document height must stop changing (three
+  // consecutive equal samples) before we trust a full-page screenshot.
+  let prevHeight = -1;
+  let stableSamples = 0;
+  const settleDeadline = Date.now() + 15_000;
+  while (stableSamples < 3 && Date.now() < settleDeadline) {
+    const h = await page.evaluate(() => document.documentElement.scrollHeight);
+    stableSamples = h === prevHeight ? stableSamples + 1 : 0;
+    prevHeight = h;
+    if (stableSamples < 3) await page.waitForTimeout(250);
+  }
   await page.waitForTimeout(400);
   // Collapse any open <details> so FAQ height is deterministic.
   await page.evaluate(() => {
