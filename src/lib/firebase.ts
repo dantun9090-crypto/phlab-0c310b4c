@@ -698,7 +698,8 @@ export const loginUser = async (email: string, password: string) => {
         referralBalance: 0,
         referralRewardClaimed: false,
         referralCount: 0,
-      });
+      }, { merge: true });
+
     }
   } catch { /* doc may not exist yet */ }
   
@@ -842,8 +843,23 @@ const upsertGoogleCustomer = async (user: FirebaseUser) => {
   // Firestore write here must be non-throwing.
   try {
     const customerRef = doc(db, 'customers', user.uid);
-    const snap = await getDoc(customerRef).catch(() => null);
-    if (!snap || !snap.exists()) {
+    // A FAILED read must never be treated as "no profile yet". Creating a
+    // fresh document in that case overwrites the existing profile and silently
+    // strips privileged/derived fields (isAdmin, isVip, role, loyaltyCredits,
+    // totalOrders, totalSpend) — that is how an admin loses admin access.
+    let snap: Awaited<ReturnType<typeof getDoc>> | null = null;
+    let readFailed = false;
+    try {
+      snap = await getDoc(customerRef);
+    } catch (e) {
+      readFailed = true;
+      console.warn('[google] customer read failed — skipping profile write', e);
+    }
+    if (readFailed) {
+      // Only a safe, additive touch. Never a full-document write.
+      setDoc(customerRef, { lastLoginAt: Timestamp.now() }, { merge: true })
+        .catch((e) => console.warn('[google] lastLoginAt merge failed', e));
+    } else if (!snap || !snap.exists()) {
       const nameParts = (user.displayName || '').trim().split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
@@ -867,7 +883,7 @@ const upsertGoogleCustomer = async (user: FirebaseUser) => {
         referralRewardClaimed: false,
         referralCount: 0,
         ...(storedRef ? { referredBy: storedRef } : {}),
-      }).catch((e) => { console.warn('[google] customer create failed', e); });
+      }, { merge: true }).catch((e) => { console.warn('[google] customer create failed', e); });
       if (storedRef) { try { clearStoredReferralCode(); } catch {} }
       sendWelcomeEmail(user.email || '', firstName).catch(console.error);
       logActivity({ type: 'signup', message: `New Google user: ${user.email}`, userId: user.uid })
@@ -876,6 +892,7 @@ const upsertGoogleCustomer = async (user: FirebaseUser) => {
       updateDoc(customerRef, { lastLoginAt: Timestamp.now() })
         .catch((e) => console.warn('[google] lastLoginAt update failed', e));
     }
+
   } catch (e) {
     console.warn('[google] upsertGoogleCustomer non-fatal error', e);
   }
