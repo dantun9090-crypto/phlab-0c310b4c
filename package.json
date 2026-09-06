@@ -198,7 +198,10 @@
     "glob": "^10.5.0",
     "vite": "^7.3.5",
     "browserslist": "^4.28.7",
-    "qs": "^6.16.0"
+    "qs": "^6.16.0",
+    "three-stdlib": {
+      "fflate": "^0.6.11"
+    }
   },
   "resolutions": {
     "@babel/core": "^7.29.6",
@@ -225,6 +228,7 @@
     "glob": "^10.5.0",
     "vite": "^7.3.5",
     "browserslist": "^4.28.7",
-    "qs": "^6.16.0"
+    "qs": "^6.16.0",
+    "three-stdlib/fflate": "^0.6.11"
   }
 }
