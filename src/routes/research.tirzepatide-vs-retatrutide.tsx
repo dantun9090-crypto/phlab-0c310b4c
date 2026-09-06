@@ -13,9 +13,9 @@ import { SITE_URL } from "@/lib/seo-meta";
 
 const URL = `${SITE_URL}/research/tirzepatide-vs-retatrutide`;
 const TITLE =
-  "Tirzepatide vs Retatrutide | Dual vs Triple Agonist Research Comparison | PH Labs";
+  "Tirzepatide vs Retatrutide | Research Comparison | PH Labs";
 const DESCRIPTION =
-  "Side-by-side comparison of Tirzepatide (dual GIP/GLP-1 agonist) and Retatrutide (triple GIP/GLP-1/glucagon agonist) for preclinical metabolic research. UK research-use only.";
+  "Tirzepatide (dual GIP/GLP-1) vs Retatrutide (triple GIP/GLP-1/glucagon) compared for preclinical metabolic research. UK research-use only.";
 
 const FAQS: Array<{ q: string; a: string }> = [
   {
