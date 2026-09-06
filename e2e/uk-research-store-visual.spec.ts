@@ -63,9 +63,24 @@ async function loadPage(page: Page) {
   // 2026-07 seed ended up with blank 900/1400/1800px baselines. Waiting for
   // the final "Research use disclaimer" heading makes the captured height
   // deterministic across mobile/tablet/desktop.
-  await expect(
-    page.locator("h2").filter({ hasText: /research use disclaimer/i }).first(),
-  ).toBeVisible({ timeout: 25_000 });
+  const disclaimer = page
+    .locator("h2")
+    .filter({ hasText: /research use disclaimer/i })
+    .first();
+  await expect(disclaimer).toBeVisible({ timeout: 25_000 });
+  // ...but even that is not enough: the page hydrates in two phases.
+  // SSR/prerendered HTML (full content, disclaimer visible) -> React reclaim
+  // swaps in a "Loading PH Labs..." boot fallback (document collapses to
+  // viewport height) -> hydrated app (full content again). A screenshot
+  // taken during the reclaim captures the collapsed fallback — this is how
+  // the seeded baselines ended up as blank 900/1400px shells on mobile and
+  // tablet. Wait for the fallback to disappear, then require the disclaimer
+  // once more, now guaranteed to be in the hydrated tree.
+  const bootFallback = page.getByText(/loading ph labs/i);
+  if (await bootFallback.count()) {
+    await expect(bootFallback.first()).toBeHidden({ timeout: 25_000 });
+  }
+  await expect(disclaimer).toBeVisible({ timeout: 25_000 });
   await page.waitForTimeout(400);
   // Collapse any open <details> so FAQ height is deterministic.
   await page.evaluate(() => {
