@@ -13,9 +13,9 @@ import { SITE_URL } from "@/lib/seo-meta";
 
 const URL = `${SITE_URL}/research/bpc-157-tb-500-synergy`;
 const TITLE =
-  "BPC-157 & TB-500 Synergy Stack | UK Tissue-Repair Research Guide | PH Labs";
+  "BPC-157 and TB-500 Synergy | Research Guide | PH Labs";
 const DESCRIPTION =
-  "How UK laboratories study BPC-157 and TB-500 together: complementary angiogenesis (VEGFR2/NO) and cell-migration (G-actin) mechanisms in combined tissue-repair research panels. Research-use only.";
+  "How UK labs study BPC-157 and TB-500 together: complementary angiogenesis and cell-migration mechanisms in tissue-repair panels. Research-use only.";
 
 const FAQS: Array<{ q: string; a: string }> = [
   {

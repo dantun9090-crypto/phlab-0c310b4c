@@ -12,9 +12,9 @@ import { SITE_URL } from "@/lib/seo-meta";
 
 const URL = `${SITE_URL}/research/cjc-1295-ipamorelin-synergy`;
 const TITLE =
-  "CJC-1295 & Ipamorelin Synergy | UK GHRH / GHRP Research Guide | PH Labs";
+  "CJC-1295 and Ipamorelin Synergy | GHRH/GHRP | PH Labs";
 const DESCRIPTION =
-  "How UK laboratories study CJC-1295 (GHRH analogue) and Ipamorelin (GHRP / ghrelin-receptor agonist) together: complementary GHRH-R and GHS-R1a pathways in combined pituitary secretagogue research panels. Research-use only.";
+  "How UK labs study CJC-1295 (GHRH analogue) and Ipamorelin (GHS-R1a agonist) together in pituitary secretagogue research panels. Research-use only.";
 
 const FAQS: Array<{ q: string; a: string }> = [
   {

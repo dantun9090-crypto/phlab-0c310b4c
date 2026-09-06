@@ -15,7 +15,7 @@ const BANNER_QUALITY = 78;
 
 const HOME_TITLE = "Research Peptides UK | HPLC-Verified | PH Labs";
 const HOME_DESCRIPTION =
-  "Buy research peptides UK — HPLC-verified purity, batch COAs and next-day UK dispatch for laboratory researchers. For research use only. Not for human consumption.";
+  "Buy research peptides UK — HPLC-verified purity, batch COAs and next-day UK dispatch. For research use only. Not for human consumption.";
 
 
 

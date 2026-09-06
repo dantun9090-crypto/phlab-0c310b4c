@@ -14,6 +14,8 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { SITE_URL } from "@/lib/seo-meta";
 import {
   findProgrammaticPage,
+  profileOf,
+  relatedComparisons,
   type ProgrammaticPage,
 } from "@/lib/programmatic-seo";
 
@@ -104,6 +106,9 @@ export const Route = createFileRoute("/compare/$slug")({
 
 function ComparePage() {
   const { page: p } = Route.useLoaderData() as { page: ProgrammaticPage };
+  const leftProfile = profileOf(p.left);
+  const rightProfile = profileOf(p.right);
+  const related = relatedComparisons(p.slug);
   return (
     <main className="bg-slate-950 min-h-screen text-white">
       <article className="max-w-5xl mx-auto px-6 md:px-10 py-12 md:py-16">
@@ -174,9 +179,24 @@ function ComparePage() {
                   <td className="px-4 py-3">{p.right.family}</td>
                 </tr>
                 <tr className="border-t border-slate-800">
-                  <td className="px-4 py-3 text-slate-400">Form</td>
-                  <td className="px-4 py-3">Lyophilised vial</td>
-                  <td className="px-4 py-3">Lyophilised vial</td>
+                  <td className="px-4 py-3 text-slate-400">Chemical class</td>
+                  <td className="px-4 py-3">{leftProfile.chemClass}</td>
+                  <td className="px-4 py-3">{rightProfile.chemClass}</td>
+                </tr>
+                <tr className="border-t border-slate-800">
+                  <td className="px-4 py-3 text-slate-400">Approx. molecular weight</td>
+                  <td className="px-4 py-3">{leftProfile.mw}</td>
+                  <td className="px-4 py-3">{rightProfile.mw}</td>
+                </tr>
+                <tr className="border-t border-slate-800">
+                  <td className="px-4 py-3 text-slate-400">Standard diluent</td>
+                  <td className="px-4 py-3">{leftProfile.diluent}</td>
+                  <td className="px-4 py-3">{rightProfile.diluent}</td>
+                </tr>
+                <tr className="border-t border-slate-800">
+                  <td className="px-4 py-3 text-slate-400">Typical assay panels</td>
+                  <td className="px-4 py-3">{leftProfile.assays}</td>
+                  <td className="px-4 py-3">{rightProfile.assays}</td>
                 </tr>
                 <tr className="border-t border-slate-800">
                   <td className="px-4 py-3 text-slate-400">Use</td>
@@ -185,11 +205,58 @@ function ComparePage() {
                 </tr>
                 <tr className="border-t border-slate-800">
                   <td className="px-4 py-3 text-slate-400">Storage</td>
-                  <td className="px-4 py-3">−20°C lyophilised; 2–8°C reconstituted</td>
-                  <td className="px-4 py-3">−20°C lyophilised; 2–8°C reconstituted</td>
+                  <td className="px-4 py-3">{leftProfile.storage}</td>
+                  <td className="px-4 py-3">{rightProfile.storage}</td>
                 </tr>
               </tbody>
             </table>
+          </div>
+        </section>
+
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold mb-5">
+            How researchers separate {p.left.name} and {p.right.name}
+          </h2>
+          <div className="space-y-4 text-slate-300 text-sm leading-relaxed max-w-3xl">
+            <p>
+              {p.left.name} sits in the {p.left.family.toLowerCase()} group.{" "}
+              {leftProfile.researchContext} In practical laboratory terms it is a{" "}
+              {leftProfile.chemClass.toLowerCase()} with an approximate molecular weight of{" "}
+              {leftProfile.mw}, normally reconstituted with {leftProfile.diluent.toLowerCase()} and held at{" "}
+              {leftProfile.storage}.
+            </p>
+            <p>
+              {p.right.name} belongs to the {p.right.family.toLowerCase()} group instead.{" "}
+              {rightProfile.researchContext} It is a {rightProfile.chemClass.toLowerCase()} with an
+              approximate molecular weight of {rightProfile.mw}, reconstituted with{" "}
+              {rightProfile.diluent.toLowerCase()} and stored at {rightProfile.storage}.
+            </p>
+            <p>
+              Because the two differ in mass and class, concentration calculations are not
+              interchangeable: the same diluent volume produces a different molar concentration for
+              each compound, which matters whenever a study compares them side by side. Assay
+              selection also differs — {p.left.name} is typically characterised through{" "}
+              {leftProfile.assays.toLowerCase()}, whereas {p.right.name} is usually assessed through{" "}
+              {rightProfile.assays.toLowerCase()}.
+            </p>
+          </div>
+        </section>
+
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold mb-5">Quality control and documentation</h2>
+          <div className="space-y-4 text-slate-300 text-sm leading-relaxed max-w-3xl">
+            <p>
+              Every batch of {p.left.name} and {p.right.name} supplied by PH Labs is released against
+              third-party HPLC purity analysis with mass-spectrometry identity confirmation. The
+              certificate of analysis records batch number, purity by peak area, retention time and
+              analysis date, so a laboratory can tie any result back to the exact vial used.
+            </p>
+            <p>
+              Vials are shipped lyophilised from the UK. On arrival, researchers commonly log batch
+              and expiry details, reconstitute according to their own protocol, and record
+              post-reconstitution storage conditions — the largest source of variability between
+              repeat experiments is handling, not the compound itself.
+            </p>
           </div>
         </section>
 
@@ -214,6 +281,24 @@ function ComparePage() {
             ))}
           </div>
         </section>
+
+        {related.length > 0 && (
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold mb-5">Related comparisons</h2>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {related.map((r) => (
+                <li key={r.slug}>
+                  <a
+                    href={`/compare/${r.slug}`}
+                    className="block bg-slate-900 border border-slate-700 hover:border-emerald-500 rounded-lg px-4 py-3 text-sm font-semibold text-slate-200"
+                  >
+                    {r.left.name} vs {r.right.name}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <section className="bg-slate-900 border border-slate-700 rounded-xl p-6 md:p-8 mb-8">
           <h2 className="text-xl font-bold mb-3">Related research catalogue</h2>

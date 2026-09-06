@@ -31,10 +31,47 @@ export interface PeptideRef {
   family: string;          // "Pentadecapeptide", "GLP-1/GIP", etc.
   // Compliance-safe research-context bullets (NOT medical claims).
   bullets: string[];
+  /** Approximate molecular weight as cited in research literature. */
+  mw?: string;
+  /** Chemical class in plain terms (peptide chain, complex, coenzyme…). */
+  chemClass?: string;
+  /** Standard laboratory diluent used for reconstitution. */
+  diluent?: string;
+  /** Handling / storage note specific to this compound. */
+  storage?: string;
+  /** One sentence describing the literature context it appears in. */
+  researchContext?: string;
+  /** Typical in-vitro assay families it appears in. */
+  assays?: string;
+}
+
+const DEFAULT_PROFILE = {
+  mw: "See batch certificate of analysis",
+  chemClass: "Lyophilised research compound",
+  diluent: "Bacteriostatic water (0.9% benzyl alcohol)",
+  storage: "−20°C lyophilised; 2–8°C once reconstituted",
+  researchContext: "Appears in UK laboratory in-vitro literature as a reference compound.",
+  assays: "In-vitro cell-culture and analytical characterisation panels",
+} as const;
+
+/** Fill any missing profile fields so comparison tables always render fully. */
+export function profileOf(ref: PeptideRef) {
+  return {
+    mw: ref.mw ?? DEFAULT_PROFILE.mw,
+    chemClass: ref.chemClass ?? DEFAULT_PROFILE.chemClass,
+    diluent: ref.diluent ?? DEFAULT_PROFILE.diluent,
+    storage: ref.storage ?? DEFAULT_PROFILE.storage,
+    researchContext: ref.researchContext ?? DEFAULT_PROFILE.researchContext,
+    assays: ref.assays ?? DEFAULT_PROFILE.assays,
+  };
 }
 
 const PEPTIDES: Record<string, PeptideRef> = {
   "bpc-157": {
+    mw: "~1,419 Da (15 amino acids)",
+    chemClass: "Linear synthetic peptide chain",
+    researchContext: "Cited across angiogenesis and tendon/gastrointestinal in-vitro repair literature.",
+    assays: "Fibroblast migration, tube-formation and VEGFR2/NO pathway assays",
     name: "BPC-157",
     slug: "bpc-157",
     family: "Pentadecapeptide (15-aa)",
@@ -46,6 +83,10 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "tb-500": {
+    mw: "~4,963 Da (Tβ4 C-terminal fragment)",
+    chemClass: "Synthetic protein fragment",
+    researchContext: "Studied for G-actin sequestration and cell-migration endpoints.",
+    assays: "Actin-binding, scratch/migration and cardiac cell-culture models",
     name: "TB-500",
     slug: "tb-500",
     family: "Thymosin Beta-4 fragment",
@@ -57,6 +98,11 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "ghk-cu": {
+    mw: "~340 Da tripeptide plus bound copper(II)",
+    chemClass: "Copper(II) tripeptide complex",
+    researchContext: "Used in skin-fibroblast, collagen and MMP/TIMP remodelling research.",
+    assays: "Fibroblast collagen synthesis and MMP/TIMP expression panels",
+    storage: "−20°C lyophilised, protected from light; 2–8°C once reconstituted",
     name: "GHK-Cu",
     slug: "ghk-cu",
     family: "Copper tripeptide",
@@ -68,6 +114,10 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "retatrutide": {
+    mw: "~4,731 Da",
+    chemClass: "Long-chain synthetic analogue peptide",
+    researchContext: "Newer triple-agonist reference compound in receptor-pharmacology literature.",
+    assays: "cAMP accumulation and receptor-binding assays at GLP-1, GIP and glucagon receptors",
     name: "Retatrutide",
     slug: "retatrutide",
     family: "GLP-1 / GIP / glucagon triple agonist (research)",
@@ -79,6 +129,10 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "tirzepatide": {
+    mw: "~4,813 Da",
+    chemClass: "Long-chain synthetic analogue peptide",
+    researchContext: "Well-characterised dual-agonist benchmark in receptor-pharmacology papers.",
+    assays: "cAMP and receptor-binding assays at GIP and GLP-1 receptors",
     name: "Tirzepatide",
     slug: "tirzepatide",
     family: "GLP-1 / GIP dual agonist (research)",
@@ -90,6 +144,10 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "mots-c": {
+    mw: "~2,174 Da (16 amino acids)",
+    chemClass: "Mitochondrial-derived peptide",
+    researchContext: "Studied in mitochondrial-signalling and AMPK-pathway research.",
+    assays: "AMPK phosphorylation, mitochondrial respiration and metabolic-flux assays",
     name: "MOTS-c",
     slug: "metabolic-signaling",
     family: "Mitochondrial-derived peptide (16-aa)",
@@ -101,6 +159,11 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "nad-plus": {
+    mw: "~663 Da",
+    chemClass: "Dinucleotide coenzyme (not a peptide)",
+    diluent: "Sterile diluent per batch documentation",
+    researchContext: "Central redox cofactor in sirtuin and cellular-aging research.",
+    assays: "NAD+/NADH ratio, sirtuin activity and redox-balance assays",
     name: "NAD+",
     slug: "cellular-aging",
     family: "Coenzyme (nicotinamide adenine dinucleotide)",
@@ -112,6 +175,10 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "pt-141": {
+    mw: "~1,025 Da (cyclic heptapeptide)",
+    chemClass: "Cyclic α-MSH analogue",
+    researchContext: "Reference ligand in melanocortin receptor-binding research.",
+    assays: "MC3R/MC4R binding and cAMP reporter assays",
     name: "PT-141",
     slug: "neurological",
     family: "Melanocortin receptor research peptide",
@@ -123,6 +190,10 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "melanotan-2": {
+    mw: "~1,024 Da (cyclic heptapeptide)",
+    chemClass: "Cyclic α-MSH analogue",
+    researchContext: "Comparator to PT-141 in melanocortin and pigmentation literature.",
+    assays: "MC1R/MC4R binding and melanocyte pigmentation assays",
     name: "Melanotan-II",
     slug: "melanin",
     family: "Melanocortin agonist (research)",
@@ -134,6 +205,10 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "kpv": {
+    mw: "~342 Da (3 amino acids)",
+    chemClass: "Short linear tripeptide",
+    researchContext: "α-MSH C-terminal fragment studied in inflammation-signalling models.",
+    assays: "NF-κB reporter and cytokine-expression cell assays",
     name: "KPV",
     slug: "tissue-repair",
     family: "Tripeptide (Lys-Pro-Val) — α-MSH C-terminal fragment",
@@ -145,6 +220,10 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "glow": {
+    mw: "Blend — per-component masses on the batch CoA",
+    chemClass: "Three-peptide research blend",
+    researchContext: "Used where a combined formulation is the study variable.",
+    assays: "Comparative blend-vs-single-agent in-vitro designs",
     name: "GLOW Blend",
     slug: "blends",
     family: "Research blend (GHK-Cu + BPC-157 + TB-500)",
@@ -156,6 +235,10 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "klow": {
+    mw: "Blend — per-component masses on the batch CoA",
+    chemClass: "Four-peptide research blend",
+    researchContext: "Used where KPV addition to a three-peptide blend is the study variable.",
+    assays: "Comparative blend-vs-single-agent in-vitro designs",
     name: "KLOW Blend",
     slug: "blends",
     family: "Research blend (KPV + GHK-Cu + BPC-157 + TB-500)",
@@ -167,6 +250,12 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "bacteriostatic-water": {
+    mw: "n/a — diluent",
+    chemClass: "Sterile water with 0.9% benzyl alcohol",
+    diluent: "n/a — this is the diluent",
+    storage: "Room temperature; refrigerate after opening",
+    researchContext: "Standard laboratory diluent for reconstituting lyophilised compounds.",
+    assays: "n/a — laboratory accessory",
     name: "Bacteriostatic Water",
     slug: "bacteriostatic-water",
     family: "Diluent (0.9% benzyl alcohol)",
@@ -551,4 +640,18 @@ export function findProgrammaticPage(slug: string): ProgrammaticPage | undefined
 
 export function listProgrammaticSlugs(): string[] {
   return PROGRAMMATIC_PAGES.map((p) => p.slug);
+}
+
+/**
+ * Other comparison pages that share a compound with the given slug.
+ * Used to give each /compare page a unique internal-link block instead of
+ * 32 near-identical shells.
+ */
+export function relatedComparisons(slug: string, limit = 6): ProgrammaticPage[] {
+  const current = findProgrammaticPage(slug);
+  if (!current) return [];
+  const names = new Set([current.left.name, current.right.name]);
+  return PROGRAMMATIC_PAGES.filter(
+    (p) => p.slug !== slug && (names.has(p.left.name) || names.has(p.right.name)),
+  ).slice(0, limit);
 }

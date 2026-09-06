@@ -13,9 +13,9 @@ import { SITE_URL } from "@/lib/seo-meta";
 
 const URL = `${SITE_URL}/research/ghk-cu-guide`;
 const TITLE =
-  "GHK-Cu Research Peptide Guide | Copper Binding, Mechanism & Tissue-Remodelling Assays | PH Labs";
+  "GHK-Cu Research Peptide Guide | PH Labs";
 const DESCRIPTION =
-  "Comprehensive UK research guide to GHK-Cu (glycyl-L-histidyl-L-lysine:copper(II)): copper coordination chemistry, mechanism of action at MMP/TIMP and collagen pathways, in-vitro assay panels, and QC release testing. Research use only.";
+  "UK research guide to GHK-Cu: copper coordination chemistry, MMP/TIMP and collagen pathways, in-vitro assays and QC release testing. Research use only.";
 
 const FAQS: Array<{ q: string; a: string }> = [
   {
