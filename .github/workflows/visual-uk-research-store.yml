@@ -40,7 +40,7 @@ jobs:
       # real browser.
       RESEARCH_BASE_URL: ${{ github.event.inputs.base_url || 'http://localhost:8080' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:

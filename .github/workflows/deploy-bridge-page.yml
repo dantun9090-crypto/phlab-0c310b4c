@@ -16,7 +16,7 @@ jobs:
     name: Deploy phlabs-bridge-page
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Splice logo from live worker
         env:
