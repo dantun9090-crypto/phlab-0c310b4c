@@ -641,3 +641,17 @@ export function findProgrammaticPage(slug: string): ProgrammaticPage | undefined
 export function listProgrammaticSlugs(): string[] {
   return PROGRAMMATIC_PAGES.map((p) => p.slug);
 }
+
+/**
+ * Other comparison pages that share a compound with the given slug.
+ * Used to give each /compare page a unique internal-link block instead of
+ * 32 near-identical shells.
+ */
+export function relatedComparisons(slug: string, limit = 6): ProgrammaticPage[] {
+  const current = findProgrammaticPage(slug);
+  if (!current) return [];
+  const names = new Set([current.left.name, current.right.name]);
+  return PROGRAMMATIC_PAGES.filter(
+    (p) => p.slug !== slug && (names.has(p.left.name) || names.has(p.right.name)),
+  ).slice(0, limit);
+}
