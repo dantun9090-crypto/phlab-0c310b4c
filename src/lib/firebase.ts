@@ -698,7 +698,8 @@ export const loginUser = async (email: string, password: string) => {
         referralBalance: 0,
         referralRewardClaimed: false,
         referralCount: 0,
-      });
+      }, { merge: true });
+
     }
   } catch { /* doc may not exist yet */ }
   
