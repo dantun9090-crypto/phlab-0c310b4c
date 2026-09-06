@@ -13,9 +13,9 @@ console.log('candidates', rows.length);
 let ok=0, exists=0; const errs=[];
 for (const r of rows) {
   const c = r.o.customer || {};
-  const body = { tracking: { tracking_number: r.t, slug: 'royal-mail', title: `PH Labs order ${r.id}`, order_id: r.id,
+  const body = { tracking_number: r.t, slug: 'royal-mail', title: `PH Labs order ${r.id}`, order_id: r.id,
     ...(c.postcode ? { tracking_postal_code: String(c.postcode).replace(/\s+/g,'').toUpperCase() } : {}),
-    ...(r.o.userEmail ? { emails: [r.o.userEmail] } : {}) } };
+    ...(r.o.userEmail ? { emails: [r.o.userEmail] } : {}) };
   const res = await fetch('https://api.aftership.com/tracking/2026-07/trackings', { method:'POST',
     headers: { 'as-api-key': key, 'content-type':'application/json' }, body: JSON.stringify(body) });
   const j = await res.json().catch(()=>({}));
