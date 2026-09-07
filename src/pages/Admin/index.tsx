@@ -488,6 +488,7 @@ export default function AdminPage() {
         case 'aigraphics': return <AIGraphicsTab />;
         case 'inventory': return <InventoryTab />;
         case 'orders': return <OrdersTab />;
+        case 'revenue': return <RevenueTab />;
         case 'customers': return <CustomersTab />;
         case 'invoices': return <InvoicesTab />;
         case 'orderinvoices': return <OrderInvoicesTab />;
