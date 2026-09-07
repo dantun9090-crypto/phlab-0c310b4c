@@ -15,6 +15,7 @@ import AdminSpaFallbackBanner from '@/components/admin/AdminSpaFallbackBanner';
 import DashboardTab from './tabs/DashboardTab';
 import InventoryTab from './tabs/InventoryTab';
 import OrdersTab from './tabs/OrdersTab';
+import RevenueTab from './tabs/RevenueTab';
 import CustomersTab from './tabs/CustomersTab';
 import MarketingTab from './tabs/MarketingTab';
 import DatabaseTab from './tabs/DatabaseTab';
