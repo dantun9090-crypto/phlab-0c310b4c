@@ -203,7 +203,7 @@ export default function RevenueTab() {
     });
 
     return {
-      paidCount: paid.count ?? paid.length,
+      paidCount: paid.length,
       paidRevenue,
       avgOrder: paid.length ? paidRevenue / paid.length : 0,
       weeks,
