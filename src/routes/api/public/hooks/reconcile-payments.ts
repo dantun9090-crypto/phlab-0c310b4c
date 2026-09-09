@@ -198,23 +198,17 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
         new Response("Method Not Allowed", { status: 405, headers: NO_STORE_HEADERS }),
       POST: async ({ request }) => {
         // ---- auth ---------------------------------------------------
-        // Two accepted secrets: CRON_SECRET (GitHub Actions) and
-        // RECONCILE_CRON_SECRET (database scheduler, runs every 2 min so
-        // recovery no longer depends on GitHub's schedule throttling).
+        const expected = process.env.CRON_SECRET || "";
         const provided = request.headers.get("x-cron-secret") || "";
-        const candidates = [
-          process.env.CRON_SECRET || "",
-          process.env.RECONCILE_CRON_SECRET || "",
-        ].filter(Boolean);
-        const matches = candidates.some((expected) => {
-          if (provided.length !== expected.length) return false;
-          let diff = 0;
-          for (let i = 0; i < expected.length; i++) {
-            diff |= expected.charCodeAt(i) ^ provided.charCodeAt(i);
-          }
-          return diff === 0;
-        });
-        if (!matches) return json({ error: "forbidden" }, 403);
+        if (!expected || provided.length !== expected.length) {
+          return json({ error: "forbidden" }, 403);
+        }
+        // constant-time compare
+        let diff = 0;
+        for (let i = 0; i < expected.length; i++) {
+          diff |= expected.charCodeAt(i) ^ provided.charCodeAt(i);
+        }
+        if (diff !== 0) return json({ error: "forbidden" }, 403);
 
         const results = { processed: 0, failed: 0, skipped: 0, conflicts: 0, stuck: 0, mpBackfill: 0 };
 
@@ -421,41 +415,13 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
         // happens within ~5-8 min of the customer paying, not 30+.
         try {
           const cutoff = new Date(Date.now() - 3 * 60_000);
-          // Orders written by different code paths land on different
-          // "not paid yet" labels. Sweeping only pending_payment left
-          // plain `pending` / `awaiting_payment` rows sitting forever
-          // until an admin noticed them by hand — sweep them all.
-          const PENDING_STATUSES = [
-            "pending_payment",
-            "pending",
-            "awaiting_payment",
-            "processing_payment",
-          ] as const;
-          const stuck: Array<Record<string, unknown> & { id: string }> = [];
-          const seenStuck = new Set<string>();
-          for (const st of PENDING_STATUSES) {
-            let batch: Array<Record<string, unknown> & { id: string }> = [];
-            try {
-              batch = await listDocsAdmin("orders", {
-                orderBy: "createdAt",
-                direction: "ASCENDING",
-                limit: 25,
-                where: { field: "status", op: "EQUAL", value: st },
-                rangeFilter: { field: "createdAt", lte: cutoff },
-              });
-            } catch (e) {
-              console.warn(
-                `[reconcile] stuck query failed for status=${st}:`,
-                e instanceof Error ? e.message : e,
-              );
-            }
-            for (const row of batch) {
-              const id = String(row.id);
-              if (seenStuck.has(id)) continue;
-              seenStuck.add(id);
-              stuck.push(row);
-            }
-          }
+          const stuck = await listDocsAdmin("orders", {
+            orderBy: "createdAt",
+            direction: "ASCENDING",
+            limit: 20,
+            where: { field: "status", op: "EQUAL", value: "pending_payment" },
+            rangeFilter: { field: "createdAt", lte: cutoff },
+          });
 
           for (const order of stuck) {
             const orderId = String(order.id);
