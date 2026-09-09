@@ -78,7 +78,8 @@ export default function WallidSyncCard() {
           </h3>
           <p className="text-xs text-slate-400 mt-1">
             Force reconcile orders stuck on pending. Same atomic path as the
-            5-minute cron, on demand.
+            automatic check that now runs every 2 minutes (all pending
+            statuses), on demand.
           </p>
         </div>
         <button
