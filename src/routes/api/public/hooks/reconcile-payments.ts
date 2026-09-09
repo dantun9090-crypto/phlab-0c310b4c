@@ -413,15 +413,48 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
         // the payment but our webhook never landed (network, edge cold
         // start, signature drift, etc.). 3-minute cutoff so recovery
         // happens within ~5-8 min of the customer paying, not 30+.
+        //
+        // Sweep rules (2026-09 hardening — orders were sitting pending for
+        // hours until the customer emailed):
+        //   - every unsettled status is swept, not just `pending_payment`
+        //     (`pending`, `awaiting_payment`, `processing_payment` too),
+        //   - NEWEST FIRST inside a 14-day window, so a pile of old
+        //     abandoned reservations can never starve a fresh paid order
+        //     out of the per-tick budget,
+        //   - orders with no resolvable Wallid payment id are flagged
+        //     (`needsPaymentCheck`) instead of being silently skipped, so
+        //     Admin → Payment triage surfaces them.
         try {
           const cutoff = new Date(Date.now() - 3 * 60_000);
-          const stuck = await listDocsAdmin("orders", {
-            orderBy: "createdAt",
-            direction: "ASCENDING",
-            limit: 20,
-            where: { field: "status", op: "EQUAL", value: "pending_payment" },
-            rangeFilter: { field: "createdAt", lte: cutoff },
-          });
+          const horizon = new Date(Date.now() - 14 * 24 * 60 * 60_000);
+          const UNSETTLED_STATUSES = [
+            "pending_payment",
+            "pending",
+            "awaiting_payment",
+            "processing_payment",
+          ];
+          const seen = new Set<string>();
+          const stuck: Array<Record<string, unknown> & { id: string }> = [];
+          for (const st of UNSETTLED_STATUSES) {
+            let rows: Array<Record<string, unknown> & { id: string }> = [];
+            try {
+              rows = (await listDocsAdmin("orders", {
+                orderBy: "createdAt",
+                direction: "DESCENDING",
+                limit: 25,
+                where: { field: "status", op: "EQUAL", value: st },
+                rangeFilter: { field: "createdAt", gte: horizon, lte: cutoff },
+              })) as Array<Record<string, unknown> & { id: string }>;
+            } catch (e) {
+              console.warn(`[reconcile] sweep query failed for ${st}:`, e instanceof Error ? e.message : e);
+            }
+            for (const r of rows) {
+              const id = String(r.id);
+              if (seen.has(id)) continue;
+              seen.add(id);
+              stuck.push(r);
+            }
+          }
 
           for (const order of stuck) {
             const orderId = String(order.id);
@@ -436,7 +469,29 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
               apiPaymentId = lookedUp?.apiPaymentId || "";
               returnToken = lookedUp?.returnToken ?? null;
             }
-            if (!apiPaymentId) continue;
+            if (!apiPaymentId) {
+              // No provider reference anywhere: the create call itself never
+              // landed (or this is a manual/Tide order). Still nudge the
+              // customer once, and flag it so it shows up in admin rather
+              // than disappearing until someone complains.
+              await maybeSendPendingReminder(order, returnToken).catch((e) =>
+                console.warn(`[reconcile] reminder failed for ${orderId}:`, e instanceof Error ? e.message : e),
+              );
+              if (!(order as { needsPaymentCheck?: unknown }).needsPaymentCheck) {
+                try {
+                  await updateDocAdmin("orders", orderId, {
+                    needsPaymentCheck: true,
+                    needsPaymentCheckAt: new Date(),
+                    needsPaymentCheckReason: "No provider payment reference found for unsettled order",
+                  });
+                  results.flagged += 1;
+                } catch (e) {
+                  console.warn(`[reconcile] flag failed for ${orderId}:`, e instanceof Error ? e.message : e);
+                }
+              }
+              continue;
+            }
+
 
             const providerStatus = await queryWallidPaymentStatus(apiPaymentId);
             if (!providerStatus || providerStatus.toLowerCase() === "pending") {
