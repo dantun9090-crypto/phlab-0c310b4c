@@ -1,6 +1,7 @@
-import admin from 'firebase-admin';
-admin.initializeApp({credential:admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON))});
-const db=admin.firestore();
+import { cert, initializeApp } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+initializeApp({credential:cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON))});
+const db=getFirestore();
 const snap=await db.collection('orders').get();
 const buckets={};
 const stuck=[];
