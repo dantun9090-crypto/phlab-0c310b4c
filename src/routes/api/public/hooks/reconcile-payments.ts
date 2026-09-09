@@ -198,17 +198,23 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
         new Response("Method Not Allowed", { status: 405, headers: NO_STORE_HEADERS }),
       POST: async ({ request }) => {
         // ---- auth ---------------------------------------------------
-        const expected = process.env.CRON_SECRET || "";
+        // Two accepted secrets: CRON_SECRET (GitHub Actions) and
+        // RECONCILE_CRON_SECRET (database scheduler, runs every 2 min so
+        // recovery no longer depends on GitHub's schedule throttling).
         const provided = request.headers.get("x-cron-secret") || "";
-        if (!expected || provided.length !== expected.length) {
-          return json({ error: "forbidden" }, 403);
-        }
-        // constant-time compare
-        let diff = 0;
-        for (let i = 0; i < expected.length; i++) {
-          diff |= expected.charCodeAt(i) ^ provided.charCodeAt(i);
-        }
-        if (diff !== 0) return json({ error: "forbidden" }, 403);
+        const candidates = [
+          process.env.CRON_SECRET || "",
+          process.env.RECONCILE_CRON_SECRET || "",
+        ].filter(Boolean);
+        const matches = candidates.some((expected) => {
+          if (provided.length !== expected.length) return false;
+          let diff = 0;
+          for (let i = 0; i < expected.length; i++) {
+            diff |= expected.charCodeAt(i) ^ provided.charCodeAt(i);
+          }
+          return diff === 0;
+        });
+        if (!matches) return json({ error: "forbidden" }, 403);
 
         const results = { processed: 0, failed: 0, skipped: 0, conflicts: 0, stuck: 0, mpBackfill: 0 };
 
