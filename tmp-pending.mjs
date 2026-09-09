@@ -1,0 +1,14 @@
+import admin from 'firebase-admin';
+admin.initializeApp({credential:admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON))});
+const db=admin.firestore();
+const snap=await db.collection('orders').get();
+const buckets={};
+const stuck=[];
+snap.forEach(d=>{const o=d.data();const s=String(o.status||'').toLowerCase();buckets[s]=(buckets[s]||0)+1;
+ if(['pending','pending_payment','awaiting_payment','processing_payment'].includes(s)) stuck.push({id:d.id,s,created:String(o.createdAt&&o.createdAt.toDate?o.createdAt.toDate().toISOString():o.createdAt),prov:o.paymentProvider,ref:o.paymentRef||o.apiPaymentId||null,rec:!!o.lastReconciledAt});
+});
+console.log(buckets);
+stuck.sort((a,b)=>String(a.created).localeCompare(String(b.created)));
+console.log('stuck total',stuck.length);
+console.log(stuck.slice(0,15));
+console.log('newest:',stuck.slice(-8));
