@@ -415,13 +415,41 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
         // happens within ~5-8 min of the customer paying, not 30+.
         try {
           const cutoff = new Date(Date.now() - 3 * 60_000);
-          const stuck = await listDocsAdmin("orders", {
-            orderBy: "createdAt",
-            direction: "ASCENDING",
-            limit: 20,
-            where: { field: "status", op: "EQUAL", value: "pending_payment" },
-            rangeFilter: { field: "createdAt", lte: cutoff },
-          });
+          // Orders written by different code paths land on different
+          // "not paid yet" labels. Sweeping only pending_payment left
+          // plain `pending` / `awaiting_payment` rows sitting forever
+          // until an admin noticed them by hand — sweep them all.
+          const PENDING_STATUSES = [
+            "pending_payment",
+            "pending",
+            "awaiting_payment",
+            "processing_payment",
+          ] as const;
+          const stuck: Array<Record<string, unknown> & { id: string }> = [];
+          const seenStuck = new Set<string>();
+          for (const st of PENDING_STATUSES) {
+            let batch: Array<Record<string, unknown> & { id: string }> = [];
+            try {
+              batch = await listDocsAdmin("orders", {
+                orderBy: "createdAt",
+                direction: "ASCENDING",
+                limit: 25,
+                where: { field: "status", op: "EQUAL", value: st },
+                rangeFilter: { field: "createdAt", lte: cutoff },
+              });
+            } catch (e) {
+              console.warn(
+                `[reconcile] stuck query failed for status=${st}:`,
+                e instanceof Error ? e.message : e,
+              );
+            }
+            for (const row of batch) {
+              const id = String(row.id);
+              if (seenStuck.has(id)) continue;
+              seenStuck.add(id);
+              stuck.push(row);
+            }
+          }
 
           for (const order of stuck) {
             const orderId = String(order.id);
