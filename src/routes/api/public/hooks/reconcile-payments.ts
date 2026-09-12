@@ -198,19 +198,37 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
         new Response("Method Not Allowed", { status: 405, headers: NO_STORE_HEADERS }),
       POST: async ({ request }) => {
         // ---- auth ---------------------------------------------------
-        const expected = process.env.CRON_SECRET || "";
+        // Accept EITHER shared secret: the GitHub Actions workflow uses
+        // CRON_SECRET, the database scheduler uses RECONCILE_CRON_SECRET.
+        // Rejecting one of them silently disables that scheduler and leaves
+        // paid orders stuck on pending.
+        const candidates = [
+          process.env.CRON_SECRET || "",
+          process.env.RECONCILE_CRON_SECRET || "",
+        ].filter((s) => s.length > 0);
         const provided = request.headers.get("x-cron-secret") || "";
-        if (!expected || provided.length !== expected.length) {
-          return json({ error: "forbidden" }, 403);
-        }
-        // constant-time compare
-        let diff = 0;
-        for (let i = 0; i < expected.length; i++) {
-          diff |= expected.charCodeAt(i) ^ provided.charCodeAt(i);
-        }
-        if (diff !== 0) return json({ error: "forbidden" }, 403);
+        const ok =
+          provided.length > 0 &&
+          candidates.some((expected) => {
+            if (provided.length !== expected.length) return false;
+            let diff = 0;
+            for (let i = 0; i < expected.length; i++) {
+              diff |= expected.charCodeAt(i) ^ provided.charCodeAt(i);
+            }
+            return diff === 0;
+          });
+        if (!ok) return json({ error: "forbidden" }, 403);
 
-        const results = { processed: 0, failed: 0, skipped: 0, conflicts: 0, stuck: 0, mpBackfill: 0 };
+        const results = {
+          processed: 0,
+          failed: 0,
+          skipped: 0,
+          conflicts: 0,
+          stuck: 0,
+          mpBackfill: 0,
+          flagged: 0,
+        };
+
 
         const [{ listDocsAdmin, updateDocAdmin, transitionDocStatusAdmin }, reliability] =
           await Promise.all([
@@ -458,17 +476,28 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
 
           for (const order of stuck) {
             const orderId = String(order.id);
-            let apiPaymentId =
-              String((order as { paymentRef?: string; apiPaymentId?: string }).paymentRef ||
-                (order as { apiPaymentId?: string }).apiPaymentId || "");
-            // Order doc may not have paymentRef yet if the webhook
-            // never ran — look it up from wallid_payments by order_id.
+            const o = order as {
+              paymentRef?: string;
+              apiPaymentId?: string;
+              wallidApiPaymentId?: string;
+            };
+            // IMPORTANT: paymentRef holds the INTERNAL order number (it is
+            // the bank narrative reference), never Wallid's api_payment_id.
+            // Polling Wallid with it returns 404 "payment not found", which
+            // used to leave paid orders stuck on pending forever.
+            let apiPaymentId = String(
+              o.wallidApiPaymentId || o.apiPaymentId || "",
+            );
+            if (apiPaymentId === orderId) apiPaymentId = "";
+            // Nothing on the doc yet (webhook never ran) — look it up from
+            // wallid_payments by order_id.
             let returnToken: string | null = null;
             if (!apiPaymentId) {
               const lookedUp = await lookupApiPaymentIdForOrder(orderId);
               apiPaymentId = lookedUp?.apiPaymentId || "";
               returnToken = lookedUp?.returnToken ?? null;
             }
+
             if (!apiPaymentId) {
               // No provider reference anywhere: the create call itself never
               // landed (or this is a manual/Tide order). Still nudge the
