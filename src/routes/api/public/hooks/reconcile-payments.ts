@@ -476,17 +476,28 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
 
           for (const order of stuck) {
             const orderId = String(order.id);
-            let apiPaymentId =
-              String((order as { paymentRef?: string; apiPaymentId?: string }).paymentRef ||
-                (order as { apiPaymentId?: string }).apiPaymentId || "");
-            // Order doc may not have paymentRef yet if the webhook
-            // never ran — look it up from wallid_payments by order_id.
+            const o = order as {
+              paymentRef?: string;
+              apiPaymentId?: string;
+              wallidApiPaymentId?: string;
+            };
+            // IMPORTANT: paymentRef holds the INTERNAL order number (it is
+            // the bank narrative reference), never Wallid's api_payment_id.
+            // Polling Wallid with it returns 404 "payment not found", which
+            // used to leave paid orders stuck on pending forever.
+            let apiPaymentId = String(
+              o.wallidApiPaymentId || o.apiPaymentId || "",
+            );
+            if (apiPaymentId === orderId) apiPaymentId = "";
+            // Nothing on the doc yet (webhook never ran) — look it up from
+            // wallid_payments by order_id.
             let returnToken: string | null = null;
             if (!apiPaymentId) {
               const lookedUp = await lookupApiPaymentIdForOrder(orderId);
               apiPaymentId = lookedUp?.apiPaymentId || "";
               returnToken = lookedUp?.returnToken ?? null;
             }
+
             if (!apiPaymentId) {
               // No provider reference anywhere: the create call itself never
               // landed (or this is a manual/Tide order). Still nudge the
