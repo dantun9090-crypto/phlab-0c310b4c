@@ -89,6 +89,45 @@ export async function resolveGetAddressKey(): Promise<string | null> {
 }
 
 
+/**
+ * Circuit breaker for the paid provider.
+ *
+ * When the paid key is refused (401/403) or out of credit (402), every
+ * checkout lookup would otherwise pay an extra round trip upstream before
+ * falling back to the free provider. We remember the outage for 15 minutes
+ * and go straight to postcodes.io meanwhile.
+ */
+let providerDownUntil = 0;
+let providerDownReason = '';
+const OUTAGE_TTL_MS = 15 * 60 * 1000;
+
+export function getPaidProviderOutage(): { reason: string; until: number } | null {
+  if (Date.now() >= providerDownUntil) return null;
+  return { reason: providerDownReason, until: providerDownUntil };
+}
+
+export function describeProviderStatus(status: number): string {
+  if (status === 402) {
+    return 'Address lookup credit is used up — top up the plan to get full street addresses again. Checkout still fills city/county from the free lookup.';
+  }
+  if (status === 401 || status === 403) {
+    return 'Key rejected (401/403) — check the key value and remove any domain/IP restriction on it.';
+  }
+  return `Provider returned HTTP ${status}.`;
+}
+
+function markPaidProviderDown(status: number): void {
+  providerDownUntil = Date.now() + OUTAGE_TTL_MS;
+  providerDownReason = describeProviderStatus(status);
+  console.warn('[postcode-lookup] paid provider unavailable, HTTP', status, '— using free lookup for 15 min');
+}
+
+/** Cleared by the admin health probe once the paid provider answers again. */
+export function clearPaidProviderOutage(): void {
+  providerDownUntil = 0;
+  providerDownReason = '';
+}
+
 async function fetchJson(url: string, apiKey?: string): Promise<any> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);

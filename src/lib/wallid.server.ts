@@ -66,6 +66,12 @@ async function wallidFetch(
   path: string,
   init: RequestInit,
   attempt = 0,
+  /**
+   * Only safe-to-repeat calls are retried. A POST /create may already have
+   * been accepted upstream when the socket dies, so retrying it can mint a
+   * second payment link (and a second bank reference) for one order.
+   */
+  retryable = (init.method || 'GET').toUpperCase() === 'GET',
 ): Promise<Response> {
   // 8s hard timeout — Wallid p99 is well under 2s; anything longer is a hang.
   // Prevents Worker invocations from sitting on a dead socket and blowing the
