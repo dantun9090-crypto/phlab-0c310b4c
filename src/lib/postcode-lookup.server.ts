@@ -316,7 +316,7 @@ export async function runPostcodeLookup(rawPostcode: string): Promise<PostcodeLo
 
   let result: PostcodeLookupResult;
   try {
-    const provider = getLookupProvider();
+    const provider = getPaidProviderOutage() ? 'postcodes-io' : getLookupProvider();
     if (provider === 'getaddress') {
       const key = await resolveGetAddressKey();
       result = key ? await lookupGetAddress(pc, key) : await lookupPostcodesIo(pc);
@@ -374,14 +374,10 @@ export async function probeProviderHealth(): Promise<{ ok: boolean; status?: num
     );
     if (json?.__status) {
       const status = Number(json.__status);
-      return {
-        ok: false,
-        status,
-        reason: status === 401 || status === 403
-          ? 'Key rejected (401/403) — check the key value and remove any domain/IP restriction on it.'
-          : `Provider returned HTTP ${status}.`,
-      };
+      markPaidProviderDown(status);
+      return { ok: false, status, reason: describeProviderStatus(status) };
     }
+    clearPaidProviderOutage();
     const count = Array.isArray(json?.result) ? json.result.length : 0;
     return count > 0 ? { ok: true } : { ok: false, reason: 'Provider returned no addresses for the test postcode.' };
   } catch {
