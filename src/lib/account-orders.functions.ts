@@ -22,7 +22,7 @@ const FIREBASE_WEB_API_KEY = 'AIzaSyB5sWYCTkzeFFup0mqyg3PzCIzjP2oGJdM';
 export interface GuestOrdersResult {
   ok: boolean;
   /** Orders matched by verified email that are not already owned by this UID. */
-  orders: Array<Record<string, unknown> & { id: string }>;
+  orders: Array<any>;
 }
 
 export const getOrdersForVerifiedEmail = createServerFn({ method: 'POST' })
@@ -37,7 +37,7 @@ export const getOrdersForVerifiedEmail = createServerFn({ method: 'POST' })
       const { verifyFirebaseIdToken } = await import('@/lib/server/firebase-auth-admin');
       const verified = await verifyFirebaseIdToken(data.idToken);
       const uid = verified.uid;
-      if (!uid) return { ok: false, orders: [] };
+      if (!uid) return { ok: false, orders: [] as any[] };
 
       // Email ownership must be proven, not merely claimed.
       const lookupRes = await fetch(
@@ -48,23 +48,23 @@ export const getOrdersForVerifiedEmail = createServerFn({ method: 'POST' })
           body: JSON.stringify({ idToken: data.idToken }),
         },
       );
-      if (!lookupRes.ok) return { ok: false, orders: [] };
+      if (!lookupRes.ok) return { ok: false, orders: [] as any[] };
       const lookup = (await lookupRes.json()) as {
         users?: Array<{ localId?: string; email?: string; emailVerified?: boolean }>;
       };
       const account = lookup.users?.[0];
       if (!account || account.localId !== uid || account.emailVerified !== true) {
-        return { ok: true, orders: [] };
+        return { ok: true, orders: [] as any[] };
       }
 
       const email = (account.email || '').trim();
-      if (!email) return { ok: true, orders: [] };
+      if (!email) return { ok: true, orders: [] as any[] };
 
       const { listDocsAdmin } = await import('@/lib/server/firestore-admin');
       // Most rows store the address lowercased; a few older ones keep the
       // typed casing, so try both spellings.
       const variants = [...new Set([email.toLowerCase(), email])];
-      const found = new Map<string, Record<string, unknown> & { id: string }>();
+      const found = new Map<string, any>();
       for (const value of variants) {
         for (const field of ['customer.email', 'userEmail']) {
           const rows = await listDocsAdmin('orders', {
@@ -79,9 +79,9 @@ export const getOrdersForVerifiedEmail = createServerFn({ method: 'POST' })
         }
       }
 
-      return { ok: true, orders: [...found.values()] };
+      return { ok: true, orders: [...found.values()] as any[] };
     } catch {
       // Never break the account page over this convenience lookup.
-      return { ok: false, orders: [] };
+      return { ok: false, orders: [] as any[] };
     }
   });
