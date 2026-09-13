@@ -23,7 +23,7 @@ import { EmailAuthProvider, deleteUser, reauthenticateWithCredential, updatePass
 import { serverTimestamp } from 'firebase/firestore';
 
 import { revokeMyRefreshTokens } from '@/lib/revoke-refresh-tokens.functions';
-import { getOrdersForVerifiedEmail } from '@/lib/account-orders.functions';
+import { getOrdersForVerifiedEmail, type GuestOrdersResult } from '@/lib/account-orders.functions';
 import { logSecurityEvent } from '@/lib/security-events';
 import { OrderTrackingBar } from '@/components/OrderTrackingBar';
 import { PayAgainCTA } from '@/components/PayAgainCTA';
@@ -223,7 +223,7 @@ async function loadOrderHistory(u: FirebaseUser): Promise<Order[]> {
   try {
     const idToken = await u.getIdToken().catch(() => null);
     if (idToken) {
-      const res = await getOrdersForVerifiedEmail({ data: { idToken } });
+      const res = (await getOrdersForVerifiedEmail({ data: { idToken } })) as GuestOrdersResult;
       for (const row of res.orders || []) {
         if (!byId.has(row.id)) byId.set(row.id, row as unknown as Order);
       }

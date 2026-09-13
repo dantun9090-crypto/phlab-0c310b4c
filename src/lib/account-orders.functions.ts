@@ -32,7 +32,7 @@ export const getOrdersForVerifiedEmail = createServerFn({ method: 'POST' })
     }
     return data;
   })
-  .handler(async ({ data }): Promise<GuestOrdersResult> => {
+  .handler(async ({ data }) => {
     try {
       const { verifyFirebaseIdToken } = await import('@/lib/server/firebase-auth-admin');
       const verified = await verifyFirebaseIdToken(data.idToken);
