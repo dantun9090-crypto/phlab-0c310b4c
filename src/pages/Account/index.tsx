@@ -421,7 +421,7 @@ export default function AccountPage() {
     if (!orders.some(o => isConfirmingPayment(o as any))) return;
     const timer = setTimeout(async () => {
       try {
-        const fresh = await getUserOrders(user.uid);
+        const fresh = await loadOrderHistory(user);
         setOrders(fresh);
       } catch (e) {
         console.error('[account] payment status refresh failed', e);
