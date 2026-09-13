@@ -156,9 +156,12 @@ export async function createWallidPayment(
     },
   };
 
+  // Idempotency key = the PH Labs order number, so a repeated create for the
+  // same order can be collapsed upstream instead of minting a second link.
   const res = await wallidFetch("/create", {
     method: "POST",
     body: JSON.stringify(payload),
+    headers: { "idempotency-key": orderRef },
   });
 
 
