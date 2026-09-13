@@ -148,6 +148,28 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
             updated += 1;
             results.push({ orderId: row.order_id, from: priorStatus, to: firestoreStatus });
 
+            // Instant admin ping — so a paid order is never a surprise even
+            // when Wallid's webhook never lands. Fire-and-forget.
+            try {
+              const { sendTelegramAlert } = await import("@/lib/server/telegram-alert");
+              const amountPence = Number(
+                (prior.totalAmount as number) ?? (prior.total as number) ?? 0,
+              );
+              const amountText = amountPence
+                ? `£${(amountPence > 1000 ? amountPence / 100 : amountPence).toFixed(2)}`
+                : "";
+              const icon = firestoreStatus === "paid" ? "✅" : "⚠️";
+              const label =
+                firestoreStatus === "paid"
+                  ? "PŁATNOŚĆ ZAKSIĘGOWANA (bez webhooka)"
+                  : `Płatność ${firestoreStatus === "failed" ? "nieudana" : "wygasła"}`;
+              await sendTelegramAlert(
+                `${icon} <b>${label}</b>\nZamówienie: <code>${row.order_id}</code>${
+                  amountText ? `\nKwota: ${amountText}` : ""
+                }\nWallid: ${remoteStatus}\nByło: ${priorStatus || "—"} → ${firestoreStatus}`,
+              );
+            } catch { /* non-blocking */ }
+
             // Visibility for webhook-delivery failures. If we transitioned
             // an order but no REAL (non-LOG) Wallid webhook event ever
             // landed for this payment within 60s of creation, the webhook
