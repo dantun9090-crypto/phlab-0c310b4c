@@ -23,6 +23,7 @@ import { EmailAuthProvider, deleteUser, reauthenticateWithCredential, updatePass
 import { serverTimestamp } from 'firebase/firestore';
 
 import { revokeMyRefreshTokens } from '@/lib/revoke-refresh-tokens.functions';
+import { getOrdersForVerifiedEmail, type GuestOrdersResult } from '@/lib/account-orders.functions';
 import { logSecurityEvent } from '@/lib/security-events';
 import { OrderTrackingBar } from '@/components/OrderTrackingBar';
 import { PayAgainCTA } from '@/components/PayAgainCTA';
@@ -209,6 +210,34 @@ const inputErrorStyleBase: React.CSSProperties = { background: '#0d1f38', border
 const luxuryBtn = "inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white font-semibold rounded-xl text-sm transition-all duration-200 shadow-[0_4px_20px_rgba(99,102,241,0.3)] hover:shadow-[0_4px_28px_rgba(99,102,241,0.45)] hover:-translate-y-px active:translate-y-0";
 const ghostBtn = "inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.14] text-gray-300 hover:text-white font-medium rounded-xl text-sm transition-all duration-200";
 
+/**
+ * Full order history for the signed-in customer.
+ *
+ * Orders created while signed in carry the UID, but orders placed at guest
+ * checkout with the same (verified) email do not — those were invisible here.
+ * They are fetched server-side and merged in, newest first.
+ */
+async function loadOrderHistory(u: FirebaseUser): Promise<Order[]> {
+  const owned = await getUserOrders(u.uid);
+  const byId = new Map<string, Order>(owned.map(o => [o.id, o]));
+  try {
+    const idToken = await u.getIdToken().catch(() => null);
+    if (idToken) {
+      const res = (await getOrdersForVerifiedEmail({ data: { idToken } })) as GuestOrdersResult;
+      for (const row of res.orders || []) {
+        if (!byId.has(row.id)) byId.set(row.id, row as unknown as Order);
+      }
+    }
+  } catch (e) {
+    console.error('[account] guest order lookup failed', e);
+  }
+  return [...byId.values()].sort((a: any, b: any) => {
+    const at = toDateSafe(a?.orderDate)?.getTime() ?? toDateSafe(a?.createdAt)?.getTime() ?? 0;
+    const bt = toDateSafe(b?.orderDate)?.getTime() ?? toDateSafe(b?.createdAt)?.getTime() ?? 0;
+    return bt - at;
+  });
+}
+
 export default function AccountPage() {
   const navigate = useNavigate();
   const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -372,7 +401,7 @@ export default function AccountPage() {
             setEditCity(data.city || '');
             setEditPostcode(data.postcode || '');
           }
-          const userOrders = await getUserOrders(u.uid);
+          const userOrders = await loadOrderHistory(u);
           setOrders(userOrders);
           await loadSavedReports(u.uid);
         } catch (e) {
@@ -392,7 +421,7 @@ export default function AccountPage() {
     if (!orders.some(o => isConfirmingPayment(o as any))) return;
     const timer = setTimeout(async () => {
       try {
-        const fresh = await getUserOrders(user.uid);
+        const fresh = await loadOrderHistory(user);
         setOrders(fresh);
       } catch (e) {
         console.error('[account] payment status refresh failed', e);
