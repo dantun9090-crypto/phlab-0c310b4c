@@ -1411,6 +1411,8 @@ export default function OrdersTab() {
       (statusFilter === 'new' && isNewOrder(o)) ||
       (statusFilter === 'unpaid' && isUnpaidOrder(o)) ||
       (statusFilter === 'failed_payment' && isFailedPaymentOrder(o)) ||
+      (statusFilter === 'pending' && o.status === 'pending_payment') ||
+
 
       (statusFilter === 'fena_paid' && isFenaAutoPaid(o)) ||
       (statusFilter === 'next_day_12' && (o as any).shippingMethod === 'next_day_12') ||
