@@ -362,7 +362,10 @@ export async function probeProviderHealth(): Promise<{ ok: boolean; status?: num
         };
       }
       const live = await lookupGetAddress('SW1A1AA', key);
-      if (live.mode === 'full' && live.addresses.length > 0) return { ok: true };
+      if (live.mode === 'full' && live.addresses.length > 0) {
+        clearPaidProviderOutage();
+        return { ok: true };
+      }
       return {
         ok: false,
         reason:
