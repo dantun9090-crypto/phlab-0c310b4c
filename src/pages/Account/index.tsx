@@ -401,7 +401,7 @@ export default function AccountPage() {
             setEditCity(data.city || '');
             setEditPostcode(data.postcode || '');
           }
-          const userOrders = await getUserOrders(u.uid);
+          const userOrders = await loadOrderHistory(u);
           setOrders(userOrders);
           await loadSavedReports(u.uid);
         } catch (e) {
