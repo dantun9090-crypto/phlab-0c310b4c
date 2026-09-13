@@ -95,9 +95,10 @@ async function wallidFetch(
       (err.name === "TimeoutError" || err.name === "AbortError");
     // Retry once on transient network blip OR timeout, then fail fast so the
     // order can transition out of pending_payment instead of hanging forever.
-    if (attempt < 1) {
+    // Non-idempotent calls (POST /create) are never retried — see `retryable`.
+    if (attempt < 1 && retryable) {
       await new Promise((r) => setTimeout(r, 400));
-      return wallidFetch(path, init, attempt + 1);
+      return wallidFetch(path, init, attempt + 1, retryable);
     }
     if (isTimeout) {
       throw new WallidError(504, "wallid_timeout", "Payment service timed out");
