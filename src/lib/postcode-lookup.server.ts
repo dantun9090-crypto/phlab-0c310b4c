@@ -185,6 +185,7 @@ async function lookupGetAddress(pc: string, key: string): Promise<PostcodeLookup
     // 401/403 = key not authorised for lookups (inactive plan or restriction).
     // 404 = endpoint unavailable on this account tier.
     console.warn('[postcode-lookup] getAddress.io /find returned', json.__status);
+    if ([401, 402, 403].includes(Number(json.__status))) markPaidProviderDown(Number(json.__status));
     const viaAutocomplete = await lookupGetAddressAutocomplete(pc, key);
     return viaAutocomplete ?? lookupPostcodesIo(pc);
   }
@@ -271,6 +272,12 @@ async function lookupIdealPostcodes(pc: string, key: string): Promise<PostcodeLo
   const json = await fetchJson(
     `https://api.ideal-postcodes.co.uk/v1/postcodes/${encodeURIComponent(pc)}?api_key=${encodeURIComponent(key)}`,
   );
+  if (json?.__status) {
+    // 402 = lookup credit exhausted, 401/403 = key refused. Either way the
+    // paid provider cannot help for a while — stop calling it every time.
+    markPaidProviderDown(Number(json.__status));
+    return lookupPostcodesIo(pc);
+  }
   const list: any[] = Array.isArray(json?.result) ? json.result : [];
   if (list.length === 0) return lookupPostcodesIo(pc);
 
