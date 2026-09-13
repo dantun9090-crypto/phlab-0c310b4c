@@ -1351,6 +1351,26 @@ export default function OrdersTab() {
     return Number.isFinite(t) ? t : 0;
   };
 
+  /**
+   * "Failed payment" category.
+   * Covers explicit provider failures (failed / expired / cancelled payment)
+   * AND the common real-world case where the payment never completed but the
+   * order was left sitting in "pending" — anything unpaid and older than 24h
+   * is treated as a failed payment so it stops hiding in Pending.
+   */
+  const FAILED_PAYMENT_STATUSES = ['failed', 'expired', 'payment_failed', 'failed_payment', 'declined'];
+  const STALE_UNPAID_MS = 24 * 60 * 60 * 1000;
+  const isFailedPaymentOrder = (o: Order) => {
+    const s = String(o.status || '').toLowerCase();
+    const ps = String((o as any).paymentStatus || '').toLowerCase();
+    if (FAILED_PAYMENT_STATUSES.includes(s) || FAILED_PAYMENT_STATUSES.includes(ps)) return true;
+    if (ps === 'paid' || s === 'paid') return false;
+    if (!UNPAID_STATUSES.includes(s)) return false;
+    const ts = orderTimeMs(o);
+    return ts > 0 && Date.now() - ts > STALE_UNPAID_MS;
+  };
+
+
   const filtered = orders.filter(o => {
 
     const c = (o as any).customer;
