@@ -89,6 +89,45 @@ export async function resolveGetAddressKey(): Promise<string | null> {
 }
 
 
+/**
+ * Circuit breaker for the paid provider.
+ *
+ * When the paid key is refused (401/403) or out of credit (402), every
+ * checkout lookup would otherwise pay an extra round trip upstream before
+ * falling back to the free provider. We remember the outage for 15 minutes
+ * and go straight to postcodes.io meanwhile.
+ */
+let providerDownUntil = 0;
+let providerDownReason = '';
+const OUTAGE_TTL_MS = 15 * 60 * 1000;
+
+export function getPaidProviderOutage(): { reason: string; until: number } | null {
+  if (Date.now() >= providerDownUntil) return null;
+  return { reason: providerDownReason, until: providerDownUntil };
+}
+
+export function describeProviderStatus(status: number): string {
+  if (status === 402) {
+    return 'Address lookup credit is used up — top up the plan to get full street addresses again. Checkout still fills city/county from the free lookup.';
+  }
+  if (status === 401 || status === 403) {
+    return 'Key rejected (401/403) — check the key value and remove any domain/IP restriction on it.';
+  }
+  return `Provider returned HTTP ${status}.`;
+}
+
+function markPaidProviderDown(status: number): void {
+  providerDownUntil = Date.now() + OUTAGE_TTL_MS;
+  providerDownReason = describeProviderStatus(status);
+  console.warn('[postcode-lookup] paid provider unavailable, HTTP', status, '— using free lookup for 15 min');
+}
+
+/** Cleared by the admin health probe once the paid provider answers again. */
+export function clearPaidProviderOutage(): void {
+  providerDownUntil = 0;
+  providerDownReason = '';
+}
+
 async function fetchJson(url: string, apiKey?: string): Promise<any> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
@@ -146,6 +185,7 @@ async function lookupGetAddress(pc: string, key: string): Promise<PostcodeLookup
     // 401/403 = key not authorised for lookups (inactive plan or restriction).
     // 404 = endpoint unavailable on this account tier.
     console.warn('[postcode-lookup] getAddress.io /find returned', json.__status);
+    if ([401, 402, 403].includes(Number(json.__status))) markPaidProviderDown(Number(json.__status));
     const viaAutocomplete = await lookupGetAddressAutocomplete(pc, key);
     return viaAutocomplete ?? lookupPostcodesIo(pc);
   }
@@ -232,6 +272,12 @@ async function lookupIdealPostcodes(pc: string, key: string): Promise<PostcodeLo
   const json = await fetchJson(
     `https://api.ideal-postcodes.co.uk/v1/postcodes/${encodeURIComponent(pc)}?api_key=${encodeURIComponent(key)}`,
   );
+  if (json?.__status) {
+    // 402 = lookup credit exhausted, 401/403 = key refused. Either way the
+    // paid provider cannot help for a while — stop calling it every time.
+    markPaidProviderDown(Number(json.__status));
+    return lookupPostcodesIo(pc);
+  }
   const list: any[] = Array.isArray(json?.result) ? json.result : [];
   if (list.length === 0) return lookupPostcodesIo(pc);
 
@@ -270,7 +316,7 @@ export async function runPostcodeLookup(rawPostcode: string): Promise<PostcodeLo
 
   let result: PostcodeLookupResult;
   try {
-    const provider = getLookupProvider();
+    const provider = getPaidProviderOutage() ? 'postcodes-io' : getLookupProvider();
     if (provider === 'getaddress') {
       const key = await resolveGetAddressKey();
       result = key ? await lookupGetAddress(pc, key) : await lookupPostcodesIo(pc);
@@ -316,7 +362,10 @@ export async function probeProviderHealth(): Promise<{ ok: boolean; status?: num
         };
       }
       const live = await lookupGetAddress('SW1A1AA', key);
-      if (live.mode === 'full' && live.addresses.length > 0) return { ok: true };
+      if (live.mode === 'full' && live.addresses.length > 0) {
+        clearPaidProviderOutage();
+        return { ok: true };
+      }
       return {
         ok: false,
         reason:
@@ -328,14 +377,10 @@ export async function probeProviderHealth(): Promise<{ ok: boolean; status?: num
     );
     if (json?.__status) {
       const status = Number(json.__status);
-      return {
-        ok: false,
-        status,
-        reason: status === 401 || status === 403
-          ? 'Key rejected (401/403) — check the key value and remove any domain/IP restriction on it.'
-          : `Provider returned HTTP ${status}.`,
-      };
+      markPaidProviderDown(status);
+      return { ok: false, status, reason: describeProviderStatus(status) };
     }
+    clearPaidProviderOutage();
     const count = Array.isArray(json?.result) ? json.result.length : 0;
     return count > 0 ? { ok: true } : { ok: false, reason: 'Provider returned no addresses for the test postcode.' };
   } catch {
