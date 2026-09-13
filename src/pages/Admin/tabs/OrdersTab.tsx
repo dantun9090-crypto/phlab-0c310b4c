@@ -1351,6 +1351,26 @@ export default function OrdersTab() {
     return Number.isFinite(t) ? t : 0;
   };
 
+  /**
+   * "Failed payment" category.
+   * Covers explicit provider failures (failed / expired / cancelled payment)
+   * AND the common real-world case where the payment never completed but the
+   * order was left sitting in "pending" — anything unpaid and older than 24h
+   * is treated as a failed payment so it stops hiding in Pending.
+   */
+  const FAILED_PAYMENT_STATUSES = ['failed', 'expired', 'payment_failed', 'failed_payment', 'declined'];
+  const STALE_UNPAID_MS = 24 * 60 * 60 * 1000;
+  const isFailedPaymentOrder = (o: Order) => {
+    const s = String(o.status || '').toLowerCase();
+    const ps = String((o as any).paymentStatus || '').toLowerCase();
+    if (FAILED_PAYMENT_STATUSES.includes(s) || FAILED_PAYMENT_STATUSES.includes(ps)) return true;
+    if (ps === 'paid' || s === 'paid') return false;
+    if (!UNPAID_STATUSES.includes(s)) return false;
+    const ts = orderTimeMs(o);
+    return ts > 0 && Date.now() - ts > STALE_UNPAID_MS;
+  };
+
+
   const filtered = orders.filter(o => {
 
     const c = (o as any).customer;
@@ -1390,7 +1410,10 @@ export default function OrdersTab() {
     const matchStatus = statusFilter === 'all' || o.status === statusFilter ||
       (statusFilter === 'new' && isNewOrder(o)) ||
       (statusFilter === 'unpaid' && isUnpaidOrder(o)) ||
+      (statusFilter === 'failed_payment' && isFailedPaymentOrder(o)) ||
       (statusFilter === 'pending' && o.status === 'pending_payment') ||
+
+
       (statusFilter === 'fena_paid' && isFenaAutoPaid(o)) ||
       (statusFilter === 'next_day_12' && (o as any).shippingMethod === 'next_day_12') ||
       (statusFilter === 'next_day_missed' && (o as any).nextDayMissedCutoff === true);
@@ -1401,6 +1424,8 @@ export default function OrdersTab() {
   const counts = {
     new: orders.filter(isNewOrder).length,
     unpaid: orders.filter(isUnpaidOrder).length,
+    failed_payment: orders.filter(isFailedPaymentOrder).length,
+
     all: orders.length,
     pending: orders.filter(o => o.status === 'pending' || o.status === 'pending_payment').length,
     paid: orders.filter(o => o.status === 'paid').length,
@@ -1557,19 +1582,22 @@ export default function OrdersTab() {
 
       {/* Status filter tabs */}
       <div className="flex gap-2 flex-wrap">
-        {(['new', 'unpaid', 'all', 'pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'fena_paid', 'next_day_12', 'next_day_missed'] as const).map(s => {
+        {(['new', 'unpaid', 'failed_payment', 'all', 'pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'fena_paid', 'next_day_12', 'next_day_missed'] as const).map(s => {
           const labelMap: Record<string, string> = {
             new: '🆕 New Orders',
             unpaid: '💷 Unpaid',
+            failed_payment: '❌ Failed Payment',
             fena_paid: '✅ Fena Auto-Paid',
             next_day_12: '🚀 Next Day by 12',
             next_day_missed: '⚠️ Next Day Missed',
           };
+
           const label = labelMap[s] ?? (s.charAt(0).toUpperCase() + s.slice(1));
 
           const isFena = s === 'fena_paid';
           const isNextDay = s === 'next_day_12' || s === 'new';
           const isMissed = s === 'next_day_missed';
+          const isFailed = s === 'failed_payment';
 
           return (
             <button
@@ -1578,13 +1606,16 @@ export default function OrdersTab() {
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
                 statusFilter === s
                   ? (isFena ? 'bg-green-600 border-green-500 text-white'
+                    : isFailed ? 'bg-red-600 border-red-500 text-white'
                     : isNextDay ? 'bg-emerald-600 border-emerald-500 text-white'
                     : isMissed ? 'bg-amber-600 border-amber-500 text-white'
                     : 'bg-blue-600 border-blue-500 text-white')
                   : (isFena ? 'bg-green-500/10 border-green-500/30 text-green-300 hover:text-green-200'
+                    : isFailed ? 'bg-red-500/10 border-red-500/30 text-red-300 hover:text-red-200'
                     : isNextDay ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:text-emerald-200'
                     : isMissed ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:text-amber-200'
                     : 'bg-[#0d1f35] border-white/[0.08] text-[#9cb8d9] hover:text-white')
+
               }`}
             >
               {label} ({counts[s]})
