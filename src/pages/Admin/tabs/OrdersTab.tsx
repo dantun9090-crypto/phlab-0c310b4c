@@ -1597,6 +1597,7 @@ export default function OrdersTab() {
           const isFena = s === 'fena_paid';
           const isNextDay = s === 'next_day_12' || s === 'new';
           const isMissed = s === 'next_day_missed';
+          const isFailed = s === 'failed_payment';
 
           return (
             <button
@@ -1605,13 +1606,16 @@ export default function OrdersTab() {
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
                 statusFilter === s
                   ? (isFena ? 'bg-green-600 border-green-500 text-white'
+                    : isFailed ? 'bg-red-600 border-red-500 text-white'
                     : isNextDay ? 'bg-emerald-600 border-emerald-500 text-white'
                     : isMissed ? 'bg-amber-600 border-amber-500 text-white'
                     : 'bg-blue-600 border-blue-500 text-white')
                   : (isFena ? 'bg-green-500/10 border-green-500/30 text-green-300 hover:text-green-200'
+                    : isFailed ? 'bg-red-500/10 border-red-500/30 text-red-300 hover:text-red-200'
                     : isNextDay ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:text-emerald-200'
                     : isMissed ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:text-amber-200'
                     : 'bg-[#0d1f35] border-white/[0.08] text-[#9cb8d9] hover:text-white')
+
               }`}
             >
               {label} ({counts[s]})
