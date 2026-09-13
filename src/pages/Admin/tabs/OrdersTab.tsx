@@ -1424,6 +1424,8 @@ export default function OrdersTab() {
   const counts = {
     new: orders.filter(isNewOrder).length,
     unpaid: orders.filter(isUnpaidOrder).length,
+    failed_payment: orders.filter(isFailedPaymentOrder).length,
+
     all: orders.length,
     pending: orders.filter(o => o.status === 'pending' || o.status === 'pending_payment').length,
     paid: orders.filter(o => o.status === 'paid').length,
