@@ -273,11 +273,15 @@ async function lookupIdealPostcodes(pc: string, key: string): Promise<PostcodeLo
     `https://api.ideal-postcodes.co.uk/v1/postcodes/${encodeURIComponent(pc)}?api_key=${encodeURIComponent(key)}`,
   );
   if (json?.__status) {
-    // 402 = lookup credit exhausted, 401/403 = key refused. Either way the
-    // paid provider cannot help for a while — stop calling it every time.
-    markPaidProviderDown(Number(json.__status));
+    const status = Number(json.__status);
+    console.warn('[postcode-lookup] ideal-postcodes returned', status);
+    // Only account-level refusals mean the paid provider cannot help for a
+    // while (402 = credit exhausted, 401/403 = key refused). A 404 (unknown
+    // postcode), 429 or 5xx is per-request — never trip the breaker for those.
+    if ([401, 402, 403].includes(status)) markPaidProviderDown(status);
     return lookupPostcodesIo(pc);
   }
+
   const list: any[] = Array.isArray(json?.result) ? json.result : [];
   if (list.length === 0) return lookupPostcodesIo(pc);
 
