@@ -331,6 +331,12 @@ export default function OrdersTab() {
   const [bulkSyncProgress, setBulkSyncProgress] = useState({ done: 0, total: 0 });
   const [bulkSyncLog, setBulkSyncLog] = useState<{ id: string; status: 'synced' | 'waiting' | 'error'; message: string }[]>([]);
 
+  // Bulk Royal Mail order creation — PROCESSING orders only.
+  const [bulkRmRunning, setBulkRmRunning] = useState(false);
+  const [bulkRmProgress, setBulkRmProgress] = useState({ done: 0, total: 0 });
+  const [bulkRmLog, setBulkRmLog] = useState<{ id: string; status: 'created' | 'skipped' | 'error'; message: string }[]>([]);
+
+
   // Dispatch email audit (all shipped orders)
   type MailAuditStatus = 'ok' | 'missing' | 'wrong_tracking' | 'send_error' | 'no_email' | 'no_tracking' | 'error';
   const [mailAuditRunning, setMailAuditRunning] = useState(false);
