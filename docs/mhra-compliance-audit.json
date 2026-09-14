@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-14T20:27:00.426Z",
+  "generatedAt": "2026-09-14T20:28:00.302Z",
   "origin": "http://localhost:8080",
   "routes": [
     "/",
@@ -110,36 +110,12 @@
   ],
   "findings": [
     {
-      "surface": "/about",
-      "kind": "page copy",
+      "surface": "/compound",
+      "kind": "structured data",
       "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/account",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/",
-      "kind": "meta description",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…, batch COAs and next-day UK dispatch. For research use only. Not for human consumption.…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
+      "detail": "Implies human use — \"for human use\"",
+      "excerpt": "…l studies.\"}},{\"@type\":\"Question\",\"name\":\"Are these products intended for human use?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"No. All materials are in…",
+      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
       "surface": "/checkout/cancel",
@@ -156,36 +132,19 @@
       "suggestion": "Render \"For Research Use Only. Not for Human Consumption.\" in a non-dismissible position on this page."
     },
     {
-      "surface": "/contact",
-      "kind": "page copy",
+      "surface": "/checkout/success",
+      "kind": "research-only notice",
       "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
+      "detail": "no research-use-only / not-for-human-consumption notice in the rendered page",
+      "suggestion": "Render \"For Research Use Only. Not for Human Consumption.\" in a non-dismissible position on this page."
     },
     {
-      "surface": "/cookies",
-      "kind": "page copy",
+      "surface": "/landingad",
+      "kind": "structured data",
       "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/downloads",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…eference PDFs for PH Labs researchers. For Research Use Only. Not for Human Consumption. PH Labs Research Catalogue Full product catalogue with COAs and tech…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/install",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
+      "detail": "Implies human use — \"for human use\"",
+      "excerpt": "…l studies.\"}},{\"@type\":\"Question\",\"name\":\"Are these products intended for human use?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"No. All materials are in…",
+      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
       "surface": "/mcp",
@@ -194,12 +153,18 @@
       "detail": "HTTP 401"
     },
     {
-      "surface": "/lab-reports",
-      "kind": "page copy",
+      "surface": "/payment/cancel",
+      "kind": "research-only notice",
       "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
+      "detail": "no research-use-only / not-for-human-consumption notice in the rendered page",
+      "suggestion": "Render \"For Research Use Only. Not for Human Consumption.\" in a non-dismissible position on this page."
+    },
+    {
+      "surface": "/payment/success",
+      "kind": "research-only notice",
+      "severity": "fail",
+      "detail": "no research-use-only / not-for-human-consumption notice in the rendered page",
+      "suggestion": "Render \"For Research Use Only. Not for Human Consumption.\" in a non-dismissible position on this page."
     },
     {
       "surface": "/order/cancel",
@@ -216,145 +181,11 @@
       "suggestion": "Render \"For Research Use Only. Not for Human Consumption.\" in a non-dismissible position on this page."
     },
     {
-      "surface": "/landing/phlabs",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…wful. © 2026 PH Labs · United Kingdom For Research Use Only · Not for Human Consumption…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/landing/phlabs",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…on intent “ For laboratory and scientific research purposes only. Not for human use or for any non-research application. ” — PH Labs Editorial Standard O…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/landing/phlabs",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…l laboratories in the United Kingdom. For research use only — not for human consumption.\"}},{\"@type\":\"Question\",\"name\":\"Do you provide batch documentation?\",…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/payment/cancel",
-      "kind": "research-only notice",
-      "severity": "fail",
-      "detail": "no research-use-only / not-for-human-consumption notice in the rendered page",
-      "suggestion": "Render \"For Research Use Only. Not for Human Consumption.\" in a non-dismissible position on this page."
-    },
-    {
-      "surface": "/privacy-policy",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/compound",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…reagent grade PH Labs · United Kingdom For Research Use Only. Not for Human Consumption. EST. 2026 UK Laboratory Supply Premium Research Compounds for UK Lab…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/compound",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…or laboratory and scientific research purposes. They are not intended for human use or for any non-research application. ” PH Labs · Research Standard § …",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/compound",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…l studies.\"}},{\"@type\":\"Question\",\"name\":\"Are these products intended for human use?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"No. All materials are in…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/landingad",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…reagent grade PH Labs · United Kingdom For Research Use Only. Not for Human Consumption. EST. 2026 UK Laboratory Supply Premium Research Compounds for UK Lab…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/landingad",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…or laboratory and scientific research purposes. They are not intended for human use or for any non-research application. ” PH Labs · Research Standard § …",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/landingad",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…l studies.\"}},{\"@type\":\"Question\",\"name\":\"Are these products intended for human use?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"No. All materials are in…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/privacy-requests",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/quality-control",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/refund-policy",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/request-catalog",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/checkout/success",
-      "kind": "research-only notice",
-      "severity": "fail",
-      "detail": "no research-use-only / not-for-human-consumption notice in the rendered page",
-      "suggestion": "Render \"For Research Use Only. Not for Human Consumption.\" in a non-dismissible position on this page."
-    },
-    {
       "surface": "/order/success",
       "kind": "research-only notice",
       "severity": "fail",
       "detail": "no research-use-only / not-for-human-consumption notice in the rendered page",
       "suggestion": "Render \"For Research Use Only. Not for Human Consumption.\" in a non-dismissible position on this page."
-    },
-    {
-      "surface": "/research",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
     },
     {
       "surface": "/research/bpc-157-tb-500-synergy",
@@ -368,16 +199,8 @@
       "surface": "/research/bpc-157-tb-500-synergy",
       "kind": "page copy",
       "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…al readouts in wound-healing research. For Research Use Only. Not for Human Consumption. At a glance — combined panel design BPC-157 — angiogenesis arm Pathw…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/research/bpc-157-tb-500-synergy",
-      "kind": "page copy",
-      "severity": "fail",
       "detail": "Therapeutic claim: wound healing — \"wound-healing\"",
-      "excerpt": "…tration. Together they cover the two dominant preclinical readouts in wound-healing research. For Research Use Only. Not for Human Consumption. At a glan…",
+      "excerpt": "…tration. Together they cover the two dominant preclinical readouts in wound-healing research. . . At a glance — combined panel design BPC-157 — angioge…",
       "suggestion": "Remove; state only that the compound is supplied for laboratory research."
     },
     {
@@ -385,7 +208,7 @@
       "kind": "page copy",
       "severity": "fail",
       "detail": "Therapeutic claim: healing — \"healing\"",
-      "excerpt": "…n. Together they cover the two dominant preclinical readouts in wound-healing research. For Research Use Only. Not for Human Consumption. At a glan…",
+      "excerpt": "…n. Together they cover the two dominant preclinical readouts in wound-healing research. . . At a glance — combined panel design BPC-157 — angioge…",
       "suggestion": "Remove; state only that the compound is supplied for laboratory research."
     },
     {
@@ -393,7 +216,7 @@
       "kind": "page copy",
       "severity": "fail",
       "detail": "Implies therapeutic use — \"therapeutic\"",
-      "excerpt": "… UK? No. Neither compound is approved by the MHRA, EMA or FDA for any therapeutic indication. PH Labs supplies both strictly as reference materials for…",
+      "excerpt": "…the UK? No. Neither compound is approved by the , EMA or FDA for any therapeutic indication. PH Labs supplies both strictly as reference materials for…",
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
@@ -401,23 +224,15 @@
       "kind": "page copy",
       "severity": "fail",
       "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…tion before adding the test compound. Are BPC-157 and TB-500 approved for human use in the UK? No. Neither compound is approved by the MHRA, EMA or FDA f…",
+      "excerpt": "…tion before adding the test compound. Are BPC-157 and TB-500 approved for human use in the UK? No. Neither compound is approved by the , EMA or FDA for …",
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
       "surface": "/research/bpc-157-tb-500-synergy",
       "kind": "structured data",
       "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…in-vitro laboratory research and analytical characterisation. Not for human consumption.\"}}]}…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/research/bpc-157-tb-500-synergy",
-      "kind": "structured data",
-      "severity": "fail",
       "detail": "Implies therapeutic use — \"therapeutic\"",
-      "excerpt": "…xt\":\"No. Neither compound is approved by the MHRA, EMA or FDA for any therapeutic indication. PH Labs supplies both strictly as reference materials for…",
+      "excerpt": "…\"text\":\"No. Neither compound is approved by the , EMA or FDA for any therapeutic indication. PH Labs supplies both strictly as reference materials for…",
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
@@ -440,14 +255,6 @@
       "surface": "/research/bpc-157-uk",
       "kind": "page copy",
       "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…atch-specific Certificate of Analysis. For Research Use Only. Not for Human Consumption. At a glance Identifier BPC-157 / PL 14736 Class Pentadecapeptide (15…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/research/bpc-157-uk",
-      "kind": "page copy",
-      "severity": "fail",
       "detail": "Therapeutic claim: wound healing — \"wound-healing\"",
       "excerpt": "…and tissue-repair in-vitro panels in UK research laboratories. Within wound-healing and angiogenesis research, BPC-157 is used alongside TB-500 as an ort…",
       "suggestion": "Remove; state only that the compound is supplied for laboratory research."
@@ -465,7 +272,7 @@
       "kind": "page copy",
       "severity": "fail",
       "detail": "Implies therapeutic use — \"therapeutic\"",
-      "excerpt": "…ational compound. It is not approved by the MHRA, EMA, or FDA for any therapeutic indication. PH Labs supplies it strictly as a reference material for …",
+      "excerpt": "…tigational compound. It is not approved by the , EMA, or FDA for any therapeutic indication. PH Labs supplies it strictly as a reference material for …",
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
@@ -480,16 +287,8 @@
       "surface": "/research/bpc-157-uk",
       "kind": "structured data",
       "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "… reference material for in-vitro research and analytical use. Not for human consumption.\"}}]}…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/research/bpc-157-uk",
-      "kind": "structured data",
-      "severity": "fail",
       "detail": "Implies therapeutic use — \"therapeutic\"",
-      "excerpt": "…ational compound. It is not approved by the MHRA, EMA, or FDA for any therapeutic indication. PH Labs supplies it strictly as a reference material for …",
+      "excerpt": "…tigational compound. It is not approved by the , EMA, or FDA for any therapeutic indication. PH Labs supplies it strictly as a reference material for …",
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
@@ -501,20 +300,140 @@
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
-      "surface": "/research/bpc-157-vs-tb-500",
+      "surface": "/research/cjc-1295-ipamorelin-synergy",
       "kind": "page copy",
       "severity": "fail",
-      "detail": "Implies therapeutic use — \"Therapy\"",
-      "excerpt": "…s Sikiric P. et al. (2018). Stable gastric pentadecapeptide BPC 157 — Therapy effect and mechanism review. Curr Pharm Des. doi: 10.2174/13816128246…",
+      "detail": "Implies medicinal product — \"Drug\"",
+      "excerpt": "… four stabilising substitutions. &#x27;CJC-1295 with DAC&#x27; adds a Drug Affinity Complex (a maleimidopropionic-acid linker) that covalently b…",
+      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
+    },
+    {
+      "surface": "/research/cjc-1295-ipamorelin-synergy",
+      "kind": "page copy",
+      "severity": "fail",
+      "detail": "Implies therapeutic use — \"therapeutic\"",
+      "excerpt": "…the UK? No. Neither compound is approved by the , EMA or FDA for any therapeutic indication. PH Labs supplies both strictly as reference materials for…",
+      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
+    },
+    {
+      "surface": "/research/cjc-1295-ipamorelin-synergy",
+      "kind": "page copy",
+      "severity": "fail",
+      "detail": "Implies human use — \"for human use\"",
+      "excerpt": "… its albumin-bound pharmacology. Are CJC-1295 and Ipamorelin approved for human use in the UK? No. Neither compound is approved by the , EMA or FDA for …",
+      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
+    },
+    {
+      "surface": "/research/cjc-1295-ipamorelin-synergy",
+      "kind": "structured data",
+      "severity": "fail",
+      "detail": "Implies medicinal product — \"Drug\"",
+      "excerpt": "…gment with four stabilising substitutions. 'CJC-1295 with DAC' adds a Drug Affinity Complex (a maleimidopropionic-acid linker) that covalently b…",
+      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
+    },
+    {
+      "surface": "/research/cjc-1295-ipamorelin-synergy",
+      "kind": "structured data",
+      "severity": "fail",
+      "detail": "Implies therapeutic use — \"therapeutic\"",
+      "excerpt": "…\"text\":\"No. Neither compound is approved by the , EMA or FDA for any therapeutic indication. PH Labs supplies both strictly as reference materials for…",
+      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
+    },
+    {
+      "surface": "/research/cjc-1295-ipamorelin-synergy",
+      "kind": "structured data",
+      "severity": "fail",
+      "detail": "Implies human use — \"for human use\"",
+      "excerpt": "….\"}},{\"@type\":\"Question\",\"name\":\"Are CJC-1295 and Ipamorelin approved for human use in the UK?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"No. Neither co…",
+      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
+    },
+    {
+      "surface": "/research/ghk-cu-guide",
+      "kind": "page copy",
+      "severity": "fail",
+      "detail": "Forbidden — not for human use — \"human consumption\"",
+      "excerpt": "…-vitro research and analytical use. It is and is not authorised for human consumption or clinical application. References Pickart L. & Thaler M.M. (1973). …",
+      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
+    },
+    {
+      "surface": "/research/ghk-cu-guide",
+      "kind": "page copy",
+      "severity": "fail",
+      "detail": "Implies clinical use — \"clinical\"",
+      "excerpt": "…nalytical use. It is and is not authorised for human consumption or clinical application. References Pickart L. & Thaler M.M. (1973). Tripeptide i…",
+      "suggestion": "Replace \"clinical\" with \"published study\" or \"laboratory\"."
+    },
+    {
+      "surface": "/research/ghk-cu-guide",
+      "kind": "page copy",
+      "severity": "fail",
+      "detail": "Implies human use — \"for human use\"",
+      "excerpt": "…ped with a batch-specific Certificate of Analysis. Is GHK-Cu approved for human use? No. PH Labs supplies GHK-Cu strictly as a reference material for in-…",
+      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
+    },
+    {
+      "surface": "/research/ghk-cu-guide",
+      "kind": "structured data",
+      "severity": "fail",
+      "detail": "Forbidden — not for human use — \"human consumption\"",
+      "excerpt": "…-vitro research and analytical use. It is and is not authorised for human consumption or clinical application.\"}}]}…",
+      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
+    },
+    {
+      "surface": "/research/ghk-cu-guide",
+      "kind": "structured data",
+      "severity": "fail",
+      "detail": "Implies clinical use — \"clinical\"",
+      "excerpt": "…nalytical use. It is and is not authorised for human consumption or clinical application.\"}}]}…",
+      "suggestion": "Replace \"clinical\" with \"published study\" or \"laboratory\"."
+    },
+    {
+      "surface": "/research/ghk-cu-guide",
+      "kind": "structured data",
+      "severity": "fail",
+      "detail": "Implies human use — \"for human use\"",
+      "excerpt": "…ficate of Analysis.\"}},{\"@type\":\"Question\",\"name\":\"Is GHK-Cu approved for human use?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"No. PH Labs supplies GHK…",
+      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
+    },
+    {
+      "surface": "/research/pt-141-uk",
+      "kind": "page copy",
+      "severity": "fail",
+      "detail": "Implies therapeutic use — \"therapeutic\"",
+      "excerpt": "…man use in the UK? No. PT-141 is not approved by the or EMA for any therapeutic indication in the UK. PH Labs supplies it strictly as a reference mat…",
+      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
+    },
+    {
+      "surface": "/research/pt-141-uk",
+      "kind": "page copy",
+      "severity": "fail",
+      "detail": "Implies human use — \"for human use\"",
+      "excerpt": "… reference compound in metabolic-stability panels. Is PT-141 approved for human use in the UK? No. PT-141 is not approved by the or EMA for any therape…",
+      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
+    },
+    {
+      "surface": "/research/pt-141-uk",
+      "kind": "structured data",
+      "severity": "fail",
+      "detail": "Implies therapeutic use — \"therapeutic\"",
+      "excerpt": "…\":\"Answer\",\"text\":\"No. PT-141 is not approved by the or EMA for any therapeutic indication in the UK. PH Labs supplies it strictly as a reference mat…",
+      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
+    },
+    {
+      "surface": "/research/pt-141-uk",
+      "kind": "structured data",
+      "severity": "fail",
+      "detail": "Implies human use — \"for human use\"",
+      "excerpt": "…c-stability panels.\"}},{\"@type\":\"Question\",\"name\":\"Is PT-141 approved for human use in the UK?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"No. PT-141 is …",
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
       "surface": "/research/bpc-157-vs-tb-500",
       "kind": "page copy",
       "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…igration and cytoskeletal remodelling. For Research Use Only. Not for Human Consumption. At a glance Attribute BPC-157 TB-500 Class Synthetic pentadecapeptid…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
+      "detail": "Implies therapeutic use — \"Therapy\"",
+      "excerpt": "…s Sikiric P. et al. (2018). Stable gastric pentadecapeptide BPC 157 — Therapy effect and mechanism review. Curr Pharm Des. doi: 10.2174/13816128246…",
+      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
       "surface": "/research/bpc-157-vs-tb-500",
@@ -545,7 +464,7 @@
       "kind": "page copy",
       "severity": "fail",
       "detail": "Implies therapeutic use — \"therapeutic\"",
-      "excerpt": "…either BPC-157 nor TB-500 is approved by the MHRA, EMA or FDA for any therapeutic indication. PH Labs supplies both strictly as reference materials for…",
+      "excerpt": "…. Neither BPC-157 nor TB-500 is approved by the , EMA or FDA for any therapeutic indication. PH Labs supplies both strictly as reference materials for…",
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
@@ -553,16 +472,8 @@
       "kind": "page copy",
       "severity": "fail",
       "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…e aliquots to minimise proteolytic loss. Are either compound approved for human use in the UK? No. Neither BPC-157 nor TB-500 is approved by the MHRA, EM…",
+      "excerpt": "…e aliquots to minimise proteolytic loss. Are either compound approved for human use in the UK? No. Neither BPC-157 nor TB-500 is approved by the , EMA o…",
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/bpc-157-vs-tb-500",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…aterials for in-vitro laboratory research and analytical use. Not for human consumption.\"}}]}…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
     },
     {
       "surface": "/research/bpc-157-vs-tb-500",
@@ -585,7 +496,7 @@
       "kind": "structured data",
       "severity": "fail",
       "detail": "Implies therapeutic use — \"therapeutic\"",
-      "excerpt": "…either BPC-157 nor TB-500 is approved by the MHRA, EMA or FDA for any therapeutic indication. PH Labs supplies both strictly as reference materials for…",
+      "excerpt": "…. Neither BPC-157 nor TB-500 is approved by the , EMA or FDA for any therapeutic indication. PH Labs supplies both strictly as reference materials for…",
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
@@ -597,188 +508,52 @@
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
-      "surface": "/research/cjc-1295-ipamorelin-synergy",
+      "surface": "/research/retatrutide-uk",
       "kind": "page copy",
       "severity": "fail",
-      "detail": "Implies medicinal product — \"Drug\"",
-      "excerpt": "… four stabilising substitutions. &#x27;CJC-1295 with DAC&#x27; adds a Drug Affinity Complex (a maleimidopropionic-acid linker) that covalently b…",
+      "detail": "Implies human use — \"for human use\"",
+      "excerpt": "…ss DPP-4 cleavage in plasma-stability assays. Is retatrutide approved for human use? No. Retatrutide is an investigational compound. PH Labs supplies it …",
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
-      "surface": "/research/cjc-1295-ipamorelin-synergy",
-      "kind": "page copy",
+      "surface": "/research/retatrutide-uk",
+      "kind": "structured data",
       "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "… in somatotroph secretagogue research. For Research Use Only. Not for Human Consumption. At a glance — combined panel design CJC-1295 — GHRH arm Receptor: GH…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
+      "detail": "Implies human use — \"for human use\"",
+      "excerpt": "…bility assays.\"}},{\"@type\":\"Question\",\"name\":\"Is retatrutide approved for human use?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"No. Retatrutide is an in…",
+      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
-      "surface": "/research/cjc-1295-ipamorelin-synergy",
+      "surface": "/research/tirzepatide-vs-retatrutide",
       "kind": "page copy",
       "severity": "fail",
       "detail": "Implies therapeutic use — \"therapeutic\"",
-      "excerpt": "… UK? No. Neither compound is approved by the MHRA, EMA or FDA for any therapeutic indication. PH Labs supplies both strictly as reference materials for…",
+      "excerpt": "…tirzepatide nor retatrutide is approved by the , EMA, or FDA for any therapeutic indication in the context of reference-material supply. PH Labs suppl…",
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
-      "surface": "/research/cjc-1295-ipamorelin-synergy",
+      "surface": "/research/tirzepatide-vs-retatrutide",
       "kind": "page copy",
       "severity": "fail",
       "detail": "Implies human use — \"for human use\"",
-      "excerpt": "… its albumin-bound pharmacology. Are CJC-1295 and Ipamorelin approved for human use in the UK? No. Neither compound is approved by the MHRA, EMA or FDA f…",
+      "excerpt": "…xtended in-vitro pharmacokinetic models. Are either compound approved for human use in the UK? No. Neither tirzepatide nor retatrutide is approved by the…",
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
-      "surface": "/research/cjc-1295-ipamorelin-synergy",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Implies medicinal product — \"Drug\"",
-      "excerpt": "…gment with four stabilising substitutions. 'CJC-1295 with DAC' adds a Drug Affinity Complex (a maleimidopropionic-acid linker) that covalently b…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/cjc-1295-ipamorelin-synergy",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…in-vitro laboratory research and analytical characterisation. Not for human consumption.\"}}]}…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/research/cjc-1295-ipamorelin-synergy",
+      "surface": "/research/tirzepatide-vs-retatrutide",
       "kind": "structured data",
       "severity": "fail",
       "detail": "Implies therapeutic use — \"therapeutic\"",
-      "excerpt": "…xt\":\"No. Neither compound is approved by the MHRA, EMA or FDA for any therapeutic indication. PH Labs supplies both strictly as reference materials for…",
+      "excerpt": "…tirzepatide nor retatrutide is approved by the , EMA, or FDA for any therapeutic indication in the context of reference-material supply. PH Labs suppl…",
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
-      "surface": "/research/cjc-1295-ipamorelin-synergy",
+      "surface": "/research/tirzepatide-vs-retatrutide",
       "kind": "structured data",
       "severity": "fail",
       "detail": "Implies human use — \"for human use\"",
-      "excerpt": "….\"}},{\"@type\":\"Question\",\"name\":\"Are CJC-1295 and Ipamorelin approved for human use in the UK?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"No. Neither co…",
+      "excerpt": "…c models.\"}},{\"@type\":\"Question\",\"name\":\"Are either compound approved for human use in the UK?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"No. Neither ti…",
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/ghk-cu-guide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies medicinal product — \"medicine\"",
-      "excerpt": "…erence material for in-vitro research and analytical use. It is not a medicine and is not authorised for human consumption or clinical application. …",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/ghk-cu-guide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…rises a GHK-Cu reference lot in-vitro. For Research Use Only. Not for Human Consumption. In this guide The molecule at a glance Copper(II) binding & coordina…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/research/ghk-cu-guide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies clinical use — \"clinical\"",
-      "excerpt": "…. It is not a medicine and is not authorised for human consumption or clinical application. References Pickart L. & Thaler M.M. (1973). Tripeptide i…",
-      "suggestion": "Replace \"clinical\" with \"published study\" or \"laboratory\"."
-    },
-    {
-      "surface": "/research/ghk-cu-guide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…ped with a batch-specific Certificate of Analysis. Is GHK-Cu approved for human use? No. PH Labs supplies GHK-Cu strictly as a reference material for in-…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/ghk-cu-guide",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Implies medicinal product — \"medicine\"",
-      "excerpt": "…erence material for in-vitro research and analytical use. It is not a medicine and is not authorised for human consumption or clinical application.\"…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/ghk-cu-guide",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…ch and analytical use. It is not a medicine and is not authorised for human consumption or clinical application.\"}}]}…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/research/ghk-cu-guide",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Implies clinical use — \"clinical\"",
-      "excerpt": "…. It is not a medicine and is not authorised for human consumption or clinical application.\"}}]}…",
-      "suggestion": "Replace \"clinical\" with \"published study\" or \"laboratory\"."
-    },
-    {
-      "surface": "/research/ghk-cu-guide",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…ficate of Analysis.\"}},{\"@type\":\"Question\",\"name\":\"Is GHK-Cu approved for human use?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"No. PH Labs supplies GHK…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/pt-141-uk",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…atch-specific Certificate of Analysis. For Research Use Only. Not for Human Consumption. At a glance Identifier PT-141 / Bremelanotide Class Cyclic heptapept…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/research/pt-141-uk",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies therapeutic use — \"therapeutic\"",
-      "excerpt": "… use in the UK? No. PT-141 is not approved by the MHRA or EMA for any therapeutic indication in the UK. PH Labs supplies it strictly as a reference mat…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/pt-141-uk",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "… reference compound in metabolic-stability panels. Is PT-141 approved for human use in the UK? No. PT-141 is not approved by the MHRA or EMA for any ther…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/pt-141-uk",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "… reference material for in-vitro research and analytical use. Not for human consumption.\"}}]}…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/research/pt-141-uk",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Implies therapeutic use — \"therapeutic\"",
-      "excerpt": "…Answer\",\"text\":\"No. PT-141 is not approved by the MHRA or EMA for any therapeutic indication in the UK. PH Labs supplies it strictly as a reference mat…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/pt-141-uk",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…c-stability panels.\"}},{\"@type\":\"Question\",\"name\":\"Is PT-141 approved for human use in the UK?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"No. PT-141 is …",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/retatrutide-comprehensive-guide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…cterise it in the in-vitro laboratory. For Research Use Only. Not for Human Consumption. In this guide The molecule at a glance Triple-agonist mechanism of a…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
     },
     {
       "surface": "/research/retatrutide-comprehensive-guide",
@@ -816,135 +591,16 @@
       "surface": "/research/retatrutide-comprehensive-guide",
       "kind": "structured data",
       "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "… reference material for in-vitro research and analytical use. Not for human consumption.\"}}]}…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/research/retatrutide-comprehensive-guide",
-      "kind": "structured data",
-      "severity": "fail",
       "detail": "Implies human use — \"for human use\"",
       "excerpt": "…e of Analysis.\"}},{\"@type\":\"Question\",\"name\":\"Is retatrutide approved for human use?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"No. Retatrutide is an in…",
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
-      "surface": "/research/retatrutide-uk",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…atch-specific Certificate of Analysis. For Research Use Only. Not for Human Consumption. At a glance Identifier LY3437943 CAS 2381089-83-2 Molecular formula …",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/research/retatrutide-uk",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…ss DPP-4 cleavage in plasma-stability assays. Is retatrutide approved for human use? No. Retatrutide is an investigational compound. PH Labs supplies it …",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/retatrutide-uk",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "… reference material for in-vitro research and analytical use. Not for human consumption.\"}}]}…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/research/retatrutide-uk",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…bility assays.\"}},{\"@type\":\"Question\",\"name\":\"Is retatrutide approved for human use?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"No. Retatrutide is an in…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/payment/success",
-      "kind": "research-only notice",
-      "severity": "fail",
-      "detail": "no research-use-only / not-for-human-consumption notice in the rendered page",
-      "suggestion": "Render \"For Research Use Only. Not for Human Consumption.\" in a non-dismissible position on this page."
-    },
-    {
-      "surface": "/research/tirzepatide-vs-retatrutide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…olic and receptor-pharmacology panels. For Research Use Only. Not for Human Consumption. At a glance Attribute Tirzepatide Retatrutide Receptor profile Dual …",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/research/tirzepatide-vs-retatrutide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies therapeutic use — \"therapeutic\"",
-      "excerpt": "…zepatide nor retatrutide is approved by the MHRA, EMA, or FDA for any therapeutic indication in the context of reference-material supply. PH Labs suppl…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/tirzepatide-vs-retatrutide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…xtended in-vitro pharmacokinetic models. Are either compound approved for human use in the UK? No. Neither tirzepatide nor retatrutide is approved by the…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/tirzepatide-vs-retatrutide",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…aterials for in-vitro laboratory research and analytical use. Not for human consumption.\"}}]}…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/research/tirzepatide-vs-retatrutide",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Implies therapeutic use — \"therapeutic\"",
-      "excerpt": "…zepatide nor retatrutide is approved by the MHRA, EMA, or FDA for any therapeutic indication in the context of reference-material supply. PH Labs suppl…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/tirzepatide-vs-retatrutide",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…c models.\"}},{\"@type\":\"Question\",\"name\":\"Are either compound approved for human use in the UK?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"No. Neither ti…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/resources",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/peptide-categories-uk-research",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/uk-research-store",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…b-Grade Reference Materials | PH Labs For Research Use Only · Not for Human Consumption · UK Laboratory Supply UK Research Store · PH Labs High-purity refere…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
       "surface": "/uk-research-store",
       "kind": "page copy",
       "severity": "fail",
       "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…vice. Discreet, unbranded outer packaging. Are the materials intended for human use? + No. All items listed are strictly For Research Use Only and are no…",
+      "excerpt": "…vice. Discreet, unbranded outer packaging. Are the materials intended for human use? + No. All items listed are strictly and are not intended for human…",
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
@@ -956,507 +612,11 @@
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
-      "surface": "/search",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/shipping-policy",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/terms-and-conditions",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/storage-guide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/r3tatrutid3",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/kpv-research-peptide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/kpv-research-peptide",
-      "kind": "meta description",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…9% purity, batch CoA included. For laboratory research only — not for human consumption.…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/kpv-research-peptide",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…9% purity, batch CoA included. For laboratory research only — not for human consumption.\",\"image\":\"https://firebasestorage.googleapis.com/v0/b/prohealthpepti…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products",
-      "kind": "meta description",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…rity, batch COAs and fast UK dispatch. For research use only. Not for human consumption.…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/retatrutide-research-peptide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/retatrutide-research-peptide",
-      "kind": "meta description",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…9% purity, batch CoA included. For laboratory research only — not for human consumption.…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/retatrutide-research-peptide",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…9% purity, batch CoA included. For laboratory research only — not for human consumption.\",\"image\":\"https://firebasestorage.googleapis.com/v0/b/prohealthpepti…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/tirzepatide-research-peptide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/tirzepatide-research-peptide",
-      "kind": "meta description",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…9% purity, batch CoA included. For laboratory research only — not for human consumption.…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/tirzepatide-research-peptide",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…9% purity, batch CoA included. For laboratory research only — not for human consumption.\",\"image\":\"https://firebasestorage.googleapis.com/v0/b/prohealthpepti…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/mots-c-research-peptide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/mots-c-research-peptide",
-      "kind": "meta description",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…, batch CoA included. For in-vitro laboratory research only — not for human consumption.…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/mots-c-research-peptide",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…, batch CoA included. For in-vitro laboratory research only — not for human consumption.\",\"image\":\"https://firebasestorage.googleapis.com/v0/b/prohealthpepti…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/tb-500-thymosin-beta-4",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/tb-500-thymosin-beta-4",
-      "kind": "meta description",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…. HPLC ≥99% purity, batch CoA. For laboratory research only — not for human consumption.…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/tb-500-thymosin-beta-4",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…. HPLC ≥99% purity, batch CoA. For laboratory research only — not for human consumption.\",\"image\":\"https://firebasestorage.googleapis.com/v0/b/prohealthpepti…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/bpc-157",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/bpc-157",
-      "kind": "meta description",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…batch Certificate of Analysis. For laboratory research only — not for human consumption.…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/bpc-157",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…batch Certificate of Analysis. For laboratory research only — not for human consumption.\",\"image\":\"https://firebasestorage.googleapis.com/v0/b/prohealthpepti…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/nad-research-compound",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/nad-research-compound",
-      "kind": "meta description",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…ent. HPLC-verified, batch CoA. For laboratory research only — not for human consumption.…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/nad-research-compound",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…ent. HPLC-verified, batch CoA. For laboratory research only — not for human consumption.\",\"image\":\"https://firebasestorage.googleapis.com/v0/b/prohealthpepti…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/pt-141-research",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/pt-141-research",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…sis provided. Sold strictly for scientific research purposes. Not for human consumption, not for veterinary use, not a dietary supplement, and not a pharmace…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/pt-141-research",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Implies dietary supplement — \"supplement\"",
-      "excerpt": "…ses. Not for human consumption, not for veterinary use, not a dietary supplement, and not a pharmaceutical or medical product.\",\"image\":\"https://fireb…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/products/ghk-cu-research-peptide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/ghk-cu-research-peptide",
-      "kind": "meta description",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…9% purity, batch CoA included. For laboratory research only — not for human consumption.…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/ghk-cu-research-peptide",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…9% purity, batch CoA included. For laboratory research only — not for human consumption.\",\"image\":\"https://firebasestorage.googleapis.com/v0/b/prohealthpepti…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/glow-blend",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/glow-blend",
-      "kind": "meta description",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…ied components with batch CoA. For laboratory research only — not for human consumption.…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/glow-blend",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…ied components with batch CoA. For laboratory research only — not for human consumption.\",\"image\":\"https://firebasestorage.googleapis.com/v0/b/prohealthpepti…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/what-is-retatrutide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/hplc-testing-explained",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/bpc-157-tissue-repair",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/tb-500-thymosin-beta-4",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/retatrutide-vs-tirzepatide-vs-semaglutide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/ipamorelin-ghrp-research",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/peptide-storage-reconstitution",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/epithalon-telomere-research",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/klow-blend",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/klow-blend",
-      "kind": "meta description",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…ied components with batch CoA. For laboratory research only — not for human consumption.…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/klow-blend",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…ied components with batch CoA. For laboratory research only — not for human consumption.\",\"image\":\"https://firebasestorage.googleapis.com/v0/b/prohealthpepti…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/tb-500-thymosin-beta-4-research",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/melanotan-2-melanocortin-research",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/peptide-storage-lyophilisation-science",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/ghk-cu-copper-peptide-research",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/ghk-cu-research-guide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/epithalon-telomere-epigenetic-research",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/semax-cognitive-neuroprotective-research",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/selank-anxiolytic-nootropic-peptide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/follistatin-344-myostatin-inhibition-research",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/tirzepatide-dual-agonist-research",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/cjc-1295-mod-grf-ghrh-research",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/mots-c-mitochondrial-derived-peptide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/nad-nicotinamide-adenine-dinucleotide-research",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/kpv-tripeptide-anti-inflammatory-research",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
       "surface": "/resources/kpv-tripeptide-anti-inflammatory-research",
       "kind": "page copy",
       "severity": "fail",
       "detail": "Therapeutic claim: anti-inflammatory — \"Anti Inflammatory\"",
-      "excerpt": "Kpv Tripeptide Anti Inflammatory Research — Resource | PH… UK Laboratory Reagent Supplier · Research U…",
+      "excerpt": "Kpv Tripeptide Anti Inflammatory Research — Resource | PH… UK Laboratory Reagent Supplier · Pro Pept…",
       "suggestion": "Remove; state only that the compound is supplied for laboratory research."
     },
     {
@@ -1476,148 +636,20 @@
       "suggestion": "Remove; state only that the compound is supplied for laboratory research."
     },
     {
-      "surface": "/resources/glow-blend-skin-peptide-research",
+      "surface": "/compare/bpc-157-vs-tb-500",
       "kind": "page copy",
       "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/klow-blend-cognitive-research",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/pt-141-bremelanotide-melanocortin-research",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/how-to-read-hplc-certificate-of-analysis",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/bpc-157-vs-tb-500-comparison",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/mass-spectrometry-peptide-identity-verification",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/research-peptides-uk",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/bpc-157-vs-tb-500",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/complete-uk-peptide-guide-2025",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/peptide-safety-legality-uk",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/what-are-peptides",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/retatrutide-research-guide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/peptide-reconstitution-guide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/resources/tirzepatide-vs-retatrutide-mechanism",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/compare/pt-141-vs-melanotan-2",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…I research vials All research products For Research Use Only. Not for Human Consumption. PH Labs supplies research compounds to UK laboratories only.…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/compare/ghk-cu-vs-bpc-157",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…7 research vials All research products For Research Use Only. Not for Human Consumption. PH Labs supplies research compounds to UK laboratories only.…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/compare/ghk-cu-vs-bpc-157",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies cosmetic product — \"cosmetic\"",
-      "excerpt": "…try — copper complex rather than a chain peptide ✓ Frequently used in cosmetic-chemistry and skin-fibroblast studies ✓ Lyophilised vials; reconstitu…",
+      "detail": "Implies human use — \"for human use\"",
+      "excerpt": "…. Both appear together in comparative in-vitro studies. Are they sold for human use? + No. PH Labs supplies both strictly . . Related comparisons GHK-C…",
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
-      "surface": "/compare/retatrutide-vs-tirzepatide",
-      "kind": "page copy",
+      "surface": "/compare/bpc-157-vs-tb-500",
+      "kind": "structured data",
       "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "… use? + No. Both are supplied strictly For Research Use Only. Not for Human Consumption. Related comparisons Retatrutide vs MOTS-c Tirzepatide vs MOTS-c Reta…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
+      "detail": "Implies human use — \"for human use\"",
+      "excerpt": "…rative in-vitro studies.\"}},{\"@type\":\"Question\",\"name\":\"Are they sold for human use?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"No. PH Labs supplies bot…",
+      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
       "surface": "/compare/retatrutide-vs-tirzepatide",
@@ -1632,16 +664,8 @@
       "kind": "page copy",
       "severity": "fail",
       "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…search masses to suit different in-vitro study designs. Are they sold for human use? + No. Both are supplied strictly For Research Use Only. Not for Huma…",
+      "excerpt": "…search masses to suit different in-vitro study designs. Are they sold for human use? + No. Both are supplied strictly . . Related comparisons Retatruti…",
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/compare/retatrutide-vs-tirzepatide",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…\"text\":\"No. Both are supplied strictly For Research Use Only. Not for Human Consumption.\"}}]}…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
     },
     {
       "surface": "/compare/retatrutide-vs-tirzepatide",
@@ -1652,95 +676,7 @@
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
-      "surface": "/compare/bpc-157-vs-tb-500",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…? + No. PH Labs supplies both strictly For Research Use Only. Not for Human Consumption. Related comparisons GHK-Cu vs BPC-157 BPC-157 vs GHK-Cu TB-500 vs GH…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/compare/bpc-157-vs-tb-500",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…. Both appear together in comparative in-vitro studies. Are they sold for human use? + No. PH Labs supplies both strictly For Research Use Only. Not for …",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/compare/bpc-157-vs-tb-500",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…t\":\"No. PH Labs supplies both strictly For Research Use Only. Not for Human Consumption.\"}}]}…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/compare/bpc-157-vs-tb-500",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…rative in-vitro studies.\"}},{\"@type\":\"Question\",\"name\":\"Are they sold for human use?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"No. PH Labs supplies bot…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/products/melanotan-ii-research-peptide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/melanotan-ii-research-peptide",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "… of Analysis included. For scientific research purposes only. Not for human consumption, not for veterinary use, not a cosmetic, not a dietary supplement, an…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/melanotan-ii-research-peptide",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Implies dietary supplement — \"supplement\"",
-      "excerpt": "…an consumption, not for veterinary use, not a cosmetic, not a dietary supplement, and not a pharmaceutical or medical product.\",\"image\":\"https://fireb…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/products/melanotan-ii-research-peptide",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Implies cosmetic product — \"cosmetic\"",
-      "excerpt": "…rposes only. Not for human consumption, not for veterinary use, not a cosmetic, not a dietary supplement, and not a pharmaceutical or medical produc…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/compare/klow-vs-glow",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…d research vials All research products For Research Use Only. Not for Human Consumption. PH Labs supplies research compounds to UK laboratories only.…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/compare/mots-c-vs-nad-plus",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…+ research vials All research products For Research Use Only. Not for Human Consumption. PH Labs supplies research compounds to UK laboratories only.…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/compare/bpc-157-vs-ghk-cu",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…u research vials All research products For Research Use Only. Not for Human Consumption. PH Labs supplies research compounds to UK laboratories only.…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/compare/bpc-157-vs-ghk-cu",
+      "surface": "/compare/ghk-cu-vs-bpc-157",
       "kind": "page copy",
       "severity": "fail",
       "detail": "Implies cosmetic product — \"cosmetic\"",
@@ -1751,49 +687,17 @@
       "surface": "/compare/tb-500-vs-ghk-cu",
       "kind": "page copy",
       "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…u research vials All research products For Research Use Only. Not for Human Consumption. PH Labs supplies research compounds to UK laboratories only.…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/compare/tb-500-vs-ghk-cu",
-      "kind": "page copy",
-      "severity": "fail",
       "detail": "Implies cosmetic product — \"cosmetic\"",
       "excerpt": "…try — copper complex rather than a chain peptide ✓ Frequently used in cosmetic-chemistry and skin-fibroblast studies ✓ Lyophilised vials; reconstitu…",
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
-      "surface": "/compare/kpv-vs-bpc-157",
+      "surface": "/compare/bpc-157-vs-ghk-cu",
       "kind": "page copy",
       "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…7 research vials All research products For Research Use Only. Not for Human Consumption. PH Labs supplies research compounds to UK laboratories only.…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/bacteriostatic-water-research-compound",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…Certificate of Analysis with every batch. Research Use Only — Not For Human Consumption. Loading PH Labs……",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/bacteriostatic-water-research-compound",
-      "kind": "meta description",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "… diluent for in-vitro reconstitution. For research use only — not for human consumption.…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/products/bacteriostatic-water-research-compound",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "… diluent for in-vitro reconstitution. For research use only — not for human consumption.\",\"image\":\"https://firebasestorage.googleapis.com/v0/b/prohealthpepti…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
+      "detail": "Implies cosmetic product — \"cosmetic\"",
+      "excerpt": "…try — copper complex rather than a chain peptide ✓ Frequently used in cosmetic-chemistry and skin-fibroblast studies ✓ Lyophilised vials; reconstitu…",
+      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
       "surface": "/google-merchant-feed.xml",
@@ -1806,16 +710,8 @@
       "surface": "/google-merchant-feed-free.xml",
       "kind": "feed content",
       "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…PLC ≥99% purity, CoA per batch, in-vitro laboratory use only. NOT for human consumption.</description> <item> <g:id>2s5IGEx2RgUDLfbfjBbF</g:id> <ti…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "/google-merchant-feed-free.xml",
-      "kind": "feed content",
-      "severity": "fail",
       "detail": "Implies therapeutic use — \"therapeutic\"",
-      "excerpt": "…cientific testing and reference standards. NOT for human consumption, therapeutic or diagnostic use.]]></description> <g:image_link>https://firebas…",
+      "excerpt": "… Strictly for in-vitro scientific testing and reference standards. , therapeutic or diagnostic use.]]></description> <g:image_link>https://firebas…",
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
@@ -1849,59 +745,11 @@
       "suggestion": "Add \"For Research Use Only. Not for Human Consumption.\" to the email footer."
     },
     {
-      "surface": "email:dispatchEmail.ts",
-      "kind": "email copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…a><br> All products for research/laboratory use only. Not for human consumption. </p> </div> `; return emailWrapper(content, 'linear-g…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "email:emailBase.ts",
-      "kind": "email copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…${C.textMuted};\">research &amp; laboratory use only</strong>. Not for human consumption. </div> </td> </tr> …",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "email:orderReceivedEmail.ts",
-      "kind": "email copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"Human Consumption\"",
-      "excerpt": "…bs.co.uk</a>. <br /><br /> For Research Use Only. Not for Human Consumption. </p> `; const text = [ `Order received — ${p.orderNumbe…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "email:orderStatusEmail.ts",
-      "kind": "email copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…a><br> All products for research/laboratory use only. Not for human consumption. </p> </div> `; return emailWrapper(content, cfg.accen…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
       "surface": "email:paymentConfirmedEmail.ts",
       "kind": "research-only notice",
       "severity": "fail",
       "detail": "customer-facing email has no research-only notice",
       "suggestion": "Add \"For Research Use Only. Not for Human Consumption.\" to the email footer."
-    },
-    {
-      "surface": "email:professionalInvoiceEmail.ts",
-      "kind": "email copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…rictly for <strong>research and laboratory use only</strong>. Not for human consumption. </p> <p style=\"color:#1a3a5c;font-size:10px;…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
-    },
-    {
-      "surface": "email:welcomeEmail.ts",
-      "kind": "email copy",
-      "severity": "fail",
-      "detail": "Forbidden — not for human use — \"human consumption\"",
-      "excerpt": "…or:${C.textMuted};\">research purposes only</strong>. Not for human consumption. For laboratory use only.<br> Questions? <a href=\"mailto:info…",
-      "suggestion": "Delete; keep only the \"not for human consumption\" notice."
     },
     {
       "surface": "site-wide notice",
@@ -1930,12 +778,6 @@
       "severity": "review",
       "detail": "the research-only banner is suppressed on the contact page",
       "suggestion": "Show the notice on every page, including contact."
-    },
-    {
-      "surface": "checkout",
-      "kind": "18+ enforcement",
-      "severity": "review",
-      "detail": "could not locate the order-creation endpoint to verify server-side 18+ enforcement"
     }
   ],
   "passes": [
@@ -2041,6 +883,7 @@
     "email:professionalInvoiceEmail.ts — research-only notice present",
     "email:protocolLibraryEmail.ts — research-only notice present",
     "email:welcomeEmail.ts — research-only notice present",
+    "order creation validates age confirmation server-side",
     "research-use confirmation gate present"
   ]
 }
