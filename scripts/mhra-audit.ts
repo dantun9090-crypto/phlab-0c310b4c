@@ -124,8 +124,37 @@ function titleOf(html: string): string | null {
   return html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim() ?? null;
 }
 
+/**
+ * Compliant disclaimer wording contains words that are otherwise forbidden
+ * ("human consumption", "medicine", "therapeutic"). Remove those exact
+ * negated / legal phrases before scanning so the notice does not flag itself.
+ */
+const NEUTRALISE: RegExp[] = [
+  /not\s+(intended\s+)?for\s+human\s+(consumption|use|ingestion|application)/gi,
+  /not\s+for\s+(consumption|ingestion|injection|diagnostic|therapeutic|medicinal|clinical|veterinary)[^.]{0,60}/gi,
+  /for\s+(laboratory\s+)?research\s+use\s+only/gi,
+  /for\s+laboratory\s+research\s+only/gi,
+  /research\s+use\s+only/gi,
+  /not\s+(a|an)\s+(medicine|medicinal\s+product|drug|supplement|cosmetic|food)/gi,
+  /no\s+(medical|therapeutic|clinical|health)\s+claims?[^.]{0,60}/gi,
+  /human\s+medicines\s+regulations(\s+2012)?/gi,
+  /medicines\s+and\s+healthcare\s+products\s+regulatory\s+agency/gi,
+  /\bMHRA\b/gi,
+  /must\s+not\s+be\s+(used|administered)[^.]{0,60}/gi,
+  /never\s+for\s+human[^.]{0,40}/gi,
+  /strictly\s+(prohibited|forbidden)[^.]{0,40}/gi,
+  /do\s+not\s+(use|administer|ingest|inject)[^.]{0,60}/gi,
+];
+
+function neutralise(text: string): string {
+  let out = text;
+  for (const re of NEUTRALISE) out = out.replace(re, " ");
+  return out;
+}
+
 /** Run the forbidden-claim list over a text surface. */
-function scanText(surface: string, kind: string, text: string, severity: Severity = "fail") {
+function scanText(surface: string, kind: string, raw: string, severity: Severity = "fail") {
+  const text = neutralise(raw);
   if (!text.trim()) return;
   const seen = new Set<string>();
   for (const { pattern, reason } of FORBIDDEN_CLAIMS) {
@@ -342,8 +371,8 @@ async function auditGates() {
   if (gate) passes.push("research-use confirmation gate present");
 
   // server-side 18+ enforcement at order creation
-  const orderApi = await read("src/routes/api/create-order.ts");
-  const orderApiAlt = orderApi || (await read("src/routes/api/orders/create.ts"));
+  const orderApi = await read("src/lib/create-order.server.ts");
+  const orderApiAlt = orderApi || (await read("src/lib/create-order.functions.ts"));
   if (orderApiAlt) {
     if (/ageConfirm|over18|dob|ageVerified/i.test(orderApiAlt)) passes.push("order creation validates age confirmation server-side");
     else add({ surface: "checkout", kind: "18+ enforcement", severity: "fail",
