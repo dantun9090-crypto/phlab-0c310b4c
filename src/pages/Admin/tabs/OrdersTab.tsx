@@ -1049,6 +1049,114 @@ export default function OrdersTab() {
     }
   };
 
+  /** Orders eligible for bulk Click & Drop creation: PROCESSING only, no label yet. */
+  const bulkRmCandidates = orders.filter(o =>
+    String(o.status || '').toLowerCase() === 'processing' &&
+    !String((o as any).royalMailOrderId || '').trim()
+  );
+
+  /**
+   * Bulk-creates Click & Drop orders for every PROCESSING order that has no
+   * Royal Mail order yet. Deliberately restricted to `processing` so pending,
+   * shipped, delivered or cancelled orders can never be charged for a label.
+   */
+  const handleBulkCreateRoyalMailOrders = async () => {
+    if (bulkRmRunning) return;
+    const candidates = bulkRmCandidates;
+    setBulkRmLog([]);
+    setBulkRmProgress({ done: 0, total: candidates.length });
+    if (candidates.length === 0) return;
+    if (!window.confirm(
+      `Create ${candidates.length} Royal Mail order${candidates.length === 1 ? '' : 's'} for orders in Processing?\n\nClick & Drop orders may be chargeable once postage is applied.`
+    )) return;
+
+    setBulkRmRunning(true);
+    try {
+      const idToken = await getAdminIdToken();
+      if (!idToken) {
+        setBulkRmLog([{ id: '—', status: 'error', message: 'You must be signed in as an admin.' }]);
+        return;
+      }
+
+      for (const o of candidates) {
+        try {
+          const c: any = (o as any).customer || {};
+          const firstName = c.firstName || (o as any).shippingFirstName || '';
+          const lastName = c.lastName || (o as any).shippingLastName || '';
+          const addressLine1 = c.address || (o as any).addressLine1 || '';
+          const addressLine2 = (o as any).addressLine2 || '';
+          const city = c.city || (o as any).city || '';
+          const postcode = String(c.postcode || (o as any).postcode || '').toUpperCase();
+          const email = c.email || o.userEmail || '';
+          if (!firstName || !lastName || !addressLine1 || !postcode || !email) {
+            setBulkRmLog(prev => [...prev, { id: o.id, status: 'skipped', message: 'Missing name, address or email.' }]);
+            continue;
+          }
+
+          const result = await createRoyalMailOrder({
+            data: {
+              idToken,
+              orderId: o.id,
+              firstName, lastName, addressLine1, addressLine2,
+              city, postcode, email,
+              phone: (c.phone || (o as any).phone || '') as string,
+              countryCode: 'GB',
+              ...(rmService ? { serviceCode: rmService } : {}),
+              weightGrams: Number(rmWeight) || 100,
+              subtotal: Number((o as any).subtotal ?? o.totalAmount ?? 0),
+              shippingCostCharged: Number((o as any).shippingCost ?? 0),
+              total: Number((o as any).total ?? o.totalAmount ?? 0),
+            },
+          });
+          if (!result.ok) {
+            const detail = result.details ? ` — ${result.details}` : '';
+            throw new Error(`${result.error ?? 'Failed to create Royal Mail order.'}${detail}`);
+          }
+          const orderIdentifier = String(result.orderId || '').trim();
+          if (!orderIdentifier) throw new Error('Worker did not return an orderId');
+          const trackingNumber = result.trackingNumber ? String(result.trackingNumber).trim() : null;
+          const serviceCodeUsed = result.serviceCodeUsed ?? '';
+
+          const updatePayload: Record<string, unknown> = {
+            royalMailOrderId: orderIdentifier,
+            royalMailService: serviceCodeUsed,
+            royalMailTracking: trackingNumber,
+            royalMailCreatedAt: Timestamp.now(),
+            courier: 'Royal Mail',
+          };
+          if (trackingNumber) updatePayload.trackingNumber = trackingNumber;
+          await updateDoc(doc(db, 'orders', o.id), updatePayload);
+          await logAdminAction({
+            action: 'order.royal_mail_create',
+            target: `orders/${o.id}`,
+            meta: { service: serviceCodeUsed, royalMailOrderId: orderIdentifier, weightGrams: Number(rmWeight) || 100, bulk: true },
+          });
+
+          setOrders(prev => prev.map(x => x.id === o.id
+            ? { ...x, ...(trackingNumber ? { trackingNumber } : {}), courier: 'Royal Mail' } as Order
+            : x));
+          setSelected(prev => prev && prev.id === o.id
+            ? { ...prev, ...(trackingNumber ? { trackingNumber } : {}), courier: 'Royal Mail' } as Order
+            : prev);
+          setBulkRmLog(prev => [...prev, {
+            id: o.id,
+            status: 'created',
+            message: `Click & Drop ${orderIdentifier}${trackingNumber ? ` · ${trackingNumber}` : ' · tracking pending'}`,
+          }]);
+        } catch (e: any) {
+          console.error('[royal-mail] bulk create failed for', o.id, e);
+          setBulkRmLog(prev => [...prev, { id: o.id, status: 'error', message: e?.message || 'Create failed.' }]);
+        } finally {
+          setBulkRmProgress(prev => ({ ...prev, done: prev.done + 1 }));
+        }
+      }
+    } finally {
+      setBulkRmRunning(false);
+    }
+  };
+
+
+
   /**
    * Pulls the tracking number for an EXISTING Click & Drop order and writes it
    * back to Firestore. Use this after applying postage / printing the label in
