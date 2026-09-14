@@ -291,7 +291,6 @@ export const MERCHANT_SEO_ENTRIES: MerchantSeoEntry[] = [
     name: buildName({
       designation: "GLOW Synthetic Peptide Reference Blend (GHK-Cu / BPC-157 / TB-500)",
       form: "Lyophilised Powder",
-      grade: "Each Constituent ≥99% RP-HPLC",
     }),
     description: buildDescription({
       composition:
@@ -306,7 +305,6 @@ export const MERCHANT_SEO_ENTRIES: MerchantSeoEntry[] = [
     name: buildName({
       designation: "KLOW Synthetic Peptide Reference Blend (KPV / GHK-Cu / BPC-157 / TB-500)",
       form: "Lyophilised Powder",
-      grade: "Each Constituent ≥99% RP-HPLC",
     }),
     description: buildDescription({
       composition:
@@ -319,7 +317,7 @@ export const MERCHANT_SEO_ENTRIES: MerchantSeoEntry[] = [
   {
     match: "bacteriostatic",
     name: buildName({
-      designation: "Bacteriostatic Water 0.9% Benzyl Alcohol Laboratory Diluent",
+      designation: "Bacteriostatic Water 0.9% Benzyl Alcohol Diluent",
       form: "Sterile Solution",
       grade: "USP-Grade Analytical Diluent",
       cas: "7732-18-5",
