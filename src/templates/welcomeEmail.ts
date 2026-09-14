@@ -9,7 +9,7 @@ export function buildWelcomeEmail(opts: WelcomeEmailOptions): string {
   const features = [
     { icon: '🧬', title: 'Research-Grade Peptides', desc: 'HPLC-tested purity. For in-vitro laboratory research use only.' },
     { icon: '🚀', title: 'Fast UK Dispatch', desc: 'Same-day dispatch on orders placed before 2 PM weekdays.' },
-    { icon: '🔒', title: 'Secure Checkout', desc: 'Open Banking payments via TrueLayer. FCA-regulated, bank-grade security.' },
+    { icon: '🔒', title: 'Secure Checkout', desc: 'UK bank transfer via Open Banking. Bank-grade security, no card details stored.' },
     { icon: '📋', title: 'Order Tracking', desc: 'Real-time status updates and dispatch notifications by email.' },
   ];
 

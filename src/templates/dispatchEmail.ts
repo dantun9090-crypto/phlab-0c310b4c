@@ -85,7 +85,7 @@ export function buildDispatchEmail(opts: DispatchEmailOptions): string {
 
       <p style="color:${C.textDimmed};font-size:11px;line-height:1.6;margin:0;text-align:center;">
         Questions about your delivery? <a href="mailto:info@phlabs.co.uk" style="color:${C.accent};text-decoration:none;">info@phlabs.co.uk</a><br>
-        All products for research/laboratory use only. Not for human consumption.
+        <strong>For Research Use Only. Not for Human Consumption.</strong>
       </p>
     </div>
   `;
