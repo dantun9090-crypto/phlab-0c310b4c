@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-14T20:29:03.731Z",
+  "generatedAt": "2026-09-14T20:29:59.408Z",
   "origin": "http://localhost:8080",
   "routes": [
     "/",
@@ -110,14 +110,14 @@
   ],
   "findings": [
     {
-      "surface": "/checkout/cancel",
+      "surface": "/checkout/success",
       "kind": "research-only notice",
       "severity": "fail",
       "detail": "no research-use-only / not-for-human-consumption notice in the rendered page",
       "suggestion": "Render \"For Research Use Only. Not for Human Consumption.\" in a non-dismissible position on this page."
     },
     {
-      "surface": "/checkout/success",
+      "surface": "/checkout/cancel",
       "kind": "research-only notice",
       "severity": "fail",
       "detail": "no research-use-only / not-for-human-consumption notice in the rendered page",
@@ -144,14 +144,14 @@
       "suggestion": "Render \"For Research Use Only. Not for Human Consumption.\" in a non-dismissible position on this page."
     },
     {
-      "surface": "/payment/success",
+      "surface": "/order/cancel",
       "kind": "research-only notice",
       "severity": "fail",
       "detail": "no research-use-only / not-for-human-consumption notice in the rendered page",
       "suggestion": "Render \"For Research Use Only. Not for Human Consumption.\" in a non-dismissible position on this page."
     },
     {
-      "surface": "/order/cancel",
+      "surface": "/payment/success",
       "kind": "research-only notice",
       "severity": "fail",
       "detail": "no research-use-only / not-for-human-consumption notice in the rendered page",
@@ -172,60 +172,20 @@
       "suggestion": "Render \"For Research Use Only. Not for Human Consumption.\" in a non-dismissible position on this page."
     },
     {
-      "surface": "/research/bpc-157-tb-500-synergy",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies therapeutic use — \"Therapy\"",
-      "excerpt": "…s Sikiric P. et al. (2018). Stable gastric pentadecapeptide BPC 157 — Therapy effect and mechanism review. Curr Pharm Des. doi: 10.2174/13816128246…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/bpc-157-tb-500-synergy",
+      "surface": "/research/bpc-157-uk",
       "kind": "page copy",
       "severity": "fail",
       "detail": "Therapeutic claim: wound healing — \"wound-healing\"",
-      "excerpt": "…tration. Together they cover the two dominant preclinical readouts in wound-healing research. . . At a glance — combined panel design BPC-157 — angioge…",
+      "excerpt": "…and tissue-repair in-vitro panels in UK research laboratories. Within wound-healing and angiogenesis research, BPC-157 is used alongside TB-500 as an ort…",
       "suggestion": "Remove; state only that the compound is supplied for laboratory research."
     },
     {
-      "surface": "/research/bpc-157-tb-500-synergy",
+      "surface": "/research/bpc-157-uk",
       "kind": "page copy",
       "severity": "fail",
       "detail": "Therapeutic claim: healing — \"healing\"",
-      "excerpt": "…n. Together they cover the two dominant preclinical readouts in wound-healing research. . . At a glance — combined panel design BPC-157 — angioge…",
+      "excerpt": "…ssue-repair in-vitro panels in UK research laboratories. Within wound-healing and angiogenesis research, BPC-157 is used alongside TB-500 as an ort…",
       "suggestion": "Remove; state only that the compound is supplied for laboratory research."
-    },
-    {
-      "surface": "/research/bpc-157-tb-500-synergy",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies therapeutic use — \"Therapeutic\"",
-      "excerpt": "…Des. doi: 10.2174/1381612824666180510104516 Hsieh M.J. et al. (2017). Therapeutic potential of BPC-157 — Angiogenesis via VEGFR2-Akt-eNOS. Mol Med Repo…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/bpc-157-tb-500-synergy",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…tion before adding the test compound. Are BPC-157 and TB-500 approved for human use in the UK? PH Labs supplies both strictly as reference materials fo…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/bpc-157-tb-500-synergy",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…pound.\"}},{\"@type\":\"Question\",\"name\":\"Are BPC-157 and TB-500 approved for human use in the UK?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\" PH Labs supp…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/bpc-157-vs-tb-500",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies therapeutic use — \"Therapy\"",
-      "excerpt": "…s Sikiric P. et al. (2018). Stable gastric pentadecapeptide BPC 157 — Therapy effect and mechanism review. Curr Pharm Des. doi: 10.2174/13816128246…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
       "surface": "/research/bpc-157-vs-tb-500",
@@ -253,22 +213,6 @@
     },
     {
       "surface": "/research/bpc-157-vs-tb-500",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies therapeutic use — \"Therapeutic\"",
-      "excerpt": "…Des. doi: 10.2174/1381612824666180510104516 Hsieh M.J. et al. (2017). Therapeutic potential of BPC-157 — Angiogenesis via VEGFR2-Akt-eNOS. Mol Med Repo…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/bpc-157-vs-tb-500",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…e aliquots to minimise proteolytic loss. Are either compound approved for human use in the UK? PH Labs supplies both strictly as reference materials fo…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/bpc-157-vs-tb-500",
       "kind": "structured data",
       "severity": "fail",
       "detail": "Therapeutic claim: wound healing — \"wound-healing\"",
@@ -284,60 +228,20 @@
       "suggestion": "Remove; state only that the compound is supplied for laboratory research."
     },
     {
-      "surface": "/research/bpc-157-vs-tb-500",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…tic loss.\"}},{\"@type\":\"Question\",\"name\":\"Are either compound approved for human use in the UK?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\" PH Labs supp…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/cjc-1295-ipamorelin-synergy",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "… its albumin-bound pharmacology. Are CJC-1295 and Ipamorelin approved for human use in the UK? PH Labs supplies both strictly as reference materials fo…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/cjc-1295-ipamorelin-synergy",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "….\"}},{\"@type\":\"Question\",\"name\":\"Are CJC-1295 and Ipamorelin approved for human use in the UK?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\" PH Labs supp…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/bpc-157-uk",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies therapeutic use — \"Therapy\"",
-      "excerpt": "…s Sikiric P. et al. (2018). Stable gastric pentadecapeptide BPC 157 — Therapy effect and mechanism review. Curr Pharm Des. doi: 10.2174/13816128246…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/bpc-157-uk",
+      "surface": "/research/bpc-157-tb-500-synergy",
       "kind": "page copy",
       "severity": "fail",
       "detail": "Therapeutic claim: wound healing — \"wound-healing\"",
-      "excerpt": "…and tissue-repair in-vitro panels in UK research laboratories. Within wound-healing and angiogenesis research, BPC-157 is used alongside TB-500 as an ort…",
+      "excerpt": "…tration. Together they cover the two dominant preclinical readouts in wound-healing research. . . At a glance — combined panel design BPC-157 — angioge…",
       "suggestion": "Remove; state only that the compound is supplied for laboratory research."
     },
     {
-      "surface": "/research/bpc-157-uk",
+      "surface": "/research/bpc-157-tb-500-synergy",
       "kind": "page copy",
       "severity": "fail",
       "detail": "Therapeutic claim: healing — \"healing\"",
-      "excerpt": "…ssue-repair in-vitro panels in UK research laboratories. Within wound-healing and angiogenesis research, BPC-157 is used alongside TB-500 as an ort…",
+      "excerpt": "…n. Together they cover the two dominant preclinical readouts in wound-healing research. . . At a glance — combined panel design BPC-157 — angioge…",
       "suggestion": "Remove; state only that the compound is supplied for laboratory research."
-    },
-    {
-      "surface": "/research/bpc-157-uk",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies therapeutic use — \"Therapeutic\"",
-      "excerpt": "…ysiol. doi: 10.1152/japplphysiol.00782.2010 Hsieh M.J. et al. (2017). Therapeutic potential of BPC-157 — Angiogenesis via VEGFR2-Akt-eNOS. Mol Med Repo…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {
       "surface": "/research/retatrutide-comprehensive-guide",
@@ -361,54 +265,6 @@
       "severity": "fail",
       "detail": "Drug-style efficacy claim — \"efficacy\"",
       "excerpt": "…-4 resistance, albumin binding, and preservation of glucagon-receptor efficacy that native GLP-1-family peptides lose during optimisation. 2. Triple…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/tirzepatide-vs-retatrutide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies therapeutic use — \"therapeutic\"",
-      "excerpt": "…tirzepatide nor retatrutide is approved by the , EMA, or FDA for any therapeutic indication in the context of reference-material supply. PH Labs suppl…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/tirzepatide-vs-retatrutide",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…xtended in-vitro pharmacokinetic models. Are either compound approved for human use in the UK? No. Neither tirzepatide nor retatrutide is approved by the…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/tirzepatide-vs-retatrutide",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Implies therapeutic use — \"therapeutic\"",
-      "excerpt": "…tirzepatide nor retatrutide is approved by the , EMA, or FDA for any therapeutic indication in the context of reference-material supply. PH Labs suppl…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/tirzepatide-vs-retatrutide",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…c models.\"}},{\"@type\":\"Question\",\"name\":\"Are either compound approved for human use in the UK?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"No. Neither ti…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/pt-141-uk",
-      "kind": "page copy",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "… reference compound in metabolic-stability panels. Is PT-141 approved for human use in the UK? No. PT-141 is . PH Labs supplies it strictly as a referen…",
-      "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
-    },
-    {
-      "surface": "/research/pt-141-uk",
-      "kind": "structured data",
-      "severity": "fail",
-      "detail": "Implies human use — \"for human use\"",
-      "excerpt": "…c-stability panels.\"}},{\"@type\":\"Question\",\"name\":\"Is PT-141 approved for human use in the UK?\",\"acceptedAnswer\":{\"@type\":\"Answer\",\"text\":\"No. PT-141 is …",
       "suggestion": "Reword so the text describes laboratory research context only, with no outcome, health or medical framing."
     },
     {

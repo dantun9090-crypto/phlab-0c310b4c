@@ -1,12 +1,12 @@
 # MHRA / UK research-compliance audit
 
-Generated: 2026-09-14T20:29:03.730Z
+Generated: 2026-09-14T20:29:59.407Z
 Origin audited: http://localhost:8080
 Surfaces: 43 routes, 60 product/detail URLs, 4 feeds, email templates, gates.
 
 ## Summary
 
-- Must fix: **48**
+- Must fix: **30**
 - Needs review: **5**
 - Checks passed: **104**
 
@@ -86,45 +86,24 @@ Surfaces: 43 routes, 60 product/detail URLs, 4 feeds, email templates, gates.
 
 ## /research/bpc-157-tb-500-synergy
 
-- **FAIL** (page copy) — Implies therapeutic use — "Therapy"
-  - context: `…s Sikiric P. et al. (2018). Stable gastric pentadecapeptide BPC 157 — Therapy effect and mechanism review. Curr Pharm Des. doi: 10.2174/13816128246…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 - **FAIL** (page copy) — Therapeutic claim: wound healing — "wound-healing"
   - context: `…tration. Together they cover the two dominant preclinical readouts in wound-healing research. . . At a glance — combined panel design BPC-157 — angioge…`
   - fix: Remove; state only that the compound is supplied for laboratory research.
 - **FAIL** (page copy) — Therapeutic claim: healing — "healing"
   - context: `…n. Together they cover the two dominant preclinical readouts in wound-healing research. . . At a glance — combined panel design BPC-157 — angioge…`
   - fix: Remove; state only that the compound is supplied for laboratory research.
-- **FAIL** (page copy) — Implies therapeutic use — "Therapeutic"
-  - context: `…Des. doi: 10.2174/1381612824666180510104516 Hsieh M.J. et al. (2017). Therapeutic potential of BPC-157 — Angiogenesis via VEGFR2-Akt-eNOS. Mol Med Repo…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (page copy) — Implies human use — "for human use"
-  - context: `…tion before adding the test compound. Are BPC-157 and TB-500 approved for human use in the UK? PH Labs supplies both strictly as reference materials fo…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (structured data) — Implies human use — "for human use"
-  - context: `…pound."}},{"@type":"Question","name":"Are BPC-157 and TB-500 approved for human use in the UK?","acceptedAnswer":{"@type":"Answer","text":" PH Labs supp…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 
 ## /research/bpc-157-uk
 
-- **FAIL** (page copy) — Implies therapeutic use — "Therapy"
-  - context: `…s Sikiric P. et al. (2018). Stable gastric pentadecapeptide BPC 157 — Therapy effect and mechanism review. Curr Pharm Des. doi: 10.2174/13816128246…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 - **FAIL** (page copy) — Therapeutic claim: wound healing — "wound-healing"
   - context: `…and tissue-repair in-vitro panels in UK research laboratories. Within wound-healing and angiogenesis research, BPC-157 is used alongside TB-500 as an ort…`
   - fix: Remove; state only that the compound is supplied for laboratory research.
 - **FAIL** (page copy) — Therapeutic claim: healing — "healing"
   - context: `…ssue-repair in-vitro panels in UK research laboratories. Within wound-healing and angiogenesis research, BPC-157 is used alongside TB-500 as an ort…`
   - fix: Remove; state only that the compound is supplied for laboratory research.
-- **FAIL** (page copy) — Implies therapeutic use — "Therapeutic"
-  - context: `…ysiol. doi: 10.1152/japplphysiol.00782.2010 Hsieh M.J. et al. (2017). Therapeutic potential of BPC-157 — Angiogenesis via VEGFR2-Akt-eNOS. Mol Med Repo…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 
 ## /research/bpc-157-vs-tb-500
 
-- **FAIL** (page copy) — Implies therapeutic use — "Therapy"
-  - context: `…s Sikiric P. et al. (2018). Stable gastric pentadecapeptide BPC 157 — Therapy effect and mechanism review. Curr Pharm Des. doi: 10.2174/13816128246…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 - **FAIL** (page copy) — Therapeutic claim: wound healing — "wound-healing"
   - context: `…n and cytoskeletal remodelling. The two act on orthogonal arms of the wound-healing cascade in preclinical models. Which compound is the better reference…`
   - fix: Remove; state only that the compound is supplied for laboratory research.
@@ -134,39 +113,12 @@ Surfaces: 43 routes, 60 product/detail URLs, 4 feeds, email templates, gates.
 - **FAIL** (page copy) — Therapeutic claim: anti-inflammatory — "anti-inflammatory"
   - context: `…on-dependent effects. Downstream, TB-500 also produces angiogenic and anti-inflammatory outputs in preclinical models, but these are typically interpreted as…`
   - fix: Remove; state only that the compound is supplied for laboratory research.
-- **FAIL** (page copy) — Implies therapeutic use — "Therapeutic"
-  - context: `…Des. doi: 10.2174/1381612824666180510104516 Hsieh M.J. et al. (2017). Therapeutic potential of BPC-157 — Angiogenesis via VEGFR2-Akt-eNOS. Mol Med Repo…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (page copy) — Implies human use — "for human use"
-  - context: `…e aliquots to minimise proteolytic loss. Are either compound approved for human use in the UK? PH Labs supplies both strictly as reference materials fo…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 - **FAIL** (structured data) — Therapeutic claim: wound healing — "wound-healing"
   - context: `…n and cytoskeletal remodelling. The two act on orthogonal arms of the wound-healing cascade in preclinical models."}},{"@type":"Question","name":"Which c…`
   - fix: Remove; state only that the compound is supplied for laboratory research.
 - **FAIL** (structured data) — Therapeutic claim: healing — "healing"
   - context: `…cytoskeletal remodelling. The two act on orthogonal arms of the wound-healing cascade in preclinical models."}},{"@type":"Question","name":"Which c…`
   - fix: Remove; state only that the compound is supplied for laboratory research.
-- **FAIL** (structured data) — Implies human use — "for human use"
-  - context: `…tic loss."}},{"@type":"Question","name":"Are either compound approved for human use in the UK?","acceptedAnswer":{"@type":"Answer","text":" PH Labs supp…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-
-## /research/cjc-1295-ipamorelin-synergy
-
-- **FAIL** (page copy) — Implies human use — "for human use"
-  - context: `… its albumin-bound pharmacology. Are CJC-1295 and Ipamorelin approved for human use in the UK? PH Labs supplies both strictly as reference materials fo…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (structured data) — Implies human use — "for human use"
-  - context: `…."}},{"@type":"Question","name":"Are CJC-1295 and Ipamorelin approved for human use in the UK?","acceptedAnswer":{"@type":"Answer","text":" PH Labs supp…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-
-## /research/pt-141-uk
-
-- **FAIL** (page copy) — Implies human use — "for human use"
-  - context: `… reference compound in metabolic-stability panels. Is PT-141 approved for human use in the UK? No. PT-141 is . PH Labs supplies it strictly as a referen…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (structured data) — Implies human use — "for human use"
-  - context: `…c-stability panels."}},{"@type":"Question","name":"Is PT-141 approved for human use in the UK?","acceptedAnswer":{"@type":"Answer","text":"No. PT-141 is …`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 
 ## /research/retatrutide-comprehensive-guide
 
@@ -178,21 +130,6 @@ Surfaces: 43 routes, 60 product/detail URLs, 4 feeds, email templates, gates.
   - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 - **FAIL** (page copy) — Drug-style efficacy claim — "efficacy"
   - context: `…-4 resistance, albumin binding, and preservation of glucagon-receptor efficacy that native GLP-1-family peptides lose during optimisation. 2. Triple…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-
-## /research/tirzepatide-vs-retatrutide
-
-- **FAIL** (page copy) — Implies therapeutic use — "therapeutic"
-  - context: `…tirzepatide nor retatrutide is approved by the , EMA, or FDA for any therapeutic indication in the context of reference-material supply. PH Labs suppl…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (page copy) — Implies human use — "for human use"
-  - context: `…xtended in-vitro pharmacokinetic models. Are either compound approved for human use in the UK? No. Neither tirzepatide nor retatrutide is approved by the…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (structured data) — Implies therapeutic use — "therapeutic"
-  - context: `…tirzepatide nor retatrutide is approved by the , EMA, or FDA for any therapeutic indication in the context of reference-material supply. PH Labs suppl…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (structured data) — Implies human use — "for human use"
-  - context: `…c models."}},{"@type":"Question","name":"Are either compound approved for human use in the UK?","acceptedAnswer":{"@type":"Answer","text":"No. Neither ti…`
   - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 
 ## /resources/kpv-tripeptide-anti-inflammatory-research
