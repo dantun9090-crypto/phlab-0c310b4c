@@ -52,7 +52,8 @@
     "sbom:verify-release": "bash scripts/verify-release-sbom.sh",
     "security:scan": "bun scripts/security-audit.ts",
     "check:dist-domains": "bun scripts/check-dist-domains.ts",
-    "scan:landings": "bun scripts/landing-banned-tokens-scan.ts"
+    "scan:landings": "bun scripts/landing-banned-tokens-scan.ts",
+    "compliance:mhra": "bun scripts/mhra-audit.ts"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^2.0.48",
