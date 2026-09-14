@@ -1738,7 +1738,45 @@ export default function OrdersTab() {
         })}
       </div>
 
+      {/* Bulk Royal Mail order creation — Processing orders only */}
+      {(bulkRmCandidates.length > 0 || bulkRmLog.length > 0) && (
+        <div className="p-3 bg-[#0d1f35] border border-white/[0.08] rounded-xl">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-[#9cb8d9] text-xs">
+              {bulkRmCandidates.length} order{bulkRmCandidates.length === 1 ? '' : 's'} in <span className="text-white font-semibold">Processing</span> without a Royal Mail order.
+            </p>
+            <button
+              onClick={handleBulkCreateRoyalMailOrders}
+              disabled={bulkRmRunning || bulkRmCandidates.length === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-300 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+            >
+              {bulkRmRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Package className="w-3.5 h-3.5" />}
+              {bulkRmRunning
+                ? `Creating ${bulkRmProgress.done}/${bulkRmProgress.total}…`
+                : 'Bulk create Royal Mail orders'}
+            </button>
+          </div>
+          {bulkRmLog.length > 0 && (
+            <ul className="mt-2 space-y-1 max-h-40 overflow-y-auto" role="status">
+              {bulkRmLog.map((r, i) => (
+                <li
+                  key={`${r.id}-${i}`}
+                  className={`text-xs font-mono ${
+                    r.status === 'created' ? 'text-emerald-300'
+                      : r.status === 'skipped' ? 'text-amber-300'
+                      : 'text-red-400'
+                  }`}
+                >
+                  {r.id}: {r.message}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
       {/* Bulk Royal Mail tracking sync */}
+
       {(() => {
         const pending = orders.filter(o =>
           String((o as any).royalMailOrderId || '').trim() && !String(o.trackingNumber || '').trim()
