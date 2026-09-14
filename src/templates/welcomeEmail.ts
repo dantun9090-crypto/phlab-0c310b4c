@@ -9,7 +9,7 @@ export function buildWelcomeEmail(opts: WelcomeEmailOptions): string {
   const features = [
     { icon: '🧬', title: 'Research-Grade Peptides', desc: 'HPLC-tested purity. For in-vitro laboratory research use only.' },
     { icon: '🚀', title: 'Fast UK Dispatch', desc: 'Same-day dispatch on orders placed before 2 PM weekdays.' },
-    { icon: '🔒', title: 'Secure Checkout', desc: 'Open Banking payments via TrueLayer. FCA-regulated, bank-grade security.' },
+    { icon: '🔒', title: 'Secure Checkout', desc: 'UK bank transfer via Open Banking. Bank-grade security, no card details stored.' },
     { icon: '📋', title: 'Order Tracking', desc: 'Real-time status updates and dispatch notifications by email.' },
   ];
 
@@ -81,10 +81,11 @@ export function buildWelcomeEmail(opts: WelcomeEmailOptions): string {
       ${divider()}
 
       <p style="color:${C.textDimmed};font-size:11px;line-height:1.6;margin:0;text-align:center;">
-        All products are sold for <strong style="color:${C.textMuted};">research purposes only</strong>. 
-        Not for human consumption. For laboratory use only.<br>
+        <strong style="color:${C.textMuted};">For Research Use Only. Not for Human Consumption.</strong><br>
+        Supplied to qualified laboratories for in-vitro research. Not a medicinal product.<br>
         Questions? <a href="mailto:info@phlabs.co.uk" style="color:${C.accent};text-decoration:none;">info@phlabs.co.uk</a>
       </p>
+
     </div>
   `;
 

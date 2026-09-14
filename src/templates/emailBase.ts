@@ -164,8 +164,10 @@ export function emailWrapper(content: string, topBarGradient?: string): string {
                     <a href="mailto:info@phlabs.co.uk" style="color:${C.textMuted};text-decoration:none;">info@phlabs.co.uk</a>
                   </div>
                   <div style="color:${C.textDimmed};font-size:10px;margin-top:8px;font-family:${EMAIL_FONT};">
-                    All products are for <strong style="color:${C.textMuted};">research &amp; laboratory use only</strong>. Not for human consumption.
+                    <strong style="color:${C.textMuted};">For Research Use Only. Not for Human Consumption.</strong><br>
+                    Supplied to qualified laboratories for in-vitro research. Not a medicinal product.
                   </div>
+
                 </td>
               </tr>
             </table>

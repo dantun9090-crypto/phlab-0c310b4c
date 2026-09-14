@@ -36,9 +36,10 @@ export function protocolLibraryEmail({
         <td style="padding:28px;">
           <h2 style="color:${C.textBright};margin:0 0 16px 0;font-size:22px;font-weight:600;font-family:${EMAIL_FONT};">What's Inside Your 28-Page Guide:</h2>
           <ul style="color:${C.text};font-size:15px;line-height:1.8;margin:0;padding-left:20px;font-family:${EMAIL_FONT};">
-            <li style="margin-bottom:8px;"><strong style="color:${C.textBright};">BPC-157 Research Protocol</strong> — Complete dosing, reconstitution & storage guide</li>
-            <li style="margin-bottom:8px;"><strong style="color:${C.textBright};">TB-500 Application Guide</strong> — Evidence-based usage protocols</li>
-            <li style="margin-bottom:8px;"><strong style="color:${C.textBright};">Semaglutide Handbook</strong> — Safe handling & administration</li>
+            <li style="margin-bottom:8px;"><strong style="color:${C.textBright};">BPC-157 Reference Material</strong> — Reconstitution, aliquoting &amp; storage conditions</li>
+            <li style="margin-bottom:8px;"><strong style="color:${C.textBright};">TB-500 Reference Material</strong> — In-vitro handling and solvent compatibility</li>
+            <li style="margin-bottom:8px;"><strong style="color:${C.textBright};">Peptide Handling Reference</strong> — Laboratory handling &amp; containment practice</li>
+
             <li style="margin-bottom:8px;"><strong style="color:${C.textBright};">Storage Best Practices</strong> — Maximise peptide stability & shelf life</li>
             <li style="margin-bottom:8px;"><strong style="color:${C.textBright};">Certificate of Analysis Guide</strong> — How to read HPLC test results</li>
             <li style="margin-bottom:0;"><strong style="color:${C.textBright};">UK Legal Compliance</strong> — Research-only use requirements</li>
@@ -103,8 +104,9 @@ export function protocolLibraryEmail({
       <tr>
         <td>
           <p style="color:${C.textMuted};font-size:13px;line-height:1.6;margin:0;font-family:${EMAIL_FONT};">
-            <strong style="color:${C.textBright};">⚠️ Research Use Only</strong><br>
-            All peptides supplied by PH Labs UK are for in-vitro research purposes only. Not for human or veterinary use. By downloading this guide, you confirm you are purchasing for legitimate research applications in compliance with UK law.
+            <strong style="color:${C.textBright};">For Research Use Only. Not for Human Consumption.</strong><br>
+            All materials supplied by PH Labs are analytical reference materials for in-vitro laboratory research. Not for human or veterinary use. By downloading this document you confirm you are ordering for legitimate laboratory research in compliance with UK law.
+
           </p>
         </td>
       </tr>
