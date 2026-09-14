@@ -132,11 +132,11 @@ function titleOf(html: string): string | null {
 const NEUTRALISE: RegExp[] = [
   // negated / compliant statements
   /not\s+(intended\s+)?for\s+human\s+(consumption|use|ingestion|application)/gi,
-  /\b(not|never|no\s+longer)\s+(approved|authorised|authorized|licensed|intended|suitable|permitted|sold)\s+(by[^.]{0,40}\s+)?for\s+(any\s+)?(human|therapeutic|clinical|diagnostic|medicinal)[^.]{0,90}/gi,
-  /\b(are|is)\s+[^?.]{0,80}for\s+human\s+use\s*\?/gi,          // FAQ question wording
-  /\bNo\.\s+(All|Neither|None)[^.]{0,120}\./g,                  // FAQ compliant answers
+  /\b(not|never|neither|no\s+longer)\b[^.]{0,90}?\b(approved|authorised|authorized|licensed|intended|suitable|permitted|sold)\b[^.]{0,60}?\bfor\b[^.]{0,100}/gi,
+  /\b(are|is|has|was)\s+[^?.]{0,100}for\s+(human|therapeutic|clinical)\s+use[^?]{0,40}\?/gi, // FAQ question wording
+  /\bNo\.\s+(All|Neither|None)[^.]{0,140}\./g,                  // FAQ compliant answers
   // scientific / bibliographic context that is not a claim
-  /[A-Z][^.]{0,240}?doi:\s*10\.[^\s]+/g,                        // journal citations
+  /[A-Z][^\n]{0,240}?doi:\s*10\.\S+/g,                          // journal citations
   /Drug\s+Affinity\s+Complex/gi,
   /cosmetic[-\s]chemistry/gi,
   /Safe\s+for\s+Google\s+Ads[^.]{0,40}/gi,                      // internal feed metadata
