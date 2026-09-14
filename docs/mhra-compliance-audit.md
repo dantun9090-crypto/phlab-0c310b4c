@@ -1,12 +1,12 @@
 # MHRA / UK research-compliance audit
 
-Generated: 2026-09-14T20:28:00.301Z
+Generated: 2026-09-14T20:29:03.730Z
 Origin audited: http://localhost:8080
 Surfaces: 43 routes, 60 product/detail URLs, 4 feeds, email templates, gates.
 
 ## Summary
 
-- Must fix: **81**
+- Must fix: **48**
 - Needs review: **5**
 - Checks passed: **104**
 
@@ -33,61 +33,16 @@ Surfaces: 43 routes, 60 product/detail URLs, 4 feeds, email templates, gates.
 - **FAIL** (research-only notice) — no research-use-only / not-for-human-consumption notice in the rendered page
   - fix: Render "For Research Use Only. Not for Human Consumption." in a non-dismissible position on this page.
 
-## /compare/bpc-157-vs-ghk-cu
-
-- **FAIL** (page copy) — Implies cosmetic product — "cosmetic"
-  - context: `…try — copper complex rather than a chain peptide ✓ Frequently used in cosmetic-chemistry and skin-fibroblast studies ✓ Lyophilised vials; reconstitu…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-
-## /compare/bpc-157-vs-tb-500
-
-- **FAIL** (page copy) — Implies human use — "for human use"
-  - context: `…. Both appear together in comparative in-vitro studies. Are they sold for human use? + No. PH Labs supplies both strictly . . Related comparisons GHK-C…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (structured data) — Implies human use — "for human use"
-  - context: `…rative in-vitro studies."}},{"@type":"Question","name":"Are they sold for human use?","acceptedAnswer":{"@type":"Answer","text":"No. PH Labs supplies bot…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-
-## /compare/ghk-cu-vs-bpc-157
-
-- **FAIL** (page copy) — Implies cosmetic product — "cosmetic"
-  - context: `…try — copper complex rather than a chain peptide ✓ Frequently used in cosmetic-chemistry and skin-fibroblast studies ✓ Lyophilised vials; reconstitu…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-
 ## /compare/retatrutide-vs-tirzepatide
 
 - **FAIL** (page copy) — Implies therapeutic use — "therapeutic"
   - context: `…receptor target. This page covers the laboratory characteristics, not therapeutic claims. Retatrutide GLP-1 / GIP / glucagon triple agonist (research) …`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (page copy) — Implies human use — "for human use"
-  - context: `…search masses to suit different in-vitro study designs. Are they sold for human use? + No. Both are supplied strictly . . Related comparisons Retatruti…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (structured data) — Implies human use — "for human use"
-  - context: `… in-vitro study designs."}},{"@type":"Question","name":"Are they sold for human use?","acceptedAnswer":{"@type":"Answer","text":"No. Both are supplied st…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-
-## /compare/tb-500-vs-ghk-cu
-
-- **FAIL** (page copy) — Implies cosmetic product — "cosmetic"
-  - context: `…try — copper complex rather than a chain peptide ✓ Frequently used in cosmetic-chemistry and skin-fibroblast studies ✓ Lyophilised vials; reconstitu…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-
-## /compound
-
-- **FAIL** (structured data) — Implies human use — "for human use"
-  - context: `…l studies."}},{"@type":"Question","name":"Are these products intended for human use?","acceptedAnswer":{"@type":"Answer","text":"No. All materials are in…`
   - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 
 ## /contact
 
 - **REVIEW** (research-only notice) — the research-only banner is suppressed on the contact page
   - fix: Show the notice on every page, including contact.
-
-## /google-ads-safe-feed.xml
-
-- **FAIL** (feed content) — Safety claim — "Safe for"
-  - context: `…o.uk</link> <description>Non-restricted laboratory reagents only. Safe for Google Ads / Shopping.</description> <!-- google_product_category…`
-  - fix: Remove any statement implying the compound is safe.
 
 ## /google-merchant-feed-free.xml
 
@@ -99,12 +54,6 @@ Surfaces: 43 routes, 60 product/detail URLs, 4 feeds, email templates, gates.
 
 - **REVIEW** (feed) — no research-only wording in feed descriptions
   - fix: Append "For Research Use Only. Not for Human Consumption." to each feed description.
-
-## /landingad
-
-- **FAIL** (structured data) — Implies human use — "for human use"
-  - context: `…l studies."}},{"@type":"Question","name":"Are these products intended for human use?","acceptedAnswer":{"@type":"Answer","text":"No. All materials are in…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 
 ## /mcp
 
@@ -146,17 +95,14 @@ Surfaces: 43 routes, 60 product/detail URLs, 4 feeds, email templates, gates.
 - **FAIL** (page copy) — Therapeutic claim: healing — "healing"
   - context: `…n. Together they cover the two dominant preclinical readouts in wound-healing research. . . At a glance — combined panel design BPC-157 — angioge…`
   - fix: Remove; state only that the compound is supplied for laboratory research.
-- **FAIL** (page copy) — Implies therapeutic use — "therapeutic"
-  - context: `…the UK? No. Neither compound is approved by the , EMA or FDA for any therapeutic indication. PH Labs supplies both strictly as reference materials for…`
+- **FAIL** (page copy) — Implies therapeutic use — "Therapeutic"
+  - context: `…Des. doi: 10.2174/1381612824666180510104516 Hsieh M.J. et al. (2017). Therapeutic potential of BPC-157 — Angiogenesis via VEGFR2-Akt-eNOS. Mol Med Repo…`
   - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 - **FAIL** (page copy) — Implies human use — "for human use"
-  - context: `…tion before adding the test compound. Are BPC-157 and TB-500 approved for human use in the UK? No. Neither compound is approved by the , EMA or FDA for …`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (structured data) — Implies therapeutic use — "therapeutic"
-  - context: `…"text":"No. Neither compound is approved by the , EMA or FDA for any therapeutic indication. PH Labs supplies both strictly as reference materials for…`
+  - context: `…tion before adding the test compound. Are BPC-157 and TB-500 approved for human use in the UK? PH Labs supplies both strictly as reference materials fo…`
   - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 - **FAIL** (structured data) — Implies human use — "for human use"
-  - context: `…pound."}},{"@type":"Question","name":"Are BPC-157 and TB-500 approved for human use in the UK?","acceptedAnswer":{"@type":"Answer","text":"No. Neither co…`
+  - context: `…pound."}},{"@type":"Question","name":"Are BPC-157 and TB-500 approved for human use in the UK?","acceptedAnswer":{"@type":"Answer","text":" PH Labs supp…`
   - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 
 ## /research/bpc-157-uk
@@ -170,17 +116,8 @@ Surfaces: 43 routes, 60 product/detail URLs, 4 feeds, email templates, gates.
 - **FAIL** (page copy) — Therapeutic claim: healing — "healing"
   - context: `…ssue-repair in-vitro panels in UK research laboratories. Within wound-healing and angiogenesis research, BPC-157 is used alongside TB-500 as an ort…`
   - fix: Remove; state only that the compound is supplied for laboratory research.
-- **FAIL** (page copy) — Implies therapeutic use — "therapeutic"
-  - context: `…tigational compound. It is not approved by the , EMA, or FDA for any therapeutic indication. PH Labs supplies it strictly as a reference material for …`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (page copy) — Implies human use — "for human use"
-  - context: `…and VEGFR2 contributions to the BPC-157 response. Is BPC-157 approved for human use? No. BPC-157 is an investigational compound. It is not approved by th…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (structured data) — Implies therapeutic use — "therapeutic"
-  - context: `…tigational compound. It is not approved by the , EMA, or FDA for any therapeutic indication. PH Labs supplies it strictly as a reference material for …`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (structured data) — Implies human use — "for human use"
-  - context: `… BPC-157 response."}},{"@type":"Question","name":"Is BPC-157 approved for human use?","acceptedAnswer":{"@type":"Answer","text":"No. BPC-157 is an invest…`
+- **FAIL** (page copy) — Implies therapeutic use — "Therapeutic"
+  - context: `…ysiol. doi: 10.1152/japplphysiol.00782.2010 Hsieh M.J. et al. (2017). Therapeutic potential of BPC-157 — Angiogenesis via VEGFR2-Akt-eNOS. Mol Med Repo…`
   - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 
 ## /research/bpc-157-vs-tb-500
@@ -197,11 +134,11 @@ Surfaces: 43 routes, 60 product/detail URLs, 4 feeds, email templates, gates.
 - **FAIL** (page copy) — Therapeutic claim: anti-inflammatory — "anti-inflammatory"
   - context: `…on-dependent effects. Downstream, TB-500 also produces angiogenic and anti-inflammatory outputs in preclinical models, but these are typically interpreted as…`
   - fix: Remove; state only that the compound is supplied for laboratory research.
-- **FAIL** (page copy) — Implies therapeutic use — "therapeutic"
-  - context: `…. Neither BPC-157 nor TB-500 is approved by the , EMA or FDA for any therapeutic indication. PH Labs supplies both strictly as reference materials for…`
+- **FAIL** (page copy) — Implies therapeutic use — "Therapeutic"
+  - context: `…Des. doi: 10.2174/1381612824666180510104516 Hsieh M.J. et al. (2017). Therapeutic potential of BPC-157 — Angiogenesis via VEGFR2-Akt-eNOS. Mol Med Repo…`
   - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 - **FAIL** (page copy) — Implies human use — "for human use"
-  - context: `…e aliquots to minimise proteolytic loss. Are either compound approved for human use in the UK? No. Neither BPC-157 nor TB-500 is approved by the , EMA o…`
+  - context: `…e aliquots to minimise proteolytic loss. Are either compound approved for human use in the UK? PH Labs supplies both strictly as reference materials fo…`
   - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 - **FAIL** (structured data) — Therapeutic claim: wound healing — "wound-healing"
   - context: `…n and cytoskeletal remodelling. The two act on orthogonal arms of the wound-healing cascade in preclinical models."}},{"@type":"Question","name":"Which c…`
@@ -209,65 +146,23 @@ Surfaces: 43 routes, 60 product/detail URLs, 4 feeds, email templates, gates.
 - **FAIL** (structured data) — Therapeutic claim: healing — "healing"
   - context: `…cytoskeletal remodelling. The two act on orthogonal arms of the wound-healing cascade in preclinical models."}},{"@type":"Question","name":"Which c…`
   - fix: Remove; state only that the compound is supplied for laboratory research.
-- **FAIL** (structured data) — Implies therapeutic use — "therapeutic"
-  - context: `…. Neither BPC-157 nor TB-500 is approved by the , EMA or FDA for any therapeutic indication. PH Labs supplies both strictly as reference materials for…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 - **FAIL** (structured data) — Implies human use — "for human use"
-  - context: `…tic loss."}},{"@type":"Question","name":"Are either compound approved for human use in the UK?","acceptedAnswer":{"@type":"Answer","text":"No. Neither BP…`
+  - context: `…tic loss."}},{"@type":"Question","name":"Are either compound approved for human use in the UK?","acceptedAnswer":{"@type":"Answer","text":" PH Labs supp…`
   - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 
 ## /research/cjc-1295-ipamorelin-synergy
 
-- **FAIL** (page copy) — Implies medicinal product — "Drug"
-  - context: `… four stabilising substitutions. &#x27;CJC-1295 with DAC&#x27; adds a Drug Affinity Complex (a maleimidopropionic-acid linker) that covalently b…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (page copy) — Implies therapeutic use — "therapeutic"
-  - context: `…the UK? No. Neither compound is approved by the , EMA or FDA for any therapeutic indication. PH Labs supplies both strictly as reference materials for…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 - **FAIL** (page copy) — Implies human use — "for human use"
-  - context: `… its albumin-bound pharmacology. Are CJC-1295 and Ipamorelin approved for human use in the UK? No. Neither compound is approved by the , EMA or FDA for …`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (structured data) — Implies medicinal product — "Drug"
-  - context: `…gment with four stabilising substitutions. 'CJC-1295 with DAC' adds a Drug Affinity Complex (a maleimidopropionic-acid linker) that covalently b…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (structured data) — Implies therapeutic use — "therapeutic"
-  - context: `…"text":"No. Neither compound is approved by the , EMA or FDA for any therapeutic indication. PH Labs supplies both strictly as reference materials for…`
+  - context: `… its albumin-bound pharmacology. Are CJC-1295 and Ipamorelin approved for human use in the UK? PH Labs supplies both strictly as reference materials fo…`
   - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 - **FAIL** (structured data) — Implies human use — "for human use"
-  - context: `…."}},{"@type":"Question","name":"Are CJC-1295 and Ipamorelin approved for human use in the UK?","acceptedAnswer":{"@type":"Answer","text":"No. Neither co…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-
-## /research/ghk-cu-guide
-
-- **FAIL** (page copy) — Forbidden — not for human use — "human consumption"
-  - context: `…-vitro research and analytical use. It is and is not authorised for human consumption or clinical application. References Pickart L. & Thaler M.M. (1973). …`
-  - fix: Delete; keep only the "not for human consumption" notice.
-- **FAIL** (page copy) — Implies clinical use — "clinical"
-  - context: `…nalytical use. It is and is not authorised for human consumption or clinical application. References Pickart L. & Thaler M.M. (1973). Tripeptide i…`
-  - fix: Replace "clinical" with "published study" or "laboratory".
-- **FAIL** (page copy) — Implies human use — "for human use"
-  - context: `…ped with a batch-specific Certificate of Analysis. Is GHK-Cu approved for human use? No. PH Labs supplies GHK-Cu strictly as a reference material for in-…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (structured data) — Forbidden — not for human use — "human consumption"
-  - context: `…-vitro research and analytical use. It is and is not authorised for human consumption or clinical application."}}]}…`
-  - fix: Delete; keep only the "not for human consumption" notice.
-- **FAIL** (structured data) — Implies clinical use — "clinical"
-  - context: `…nalytical use. It is and is not authorised for human consumption or clinical application."}}]}…`
-  - fix: Replace "clinical" with "published study" or "laboratory".
-- **FAIL** (structured data) — Implies human use — "for human use"
-  - context: `…ficate of Analysis."}},{"@type":"Question","name":"Is GHK-Cu approved for human use?","acceptedAnswer":{"@type":"Answer","text":"No. PH Labs supplies GHK…`
+  - context: `…."}},{"@type":"Question","name":"Are CJC-1295 and Ipamorelin approved for human use in the UK?","acceptedAnswer":{"@type":"Answer","text":" PH Labs supp…`
   - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 
 ## /research/pt-141-uk
 
-- **FAIL** (page copy) — Implies therapeutic use — "therapeutic"
-  - context: `…man use in the UK? No. PT-141 is not approved by the or EMA for any therapeutic indication in the UK. PH Labs supplies it strictly as a reference mat…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 - **FAIL** (page copy) — Implies human use — "for human use"
-  - context: `… reference compound in metabolic-stability panels. Is PT-141 approved for human use in the UK? No. PT-141 is not approved by the or EMA for any therape…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (structured data) — Implies therapeutic use — "therapeutic"
-  - context: `…":"Answer","text":"No. PT-141 is not approved by the or EMA for any therapeutic indication in the UK. PH Labs supplies it strictly as a reference mat…`
+  - context: `… reference compound in metabolic-stability panels. Is PT-141 approved for human use in the UK? No. PT-141 is . PH Labs supplies it strictly as a referen…`
   - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 - **FAIL** (structured data) — Implies human use — "for human use"
   - context: `…c-stability panels."}},{"@type":"Question","name":"Is PT-141 approved for human use in the UK?","acceptedAnswer":{"@type":"Answer","text":"No. PT-141 is …`
@@ -283,21 +178,6 @@ Surfaces: 43 routes, 60 product/detail URLs, 4 feeds, email templates, gates.
   - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 - **FAIL** (page copy) — Drug-style efficacy claim — "efficacy"
   - context: `…-4 resistance, albumin binding, and preservation of glucagon-receptor efficacy that native GLP-1-family peptides lose during optimisation. 2. Triple…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (page copy) — Implies human use — "for human use"
-  - context: `…ith a batch-specific Certificate of Analysis. Is retatrutide approved for human use? No. Retatrutide is an investigational compound. PH Labs supplies it …`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (structured data) — Implies human use — "for human use"
-  - context: `…e of Analysis."}},{"@type":"Question","name":"Is retatrutide approved for human use?","acceptedAnswer":{"@type":"Answer","text":"No. Retatrutide is an in…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-
-## /research/retatrutide-uk
-
-- **FAIL** (page copy) — Implies human use — "for human use"
-  - context: `…ss DPP-4 cleavage in plasma-stability assays. Is retatrutide approved for human use? No. Retatrutide is an investigational compound. PH Labs supplies it …`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (structured data) — Implies human use — "for human use"
-  - context: `…bility assays."}},{"@type":"Question","name":"Is retatrutide approved for human use?","acceptedAnswer":{"@type":"Answer","text":"No. Retatrutide is an in…`
   - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 
 ## /research/tirzepatide-vs-retatrutide
@@ -326,15 +206,6 @@ Surfaces: 43 routes, 60 product/detail URLs, 4 feeds, email templates, gates.
 - **FAIL** (meta description) — Therapeutic claim: anti-inflammatory — "Anti Inflammatory"
   - context: `Kpv Tripeptide Anti Inflammatory Research: resource notes and references from PH Labs UK.…`
   - fix: Remove; state only that the compound is supplied for laboratory research.
-
-## /uk-research-store
-
-- **FAIL** (page copy) — Implies human use — "for human use"
-  - context: `…vice. Discreet, unbranded outer packaging. Are the materials intended for human use? + No. All items listed are strictly and are not intended for human…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
-- **FAIL** (structured data) — Implies human use — "for human use"
-  - context: `… packaging."}},{"@type":"Question","name":"Are the materials intended for human use?","acceptedAnswer":{"@type":"Answer","text":"No. All items listed are…`
-  - fix: Reword so the text describes laboratory research context only, with no outcome, health or medical framing.
 
 ## email:adminInvoiceEmail.ts
 
