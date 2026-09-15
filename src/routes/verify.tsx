@@ -177,11 +177,11 @@ export function VerifyPage() {
 
   const { batch, product } = params;
 
-  const batchQuery = useQuery({
-    queryKey: ["lab-tests", "batch", batch],
-    enabled: hydrated && !!batch,
-    staleTime: 60_000,
-    queryFn: async (): Promise<LabTest[]> => {
+  const productKey = product ? (toShopProductKey(product) ?? product.toUpperCase()) : undefined;
+
+  const batchQuery = useLabTestQuery(
+    hydrated && !!batch,
+    async () => {
       const { data, error } = await supabase
         .from("lab_tests")
         .select(SELECT_COLUMNS)
@@ -190,15 +190,12 @@ export function VerifyPage() {
       if (error) throw new Error(error.message);
       return (data ?? []) as unknown as LabTest[];
     },
-  });
+    [batch],
+  );
 
-  const productKey = product ? (toShopProductKey(product) ?? product.toUpperCase()) : undefined;
-
-  const productQuery = useQuery({
-    queryKey: ["lab-tests", "product", productKey],
-    enabled: hydrated && !!productKey && !batch,
-    staleTime: 60_000,
-    queryFn: async (): Promise<LabTest[]> => {
+  const productQuery = useLabTestQuery(
+    hydrated && !!productKey && !batch,
+    async () => {
       const { data, error } = await supabase
         .from("lab_tests")
         .select(SELECT_COLUMNS)
@@ -207,7 +204,8 @@ export function VerifyPage() {
       if (error) throw new Error(error.message);
       return (data ?? []) as unknown as LabTest[];
     },
-  });
+    [productKey, batch],
+  );
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-10 text-white">
