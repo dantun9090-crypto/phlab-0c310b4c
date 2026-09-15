@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { getAdminIdToken } from '@/lib/auth-ready';
 import { logAdminAction } from '@/lib/admin-audit';
+import { fetchVerifyBatchEnabled, setVerifyBatchEnabled } from '@/lib/verify-feature';
 import {
   listLabTestsAdmin,
   saveLabTestAdmin,
@@ -184,7 +185,11 @@ export default function LabTestsTab() {
     try {
       await setVerifyBatchEnabled(next);
       setFeatureOn(next);
-      await logAdminAction('lab_test.feature.toggle', { enabled: next });
+      void logAdminAction({
+        action: 'lab_test.feature.toggle',
+        target: 'settings/siteSettings',
+        after: { verifyBatchEnabled: next },
+      });
       notify(next ? 'Batch verification switched on' : 'Batch verification switched off');
     } catch (e) {
       notify(e instanceof Error ? e.message : 'Failed to update setting');
