@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { supabase } from "@/integrations/supabase/client";
+import { useVerifyBatchEnabled } from "@/lib/verify-feature";
 import { safeJsonLd } from "@/lib/safe-json-ld";
 import {
   type LabTest,
@@ -160,6 +161,7 @@ function useLabTestQuery(
  */
 export function VerifyPage() {
   const hydrated = useHydrated();
+  const verifyEnabled = useVerifyBatchEnabled();
   const [params, setParams] = useState<VerifySearch>({});
 
   useEffect(() => {
@@ -180,7 +182,7 @@ export function VerifyPage() {
   const productKey = product ? (toShopProductKey(product) ?? product.toUpperCase()) : undefined;
 
   const batchQuery = useLabTestQuery(
-    hydrated && !!batch,
+    hydrated && verifyEnabled && !!batch,
     async () => {
       const { data, error } = await supabase
         .from("lab_tests")
@@ -194,7 +196,7 @@ export function VerifyPage() {
   );
 
   const productQuery = useLabTestQuery(
-    hydrated && !!productKey && !batch,
+    hydrated && verifyEnabled && !!productKey && !batch,
     async () => {
       const { data, error } = await supabase
         .from("lab_tests")
@@ -221,7 +223,18 @@ export function VerifyPage() {
           </p>
         </header>
 
-        {batch ? (
+        {!verifyEnabled ? (
+          <div className="rounded-xl border border-slate-800 bg-slate-900 p-5 text-slate-300">
+            <p className="font-semibold text-white">Batch verification is temporarily unavailable.</p>
+            <p className="mt-2 text-sm">
+              Please{" "}
+              <A to="/contact" className="text-emerald-400 hover:underline">
+                contact us
+              </A>{" "}
+              with your batch code and we will send the analytical report for your batch.
+            </p>
+          </div>
+        ) : batch ? (
           <BatchView batch={batch} query={batchQuery} />
         ) : productKey ? (
           <ProductView productKey={productKey} query={productQuery} />

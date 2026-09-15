@@ -6,6 +6,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import type { Product } from '@/lib/firebase';
 import { isVipProduct } from '@/lib/vip-visibility';
+import { useVerifyBatchEnabled } from '@/lib/verify-feature';
 
 import InstallAppButton from '@/components/InstallAppButton';
 import TransactionalLink from '@/components/TransactionalLink';
@@ -49,6 +50,7 @@ const BASE_NAV: Omit<NavLink, 'dropdown'>[] = [
 function useNavLinks(): NavLink[] {
   const [categories, setCategories] = useState<DropdownItem[]>([]);
   const location = useLocation();
+  const verifyEnabled = useVerifyBatchEnabled();
 
   useEffect(() => {
     let cancelled = false;
@@ -91,6 +93,8 @@ function useNavLinks(): NavLink[] {
   const isContactPage = ['/contact', '/shipping-policy', '/privacy-policy'].includes(location.pathname);
   return BASE_NAV
     .filter(link => !(isContactPage && (link.name === 'Peptides' || link.name === 'Lab Reports')))
+    // Batch verification can be switched off in Admin → Lab Tests.
+    .filter(link => link.href !== '/verify' || verifyEnabled)
     .map(link =>
       link.name === 'Peptides' ? { ...link, dropdown: categories } : link
     );

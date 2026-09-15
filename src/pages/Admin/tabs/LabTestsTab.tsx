@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { getAdminIdToken } from '@/lib/auth-ready';
 import { logAdminAction } from '@/lib/admin-audit';
+import { fetchVerifyBatchEnabled, setVerifyBatchEnabled } from '@/lib/verify-feature';
 import {
   listLabTestsAdmin,
   saveLabTestAdmin,
@@ -164,10 +165,38 @@ export default function LabTestsTab() {
   const [qrRow, setQrRow] = useState<LabTest | null>(null);
   const [importOpen, setImportOpen] = useState(false);
 
+  const [featureOn, setFeatureOn] = useState(true);
+  const [featureSaving, setFeatureSaving] = useState(false);
+
   const notify = useCallback((msg: string) => {
     setToast(msg);
     window.setTimeout(() => setToast(null), 2500);
   }, []);
+
+  useEffect(() => {
+    void fetchVerifyBatchEnabled()
+      .then(setFeatureOn)
+      .catch(() => setFeatureOn(true));
+  }, []);
+
+  const toggleFeature = useCallback(async () => {
+    const next = !featureOn;
+    setFeatureSaving(true);
+    try {
+      await setVerifyBatchEnabled(next);
+      setFeatureOn(next);
+      void logAdminAction({
+        action: 'lab_test.feature.toggle',
+        target: 'settings/siteSettings',
+        after: { verifyBatchEnabled: next },
+      });
+      notify(next ? 'Batch verification switched on' : 'Batch verification switched off');
+    } catch (e) {
+      notify(e instanceof Error ? e.message : 'Failed to update setting');
+    } finally {
+      setFeatureSaving(false);
+    }
+  }, [featureOn, notify]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -355,6 +384,34 @@ export default function LabTestsTab() {
         </button>
         <button type="button" className={BTN} onClick={() => setDraft({ ...EMPTY_DRAFT })}>
           <Plus className="h-4 w-4" /> Add test
+        </button>
+      </div>
+
+      {/* Global on/off switch for the customer-facing /verify feature. */}
+      <div className="flex flex-wrap items-center gap-3 rounded-lg border-2 border-slate-600 bg-slate-800 p-3">
+        <span
+          className={`inline-flex items-center gap-2 rounded-lg border px-2 py-1 text-xs font-semibold ${
+            featureOn
+              ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300'
+              : 'border-slate-500/40 bg-slate-500/15 text-slate-300'
+          }`}
+        >
+          Verify Batch: {featureOn ? 'ON' : 'OFF'}
+        </span>
+        <p className="mr-auto text-xs text-slate-300">
+          When OFF, the public /verify page, the menu and footer links and the product-page lab-testing block are
+          hidden. Published batches stay in the database.
+        </p>
+        <button
+          type="button"
+          className={BTN}
+          disabled={featureSaving}
+          aria-pressed={featureOn}
+          aria-label={featureOn ? 'Switch batch verification off' : 'Switch batch verification on'}
+          onClick={() => void toggleFeature()}
+        >
+          {featureSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {featureOn ? 'Switch off' : 'Switch on'}
         </button>
       </div>
 

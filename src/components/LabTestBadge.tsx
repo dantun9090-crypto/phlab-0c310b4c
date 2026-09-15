@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { ShieldCheck, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toShopProductKey, verifyProductUrl } from '@/lib/lab-tests';
+import { useVerifyBatchEnabled } from '@/lib/verify-feature';
 
 interface Props {
   /** Shop product name, e.g. "TB-500 (Thymosin Beta-4)". */
@@ -17,6 +18,7 @@ interface Props {
 
 export function LabTestBadge({ productName }: Props) {
   const productKey = toShopProductKey(productName);
+  const verifyEnabled = useVerifyBatchEnabled();
   const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -39,7 +41,7 @@ export function LabTestBadge({ productName }: Props) {
     };
   }, [productKey]);
 
-  if (!productKey || !count) return null;
+  if (!verifyEnabled || !productKey || !count) return null;
 
   // Relative link keeps the badge working on every host the app serves.
   const href = verifyProductUrl(productKey).replace(/^https?:\/\/[^/]+/, '');
