@@ -892,7 +892,7 @@ export default function AccountPage() {
                       <Bell className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-amber-300 text-sm font-semibold">Email not verified</p>
-                        <p className="text-amber-400/70 text-xs mt-0.5">Please verify your email to unlock all account features.</p>
+                        <p className="text-amber-400/70 text-xs mt-0.5">Verify your email to unlock all account features — including orders you placed at checkout without signing in.</p>
                         {verifSent && <p className="text-emerald-400 text-xs mt-1">Verification email sent! Check your inbox.</p>}
                         {verifError && <p className="text-red-400 text-xs mt-1">{verifError}</p>}
                       </div>
