@@ -16,7 +16,7 @@
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+
 import { supabase } from "@/integrations/supabase/client";
 import { safeJsonLd } from "@/lib/safe-json-ld";
 import {
@@ -442,21 +442,23 @@ function SearchView() {
     return () => window.clearTimeout(id);
   }, [input]);
 
-  const suggestions = useQuery({
-    queryKey: ["lab-tests", "search", term],
-    enabled: hydrated && term.length >= 2,
-    staleTime: 60_000,
-    queryFn: async (): Promise<LabTest[]> => {
+  const suggestions = useLabTestQuery(
+    hydrated && term.length >= 2,
+    async () => {
+      // Escape PostgREST `or()` separators so a stray comma/paren cannot
+      // rewrite the filter expression.
+      const safe = term.replace(/[,()]/g, " ").trim();
       const { data, error } = await supabase
         .from("lab_tests")
         .select(SELECT_COLUMNS)
-        .or(`batch.ilike.%${term}%,product.ilike.%${term}%`)
+        .or(`batch.ilike.%${safe}%,product.ilike.%${safe}%`)
         .order("test_date", { ascending: false })
         .limit(12);
       if (error) throw new Error(error.message);
       return (data ?? []) as unknown as LabTest[];
     },
-  });
+    [term],
+  );
 
   const rows = useMemo(() => suggestions.data ?? [], [suggestions.data]);
 
