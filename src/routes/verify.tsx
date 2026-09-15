@@ -110,6 +110,48 @@ function useHydrated() {
   return hydrated;
 }
 
+interface QueryLike {
+  data?: LabTest[];
+  isLoading: boolean;
+  isError: boolean;
+}
+
+/**
+ * Tiny fetch hook. Deliberately NOT react-query: this page is also mounted by
+ * the legacy react-router app, which has no QueryClientProvider — using
+ * useQuery there throws "No QueryClient set".
+ */
+function useLabTestQuery(
+  enabled: boolean,
+  run: () => Promise<LabTest[]>,
+  deps: ReadonlyArray<unknown>,
+): QueryLike {
+  const [state, setState] = useState<QueryLike>({ isLoading: enabled, isError: false });
+
+  useEffect(() => {
+    if (!enabled) {
+      setState({ isLoading: false, isError: false });
+      return;
+    }
+    let alive = true;
+    setState({ isLoading: true, isError: false });
+    void run()
+      .then((rows) => {
+        if (alive) setState({ data: rows, isLoading: false, isError: false });
+      })
+      .catch(() => {
+        if (alive) setState({ isLoading: false, isError: true });
+      });
+    return () => {
+      alive = false;
+    };
+    // `run` is recreated every render; the caller-supplied deps drive refetches.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, ...deps]);
+
+  return state;
+}
+
 /**
  * Exported so the legacy react-router app (src/legacy/AppRouter.tsx) can mount
  * the same page after hydration — otherwise a client-side click on the nav
