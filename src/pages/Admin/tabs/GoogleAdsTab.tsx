@@ -8,6 +8,13 @@ import {
 } from '@/lib/google-ads-campaign';
 import { pushCampaignToGoogleAds } from '@/lib/google-ads-push.functions';
 import { auth } from '@/lib/firebase';
+import {
+  ADS_BACKUP_TAKEN_AT,
+  ADS_BACKUP_CUSTOMER_ID,
+  ADS_CAMPAIGN_BACKUP,
+  ADS_CONVERSION_BACKUP,
+  ADS_GOAL_BACKUP,
+} from '@/data/google-ads-conversion-backup';
 
 
 function download(filename: string, content: string, mime = 'text/csv') {
