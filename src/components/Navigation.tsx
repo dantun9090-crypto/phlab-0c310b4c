@@ -1,6 +1,6 @@
 import {
   FlaskConical, FileCheck, Microscope, Mail, Home, Crown,
-  ChevronDown, X, Shield,
+  ChevronDown, X, Shield, ShieldCheck,
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
