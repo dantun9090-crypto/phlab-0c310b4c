@@ -360,6 +360,9 @@ export default function GoogleAdsTab() {
         </p>
       </header>
 
+      <ConversionBackupPanel />
+
+
       <div className="mb-4 rounded-lg border-2 border-blue-700 bg-blue-950 p-3 text-sm text-blue-200">
         <strong>ℹ️ Search-only — no Merchant Center</strong>{' '}
         These are classic text ads (headlines + descriptions) that appear in Google Search results. They do <strong>not</strong> use Google Merchant Center or Shopping ads, so product disapprovals in GMC do not block them.
