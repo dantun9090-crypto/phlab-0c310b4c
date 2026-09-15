@@ -1037,10 +1037,15 @@ export default function OrdersTab() {
       setRmResult({ orderIdentifier, orderReference, trackingNumber });
       if (trackingNumber) setTrackingInput(trackingNumber);
       setCourierInput('Royal Mail');
-      setOrders(prev => prev.map(o => o.id === selected.id
-        ? { ...o, ...(trackingNumber ? { trackingNumber } : {}), courier: 'Royal Mail' } as Order
-        : o));
-      setSelected(prev => prev ? { ...prev, ...(trackingNumber ? { trackingNumber } : {}), courier: 'Royal Mail' } as Order : prev);
+      const localRmPatch = {
+        royalMailOrderId: orderIdentifier,
+        royalMailService: serviceCodeUsed,
+        royalMailTracking: trackingNumber,
+        courier: 'Royal Mail',
+        ...(trackingNumber ? { trackingNumber } : {}),
+      };
+      setOrders(prev => prev.map(o => o.id === selected.id ? { ...o, ...localRmPatch } as Order : o));
+      setSelected(prev => prev ? { ...prev, ...localRmPatch } as Order : prev);
     } catch (e: any) {
       console.error('[royal-mail] create order failed', e);
       setRmError(e?.message || 'Failed to create Royal Mail order.');
