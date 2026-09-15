@@ -50,7 +50,8 @@ export type AdminAuditAction =
   | 'lab_test.update'
   | 'lab_test.delete'
   | 'lab_test.publish.toggle'
-  | 'lab_test.import';
+  | 'lab_test.import'
+  | 'lab_test.feature.toggle';
 
 interface LogPayload {
   action: AdminAuditAction;

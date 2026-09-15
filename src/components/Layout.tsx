@@ -1393,7 +1393,7 @@ export function Layout({ children }: LayoutProps) {
                   { label: 'Contact Us', href: '/contact' },
                   { label: 'Storage Guide', href: '/storage-guide' },
                   
-                ].filter(l => l.href !== '/verify' || n.verifyBatchEnabled !== false).map(l => (
+                ].filter(l => l.href !== '/verify' || siteSettings.verifyBatchEnabled !== false).map(l => (
                   <li key={l.label}>
                     <a href={l.href} className="group flex items-center gap-2 text-[#5a80a6] hover:text-[#8caad4] transition-colors text-sm">
                       <span className="w-1 h-1 rounded-full bg-blue-600/40 group-hover:bg-blue-400 transition-colors flex-shrink-0" />
