@@ -182,7 +182,7 @@ export function VerifyPage() {
   const productKey = product ? (toShopProductKey(product) ?? product.toUpperCase()) : undefined;
 
   const batchQuery = useLabTestQuery(
-    hydrated && !!batch,
+    hydrated && verifyEnabled && !!batch,
     async () => {
       const { data, error } = await supabase
         .from("lab_tests")
@@ -196,7 +196,7 @@ export function VerifyPage() {
   );
 
   const productQuery = useLabTestQuery(
-    hydrated && !!productKey && !batch,
+    hydrated && verifyEnabled && !!productKey && !batch,
     async () => {
       const { data, error } = await supabase
         .from("lab_tests")
