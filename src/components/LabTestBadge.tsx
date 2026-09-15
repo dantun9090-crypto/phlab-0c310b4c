@@ -41,7 +41,7 @@ export function LabTestBadge({ productName }: Props) {
     };
   }, [productKey]);
 
-  if (!productKey || !count) return null;
+  if (!verifyEnabled || !productKey || !count) return null;
 
   // Relative link keeps the badge working on every host the app serves.
   const href = verifyProductUrl(productKey).replace(/^https?:\/\/[^/]+/, '');
