@@ -358,6 +358,34 @@ export default function LabTestsTab() {
         </button>
       </div>
 
+      {/* Global on/off switch for the customer-facing /verify feature. */}
+      <div className="flex flex-wrap items-center gap-3 rounded-lg border-2 border-slate-600 bg-slate-800 p-3">
+        <span
+          className={`inline-flex items-center gap-2 rounded-lg border px-2 py-1 text-xs font-semibold ${
+            featureOn
+              ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300'
+              : 'border-slate-500/40 bg-slate-500/15 text-slate-300'
+          }`}
+        >
+          Verify Batch: {featureOn ? 'ON' : 'OFF'}
+        </span>
+        <p className="mr-auto text-xs text-slate-300">
+          When OFF, the public /verify page, the menu and footer links and the product-page lab-testing block are
+          hidden. Published batches stay in the database.
+        </p>
+        <button
+          type="button"
+          className={BTN}
+          disabled={featureSaving}
+          aria-pressed={featureOn}
+          aria-label={featureOn ? 'Switch batch verification off' : 'Switch batch verification on'}
+          onClick={() => void toggleFeature()}
+        >
+          {featureSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {featureOn ? 'Switch off' : 'Switch on'}
+        </button>
+      </div>
+
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-[260px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
