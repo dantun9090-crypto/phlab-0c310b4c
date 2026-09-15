@@ -1132,12 +1132,18 @@ export default function OrdersTab() {
             meta: { service: serviceCodeUsed, royalMailOrderId: orderIdentifier, weightGrams: Number(rmWeight) || 100, bulk: true },
           });
 
-          setOrders(prev => prev.map(x => x.id === o.id
-            ? { ...x, ...(trackingNumber ? { trackingNumber } : {}), courier: 'Royal Mail' } as Order
-            : x));
-          setSelected(prev => prev && prev.id === o.id
-            ? { ...prev, ...(trackingNumber ? { trackingNumber } : {}), courier: 'Royal Mail' } as Order
-            : prev);
+          // Merge the Royal Mail identifiers into local state too, otherwise the
+          // order stays in `bulkRmCandidates` and a second run would create a
+          // duplicate (chargeable) Click & Drop order for the same parcel.
+          const localRmPatch = {
+            royalMailOrderId: orderIdentifier,
+            royalMailService: serviceCodeUsed,
+            royalMailTracking: trackingNumber,
+            courier: 'Royal Mail',
+            ...(trackingNumber ? { trackingNumber } : {}),
+          };
+          setOrders(prev => prev.map(x => x.id === o.id ? { ...x, ...localRmPatch } as Order : x));
+          setSelected(prev => prev && prev.id === o.id ? { ...prev, ...localRmPatch } as Order : prev);
           setBulkRmLog(prev => [...prev, {
             id: o.id,
             status: 'created',
