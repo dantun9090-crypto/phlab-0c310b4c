@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { supabase } from "@/integrations/supabase/client";
+import { useVerifyBatchEnabled } from "@/lib/verify-feature";
 import { safeJsonLd } from "@/lib/safe-json-ld";
 import {
   type LabTest,
@@ -160,6 +161,7 @@ function useLabTestQuery(
  */
 export function VerifyPage() {
   const hydrated = useHydrated();
+  const verifyEnabled = useVerifyBatchEnabled();
   const [params, setParams] = useState<VerifySearch>({});
 
   useEffect(() => {
