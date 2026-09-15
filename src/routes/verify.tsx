@@ -253,12 +253,6 @@ export function VerifyPage() {
 
 /* ─────────────────────────────── Mode 1 ─────────────────────────────── */
 
-interface QueryLike {
-  data?: LabTest[];
-  isLoading: boolean;
-  isError: boolean;
-}
-
 function BatchView({ batch, query }: { batch: string; query: QueryLike }) {
   if (query.isLoading) return <Skeleton />;
   if (query.isError)
