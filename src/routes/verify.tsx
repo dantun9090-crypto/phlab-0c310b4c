@@ -110,9 +110,30 @@ function useHydrated() {
   return hydrated;
 }
 
-function VerifyPage() {
-  const { batch, product } = Route.useSearch();
+/**
+ * Exported so the legacy react-router app (src/legacy/AppRouter.tsx) can mount
+ * the same page after hydration — otherwise a client-side click on the nav
+ * link would fall through to <NotFound />. Search params are read from
+ * `window.location` so the component works under either router.
+ */
+export function VerifyPage() {
   const hydrated = useHydrated();
+  const [params, setParams] = useState<VerifySearch>({});
+
+  useEffect(() => {
+    const read = () => {
+      const sp = new URLSearchParams(window.location.search);
+      setParams({
+        batch: sp.get("batch") ?? undefined,
+        product: sp.get("product") ?? undefined,
+      });
+    };
+    read();
+    window.addEventListener("popstate", read);
+    return () => window.removeEventListener("popstate", read);
+  }, []);
+
+  const { batch, product } = params;
 
   const batchQuery = useQuery({
     queryKey: ["lab-tests", "batch", batch],
