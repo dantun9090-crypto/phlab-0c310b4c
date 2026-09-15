@@ -43,6 +43,7 @@ import IpWhitelistTab from './tabs/IpWhitelistTab';
 import SEOTab from './tabs/SEOTab';
 import { FeaturedProductsTab } from './tabs/FeaturedProductsTab';
 import QCDashboardTab from './tabs/QCDashboardTab';
+import LabTestsTab from './tabs/LabTestsTab';
 import SitemapTab from './tabs/SitemapTab';
 import SitemapAuditTab from './tabs/SitemapAuditTab';
 import PromoCodesTab from './tabs/PromoCodesTab';
@@ -530,6 +531,7 @@ export default function AdminPage() {
         case 'sitemap': return <SitemapTab />;
         case 'sitemapaudit': return <SitemapAuditTab />;
         case 'qc': return <QCDashboardTab />;
+        case 'labtests': return <LabTestsTab />;
         case 'promocodes': return <PromoCodesTab />;
         case 'freegift': return <FreeGiftTab />;
         case 'reviews': return <ReviewsTab />;
@@ -591,7 +593,7 @@ export default function AdminPage() {
   // Tab label lookup for header breadcrumb
   const TAB_LABELS: Record<string, string> = {
     dashboard: 'Dashboard', ai: 'AI Assistant', aigraphics: 'AI Graphics', inventory: 'Inventory', featured: 'Featured',
-    qc: 'QC Dashboard', orders: 'Orders', revenue: 'Revenue', customers: 'Customers',
+    qc: 'QC Dashboard', labtests: 'Lab Tests', orders: 'Orders', revenue: 'Revenue', customers: 'Customers',
     compliance: 'Compliance', auditlog: 'Audit Log', authevents: 'Auth Events', visitors: 'Visitors', liveactivity: 'Live Activity', toastaudit: 'Toast Audit', cartevents: 'Cart Events', mailhealth: 'Mail Health', invoices: 'Invoices', orderinvoices: 'Invoices / Faktury', banner: 'Promo Banner',
     adverts: 'Adverts', landing: 'Landing Pages', policies: 'Policies',
     marketing: 'Marketing', emailmarketing: 'Email Campaigns', emailbranding: 'Email Branding', emailpreview: 'Email Preview', emailqueue: 'Email Queue & Delivery',

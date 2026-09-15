@@ -44,7 +44,13 @@ export type AdminAuditAction =
   | 'email.brand.update'
   | 'review.approve'
   | 'review.reject'
-  | 'review.delete';
+  | 'review.delete'
+
+  | 'lab_test.create'
+  | 'lab_test.update'
+  | 'lab_test.delete'
+  | 'lab_test.publish.toggle'
+  | 'lab_test.import';
 
 interface LogPayload {
   action: AdminAuditAction;
