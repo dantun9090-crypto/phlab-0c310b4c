@@ -164,10 +164,34 @@ export default function LabTestsTab() {
   const [qrRow, setQrRow] = useState<LabTest | null>(null);
   const [importOpen, setImportOpen] = useState(false);
 
+  const [featureOn, setFeatureOn] = useState(true);
+  const [featureSaving, setFeatureSaving] = useState(false);
+
   const notify = useCallback((msg: string) => {
     setToast(msg);
     window.setTimeout(() => setToast(null), 2500);
   }, []);
+
+  useEffect(() => {
+    void fetchVerifyBatchEnabled()
+      .then(setFeatureOn)
+      .catch(() => setFeatureOn(true));
+  }, []);
+
+  const toggleFeature = useCallback(async () => {
+    const next = !featureOn;
+    setFeatureSaving(true);
+    try {
+      await setVerifyBatchEnabled(next);
+      setFeatureOn(next);
+      await logAdminAction('lab_test.feature.toggle', { enabled: next });
+      notify(next ? 'Batch verification switched on' : 'Batch verification switched off');
+    } catch (e) {
+      notify(e instanceof Error ? e.message : 'Failed to update setting');
+    } finally {
+      setFeatureSaving(false);
+    }
+  }, [featureOn, notify]);
 
   const load = useCallback(async () => {
     setLoading(true);
