@@ -43,6 +43,7 @@ import IpWhitelistTab from './tabs/IpWhitelistTab';
 import SEOTab from './tabs/SEOTab';
 import { FeaturedProductsTab } from './tabs/FeaturedProductsTab';
 import QCDashboardTab from './tabs/QCDashboardTab';
+import LabTestsTab from './tabs/LabTestsTab';
 import SitemapTab from './tabs/SitemapTab';
 import SitemapAuditTab from './tabs/SitemapAuditTab';
 import PromoCodesTab from './tabs/PromoCodesTab';
@@ -108,7 +109,7 @@ import TagGatewayTab from './tabs/TagGatewayTab';
 import CloudflareAnalyticsTab from './tabs/CloudflareAnalyticsTab';
 import CloudflareVsAnalyticsTab from './tabs/CloudflareVsAnalyticsTab';
 
-type Tab = 'dashboard' | 'ai' | 'aigraphics' | 'inventory' | 'orders' | 'revenue' | 'customers' | 'marketing' | 'database' | 'invoices' | 'orderinvoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'firestorebackups' | 'backupauditlog' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'visitors' | 'liveactivity' | 'toastaudit' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailbranding' | 'emailpreview' | 'emailqueue' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'reviews' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'marketingcoverage' | 'urlmonitor' | 'merchantfeed' | 'merchantfeededitor' | 'bingfeed' | 'indexnow' | 'reindexhook' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'paymenttriage' | 'shopify' | 'semrush' | 'seoopportunities' | 'backlinkoutreach' | 'backlinkchanges' | 'googleads' | 'compoundqueries' | 'compoundnegativesaudit' | 'internallinks' | 'webvitals' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks' | 'watchdog' | 'blankwatchdog' | 'healthmonitor' | 'infrahealth' | 'researchincidents' | 'purgeincidents' | 'swtelemetrydebug' | 'monitorlog' | 'staleassets' | 'sentryissues' | 'publishstatus' | 'auditreport' | 'emergencypurge' | 'cloudflarestatus' | 'taggateway' | 'newsletter' | 'cloudflareanalytics' | 'cfvsanalytics' | 'adsdomains';
+type Tab = 'dashboard' | 'ai' | 'aigraphics' | 'inventory' | 'orders' | 'revenue' | 'customers' | 'marketing' | 'database' | 'invoices' | 'orderinvoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'firestorebackups' | 'backupauditlog' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'visitors' | 'liveactivity' | 'toastaudit' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailbranding' | 'emailpreview' | 'emailqueue' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'labtests' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'reviews' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'marketingcoverage' | 'urlmonitor' | 'merchantfeed' | 'merchantfeededitor' | 'bingfeed' | 'indexnow' | 'reindexhook' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'paymenttriage' | 'shopify' | 'semrush' | 'seoopportunities' | 'backlinkoutreach' | 'backlinkchanges' | 'googleads' | 'compoundqueries' | 'compoundnegativesaudit' | 'internallinks' | 'webvitals' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks' | 'watchdog' | 'blankwatchdog' | 'healthmonitor' | 'infrahealth' | 'researchincidents' | 'purgeincidents' | 'swtelemetrydebug' | 'monitorlog' | 'staleassets' | 'sentryissues' | 'publishstatus' | 'auditreport' | 'emergencypurge' | 'cloudflarestatus' | 'taggateway' | 'newsletter' | 'cloudflareanalytics' | 'cfvsanalytics' | 'adsdomains';
 
 
 
@@ -530,6 +531,7 @@ export default function AdminPage() {
         case 'sitemap': return <SitemapTab />;
         case 'sitemapaudit': return <SitemapAuditTab />;
         case 'qc': return <QCDashboardTab />;
+        case 'labtests': return <LabTestsTab />;
         case 'promocodes': return <PromoCodesTab />;
         case 'freegift': return <FreeGiftTab />;
         case 'reviews': return <ReviewsTab />;
@@ -591,7 +593,7 @@ export default function AdminPage() {
   // Tab label lookup for header breadcrumb
   const TAB_LABELS: Record<string, string> = {
     dashboard: 'Dashboard', ai: 'AI Assistant', aigraphics: 'AI Graphics', inventory: 'Inventory', featured: 'Featured',
-    qc: 'QC Dashboard', orders: 'Orders', revenue: 'Revenue', customers: 'Customers',
+    qc: 'QC Dashboard', labtests: 'Lab Tests', orders: 'Orders', revenue: 'Revenue', customers: 'Customers',
     compliance: 'Compliance', auditlog: 'Audit Log', authevents: 'Auth Events', visitors: 'Visitors', liveactivity: 'Live Activity', toastaudit: 'Toast Audit', cartevents: 'Cart Events', mailhealth: 'Mail Health', invoices: 'Invoices', orderinvoices: 'Invoices / Faktury', banner: 'Promo Banner',
     adverts: 'Adverts', landing: 'Landing Pages', policies: 'Policies',
     marketing: 'Marketing', emailmarketing: 'Email Campaigns', emailbranding: 'Email Branding', emailpreview: 'Email Preview', emailqueue: 'Email Queue & Delivery',

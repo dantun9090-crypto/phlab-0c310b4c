@@ -40,6 +40,9 @@ function buildStaticEntries(): SitemapEntry[] {
     { path: "/landing/phlabs", changefreq: "weekly", priority: "0.7" },
     { path: "/uk-research-store", changefreq: "weekly", priority: "0.8" },
     { path: "/lab-reports", changefreq: "monthly", priority: "0.6" },
+    // Public batch-verification page (lab test lookup). New URL — no existing
+    // product/canonical/feed link is changed by this entry.
+    { path: "/verify", changefreq: "daily", priority: "0.7" },
     { path: "/storage-guide", changefreq: "monthly", priority: "0.6" },
     { path: "/downloads", changefreq: "monthly", priority: "0.5" },
   ];

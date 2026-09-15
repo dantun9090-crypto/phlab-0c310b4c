@@ -36,6 +36,7 @@ const navGroups = [
       { id: 'inventory', label: 'Inventory', icon: Package },
       { id: 'featured', label: 'Featured', icon: Star },
       { id: 'qc', label: 'QC Dashboard', icon: ShieldCheck },
+      { id: 'labtests', label: 'Lab Tests', icon: ShieldCheck },
       { id: 'orders', label: 'Orders', icon: ShoppingCart },
       { id: 'revenue', label: 'Revenue', icon: TrendingUp },
       { id: 'orderinvoices', label: 'Invoices / Faktury', icon: FileText },
@@ -174,6 +175,7 @@ const ITEM_ACCENTS: Record<string, string> = {
   backup: 'from-teal-500 to-teal-600',
   featured: 'from-amber-400 to-yellow-500',
   qc: 'from-emerald-400 to-teal-500',
+  labtests: 'from-sky-400 to-emerald-500',
   promocodes: 'from-emerald-500 to-green-600',
   freegift: 'from-emerald-400 to-teal-500',
 };

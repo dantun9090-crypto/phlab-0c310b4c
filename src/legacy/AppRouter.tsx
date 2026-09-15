@@ -62,6 +62,11 @@ const Install = lazyWithRetry(() => import('@/pages/Install'));
 const RequestCatalog = lazyWithRetry(() => import('@/pages/RequestCatalog'));
 const CategoryPage = lazyWithRetry(() => import('@/pages/CategoryPage'));
 const PrivacyRequests = lazyWithRetry(() => import('@/pages/PrivacyRequests'));
+// Public lab-test verification page — shared with the TanStack route
+// `src/routes/verify.tsx` so a client-side nav to /verify does not 404.
+const VerifyLazy = lazyWithRetry(() =>
+  import('@/routes/verify').then((m) => ({ default: m.VerifyPage })),
+);
 
 
 // Minimal spinner shown while lazy chunks load.
@@ -199,6 +204,7 @@ const routes = [
       { path: 'research',          element: <Research /> },
       { path: 'install',           element: <Install /> },
       { path: 'request-catalog',   element: <RequestCatalog /> },
+      { path: 'verify',            element: <VerifyLazy /> },
       { path: '*',                 element: <NotFound /> },
     ],
   },

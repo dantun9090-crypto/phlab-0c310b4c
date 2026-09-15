@@ -1,6 +1,6 @@
 import {
   FlaskConical, FileCheck, Microscope, Mail, Home, Crown,
-  ChevronDown, X, Shield,
+  ChevronDown, X, Shield, ShieldCheck,
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
@@ -41,6 +41,7 @@ const BASE_NAV: Omit<NavLink, 'dropdown'>[] = [
   { name: 'Home',        href: '/',           icon: Home },
   { name: 'Peptides',    href: '/products',   icon: FlaskConical },
   { name: 'Lab Reports', href: '/lab-reports', icon: FileCheck },
+  { name: 'Verify Batch', href: '/verify', icon: ShieldCheck },
   { name: 'Research',    href: '/research',   icon: Microscope },
   { name: 'Contact',     href: '/contact',    icon: Mail, highlight: true },
 ];

@@ -1386,6 +1386,7 @@ export function Layout({ children }: LayoutProps) {
                   isContactPage
                     ? { label: 'Lab Reports', href: '/lab-reports' }
                     : { label: 'HPLC Lab Reports', href: '/lab-reports' },
+                  { label: 'Lab Test Verification', href: '/verify' },
                   { label: 'FAQ', href: '/#faq' },
                   { label: 'Contact Us', href: '/contact' },
                   { label: 'Storage Guide', href: '/storage-guide' },

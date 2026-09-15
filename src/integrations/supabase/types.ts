@@ -221,6 +221,66 @@ export type Database = {
         }
         Relationships: []
       }
+      lab_tests: {
+        Row: {
+          avg_mass: number | null
+          avg_purity: number | null
+          batch: string | null
+          cap_color: string | null
+          created_at: string
+          id: string
+          is_public: boolean
+          lab_source: string | null
+          label_mg: string | null
+          mass_1: number | null
+          mass_2: number | null
+          product: string
+          purity_1: number | null
+          purity_2: number | null
+          test_date: string | null
+          test_link: string | null
+          updated_at: string
+        }
+        Insert: {
+          avg_mass?: number | null
+          avg_purity?: number | null
+          batch?: string | null
+          cap_color?: string | null
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          lab_source?: string | null
+          label_mg?: string | null
+          mass_1?: number | null
+          mass_2?: number | null
+          product: string
+          purity_1?: number | null
+          purity_2?: number | null
+          test_date?: string | null
+          test_link?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avg_mass?: number | null
+          avg_purity?: number | null
+          batch?: string | null
+          cap_color?: string | null
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          lab_source?: string | null
+          label_mg?: string | null
+          mass_1?: number | null
+          mass_2?: number | null
+          product?: string
+          purity_1?: number | null
+          purity_2?: number | null
+          test_date?: string | null
+          test_link?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       monitor_alert_state: {
         Row: {
           alerts_sent: number

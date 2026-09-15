@@ -7,6 +7,7 @@ import { dispatchAddToCart } from '@/components/Layout';
 import NextDayCountdown from '@/components/NextDayCountdown';
 import { ProductEditor } from '@/components/ProductEditor';
 import { CoaButton } from '@/components/CoaButton';
+import LabTestBadge from '@/components/LabTestBadge';
 import MarketingAdvertSlot from '@/components/MarketingAdvertSlot';
 import ReviewForm from '@/components/ReviewForm';
 import { auth, db, doc, getDoc, getDocFromServer, collection, query, where, getDocsFromServer, limit, orderBy, onAuthStateChanged } from '@/lib/firebase';
@@ -1361,6 +1362,9 @@ export default function ProductDetail() {
 
                   {/* ── COA / HPLC Certificate button (directly below main image) ── */}
                   <CoaButton product={product} />
+
+                  {/* ── Batch lab-test verification (only if published tests exist) ── */}
+                  <LabTestBadge productName={product.name} />
 
                   {/* ── Thumbnails ── */}
                   {count > 1 && (

@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as Char123indexnowKeyChar125DottxtRouteImport } from './routes/{$indexnowKey}[.]txt'
+import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as UkResearchStoreRouteImport } from './routes/uk-research-store'
 import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
 import { Route as StorageGuideRouteImport } from './routes/storage-guide'
@@ -159,6 +160,11 @@ const Char123indexnowKeyChar125DottxtRoute =
     path: '/{$indexnowKey}.txt',
     getParentRoute: () => rootRouteImport,
   } as any)
+const VerifyRoute = VerifyRouteImport.update({
+  id: '/verify',
+  path: '/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UkResearchStoreRoute = UkResearchStoreRouteImport.update({
   id: '/uk-research-store',
   path: '/uk-research-store',
@@ -942,6 +948,7 @@ export interface FileRoutesByFullPath {
   '/storage-guide': typeof StorageGuideRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/uk-research-store': typeof UkResearchStoreRoute
+  '/verify': typeof VerifyRoute
   '/{$indexnowKey}.txt': typeof Char123indexnowKeyChar125DottxtRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -1085,6 +1092,7 @@ export interface FileRoutesByTo {
   '/storage-guide': typeof StorageGuideRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/uk-research-store': typeof UkResearchStoreRoute
+  '/verify': typeof VerifyRoute
   '/{$indexnowKey}.txt': typeof Char123indexnowKeyChar125DottxtRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -1231,6 +1239,7 @@ export interface FileRoutesById {
   '/storage-guide': typeof StorageGuideRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/uk-research-store': typeof UkResearchStoreRoute
+  '/verify': typeof VerifyRoute
   '/{$indexnowKey}.txt': typeof Char123indexnowKeyChar125DottxtRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -1377,6 +1386,7 @@ export interface FileRouteTypes {
     | '/storage-guide'
     | '/terms-and-conditions'
     | '/uk-research-store'
+    | '/verify'
     | '/{$indexnowKey}.txt'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -1520,6 +1530,7 @@ export interface FileRouteTypes {
     | '/storage-guide'
     | '/terms-and-conditions'
     | '/uk-research-store'
+    | '/verify'
     | '/{$indexnowKey}.txt'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -1665,6 +1676,7 @@ export interface FileRouteTypes {
     | '/storage-guide'
     | '/terms-and-conditions'
     | '/uk-research-store'
+    | '/verify'
     | '/{$indexnowKey}.txt'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -1811,6 +1823,7 @@ export interface RootRouteChildren {
   StorageGuideRoute: typeof StorageGuideRoute
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   UkResearchStoreRoute: typeof UkResearchStoreRoute
+  VerifyRoute: typeof VerifyRoute
   Char123indexnowKeyChar125DottxtRoute: typeof Char123indexnowKeyChar125DottxtRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -1912,6 +1925,13 @@ declare module '@tanstack/react-router' {
       path: '/{$indexnowKey}.txt'
       fullPath: '/{$indexnowKey}.txt'
       preLoaderRoute: typeof Char123indexnowKeyChar125DottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify': {
+      id: '/verify'
+      path: '/verify'
+      fullPath: '/verify'
+      preLoaderRoute: typeof VerifyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/uk-research-store': {
@@ -3032,6 +3052,7 @@ const rootRouteChildren: RootRouteChildren = {
   StorageGuideRoute: StorageGuideRoute,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   UkResearchStoreRoute: UkResearchStoreRoute,
+  VerifyRoute: VerifyRoute,
   Char123indexnowKeyChar125DottxtRoute: Char123indexnowKeyChar125DottxtRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
