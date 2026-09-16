@@ -164,6 +164,7 @@ export const KNOWN_PUBLIC_ROUTES: readonly string[] = [
   "/compound",
   "/landing/phlabs",
   "/uk-research-store",
+  "/verify",
   "/about",
   "/contact",
   "/shipping-policy",
