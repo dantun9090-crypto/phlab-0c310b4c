@@ -1560,62 +1560,22 @@ export default function CheckoutPage() {
       } catch { /* non-blocking */ }
       }
 
-      // GA4 + Bing purchase tracking — manual bank transfer counts the order
-      // PLACEMENT as the conversion (offline payment; the /payment|checkout
-      // success pages never run for this flow). Uses the same per-order
-      // localStorage flag as the card success pages, so a later status-page
-      // visit can never double-count.
+      // Manual bank transfer: do NOT count the conversion at order PLACEMENT.
+      // Roughly 13 of 68 bank-transfer orders per 30 days are never paid, so
+      // firing here inflated Google Ads by unpaid orders (~£874/30d). Instead
+      // we park the order id: `recoverPendingPurchase()` (runs on every app
+      // boot from Layout) fires the purchase once the order status turns paid,
+      // and the offline gclid CSV import covers buyers who never return.
       try {
-        const purchaseFlagKey = `php_ga_purchase_${orderId}`;
-        if (localStorage.getItem(purchaseFlagKey) !== '1') {
-          const fired = await trackPurchase(orderId, Number(totalAmount) || 0, cartToGaItems(), {
-            shipping: Number(serverResult.shippingCost ?? 0) || 0,
-            userData: {
-              email: form.email,
-              phone: form.phone || undefined,
-              firstName: form.firstName,
-              lastName: form.lastName,
-              country: form.country === 'Germany' ? 'DE' : form.country === 'Poland' ? 'PL' : form.country === 'Ireland' ? 'IE' : 'GB',
-              postalCode: form.postcode,
-              city: form.city,
-            },
-          });
-          trackBingPurchase(orderId);
-          renderGoogleCustomerReviewsOptIn({
-            orderId,
-            email: form.email,
-            deliveryCountry: form.country === 'Germany' ? 'DE' : form.country === 'Poland' ? 'PL' : form.country === 'Ireland' ? 'IE' : 'GB',
-          });
-          // Only latch when the conversion actually reached the tag.
-          if (fired) {
-            localStorage.setItem(purchaseFlagKey, '1');
-            // Ack to the server so the offline gclid CSV import + MP backfill
-            // know this order already produced a browser conversion. Without
-            // this, manual bank-transfer / Tide orders carried NO server-side
-            // marker at all, so they could never be safely exported.
-            try {
-              const { hasMarketingConsent } = await import('@/lib/analytics');
-              const ackIdToken = auth.currentUser
-                ? await auth.currentUser.getIdToken().catch(() => null)
-                : null;
-              const ackPaymentToken = serverResult.paymentToken ?? null;
-              if (ackIdToken || ackPaymentToken) {
-                void fetch('/api/payments/status', {
-                  method: 'POST',
-                  headers: { 'content-type': 'application/json', accept: 'application/json' },
-                  body: JSON.stringify({
-                    orderId,
-                    idToken: ackIdToken,
-                    paymentToken: ackPaymentToken,
-                    purchaseFired: true,
-                    adsFired: hasMarketingConsent(),
-                  }),
-                  cache: 'no-store',
-                });
-              }
-            } catch { /* analytics never blocks checkout */ }
-          }
-        }
+        localStorage.setItem('php_pending_order', orderId);
+        localStorage.setItem('php_pending_order_at', String(Date.now()));
+      } catch { /* ignore */ }
+      try {
+        renderGoogleCustomerReviewsOptIn({
+          orderId,
+          email: form.email,
+          deliveryCountry: form.country === 'Germany' ? 'DE' : form.country === 'Poland' ? 'PL' : form.country === 'Ireland' ? 'IE' : 'GB',
+        });
       } catch { /* analytics never blocks checkout */ }
 
       localStorage.removeItem('php_cart');
