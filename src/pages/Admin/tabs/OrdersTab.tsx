@@ -496,7 +496,10 @@ export default function OrdersTab() {
       // Send order status email notification to customer
       const order = orders.find(o => o.id === orderId);
       const customerEmail = order?.userEmail || (order as any)?.customer?.email;
-      if (customerEmail && ['processing', 'shipped', 'delivered', 'canceled', 'paid', 'refunded'].includes(status)) {
+      // 'paid' is intentionally excluded: the dedicated "Payment received"
+      // email below (shared with the automatic Wallid paths) covers it, and
+      // sending both would look like a duplicate/double charge to the buyer.
+      if (customerEmail && ['processing', 'shipped', 'delivered', 'canceled', 'refunded'].includes(status)) {
         const firstName = (order as any)?.shippingFirstName || (order as any)?.customer?.firstName || 'Customer';
         const orderItems = (order?.items || []).map((it: any) => ({
           name: it.name || '',
