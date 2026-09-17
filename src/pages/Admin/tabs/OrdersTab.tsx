@@ -1105,6 +1105,66 @@ export default function OrdersTab() {
     }
   };
 
+  /**
+   * Orders eligible for the bulk "Payment Not Completed" email: still unpaid,
+   * have a customer email, and no pay-again link sent yet (so a second run can
+   * never spam the same buyer twice).
+   */
+  const UNPAID_FOR_PAYLINK = ['pending', 'pending_payment', 'awaiting_payment', 'processing_payment', 'failed', 'cancelled'];
+  const bulkPayCandidates = orders.filter(o => {
+    if (!UNPAID_FOR_PAYLINK.includes(String(o.status || '').toLowerCase())) return false;
+    if (String((o as any).paymentRetryLinkSentAt || (o as any).paymentRetryEmailAt || '').trim()) return false;
+    const email = String((o as any).userEmail || (o as any).customerEmail || (o as any).customer?.email || '').trim();
+    return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
+  });
+
+  /**
+   * Sends the one-click "Pay Again" email (with bank-transfer fallback) to every
+   * unpaid order that hasn't had one yet. Sequential + local state patch so a
+   * repeated click cannot double-email the same customer.
+   */
+  const handleBulkSendPaymentLinks = async () => {
+    if (bulkPayRunning) return;
+    const candidates = bulkPayCandidates;
+    setBulkPayLog([]);
+    setBulkPayProgress({ done: 0, total: candidates.length });
+    if (candidates.length === 0) return;
+    if (!window.confirm(
+      `Email a "Pay Again" link to ${candidates.length} unpaid customer${candidates.length === 1 ? '' : 's'}?\n\nEach email includes bank-transfer details and tells the customer to ignore it if they have already paid.`
+    )) return;
+
+    setBulkPayRunning(true);
+    try {
+      const idToken = await getAdminIdToken();
+      if (!idToken) {
+        setBulkPayLog([{ id: '—', status: 'error', message: 'You must be signed in as an admin.' }]);
+        return;
+      }
+      for (const o of candidates) {
+        try {
+          const res = await fetch('/api/admin/send-payment-link', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ idToken, orderId: o.id }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data?.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+          const patch = { paymentRetryLinkSentAt: new Date().toISOString() };
+          setOrders(prev => prev.map(x => x.id === o.id ? { ...x, ...patch } as Order : x));
+          setSelected(prev => prev && prev.id === o.id ? { ...prev, ...patch } as Order : prev);
+          await logAdminAction({ action: 'order.payment_link_sent', target: `orders/${o.id}`, meta: { bulk: true } });
+          setBulkPayLog(prev => [...prev, { id: o.id, status: 'sent', message: `Pay-again link emailed to ${data.to}` }]);
+        } catch (e: any) {
+          setBulkPayLog(prev => [...prev, { id: o.id, status: 'error', message: e?.message || 'Send failed.' }]);
+        } finally {
+          setBulkPayProgress(prev => ({ ...prev, done: prev.done + 1 }));
+        }
+      }
+    } finally {
+      setBulkPayRunning(false);
+    }
+  };
+
   /** Orders eligible for bulk Click & Drop creation: PROCESSING only, no label yet. */
   const bulkRmCandidates = orders.filter(o =>
     String(o.status || '').toLowerCase() === 'processing' &&
