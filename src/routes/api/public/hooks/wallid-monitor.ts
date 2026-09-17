@@ -33,6 +33,7 @@ import { getWallidStatus, WallidError } from "@/lib/wallid.server";
 import { timingSafeEqualStr } from "@/lib/timing-safe-equal";
 import { checkRateLimit, getClientIp, rateLimitedResponse } from "@/lib/rate-limit";
 import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
+import { allowFromFor } from "@/lib/payment-transitions";
 
 const STUCK_STATUSES = new Set([
   "pending",
@@ -225,7 +226,7 @@ export const Route = createFileRoute("/api/public/hooks/wallid-monitor")({
             mapped === "SUCCESS" ? "paid" : mapped === "FAILED" ? "failed" : "expired";
 
           const { transitioned, prior } = await transitionDocStatusAdmin("orders", orderId, {
-            allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", "needs_review", ""],
+            allowFrom: allowFromFor(firestoreStatus),
             updates: {
               status: firestoreStatus,
               paymentProvider: "wallid",

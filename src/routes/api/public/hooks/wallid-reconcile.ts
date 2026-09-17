@@ -17,6 +17,7 @@ import { getWallidStatus, WallidError } from "@/lib/wallid.server";
 import { timingSafeEqualStr } from "@/lib/timing-safe-equal";
 import { checkRateLimit, getClientIp, rateLimitedResponse } from "@/lib/rate-limit";
 import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
+import { allowFromFor } from "@/lib/payment-transitions";
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -61,13 +62,19 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
 
+        // FAILED / EXPIRED sessions are re-polled too: a customer who paid
+        // from the "Pay again" link often does so on a session Wallid had
+        // already marked failed, and that success would otherwise never be
+        // picked up (no webhook ⇒ no paid status ⇒ no confirmation email).
+        // Rows already SUCCESS here are excluded, so settled orders are not
+        // re-polled.
         const { data: rows, error } = await supabaseAdmin
           .from("wallid_payments")
           .select("order_id, api_payment_id, status, created_at")
-          .in("status", ["NEW", "PENDING", "PROCESSING"])
+          .in("status", ["NEW", "PENDING", "PROCESSING", "FAILED", "EXPIRED", "DECLINED", "CANCELLED"])
           .gte("created_at", cutoff)
           .order("created_at", { ascending: false })
-          .limit(100);
+          .limit(150);
 
         if (error) {
           console.error("[Wallid reconcile] DB lookup failed:", error.message);
@@ -124,7 +131,7 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
               "orders",
               row.order_id,
               {
-                allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
+                allowFrom: allowFromFor(firestoreStatus),
                 updates: {
                   status: firestoreStatus,
                   paymentProvider: "wallid",

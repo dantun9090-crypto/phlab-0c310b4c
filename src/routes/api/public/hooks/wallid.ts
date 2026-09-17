@@ -21,6 +21,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { enforceRateLimit, getClientIp } from "@/lib/rate-limit";
 import { verifyWallidSignature } from "@/lib/webhook-signature";
 import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
+import { allowFromFor } from "@/lib/payment-transitions";
 
 interface WallidEvent {
   event_id?: string;
@@ -254,7 +255,7 @@ export const Route = createFileRoute("/api/public/hooks/wallid")({
                     "orders",
                     orderId,
                     {
-                      allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", "needs_review", ""],
+                      allowFrom: allowFromFor(firestoreStatus),
                       updates: {
                         status: firestoreStatus,
                         paymentProvider: "wallid",
