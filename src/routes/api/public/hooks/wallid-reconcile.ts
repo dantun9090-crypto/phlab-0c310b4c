@@ -62,13 +62,19 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
 
+        // FAILED / EXPIRED sessions are re-polled too: a customer who paid
+        // from the "Pay again" link often does so on a session Wallid had
+        // already marked failed, and that success would otherwise never be
+        // picked up (no webhook ⇒ no paid status ⇒ no confirmation email).
+        // Rows already SUCCESS here are excluded, so settled orders are not
+        // re-polled.
         const { data: rows, error } = await supabaseAdmin
           .from("wallid_payments")
           .select("order_id, api_payment_id, status, created_at")
-          .in("status", ["NEW", "PENDING", "PROCESSING"])
+          .in("status", ["NEW", "PENDING", "PROCESSING", "FAILED", "EXPIRED", "DECLINED", "CANCELLED"])
           .gte("created_at", cutoff)
           .order("created_at", { ascending: false })
-          .limit(100);
+          .limit(150);
 
         if (error) {
           console.error("[Wallid reconcile] DB lookup failed:", error.message);
