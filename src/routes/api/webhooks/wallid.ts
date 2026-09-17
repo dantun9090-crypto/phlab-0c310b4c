@@ -363,7 +363,7 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
                       "orders",
                       orderId,
                       {
-                        allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", "needs_review", ""],
+                        allowFrom: allowFromFor(firestoreStatus),
                         updates: {
                           status: firestoreStatus,
                           paymentProvider: "wallid",

@@ -122,7 +122,7 @@ export const syncWallidPaymentAdmin = createServerFn({ method: "POST" })
 
     const { transitionDocStatusAdmin } = await import("@/lib/server/firestore-admin");
     const { transitioned, prior } = await transitionDocStatusAdmin("orders", data.orderId, {
-      allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
+      allowFrom: allowFromFor(firestoreStatus),
       updates: {
         status: firestoreStatus,
         paymentProvider: "wallid",

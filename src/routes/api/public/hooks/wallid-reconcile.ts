@@ -124,7 +124,7 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
               "orders",
               row.order_id,
               {
-                allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
+                allowFrom: allowFromFor(firestoreStatus),
                 updates: {
                   status: firestoreStatus,
                   paymentProvider: "wallid",

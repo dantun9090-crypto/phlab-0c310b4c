@@ -266,7 +266,7 @@ export const Route = createFileRoute("/api/payments/status")({
                 "orders",
                 orderId,
                 {
-                  allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
+                  allowFrom: allowFromFor(firestoreStatus),
                   updates: {
                     status: firestoreStatus,
                     paymentProvider: "wallid",
