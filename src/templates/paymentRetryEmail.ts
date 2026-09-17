@@ -97,9 +97,25 @@ export function buildPaymentRetryEmail({
 
     ${divider()}
 
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;">
+      <tr>
+        <td style="padding:14px 16px;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.28);border-radius:12px;">
+          <p style="margin:0 0 6px;color:#34d399;font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;font-family:${EMAIL_FONT};">If you have already paid</p>
+          <p style="margin:0;color:${C.text};font-size:13px;line-height:1.7;font-family:${EMAIL_FONT};">
+            Please disregard this message — no further action is required. Bank confirmations can take a few minutes to
+            reach us, and your order <strong style="color:${C.textBright};">#${shortId}</strong> will be processed
+            automatically as soon as the payment is confirmed. This notice was sent before your payment reached our
+            system, so it does not indicate a problem with your order and you have not been charged twice.
+          </p>
+        </td>
+      </tr>
+    </table>
+
     <p style="color:${C.textDimmed};font-size:12px;line-height:1.6;margin:0;text-align:center;font-family:${EMAIL_FONT};">
-      Already paid? Please ignore this email — your order will be processed automatically.<br>
-      Questions? <a href="mailto:info@phlabs.co.uk" style="color:${C.accent};text-decoration:none;">info@phlabs.co.uk</a>
+      Any questions about this order? Reply to this email or contact
+      <a href="mailto:info@phlabs.co.uk" style="color:${C.accent};text-decoration:none;">info@phlabs.co.uk</a>
+      quoting reference <strong style="color:${C.textBright};">#${shortId}</strong>.<br>
+      For Research Use Only. Not for Human Consumption.
     </p>
   `;
 
