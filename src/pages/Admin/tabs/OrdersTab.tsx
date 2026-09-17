@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CustomerOrdersSummary, { orderEmail } from '@/components/admin/CustomerOrdersSummary';
-import { getAllOrders, updateOrderStatus, Order, db, doc, updateDoc, addDoc, collection, query, where, getDocs, Timestamp, deleteDoc, sendOrderStatusEmail } from '@/lib/firebase';
+import { getAllOrders, updateOrderStatus, Order, db, doc, updateDoc, addDoc, collection, query, where, getDocs, getDoc, setDoc, Timestamp, deleteDoc, sendOrderStatusEmail } from '@/lib/firebase';
 import { auth } from '@/lib/firebase';
 import { logAdminAction } from '@/lib/admin-audit';
 import PaymentTimeline from '@/components/admin/PaymentTimeline';
@@ -21,6 +21,7 @@ import { registerTracker, bulkRegisterTrackers, bulkCheckDeliveries } from '@/li
 
 import { buildDispatchEmail } from '@/templates/dispatchEmail';
 import { orderReceivedEmail } from '@/templates/orderReceivedEmail';
+import { paymentConfirmedEmail } from '@/templates/paymentConfirmedEmail';
 
 import { getAdminIdToken } from '@/lib/auth-ready';
 import { toDateSafe, toMillisSafe } from '@/lib/to-date';
