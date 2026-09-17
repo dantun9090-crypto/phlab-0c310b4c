@@ -20,6 +20,7 @@ export type AdminAuditAction =
   | 'order.dispatch_email_resend'
   | 'order.payment_link_sent'
   | 'order.confirmation_email_resend'
+  | 'order.payment_confirmed_email'
 
   | 'royal_mail.manual_label_create'
   | 'royal_mail.delivery_sync'
