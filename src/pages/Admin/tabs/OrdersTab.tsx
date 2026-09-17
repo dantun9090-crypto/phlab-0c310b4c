@@ -337,6 +337,11 @@ export default function OrdersTab() {
   const [bulkRmProgress, setBulkRmProgress] = useState({ done: 0, total: 0 });
   const [bulkRmLog, setBulkRmLog] = useState<{ id: string; status: 'created' | 'skipped' | 'error'; message: string }[]>([]);
 
+  // Bulk "Payment Not Completed" pay-again emails — UNPAID orders only.
+  const [bulkPayRunning, setBulkPayRunning] = useState(false);
+  const [bulkPayProgress, setBulkPayProgress] = useState({ done: 0, total: 0 });
+  const [bulkPayLog, setBulkPayLog] = useState<{ id: string; status: 'sent' | 'skipped' | 'error'; message: string }[]>([]);
+
 
   // Dispatch email audit (all shipped orders)
   type MailAuditStatus = 'ok' | 'missing' | 'wrong_tracking' | 'send_error' | 'no_email' | 'no_tracking' | 'error';
