@@ -510,6 +510,48 @@ export default function OrdersTab() {
           orderItems, order?.totalAmount
         ).catch(console.error);
       }
+
+      // Manual "paid" in the panel must reach the customer with the same
+      // "Payment received" email the automatic Wallid paths send. Uses the
+      // deterministic mail doc id `payment-confirmed:<orderId>`, so a webhook
+      // or reconcile run that already sent it cannot be duplicated here.
+      if (customerEmail && status === 'paid') {
+        void (async () => {
+          try {
+            const mailId = `payment-confirmed:${orderId}`.replace(/[^A-Za-z0-9_:-]/g, '_');
+            const mailRef = doc(db, 'mail', mailId);
+            const existing = await getDoc(mailRef);
+            if (existing.exists()) return;
+            const firstName =
+              String(
+                (order as any)?.shippingFirstName ||
+                  (order as any)?.customer?.firstName ||
+                  '',
+              ).split(' ')[0] || 'there';
+            const mail = paymentConfirmedEmail({
+              firstName,
+              orderNumber: String((order as any)?.orderNumber || orderId),
+              amount: Number(order?.totalAmount || 0),
+              paymentMethod: 'Open Banking (bank transfer)',
+              paidAt: new Date(),
+            });
+            await setDoc(mailRef, {
+              to: customerEmail,
+              replyTo: 'info@phlabs.co.uk',
+              message: mail,
+              source: 'admin:manual-paid',
+              createdAt: Timestamp.now(),
+            });
+            await logAdminAction({
+              action: 'order.payment_confirmed_email',
+              target: `orders/${orderId}`,
+              meta: { to: customerEmail, trigger: 'manual-paid' },
+            });
+          } catch (mailErr) {
+            console.error('[OrdersTab] payment-confirmed email failed', mailErr);
+          }
+        })();
+      }
     } catch (e) {
       console.error(e);
     } finally {
