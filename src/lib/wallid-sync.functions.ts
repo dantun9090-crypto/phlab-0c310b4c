@@ -222,6 +222,10 @@ export interface StuckWallidRow {
   apiPaymentId: string | null;
   status: string;
   createdAt: string;
+  /** Wallid says SUCCESS but the order is not paid in Firestore. */
+  mismatch?: boolean;
+  /** Current Firestore order status (only filled for mismatch rows). */
+  orderStatus?: string | null;
 }
 
 export const listStuckWallidPaymentsAdmin = createServerFn({ method: "POST" })
@@ -229,23 +233,45 @@ export const listStuckWallidPaymentsAdmin = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<{ rows: StuckWallidRow[] }> => {
     await requireFirebaseAdmin(data.idToken);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getDocAdmin } = await import("@/lib/server/firestore-admin");
     const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const { data: rows, error } = await supabaseAdmin
       .from("wallid_payments")
       .select("order_id, api_payment_id, status, created_at")
-      .in("status", ["NEW", "PENDING", "PROCESSING"])
+      .in("status", ["NEW", "PENDING", "PROCESSING", "SUCCESS"])
       .gte("created_at", cutoff)
       .order("created_at", { ascending: false })
-      .limit(50);
+      .limit(120);
     if (error) throw new Error(error.message);
-    return {
-      rows: (rows || []).map((r) => ({
-        orderId: String(r.order_id),
+
+    const PAID = new Set(["paid", "processing", "shipped", "delivered", "fulfilled", "completed", "refunded"]);
+    const out: StuckWallidRow[] = [];
+    for (const r of rows || []) {
+      const orderId = String(r.order_id);
+      const status = String(r.status);
+      const base: StuckWallidRow = {
+        orderId,
         apiPaymentId: r.api_payment_id ? String(r.api_payment_id) : null,
-        status: String(r.status),
+        status,
         createdAt: String(r.created_at),
-      })),
-    };
+      };
+      if (status !== "SUCCESS") {
+        out.push(base);
+        continue;
+      }
+      // SUCCESS at Wallid — only surface it when the order never settled,
+      // which is exactly the case that used to need a manual fix.
+      try {
+        const order = await getDocAdmin("orders", orderId);
+        const orderStatus = order ? String(order.status ?? "").toLowerCase() : "";
+        if (!PAID.has(orderStatus)) {
+          out.push({ ...base, mismatch: true, orderStatus: orderStatus || null });
+        }
+      } catch {
+        /* best-effort: a lookup failure must not break the stuck list */
+      }
+    }
+    return { rows: out.slice(0, 60) };
   });
 
 
