@@ -1860,6 +1860,43 @@ export default function OrdersTab() {
         })}
       </div>
 
+      {/* Bulk "Payment Not Completed" pay-again emails — unpaid orders only */}
+      {(bulkPayCandidates.length > 0 || bulkPayLog.length > 0) && (
+        <div className="p-3 bg-[#0d1f35] border border-white/[0.08] rounded-xl">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-[#9cb8d9] text-xs">
+              {bulkPayCandidates.length} <span className="text-white font-semibold">unpaid</span> order{bulkPayCandidates.length === 1 ? '' : 's'} with no pay-again email sent yet. Each email includes bank-transfer details and asks the customer to disregard it if payment has already been made.
+            </p>
+            <button
+              onClick={handleBulkSendPaymentLinks}
+              disabled={bulkPayRunning || bulkPayCandidates.length === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 hover:bg-orange-500/25 border border-orange-500/30 text-orange-300 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+            >
+              {bulkPayRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+              {bulkPayRunning
+                ? `Sending ${bulkPayProgress.done}/${bulkPayProgress.total}…`
+                : 'Bulk send Payment Not Completed'}
+            </button>
+          </div>
+          {bulkPayLog.length > 0 && (
+            <ul className="mt-2 space-y-1 max-h-40 overflow-y-auto" role="status">
+              {bulkPayLog.map((r, i) => (
+                <li
+                  key={`${r.id}-${i}`}
+                  className={`text-xs font-mono ${
+                    r.status === 'sent' ? 'text-emerald-300'
+                      : r.status === 'skipped' ? 'text-amber-300'
+                      : 'text-red-400'
+                  }`}
+                >
+                  {r.id}: {r.message}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
       {/* Bulk Royal Mail order creation — Processing orders only */}
       {(bulkRmCandidates.length > 0 || bulkRmLog.length > 0) && (
         <div className="p-3 bg-[#0d1f35] border border-white/[0.08] rounded-xl">
