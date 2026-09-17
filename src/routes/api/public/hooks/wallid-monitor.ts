@@ -33,6 +33,7 @@ import { getWallidStatus, WallidError } from "@/lib/wallid.server";
 import { timingSafeEqualStr } from "@/lib/timing-safe-equal";
 import { checkRateLimit, getClientIp, rateLimitedResponse } from "@/lib/rate-limit";
 import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
+import { allowFromFor } from "@/lib/payment-transitions";
 
 const STUCK_STATUSES = new Set([
   "pending",

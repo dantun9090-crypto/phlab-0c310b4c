@@ -21,6 +21,7 @@ import { enforceRateLimit } from "@/lib/rate-limit";
 import { verifyFirebaseIdToken } from "@/lib/server/firebase-auth-admin";
 import { getDocAdmin } from "@/lib/server/firestore-admin";
 import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
+import { allowFromFor } from "@/lib/payment-transitions";
 
 const BodySchema = z.object({
   orderId: z.string().min(3).max(128).regex(/^[A-Za-z0-9_-]+$/),

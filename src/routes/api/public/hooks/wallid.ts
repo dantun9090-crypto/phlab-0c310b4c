@@ -21,6 +21,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { enforceRateLimit, getClientIp } from "@/lib/rate-limit";
 import { verifyWallidSignature } from "@/lib/webhook-signature";
 import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
+import { allowFromFor } from "@/lib/payment-transitions";
 
 interface WallidEvent {
   event_id?: string;

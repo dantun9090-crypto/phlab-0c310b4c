@@ -12,6 +12,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireFirebaseAdmin } from "@/lib/server/firebase-auth-admin";
 import { getWallidStatus, WallidError } from "@/lib/wallid.server";
+import { allowFromFor } from "@/lib/payment-transitions";
 
 const Input = z.object({
   idToken: z.string().min(10).max(4096),
