@@ -26,6 +26,7 @@ import { paymentConfirmedEmail } from '@/templates/paymentConfirmedEmail';
 import { getAdminIdToken } from '@/lib/auth-ready';
 import { toDateSafe, toMillisSafe } from '@/lib/to-date';
 import { hasHouseNumber } from '@/lib/uk-address';
+import { canRetryPayment } from '@/lib/order-payment-retry';
 
 // ── "Check address" badge — order has no deliverable house number ──
 function CheckAddressBadge({ order, addressLine }: { order: any; addressLine: string }) {
@@ -1109,10 +1110,25 @@ export default function OrdersTab() {
    * Orders eligible for the bulk "Payment Not Completed" email: still unpaid,
    * have a customer email, and no pay-again link sent yet (so a second run can
    * never spam the same buyer twice).
+   *
+   * `cancelled` is deliberately NOT a blanket candidate: it is also the status
+   * used for admin-cancelled orders, which must never be asked to pay again.
+   * A cancelled order only qualifies when it was a Pay-by-Bank / Fena / Wallid
+   * payment the customer abandoned at the bank — exactly what canRetryPayment()
+   * checks (same rule the customer-facing "Pay Again" CTA uses).
    */
-  const UNPAID_FOR_PAYLINK = ['pending', 'pending_payment', 'awaiting_payment', 'processing_payment', 'failed', 'cancelled'];
+  const UNPAID_FOR_PAYLINK = ['pending', 'pending_payment', 'awaiting_payment', 'processing_payment', 'failed'];
   const bulkPayCandidates = orders.filter(o => {
-    if (!UNPAID_FOR_PAYLINK.includes(String(o.status || '').toLowerCase())) return false;
+    const status = String(o.status || '').toLowerCase();
+    const eligible =
+      UNPAID_FOR_PAYLINK.includes(status) ||
+      (status === 'cancelled' &&
+        canRetryPayment({
+          status,
+          paymentMethod: (o as any).paymentMethod,
+          paymentProvider: (o as any).paymentProvider,
+        }));
+    if (!eligible) return false;
     if (String((o as any).paymentRetryLinkSentAt || (o as any).paymentRetryEmailAt || '').trim()) return false;
     const email = String((o as any).userEmail || (o as any).customerEmail || (o as any).customer?.email || '').trim();
     return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
