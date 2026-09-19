@@ -26,6 +26,7 @@ import { paymentConfirmedEmail } from '@/templates/paymentConfirmedEmail';
 import { getAdminIdToken } from '@/lib/auth-ready';
 import { toDateSafe, toMillisSafe } from '@/lib/to-date';
 import { hasHouseNumber } from '@/lib/uk-address';
+import { canRetryPayment } from '@/lib/order-payment-retry';
 
 // ── "Check address" badge — order has no deliverable house number ──
 function CheckAddressBadge({ order, addressLine }: { order: any; addressLine: string }) {
