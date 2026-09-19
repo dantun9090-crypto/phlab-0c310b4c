@@ -1,51 +1,41 @@
-# Ads analysis + site conversion work
+# Wzrost sprzedaży — Ads (odczyt) + ostrożne zmiany na stronie
 
-## What the account actually allows (checked live, last 30 days)
+## Strefa zamrożona — zero zmian
 
-The account runs **one** campaign: "Performance Max" (£51/day). Every other campaign is removed with zero spend. That changes three of your ten prompts, because Performance Max has no keywords and no text-ad auction data:
+- `/compound` — nic: treść, kod, style, komponenty, JSON-LD, meta, obrazy, preload. Także żadnych optymalizacji szybkości.
+- Strony produktowe — wolno tylko punkty 5 i 6. Zakaz: cena (format, waluta, pozycja), availability, JSON-LD/microdata oferty (price, priceCurrency, availability, gtin, mpn, brand), H1 i title produktu, URL-e, opisy widoczne dla crawlera.
+- Stopka i strony prawne (returns, shipping, privacy, terms, contact, about) — bez zmian.
+- Feed Merchant Center (`/api/public/*feed*`, bing-feed, generatory feedu) — bez zmian.
+- Żadnych banerów/overlay z ceną lub % rabatu na stronach produktowych.
 
-| Your prompt | Possible? | Why |
-|---|---|---|
-| 1 — wasted spend + negatives | Partly | Google reports search **categories** with impressions, clicks and conversions, but **no cost per category** in Performance Max. So "spend > £10 with 0 conversions" cannot be produced. I can rank zero-conversion categories by clicks instead, and propose negatives (campaign-level negatives are allowed). |
-| 2 — Quality Score | No | Quality Score only exists on keywords. There are no keywords in the account. |
-| 3 — winning search terms → new keywords | Partly | I can list converting categories from 90 days, but there is nowhere to add keywords. Value is real though: they become page copy and a future Search campaign. |
-| 4 — device / location / hour | Yes | Full segment data available. Note: Performance Max has no hour-of-day or device bid adjustments, so output is insight, not bid tweaks. |
-| 5 — RSA audit | No | No responsive search ads. Only the one asset group "PH" (rated POOR). Headline suggestions are still possible, as asset-group copy. |
-| 6 — budget shifts between campaigns | Partly | There is only one campaign, so nothing to shift between. I can report spend, cost per order and impression share lost to budget. |
+## Co konto Ads faktycznie pozwala (sprawdzone na żywo, 30 dni)
 
-Already visible from the read I ran: brand/competitor searches ("anglo peptides", "swisschems", "phoenix peptides", "umbrella labs", "zentra peptides", "biotech peptides", "oxford labs peptides", "supreme peptides", "proforma peptides", "biohack peptides") and pure information searches ("what is nad+", "nad+ benefits", "injectable water") pull impressions with almost no clicks or orders — the natural first negative list.
+Działa **jedna** kampania: „Performance Max" (£51/dzień), reszta usunięta z zerowym wydatkiem. Skutki dla Twoich punktów:
 
-## Part A — Ads analysis (read-only, nothing changes on the account)
+- Punkt 1 (asset group „PH") — w pełni możliwy: widzę assety grupy, ich wyniki i braki.
+- Punkt 2 (negative keywords) — możliwy jako propozycja. Uwaga: Performance Max raportuje **kategorie zapytań**, bez kosztu na kategorię — więc listę oprę na kliknięciach, wyświetleniach i konwersjach, nie na wydatku.
+- Punkt 3 (placementy) — częściowo. PMax nie rozbija kosztu na Search/YouTube/Display/Discover/Gmail. Dostępne są: typ kanału/konwersji, raport grup zasobów, raport placementów (konkretne kanały YouTube i strony) oraz `asset_group_top_combination_view`. Raport pokaże to, co Google faktycznie udostępnia, i wyraźnie nazwie, czego brakuje — zamiast podać wymyślony podział kosztu.
 
-Delivered as a chat report, in Polish, with an accept/reject list you sign off before anything is touched:
+Już widać: czysto informacyjne zapytania („what is nad+", „nad+ benefits") mają wyświetlenia bez kliknięć — to naturalny rdzeń listy negatywów. Brandy konkurencji i „injectable water" zostają nietknięte, zgodnie z Twoją instrukcją.
 
-1. **Where budget leaks** — zero-conversion search categories ranked by clicks and impressions, plus a proposed negative-keyword list (competitor brands, information-only searches, non-product searches), stated as a proposal only.
-2. **Device, location, hour** — cost per order and conversion rate by device, region and hour of day, with what it implies (and a clear note that Performance Max cannot take hour/device bid adjustments).
-3. **Winning searches, 90 days** — converting categories you have no landing page for, marked as candidates for page copy and a possible future Search campaign.
-4. **Budget reality** — spend, cost per order, impression share lost to budget for the single campaign; a budget recommendation only if your target cost per order or margin is on the table, otherwise stated as unavailable.
-5. **Asset group copy** — three new headline variants for the weakest slots in asset group "PH", research-use framing, no health claims. For your approval; nothing published.
+## Kolejność prac — STOP po każdym punkcie
 
-Skipped with reason stated: Quality Score, RSA-level CTR, cross-campaign budget shifts.
+1. **Asset group „PH"** — audyt wszystkich assetów (headlines krótkie i długie, descriptions, obrazy, logotypy, wideo), które slotu brakują, i propozycja nowych tekstów w ramach research-use-only. Tylko lista do Twojej akceptacji, nic nie publikuję.
+2. **Negative keywords** — wyłącznie informacyjne wzorce („what is", „benefits", „side effects", „how to", „reddit", „dosage"), oparte na realnych kategoriach zapytań z konta. Lista do akceptacji, nic nie dodaję.
+3. **Raport placementów** — co Google udostępnia dla PMax, z jasnym oznaczeniem braków. Tylko raport.
+4. **Szybkość — `/`, `/products`, `/research`** (nie `/compound`): preload hero/LCP z wysokim priorytetem, leniwe montowanie sekcji poniżej foldu, odchudzenie wejściowego bundla. LCP mierzone przed i po. Istniejący test `e2e/home-hero-lcp.spec.ts` musi dalej przechodzić.
+5. **Trust przy „Add to cart"** — badge „Batch verified — check COA" z odnośnikiem do `/verify` (tylko gdy weryfikacja partii jest włączona), „≥99% purity, third-party tested" z realnych danych laboratoryjnych, ikony płatności, czas wysyłki. Bez dotykania ceny, availability i structured data; wstawka wyłącznie wizualna, poniżej istniejącego bloku ceny.
+6. **AOV** — AOV z 90 dni zamówień opłaconych; próg darmowej dostawy = AOV × 1,2 zaokrąglone do £5 (podam wyliczoną liczbę do akceptacji przed wdrożeniem). Bundle schodkowy: 2 produkty −5%, 3+ −10%, bez kumulacji z SALE11. Pasek „Add £X for free shipping" w koszyku. „Frequently researched together" na stronie produktu — tylko nazwy + „view", bez cen. Wartość konwersji do analityki = kwota po rabatach (bez dotykania samego kodu pomiaru — przekazywana kwota pochodzi z sumy koszyka po rabacie).
+7. **Message match — `/`, `/products`, `/research`** (nie `/compound`): H1 i hero pod top konwertujące frazy (reta/retatrutide, MOTS-C, GHK-Cu, bacteriostatic water, „tested peptides UK"). Pełny diff i czekam na „ok". Bez zmian URL-i, canonicali, title tags, meta descriptions, JSON-LD.
 
-## Part B — Site changes (implemented)
+## Notatki techniczne
 
-6. **Message match (prompt 7)** — align the H1 and hero copy on `/`, `/products`, `/compound` and `/research` with the top converting searches (retatrutide/reta, MOTS-C, GHK-Cu, bacteriostatic water, "tested peptides UK"). Research framing, UK spelling, no claims. Diff shown before saving; no URL, slug, canonical, JSON-LD or feed link changes.
-7. **Speed (prompt 8)** — hero image preloaded with high fetch priority on the four routes, below-fold sections lazily mounted, entry bundle trimmed. LCP measured before and after.
-8. **Trust at the buy button (prompt 9)** — next to "Add to cart": a "Batch verified — check COA" badge linking to `/verify` (only when the verification feature is on), "≥99% purity, third-party tested" sourced from real lab data, payment icons, dispatch time. Existing colours, spacing and header untouched.
-9. **Order value (prompt 10)** — "Frequently researched together" (2–3 products, 10% bundle discount) on the product page, and an "Add £X for free shipping" bar in the cart.
+- Ads wyłącznie odczyt (GAQL: `asset_group`, `asset_group_asset`, `campaign_search_term_insight`, raporty placementów, segmenty). Każda mutacja tylko po Twojej akceptacji na karcie.
+- Nietykalne: conversion actions, goals, offline import, GA4, GTM-MT4BZ2X8, dataLayer, server-side measurement, `/metrics`, `/api/public/hooks/`, `src/lib/analytics`, checkout flow, `/checkout/success`, Wallid, nowpayments-webhook, create-order, CSP w `src/server.ts`.
+- Żadnych nowych snippetów Google w kodzie. Żadnych nowych routes — jeśli okaże się potrzebny, pytam najpierw (wymaga wpisu w `KNOWN_PUBLIC_ROUTES` w `src/lib/sitemap-audit.functions.ts`).
+- Zero claimów medycznych; zakazane słowa (heals, treats, cures, fat loss, muscle growth, anti-aging) nie pojawią się. RUO i elementy compliance bez zmian.
+- Po każdej zmianie: `bunx tsgo --noEmit` i `bun run build`; diff przed zapisem każdego pliku; po deployu raport, co poszło na produkcję, żebyś mógł monitorować Merchant Center 48 h.
 
-## Technical notes
+## Czego nie da się zrobić i dlaczego
 
-- Ads work goes through the existing Google Ads connection, read-only (GAQL `campaign`, `campaign_search_term_insight`, `asset_group`, device/geo/hour segments). Any mutation waits for your approval card.
-- Untouched: conversion actions, goals, offline import, GTM-MT4BZ2X8, dataLayer, `/metrics`, `/api/public/hooks/*`, checkout flow, CSP in `src/server.ts`, Wallid.
-- Copy changes stay inside existing components (`src/routes/index.tsx`, `src/legacy/LegacySsrShell.tsx` hero, `src/routes/products.tsx`, `_marketing.compound.tsx`, research routes). No new routes are planned, so `KNOWN_PUBLIC_ROUTES` stays as is; if one is added, it goes into `src/lib/sitemap-audit.functions.ts` in the same change.
-- Bundle discount and free-shipping threshold are presentation plus cart maths only — no payment or order-creation logic changes.
-- `bunx tsgo --noEmit` and `bun run build` must pass; RUO notice preserved everywhere.
-
-## Order of work
-
-Analysis first (1 and 3 above), then message match, then speed, then trust badges, then order value. Each site step lands with the diff shown.
-
-## Open question
-
-The free-shipping threshold and the bundle discount need your numbers: what order value should unlock free shipping, and is 10% off a 2–3 item bundle acceptable on your margins?
+Quality Score i audyt RSA nie istnieją na tym koncie — nie ma keywordów ani reklam tekstowych, jest tylko Performance Max z jedną grupą zasobów. Przesunięcia budżetu między kampaniami też nie, bo kampania jest jedna.
