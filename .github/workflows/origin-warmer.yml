@@ -1,0 +1,27 @@
+name: Origin warmer
+
+# Keeps the SSR isolate warm for the no-store HTML routes so the hourly
+# Lighthouse gate (and first-time visitors) don't eat 2-4s cold starts.
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  warm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Warm key routes
+        run: |
+          set -euo pipefail
+          UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+          for p in / /products /compound /research; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 -A "$UA" "https://phlabs.co.uk${p}")
+            echo "warm ${p} -> ${code}"
+            test "$code" = "200"
+          done
