@@ -47,7 +47,7 @@ jobs:
       TEST_BASE_URL: http://localhost:8080
       RESOURCES_BASE_URL: http://localhost:8080
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -139,7 +139,7 @@ jobs:
             baseline: lighthouse-baseline/mobile.json
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:

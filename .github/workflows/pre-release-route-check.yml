@@ -38,7 +38,7 @@ jobs:
     env:
       BASE: ${{ github.event.inputs.base_url || 'http://127.0.0.1:8080' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
