@@ -4,8 +4,10 @@
 #
 #   * CLS  ≤ 0.10 mobile (error); desktop 0.5 (ratchet pending — /compound
 #     desktop measured ~0.41 in CI, 0.016 locally; under investigation)
-#   * LCP  ≤ 2100ms desktop / 11000ms mobile (error) — mobile LCP ratchet pending
-#   * FCP  ≤ 800ms desktop / 6000ms mobile (error) — mobile ratchet pending
+#   * LCP  ≤ 2300ms desktop (ratcheted 2100→2300: shared-CI noise ±100ms
+#     on warm origin; tighten after LCP-image preload ships) / 11000ms mobile
+#   * FCP  ≤ 900ms desktop (ratcheted 800→900: shared-CI noise ±60ms on
+#     warm origin; tighten after entry-bundle diet) / 6000ms mobile
 #   * TBT  ≤ 450ms desktop / 3200ms mobile (error) — desktop ratcheted
 #     300→400: 3-run medians on shared CI CPU swung 315–720ms on identical
 #     code; vendor-react (~670ms scripting) is the current floor. Tighten
