@@ -33,6 +33,7 @@ import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 import { ResearchContentBlock } from '@/components/ResearchContentBlock';
 import PuritySignature from '@/components/PuritySignature';
+import ProductTrustStrip from '@/components/ProductTrustStrip';
 import { StarRating } from '@/components/StarRating';
 import { ReviewPreview } from '@/components/ReviewPreview';
 import { ReviewsModal } from '@/components/ReviewsModal';
@@ -1835,6 +1836,11 @@ export default function ProductDetail() {
                 </div>
               )}
             </div>
+
+            {/* ── Trust strip (visual only — no price / availability / JSON-LD) ── */}
+            <ProductTrustStrip />
+
+
 
             {/* ── Legal disclaimer near Add to Cart ── */}
             <div className="flex items-start gap-3 p-4 bg-amber-500/[0.06] border border-amber-500/25 rounded-2xl">
