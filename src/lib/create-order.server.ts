@@ -136,7 +136,11 @@ export interface CreateOrderResult {
   orderId: string;
   bankTransferReference: string;
   subtotal: number;
+  /** Coupon discount + bundle discount (the total taken off the subtotal). */
   discount: number;
+  couponDiscount: number;
+  bundleDiscount: number;
+  bundlePercent: number;
   shippingCost: number;
   totalAmount: number;
   couponCode: string | null;
@@ -509,7 +513,10 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
     orderId,
     bankTransferReference: btRef,
     subtotal: validation.subtotal,
-    discount: validation.discount,
+    discount: discountTotal,
+    couponDiscount: validation.discount,
+    bundleDiscount,
+    bundlePercent: bundle.percent,
     shippingCost,
     totalAmount,
     couponCode: validation.coupon?.code ?? null,
