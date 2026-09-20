@@ -13,6 +13,7 @@ import {
 } from '@/lib/firebase';
 import type { Coupon } from '@/lib/firebase';
 import { validateCartPrices } from '@/lib/cart-validation.functions';
+import { computeBundleDiscount } from '@/lib/bundle-discount';
 import { parseCartTransferParam } from '@/lib/legacy-host';
 import { createOrder } from '@/lib/create-order.functions';
 import { getStoredAdClickIds } from '@/lib/gclid-capture';
@@ -691,13 +692,17 @@ export default function CheckoutPage() {
 
   // Calculations
   const subtotal = cart.reduce((s, i) => s + i.priceNum * i.quantity, 0);
-  const discount = appliedCoupon ? (
+  const couponDiscount = appliedCoupon ? (
     appliedCoupon.type === 'percentage'
       ? +(subtotal * appliedCoupon.value / 100).toFixed(2)
       : appliedCoupon.type === 'fixed'
         ? Math.min(appliedCoupon.value, subtotal)
         : 0
   ) : 0;
+  // Preview only — the authoritative bundle discount is recomputed in
+  // create-order.server.ts from Firestore prices via the SAME helper.
+  const bundle = computeBundleDiscount(subtotal, cart, couponDiscount);
+  const discount = +Math.min(subtotal, couponDiscount + bundle.amount).toFixed(2);
   // EU international shipping (Germany, Poland) — matches the "Delivery EU"
   // policy in Google Merchant Center: £20 flat, free over £200.
   const isEuInternational = form.country === 'Germany' || form.country === 'Poland';
