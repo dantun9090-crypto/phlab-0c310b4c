@@ -13,6 +13,7 @@ import {
 } from '@/lib/firebase';
 import type { Coupon } from '@/lib/firebase';
 import { validateCartPrices } from '@/lib/cart-validation.functions';
+import { computeBundleDiscount } from '@/lib/bundle-discount';
 import { parseCartTransferParam } from '@/lib/legacy-host';
 import { createOrder } from '@/lib/create-order.functions';
 import { getStoredAdClickIds } from '@/lib/gclid-capture';
@@ -691,13 +692,17 @@ export default function CheckoutPage() {
 
   // Calculations
   const subtotal = cart.reduce((s, i) => s + i.priceNum * i.quantity, 0);
-  const discount = appliedCoupon ? (
+  const couponDiscount = appliedCoupon ? (
     appliedCoupon.type === 'percentage'
       ? +(subtotal * appliedCoupon.value / 100).toFixed(2)
       : appliedCoupon.type === 'fixed'
         ? Math.min(appliedCoupon.value, subtotal)
         : 0
   ) : 0;
+  // Preview only — the authoritative bundle discount is recomputed in
+  // create-order.server.ts from Firestore prices via the SAME helper.
+  const bundle = computeBundleDiscount(subtotal, cart, couponDiscount);
+  const discount = +Math.min(subtotal, couponDiscount + bundle.amount).toFixed(2);
   // EU international shipping (Germany, Poland) — matches the "Delivery EU"
   // policy in Google Merchant Center: £20 flat, free over £200.
   const isEuInternational = form.country === 'Germany' || form.country === 'Poland';
@@ -2379,10 +2384,16 @@ export default function CheckoutPage() {
                           onSelect={setSelectedGiftId}
                         />
                       )}
-                      {discount > 0 && (
+                      {couponDiscount > 0 && (
                         <div className="flex justify-between text-emerald-400">
                           <span>Discount ({appliedCoupon?.code})</span>
-                          <span>−£{discount.toFixed(2)}</span>
+                          <span>−£{couponDiscount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {bundle.amount > 0 && (
+                        <div className="flex justify-between text-emerald-400">
+                          <span>Bundle saving ({bundle.percent}%)</span>
+                          <span>−£{bundle.amount.toFixed(2)}</span>
                         </div>
                       )}
                       {couponFreeShipping && baseShipping > 0 && (
@@ -2680,9 +2691,14 @@ export default function CheckoutPage() {
                     <div className="flex justify-between text-gray-400">
                       <span>Subtotal</span><span className="text-white">£{subtotal.toFixed(2)}</span>
                     </div>
-                    {discount > 0 && (
+                    {couponDiscount > 0 && (
                       <div className="flex justify-between text-emerald-400">
-                        <span>Discount</span><span>−£{discount.toFixed(2)}</span>
+                        <span>Discount</span><span>−£{couponDiscount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {bundle.amount > 0 && (
+                      <div className="flex justify-between text-emerald-400">
+                        <span>Bundle saving ({bundle.percent}%)</span><span>−£{bundle.amount.toFixed(2)}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-gray-400">
@@ -2712,18 +2728,35 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Free shipping progress */}
-                {!isFreeShipping && (
+                {/* Bundle saving progress (replaces the free-shipping bar;
+                    the £50 free-delivery threshold itself is unchanged).
+                    Values shown are the basket AFTER discounts. */}
+                {cart.length > 0 && (bundle.nextTierPercent !== null || bundle.percent > 0) && (
                   <div className="bg-[#0b1a30] border border-white/[0.07] rounded-xl p-4">
-                    <p className="text-xs text-gray-400 mb-2">
-                      Add <strong className="text-white">£{(FREE_SHIPPING_THRESHOLD - subtotal).toFixed(2)}</strong> more for free shipping
-                    </p>
+                    {bundle.percent > 0 && (
+                      <p className="text-xs text-emerald-400 mb-1.5 font-semibold">
+                        Bundle saving applied: −{bundle.percent}% (−£{bundle.amount.toFixed(2)})
+                      </p>
+                    )}
+                    {bundle.suppressedByCoupon && (
+                      <p className="text-[11px] text-gray-400 mb-1.5">
+                        Bundle savings cannot be combined with a discount code — your code has been applied instead.
+                      </p>
+                    )}
+                    {bundle.nextTierPercent !== null && bundle.unitsToNextTier !== null && bundle.unitsToNextTier > 0 && (
+                      <p className="text-xs text-gray-400 mb-2">
+                        Add <strong className="text-white">{bundle.unitsToNextTier} more product{bundle.unitsToNextTier === 1 ? '' : 's'}</strong> and save {bundle.nextTierPercent}%
+                      </p>
+                    )}
                     <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-emerald-500 rounded-full transition-all duration-300"
-                        style={{ width: `${Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100)}%` }}
+                        style={{ width: `${Math.min(100, (bundle.units / 3) * 100)}%` }}
                       />
                     </div>
+                    <p className="text-[11px] text-gray-500 mt-2">
+                      Basket after discounts: £{Math.max(0, subtotal - discount).toFixed(2)}
+                    </p>
                   </div>
                 )}
               </div>

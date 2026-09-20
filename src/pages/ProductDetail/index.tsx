@@ -1840,6 +1840,34 @@ export default function ProductDetail() {
             {/* ── Trust strip (visual only — no price / availability / JSON-LD) ── */}
             <ProductTrustStrip />
 
+            {/* ── Frequently researched together ──
+                Names + "View" only. Deliberately NO prices, no availability,
+                no offer markup — this block must stay outside the product's
+                price/offer surface. */}
+            {relatedProducts.length > 0 && (
+              <div className="rounded-2xl border border-white/[0.07] bg-[#0b1a30] p-4">
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#4a6a8a] mb-3">
+                  Frequently researched together
+                </p>
+                <ul className="space-y-1.5">
+                  {relatedProducts.slice(0, 3).map(rp => {
+                    const rpSlug = (rp as any).slug || nameToSlug(rp.name);
+                    return (
+                      <li key={`frt-${rp.id}`} className="flex items-center justify-between gap-3">
+                        <span className="text-[#c8dcf0] text-xs leading-snug">{rp.name}</span>
+                        <Link
+                          to={`/products/${rpSlug}`}
+                          className="shrink-0 inline-flex items-center min-h-[44px] px-3 text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+                        >
+                          View
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+
 
 
             {/* ── Legal disclaimer near Add to Cart ── */}
