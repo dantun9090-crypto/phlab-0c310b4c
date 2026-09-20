@@ -3,10 +3,14 @@ import {
   X, ChevronDown, Package, WifiOff, RefreshCw, Microscope,
   CheckCircle2, LayoutGrid, List, Filter,
 } from 'lucide-react';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 import { useLocation, Link } from 'react-router-dom';
-import { AnimatedBackground } from '@/components/AnimatedBackground';
+// Decorative canvas behind the hero — never the LCP element, so it is
+// code-split and mounted after the first screen paints.
+const AnimatedBackground = lazy(() =>
+  import('@/components/AnimatedBackground').then(m => ({ default: m.AnimatedBackground })),
+);
 import { dispatchAddToCart, CartItem } from '@/components/Layout';
 import { auth, db, getAllProducts, doc, getDoc, getDocs, collection, query, onAuthStateChanged } from '@/lib/firebase';
 import { filterProductsForHost } from '@/lib/domain-visibility';
@@ -15,9 +19,14 @@ import {
   markPrerenderReady,
   flipPrerenderReadyWhenRendered,
 } from '@/lib/prerender-ready';
-import { ProductEditor } from '@/components/ProductEditor';
+// Admin-only modal — pulled out of the entry bundle for shoppers.
+const ProductEditor = lazy(() =>
+  import('@/components/ProductEditor').then(m => ({ default: m.ProductEditor })),
+);
 import { ProductCard } from '@/components/ProductCard';
-import MarketingAdvertSlot from '@/components/MarketingAdvertSlot';
+// Marketing slots are below the hero — code-split, height reserved by the
+// existing wrappers so there is no layout shift.
+const MarketingAdvertSlot = lazy(() => import('@/components/MarketingAdvertSlot'));
 import type { Product } from '@/lib/firebase';
 import { excludeVipProducts } from '@/lib/vip-visibility';
 
@@ -369,7 +378,7 @@ export default function Products() {
 
       {/* ── HERO ────────────────────────────────────────────────────────────── */}
       <section id="hero" className="relative overflow-hidden" style={{ background: '#030812', paddingTop: 'calc(var(--nav-h, 80px) + 2rem)', paddingBottom: '4rem' }}>
-        <AnimatedBackground variant="blue" />
+        <Suspense fallback={null}><AnimatedBackground variant="blue" /></Suspense>
 
         {/* Decorative rings */}
         <div className="absolute pointer-events-none hidden lg:block" style={{ top: '-30%', right: '-8%', width: 640, height: 640, borderRadius: '50%', border: '1px solid rgba(37,99,235,0.07)' }} />
@@ -554,7 +563,9 @@ export default function Products() {
                   </Link>
                 </div>
 
-                <MarketingAdvertSlot adverts={adverts} placement="products_sidebar" variant="compact" />
+                <Suspense fallback={null}>
+                  <MarketingAdvertSlot adverts={adverts} placement="products_sidebar" variant="compact" />
+                </Suspense>
 
               </div>
             </aside>
@@ -562,7 +573,9 @@ export default function Products() {
             {/* ── CONTENT ──────────────────────────────────────────────────── */}
             <div className="flex-1 min-w-0">
 
-              <MarketingAdvertSlot adverts={adverts} placement="products_top" className="mb-6" />
+              <Suspense fallback={<div aria-hidden="true" className="mb-6" />}>
+                <MarketingAdvertSlot adverts={adverts} placement="products_top" className="mb-6" />
+              </Suspense>
 
               {/* Toolbar */}
               <div className="flex flex-wrap items-center gap-3 mb-6">
@@ -760,12 +773,14 @@ export default function Products() {
 
       {/* ── ADMIN PRODUCT EDITOR ───────────────────────────────────────────── */}
       {editingProduct && (
-        <ProductEditor
-          product={editingProduct}
-          isOpen={true}
-          onClose={() => setEditingProduct(null)}
-          onSave={() => setEditingProduct(null)}
-        />
+        <Suspense fallback={null}>
+          <ProductEditor
+            product={editingProduct}
+            isOpen={true}
+            onClose={() => setEditingProduct(null)}
+            onSave={() => setEditingProduct(null)}
+          />
+        </Suspense>
       )}
     </div>
   );

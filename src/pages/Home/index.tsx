@@ -5,7 +5,9 @@ import SmartBanner from '@/components/SmartBanner';
 import { useSSRBanner } from '@/legacy/SSRDataContext';
 import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 import HeroMoleculeCanvas from '@/components/HeroMoleculeCanvas';
-import CoALookup from '@/components/CoALookup';
+// Below-fold: batch COA lookup sits near the footer — never on the first
+// screen, so it is code-split out of the entry bundle.
+const CoALookup = lazy(() => import('@/components/CoALookup'));
 import { useMagneticHover } from '@/hooks/useMagneticHover';
 
 import { Link } from 'react-router-dom';
@@ -28,7 +30,8 @@ import { nameToSlug } from '@/lib/seedProducts';
 import { markPrerenderPending, markPrerenderReady, flipPrerenderReadyWhenRendered } from '@/lib/prerender-ready';
 import { sendPublicMail } from '@/lib/sendPublicMail';
 import { cfImgProps } from '@/lib/cf-image';
-import Testimonials from '@/components/Testimonials';
+// Below-fold: reviews section — code-split, mounted under Suspense.
+const Testimonials = lazy(() => import('@/components/Testimonials'));
 
 
 import { useSEO } from '@/hooks/useSEO';
@@ -1188,7 +1191,9 @@ export default function HomePage() {
       </section>
 
       {/* Approved customer reviews (Admin → Reviews). Renders nothing when empty. */}
-      <Testimonials />
+      <Suspense fallback={null}>
+        <Testimonials />
+      </Suspense>
 
 
 
@@ -1472,7 +1477,9 @@ export default function HomePage() {
       </div>
 
       {/* CoA batch lookup — between products and SEO/footer */}
-      <CoALookup />
+      <Suspense fallback={<div aria-hidden="true" style={{ minHeight: 220 }} />}>
+        <CoALookup />
+      </Suspense>
 
       {/* SEO link-index — SSR-rendered hub linking to every product + article */}
       <HomeSeoIndex />

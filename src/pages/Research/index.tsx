@@ -5,7 +5,11 @@ import {
   FlaskConical, BookOpen, ArrowRight, ExternalLink,
   Zap, Shield, Brain, Activity, Dna, ChevronDown
 } from 'lucide-react';
-import { AnimatedBackground } from '@/components/AnimatedBackground';
+// Decorative hero canvas — not the LCP element (the H1 text is), so it is
+// code-split and mounted after the first screen paints.
+const AnimatedBackground = React.lazy(() =>
+  import('@/components/AnimatedBackground').then(m => ({ default: m.AnimatedBackground })),
+);
 
 /* ── Scroll-fade hook ───────────────────────────────────────────── */
 function useScrollFade(options?: IntersectionObserverInit) {
@@ -429,7 +433,7 @@ export default function Research() {
       {/* ── Hero ── */}
       <section className="page-hero relative border-b border-white/[0.07] overflow-hidden">
         {/* Animated background */}
-        <AnimatedBackground variant="blue" />
+        <React.Suspense fallback={null}><AnimatedBackground variant="blue" /></React.Suspense>
         <div className="absolute inset-0 bg-gradient-to-b from-[#030812] via-transparent to-[#030812] pointer-events-none" />
 
         <div className="relative max-w-7xl mx-auto px-6 py-24 text-center">
@@ -592,7 +596,9 @@ export default function Research() {
         </section>
 
         {/* ── Section 2: Research Peptides ── */}
-        <section id="peptides">
+        {/* cv-auto: below-fold rendering work deferred; DOM stays intact so
+            the prerender snapshot and crawlers see the full content. */}
+        <section id="peptides" className="cv-auto">
           <FadeIn direction="up">
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-3">
@@ -628,7 +634,7 @@ export default function Research() {
         </section>
 
         {/* ── Section 3: NAD+ Biology ── */}
-        <section id="nad">
+        <section id="nad" className="cv-auto">
           <FadeIn direction="up">
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-3">
@@ -698,7 +704,7 @@ export default function Research() {
         </section>
 
         {/* ── Key Studies ── */}
-        <section>
+        <section className="cv-auto">
           <FadeIn direction="up">
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-3">
