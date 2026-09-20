@@ -1836,6 +1836,11 @@ export default function ProductDetail() {
               )}
             </div>
 
+            {/* ── Trust strip (visual only — no price / availability / JSON-LD) ── */}
+            <ProductTrustStrip />
+
+
+
             {/* ── Legal disclaimer near Add to Cart ── */}
             <div className="flex items-start gap-3 p-4 bg-amber-500/[0.06] border border-amber-500/25 rounded-2xl">
               <ShieldCheck className="w-4 h-4 text-amber-400/80 shrink-0 mt-0.5" />
