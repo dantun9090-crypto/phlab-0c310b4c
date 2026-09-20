@@ -407,7 +407,7 @@ export default function Products() {
               </div>
 
               <h1 className="font-black leading-tight mb-3" style={{ fontSize: 'clamp(2rem, 4.5vw, 3.25rem)', color: '#eef4ff', letterSpacing: '-0.025em' }}>
-                {heroInfo.h1}
+                {heroInfo.h1Display ?? heroInfo.h1}
               </h1>
               <p className="leading-relaxed text-base" style={{ color: '#9cb8d9', maxWidth: 560 }}>
                 {heroInfo.intro}
