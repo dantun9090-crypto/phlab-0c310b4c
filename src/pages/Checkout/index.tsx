@@ -2384,10 +2384,16 @@ export default function CheckoutPage() {
                           onSelect={setSelectedGiftId}
                         />
                       )}
-                      {discount > 0 && (
+                      {couponDiscount > 0 && (
                         <div className="flex justify-between text-emerald-400">
                           <span>Discount ({appliedCoupon?.code})</span>
-                          <span>−£{discount.toFixed(2)}</span>
+                          <span>−£{couponDiscount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {bundle.amount > 0 && (
+                        <div className="flex justify-between text-emerald-400">
+                          <span>Bundle saving ({bundle.percent}%)</span>
+                          <span>−£{bundle.amount.toFixed(2)}</span>
                         </div>
                       )}
                       {couponFreeShipping && baseShipping > 0 && (
@@ -2685,9 +2691,14 @@ export default function CheckoutPage() {
                     <div className="flex justify-between text-gray-400">
                       <span>Subtotal</span><span className="text-white">£{subtotal.toFixed(2)}</span>
                     </div>
-                    {discount > 0 && (
+                    {couponDiscount > 0 && (
                       <div className="flex justify-between text-emerald-400">
-                        <span>Discount</span><span>−£{discount.toFixed(2)}</span>
+                        <span>Discount</span><span>−£{couponDiscount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {bundle.amount > 0 && (
+                      <div className="flex justify-between text-emerald-400">
+                        <span>Bundle saving ({bundle.percent}%)</span><span>−£{bundle.amount.toFixed(2)}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-gray-400">
@@ -2717,18 +2728,35 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Free shipping progress */}
-                {!isFreeShipping && (
+                {/* Bundle saving progress (replaces the free-shipping bar;
+                    the £50 free-delivery threshold itself is unchanged).
+                    Values shown are the basket AFTER discounts. */}
+                {cart.length > 0 && (bundle.nextTierPercent !== null || bundle.percent > 0) && (
                   <div className="bg-[#0b1a30] border border-white/[0.07] rounded-xl p-4">
-                    <p className="text-xs text-gray-400 mb-2">
-                      Add <strong className="text-white">£{(FREE_SHIPPING_THRESHOLD - subtotal).toFixed(2)}</strong> more for free shipping
-                    </p>
+                    {bundle.percent > 0 && (
+                      <p className="text-xs text-emerald-400 mb-1.5 font-semibold">
+                        Bundle saving applied: −{bundle.percent}% (−£{bundle.amount.toFixed(2)})
+                      </p>
+                    )}
+                    {bundle.suppressedByCoupon && (
+                      <p className="text-[11px] text-gray-400 mb-1.5">
+                        Bundle savings cannot be combined with a discount code — your code has been applied instead.
+                      </p>
+                    )}
+                    {bundle.nextTierPercent !== null && bundle.unitsToNextTier !== null && bundle.unitsToNextTier > 0 && (
+                      <p className="text-xs text-gray-400 mb-2">
+                        Add <strong className="text-white">{bundle.unitsToNextTier} more product{bundle.unitsToNextTier === 1 ? '' : 's'}</strong> and save {bundle.nextTierPercent}%
+                      </p>
+                    )}
                     <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-emerald-500 rounded-full transition-all duration-300"
-                        style={{ width: `${Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100)}%` }}
+                        style={{ width: `${Math.min(100, (bundle.units / 3) * 100)}%` }}
                       />
                     </div>
+                    <p className="text-[11px] text-gray-500 mt-2">
+                      Basket after discounts: £{Math.max(0, subtotal - discount).toFixed(2)}
+                    </p>
                   </div>
                 )}
               </div>
