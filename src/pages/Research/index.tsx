@@ -449,9 +449,9 @@ export default function Research() {
             className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 leading-tight"
             style={{ animation: 'researchFadeUp 0.8s cubic-bezier(0.22,1,0.36,1) 0.18s both' }}
           >
-            Peptide Research &amp;<br />
+            Tested Research Peptides UK<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-cyan-400">
-              Comparative Science
+              Retatrutide, MOTS-C &amp; GHK-Cu Data
             </span>
           </h1>
 
@@ -459,7 +459,7 @@ export default function Research() {
             className="text-[#7a9ec2] text-lg max-w-3xl mx-auto leading-relaxed mb-8"
             style={{ animation: 'researchFadeUp 0.8s cubic-bezier(0.22,1,0.36,1) 0.32s both' }}
           >
-            A structured overview of research compounds, receptor mechanisms, preclinical data, and comparative pharmacological profiles — built for researchers who need the science in one place.
+            A structured overview of retatrutide, MOTS-C, GHK-Cu, bacteriostatic water and related research compounds — receptor mechanisms, preclinical data and comparative profiles in one place. Research use only.
           </p>
 
           <div
