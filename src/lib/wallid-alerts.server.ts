@@ -150,6 +150,15 @@ export async function sendWallidAlert(
   const slackUrl = process.env.SLACK_PAYMENTS_WEBHOOK?.trim();
   const discordUrl = process.env.DISCORD_PAYMENTS_WEBHOOK?.trim();
 
+  // Preferred: linked Slack connection via the connector gateway.
+  try {
+    const { postSlackGatewayAlert } = await import("@/lib/server/slack-gateway-alert");
+    const sent = await postSlackGatewayAlert(buildSlackPayload(p), "wallid-alerts");
+    if (sent) return "slack";
+  } catch {
+    // fall through to webhook / discord / email
+  }
+
   if (slackUrl) {
     const ok = await postJson(slackUrl, buildSlackPayload(p), "Slack");
     if (ok) return "slack";
