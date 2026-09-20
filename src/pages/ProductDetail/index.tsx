@@ -33,6 +33,7 @@ import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 import { ResearchContentBlock } from '@/components/ResearchContentBlock';
 import PuritySignature from '@/components/PuritySignature';
+import ProductTrustStrip from '@/components/ProductTrustStrip';
 import { StarRating } from '@/components/StarRating';
 import { ReviewPreview } from '@/components/ReviewPreview';
 import { ReviewsModal } from '@/components/ReviewsModal';
