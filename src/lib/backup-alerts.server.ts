@@ -126,6 +126,15 @@ export async function sendBackupAlert(
     process.env.DISCORD_SECURITY_WEBHOOK?.trim() ||
     process.env.DISCORD_PAYMENTS_WEBHOOK?.trim();
 
+  // Preferred: linked Slack connection via the connector gateway.
+  try {
+    const { postSlackGatewayAlert } = await import("@/lib/server/slack-gateway-alert");
+    const sent = await postSlackGatewayAlert(buildSlackPayload(p), "backup-alerts");
+    if (sent) return "slack";
+  } catch {
+    // fall through to webhook / discord / email
+  }
+
   if (slackUrl) {
     const ok = await postJson(slackUrl, buildSlackPayload(p), "Slack");
     if (ok) return "slack";
