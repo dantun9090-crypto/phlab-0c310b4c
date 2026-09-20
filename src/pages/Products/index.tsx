@@ -55,9 +55,11 @@ const SORT_OPTIONS = [
   { id: 'name-asc',   label: 'Name: A → Z'   },
 ];
 
-const CATEGORY_INTROS: Record<string, { h1: string; intro: string }> = {
+// h1Display: visible on-page H1 only. `h1` stays the source of document.title — do not swap them.
+const CATEGORY_INTROS: Record<string, { h1: string; h1Display?: string; intro: string }> = {
   all: {
     h1: 'Research Peptides UK | Full Catalogue',
+    h1Display: 'Tested Research Peptides UK — Retatrutide, MOTS-C, GHK-Cu',
     intro: 'HPLC-tested, research-grade lyophilised peptides. Every batch analytically verified to ≥99% purity by reverse-phase HPLC and confirmed by mass spectrometry. Certificate of Analysis included. For laboratory research use only.',
   },
   'tissue-repair': {
@@ -86,6 +88,7 @@ const CATEGORY_INTROS: Record<string, { h1: string; intro: string }> = {
   },
   accessories: {
     h1: 'Laboratory Accessories & Bacteriostatic Water UK',
+    h1Display: 'Bacteriostatic Water UK & Laboratory Accessories',
     intro: 'Bacteriostatic water, syringes, and reconstitution accessories for peptide research protocols. Supplied for laboratory use only.',
   },
 };
@@ -404,7 +407,7 @@ export default function Products() {
               </div>
 
               <h1 className="font-black leading-tight mb-3" style={{ fontSize: 'clamp(2rem, 4.5vw, 3.25rem)', color: '#eef4ff', letterSpacing: '-0.025em' }}>
-                {heroInfo.h1}
+                {heroInfo.h1Display ?? heroInfo.h1}
               </h1>
               <p className="leading-relaxed text-base" style={{ color: '#9cb8d9', maxWidth: 560 }}>
                 {heroInfo.intro}
