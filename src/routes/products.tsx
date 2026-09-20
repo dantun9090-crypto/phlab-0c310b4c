@@ -53,7 +53,17 @@ export const Route = createFileRoute("/products")({
       // Safe to set canonical here: /products/$slug now uses the escaped
       // filename products_.$slug.tsx, so it's a sibling — not a child — and
       // TanStack does not concat this <link> into the product detail page.
-      links: [{ rel: "canonical", href: URL }],
+      links: [
+        { rel: "canonical", href: URL },
+        // The /products hero is text-only (no hero image), so the LCP
+        // candidate is the first product card image. No fixed URL exists to
+        // preload here (grid order is decided client-side), so instead warm
+        // the image + data origins; ProductCard raises fetchPriority on the
+        // first card. Grid itself stays eager for the prerender snapshot.
+        { rel: "preconnect", href: "https://firebasestorage.googleapis.com", crossOrigin: "" },
+        { rel: "preconnect", href: "https://firestore.googleapis.com", crossOrigin: "" },
+        { rel: "dns-prefetch", href: "https://firebasestorage.googleapis.com" },
+      ],
       scripts: [
         {
           type: "application/ld+json",
