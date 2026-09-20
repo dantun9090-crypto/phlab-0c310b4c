@@ -12,6 +12,7 @@
  */
 import { z } from 'zod';
 import { validateUkAddressLine } from './uk-address';
+import { computeBundleDiscount } from './bundle-discount';
 import { runValidateCart, type ValidateCartResult } from './cart-validation.server';
 import { addDocAdmin, getDocAdmin, updateDocAdmin } from './server/firestore-admin';
 import { verifyFirebaseIdToken } from './server/firebase-auth-admin';
@@ -210,7 +211,14 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
   const baseCost = isFreeShipping ? 0 : baseShipping;
   const shippingDisc = (isNextDay || isEuInternational) ? 0 : validation.shippingDiscount;
   const shippingCost = +Math.max(0, baseCost - shippingDisc).toFixed(2);
-  const totalAmount  = +Math.max(0, validation.subtotal - validation.discount + shippingCost).toFixed(2);
+
+  // Tiered bundle discount (2 units −5%, 3+ units −10%), computed from the
+  // SERVER-validated quantities and subtotal only. Never combined with a
+  // coupon discount (e.g. SALE11) — see src/lib/bundle-discount.ts.
+  const bundle = computeBundleDiscount(validation.subtotal, validation.items, validation.discount);
+  const bundleDiscount = bundle.amount;
+  const discountTotal = +Math.min(validation.subtotal, validation.discount + bundleDiscount).toFixed(2);
+  const totalAmount  = +Math.max(0, validation.subtotal - discountTotal + shippingCost).toFixed(2);
 
   // Both guards above already rejected any missed-cutoff next-day request,
   // so this flag is retained only as a defence-in-depth breadcrumb on the
