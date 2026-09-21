@@ -129,6 +129,7 @@ export default function PaymentMethodOptions({
   options,
   wallidEnabled = false,
   peptidepayEnabled = false,
+  brokkrpayEnabled = false,
   nowpaymentsEnabled = false,
   tideEnabled = true,
   manualEnabled = true,
@@ -187,6 +188,7 @@ export default function PaymentMethodOptions({
   const methodCount =
     (showPrimary ? 1 : 0) +
     (peptidepayEnabled ? 1 : 0) +
+    (brokkrpayEnabled ? 1 : 0) +
     (nowpaymentsEnabled ? 1 : 0) +
     (tideEnabled ? 1 : 0) +
     (manualEnabled ? 1 : 0);
@@ -227,6 +229,10 @@ export default function PaymentMethodOptions({
 
   const peptidepayCardClass = `${baseCardClass} border-slate-700/50 bg-slate-900/60 hover:bg-slate-800/60 ${
     value === "peptidepay" ? "ring-2 ring-emerald-500/40" : ""
+  }`;
+
+  const brokkrpayCardClass = `${baseCardClass} border-slate-700/50 bg-slate-900/60 hover:bg-slate-800/60 ${
+    value === "brokkrpay" ? "ring-2 ring-emerald-500/40" : ""
   }`;
 
   const cryptoCardClass = `${baseCardClass} border-slate-700/50 bg-slate-900/60 hover:bg-slate-800/60 ${
