@@ -452,6 +452,72 @@ export default function PaymentMethodOptions({
           </div>
         )}
 
+        {/* SECONDARY: BrokkrPay — hosted card checkout */}
+        {brokkrpayEnabled && (
+          <div className="relative">
+            <button
+              type="button"
+              data-testid="brokkrpay-button"
+              onClick={(e) => handleSelect("brokkrpay", e.currentTarget)}
+              role="radio"
+              aria-checked={value === "brokkrpay"}
+              aria-describedby={value === "brokkrpay" ? "brokkrpay-instructions" : undefined}
+              className={brokkrpayCardClass}
+            >
+              <div className="flex items-start gap-3">
+                <Radio checked={value === "brokkrpay"} tone="slate" />
+                <span
+                  aria-hidden="true"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5"
+                >
+                  <CreditCard className="h-5 w-5 text-slate-300" />
+                </span>
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-base font-semibold text-white leading-tight">
+                      Debit or credit card
+                    </span>
+                    {value === "brokkrpay" && (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
+                        <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                        Selected
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-300 mt-1">
+                    Secure hosted checkout — we never see your card details.
+                  </p>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-slate-400 shrink-0 mt-2 transition-transform ${
+                    value === "brokkrpay" ? "rotate-180" : ""
+                  }`}
+                  aria-hidden="true"
+                />
+              </div>
+            </button>
+
+            <Drawer open={value === "brokkrpay"} id="brokkrpay-instructions">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs leading-relaxed text-slate-300">
+                <p className="font-semibold text-white">Before you pay</p>
+                <p className="mt-1">
+                  Your payment is handled by our retail partner — an online retail store — so your
+                  receipt and card statement will show retail items, not the products you ordered.
+                  Same products, same price, same delivery.
+                </p>
+                <p className="mt-2">
+                  You will be redirected to a secure payment page. Once the payment is confirmed you
+                  will receive an email with your order details.
+                </p>
+                <p className="mt-2 flex items-center gap-2 text-slate-400">
+                  <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
+                  Card details are handled entirely by the payment provider.
+                </p>
+              </div>
+            </Drawer>
+          </div>
+        )}
+
 
         {/* SECONDARY: Crypto via NOWPayments (hosted invoice) */}
         {nowpaymentsEnabled && (
