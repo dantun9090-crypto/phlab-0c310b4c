@@ -9,7 +9,7 @@ import {
   gbpPenceToUsdWhole,
   clampUsdRate,
   BROKKRPAY_DEFAULT_USD_RATE,
-} from '@/lib/brokkrpay-fx';
+} from '../src/lib/brokkrpay-amount';
 
 describe('clampUsdRate', () => {
   it('keeps sane rates and falls back on nonsense', () => {

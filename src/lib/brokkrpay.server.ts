@@ -18,7 +18,7 @@
  *   BROKKRPAY_WEBHOOK_SECRET  whsec_… fallback when no secret is stored in Firestore
  */
 import { timingSafeEqualStr } from "@/lib/timing-safe-equal";
-import { gbpPenceToUsdWhole } from "@/lib/brokkrpay-fx";
+import { gbpPenceToUsdWhole } from "@/lib/brokkrpay-amount";
 
 const BROKKRPAY_BASE = "https://api.brokkrpay.com";
 const TIMEOUT_MS = 12_000;

@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 import {
   parseBrokkrSignatureHeader,
   verifyBrokkrPaySignature,
-} from '@/lib/brokkrpay.server';
+} from '../src/lib/brokkrpay.server';
 
 const SECRET = 'whsec_test_0123456789abcdef0123456789abcdef';
 

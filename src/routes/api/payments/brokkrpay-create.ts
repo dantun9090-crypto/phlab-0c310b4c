@@ -22,7 +22,7 @@ import { verifyFirebaseIdToken } from "@/lib/server/firebase-auth-admin";
 import { buildOrderCtxForPayment } from "@/lib/payments/dispatch.server";
 import { updateDocAdmin, getDocAdmin } from "@/lib/server/firestore-admin";
 import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
-import { clampUsdRate, gbpPenceToUsdWhole } from "@/lib/brokkrpay-fx";
+import { clampUsdRate, gbpPenceToUsdWhole } from "@/lib/brokkrpay-amount";
 import {
   createBrokkrPayLink,
   isBrokkrPayConfigured,
