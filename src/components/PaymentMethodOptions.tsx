@@ -35,6 +35,7 @@ export type PaymentMethodValue =
   | "bank_transfer"
   | "wallid"
   | "peptidepay"
+  | "brokkrpay"
   | "nowpayments"
   | "tide";
 
@@ -45,6 +46,8 @@ export interface PaymentMethodOptionsProps {
   wallidEnabled?: boolean;
   /** PeptidePay (card / Apple Pay / Google Pay / crypto) availability. */
   peptidepayEnabled?: boolean;
+  /** BrokkrPay hosted card checkout availability (admin kill switch). */
+  brokkrpayEnabled?: boolean;
   /** NOWPayments crypto invoice availability (admin kill switch). */
   nowpaymentsEnabled?: boolean;
   /** Pay with Tide (hosted QR / Open Banking link) availability. */
