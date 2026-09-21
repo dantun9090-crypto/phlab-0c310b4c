@@ -49,6 +49,7 @@ const navGroups = [
       { id: 'invoices', label: 'Invoices', icon: FileText },
       { id: 'payments', label: 'Payment Gateways', icon: CreditCard },
       { id: 'paymenttriage', label: 'Payment Triage', icon: Activity },
+      { id: 'brokkrpay', label: 'BrokkrPay (Cards)', icon: CreditCard },
 
       { id: 'fena', label: 'Fena Payments', icon: CreditCard },
       { id: 'wallidpreview', label: 'Wallid Preview', icon: Eye },
