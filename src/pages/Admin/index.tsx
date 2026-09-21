@@ -68,6 +68,7 @@ import EdgeMonitorTab from './tabs/EdgeMonitorTab';
 import SecurityEventsTab from './tabs/SecurityEventsTab';
 import FenaTab from './tabs/FenaTab';
 import PaymentsTab from './tabs/PaymentsTab';
+import BrokkrPayTab from './tabs/BrokkrPayTab';
 import PaymentTriageTab from './tabs/PaymentTriageTab';
 
 import AIAssistantTab from './tabs/AIAssistantTab';
@@ -109,7 +110,7 @@ import TagGatewayTab from './tabs/TagGatewayTab';
 import CloudflareAnalyticsTab from './tabs/CloudflareAnalyticsTab';
 import CloudflareVsAnalyticsTab from './tabs/CloudflareVsAnalyticsTab';
 
-type Tab = 'dashboard' | 'ai' | 'aigraphics' | 'inventory' | 'orders' | 'revenue' | 'customers' | 'marketing' | 'database' | 'invoices' | 'orderinvoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'firestorebackups' | 'backupauditlog' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'visitors' | 'liveactivity' | 'toastaudit' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailbranding' | 'emailpreview' | 'emailqueue' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'labtests' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'reviews' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'marketingcoverage' | 'urlmonitor' | 'merchantfeed' | 'merchantfeededitor' | 'bingfeed' | 'indexnow' | 'reindexhook' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'paymenttriage' | 'shopify' | 'semrush' | 'seoopportunities' | 'backlinkoutreach' | 'backlinkchanges' | 'googleads' | 'compoundqueries' | 'compoundnegativesaudit' | 'internallinks' | 'webvitals' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks' | 'watchdog' | 'blankwatchdog' | 'healthmonitor' | 'infrahealth' | 'researchincidents' | 'purgeincidents' | 'swtelemetrydebug' | 'monitorlog' | 'staleassets' | 'sentryissues' | 'publishstatus' | 'auditreport' | 'emergencypurge' | 'cloudflarestatus' | 'taggateway' | 'newsletter' | 'cloudflareanalytics' | 'cfvsanalytics' | 'adsdomains';
+type Tab = 'dashboard' | 'ai' | 'aigraphics' | 'inventory' | 'orders' | 'revenue' | 'customers' | 'marketing' | 'database' | 'invoices' | 'orderinvoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'firestorebackups' | 'backupauditlog' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'visitors' | 'liveactivity' | 'toastaudit' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailbranding' | 'emailpreview' | 'emailqueue' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'labtests' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'reviews' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'marketingcoverage' | 'urlmonitor' | 'merchantfeed' | 'merchantfeededitor' | 'bingfeed' | 'indexnow' | 'reindexhook' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'brokkrpay' | 'paymenttriage' | 'shopify' | 'semrush' | 'seoopportunities' | 'backlinkoutreach' | 'backlinkchanges' | 'googleads' | 'compoundqueries' | 'compoundnegativesaudit' | 'internallinks' | 'webvitals' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks' | 'watchdog' | 'blankwatchdog' | 'healthmonitor' | 'infrahealth' | 'researchincidents' | 'purgeincidents' | 'swtelemetrydebug' | 'monitorlog' | 'staleassets' | 'sentryissues' | 'publishstatus' | 'auditreport' | 'emergencypurge' | 'cloudflarestatus' | 'taggateway' | 'newsletter' | 'cloudflareanalytics' | 'cfvsanalytics' | 'adsdomains';
 
 
 
@@ -518,6 +519,7 @@ export default function AdminPage() {
         case 'mailhealth': return <MailHealthTab />;
         case 'fena': return <FenaTab />;
         case 'payments': return <PaymentsTab />;
+        case 'brokkrpay': return <BrokkrPayTab />;
         case 'paymenttriage': return <PaymentTriageTab />;
 
         case 'emailmarketing': return <EmailMarketingTab />;
@@ -601,7 +603,7 @@ export default function AdminPage() {
     tools: 'Tools', themes: 'Themes', database: 'Database', backup: 'Backup', firestorebackups: 'Firestore Backups', backupauditlog: 'Backup Audit Log',
     ipwhitelist: 'IP Whitelist', promocodes: 'Promo Codes', freegift: 'Free Gift Promo', diagnostics: 'Diagnostics',
     prerenderstatus: 'Prerender Status', cacherecache: 'Cache & Recache', gscmonitor: 'GSC Monitor', marketingcoverage: 'Marketing Coverage', urlmonitor: 'URL Monitor', merchantfeed: 'Merchant Feed', merchantfeededitor: 'Merchant Feed Editor', bingfeed: 'Bing Shopping', indexnow: 'IndexNow', reindexhook: 'Fast Reindex (Compound)',
-    securityaudit: 'Security Audit', fena: 'Fena Payments', payments: 'Payment Gateways', shopify: 'Shopify', semrush: 'Semrush', seoopportunities: 'SEO Opportunities', backlinkoutreach: 'Backlink Outreach', backlinkchanges: 'Backlink Changes', googleads: 'Google Ads Campaigns', compoundqueries: '/compound Queries', compoundnegativesaudit: 'Compound Negatives Audit', internallinks: 'Internal Links', webvitals: 'Web Vitals',
+    securityaudit: 'Security Audit', fena: 'Fena Payments', payments: 'Payment Gateways', brokkrpay: 'BrokkrPay (Cards)', shopify: 'Shopify', semrush: 'Semrush', seoopportunities: 'SEO Opportunities', backlinkoutreach: 'Backlink Outreach', backlinkchanges: 'Backlink Changes', googleads: 'Google Ads Campaigns', compoundqueries: '/compound Queries', compoundnegativesaudit: 'Compound Negatives Audit', internallinks: 'Internal Links', webvitals: 'Web Vitals',
     royalmail: 'Royal Mail Labels', webhooktest: 'Webhook Test', wallidpreview: 'Wallid Preview', wallidbadges: 'Wallid Badges', wallidbanks: 'Wallid Banks', watchdog: 'Watchdog', blankwatchdog: 'Blank-Page Watchdog', healthmonitor: 'Health Monitor', infrahealth: 'Infrastructure Health', researchincidents: 'Research Incidents', purgeincidents: 'Purge Incidents', swtelemetrydebug: 'SW Telemetry Debug', monitorlog: 'Monitor Log (HEAD/GET)', staleassets: 'Stale Asset 404s', sentryissues: 'Sentry Issues', publishstatus: 'Publish Status', auditreport: 'Audit Report', emergencypurge: 'Emergency Purge', cloudflarestatus: 'Cloudflare Status', taggateway: 'Google Tag Gateway (Ads)', newsletter: 'Newsletter', cloudflareanalytics: 'CF Analytics (Human Traffic)', cfvsanalytics: 'CF vs GA4/Plausible',
   };
   const activeLabel = TAB_LABELS[activeTab] ?? activeTab;

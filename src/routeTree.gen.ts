@@ -108,6 +108,7 @@ import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-
 import { Route as ApiPublicCoaPdfRouteImport } from './routes/api/public/coa-pdf'
 import { Route as ApiPublicCloudflareSecretsStatusRouteImport } from './routes/api/public/cloudflare-secrets-status'
 import { Route as ApiPublicCacheConfigRouteImport } from './routes/api/public/cache-config'
+import { Route as ApiPublicBrokkrpayWebhookRouteImport } from './routes/api/public/brokkrpay-webhook'
 import { Route as ApiPublicAuditReportRouteImport } from './routes/api/public/audit-report'
 import { Route as ApiPublicAdminErrorsRouteImport } from './routes/api/public/admin-errors'
 import { Route as ApiPaymentsStatusRouteImport } from './routes/api/payments/status'
@@ -115,6 +116,7 @@ import { Route as ApiPaymentsPeptidepayCreateRouteImport } from './routes/api/pa
 import { Route as ApiPaymentsNowpaymentsCreateRouteImport } from './routes/api/payments/nowpayments-create'
 import { Route as ApiPaymentsCreateRouteImport } from './routes/api/payments/create'
 import { Route as ApiPaymentsCancelRouteImport } from './routes/api/payments/cancel'
+import { Route as ApiPaymentsBrokkrpayCreateRouteImport } from './routes/api/payments/brokkrpay-create'
 import { Route as ApiDsrProcessRouteImport } from './routes/api/dsr/process'
 import { Route as ApiConfigPaymentsRouteImport } from './routes/api/config/payments'
 import { Route as ApiAdminWeeklyBriefingRouteImport } from './routes/api/admin/weekly-briefing'
@@ -666,6 +668,12 @@ const ApiPublicCacheConfigRoute = ApiPublicCacheConfigRouteImport.update({
   path: '/api/public/cache-config',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicBrokkrpayWebhookRoute =
+  ApiPublicBrokkrpayWebhookRouteImport.update({
+    id: '/api/public/brokkrpay-webhook',
+    path: '/api/public/brokkrpay-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicAuditReportRoute = ApiPublicAuditReportRouteImport.update({
   id: '/api/public/audit-report',
   path: '/api/public/audit-report',
@@ -703,6 +711,12 @@ const ApiPaymentsCancelRoute = ApiPaymentsCancelRouteImport.update({
   path: '/api/payments/cancel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPaymentsBrokkrpayCreateRoute =
+  ApiPaymentsBrokkrpayCreateRouteImport.update({
+    id: '/api/payments/brokkrpay-create',
+    path: '/api/payments/brokkrpay-create',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiDsrProcessRoute = ApiDsrProcessRouteImport.update({
   id: '/api/dsr/process',
   path: '/api/dsr/process',
@@ -1000,6 +1014,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/weekly-briefing': typeof ApiAdminWeeklyBriefingRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
+  '/api/payments/brokkrpay-create': typeof ApiPaymentsBrokkrpayCreateRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/nowpayments-create': typeof ApiPaymentsNowpaymentsCreateRoute
@@ -1007,6 +1022,7 @@ export interface FileRoutesByFullPath {
   '/api/payments/status': typeof ApiPaymentsStatusRoute
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
   '/api/public/audit-report': typeof ApiPublicAuditReportRoute
+  '/api/public/brokkrpay-webhook': typeof ApiPublicBrokkrpayWebhookRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
   '/api/public/cloudflare-secrets-status': typeof ApiPublicCloudflareSecretsStatusRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
@@ -1144,6 +1160,7 @@ export interface FileRoutesByTo {
   '/api/admin/weekly-briefing': typeof ApiAdminWeeklyBriefingRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
+  '/api/payments/brokkrpay-create': typeof ApiPaymentsBrokkrpayCreateRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/nowpayments-create': typeof ApiPaymentsNowpaymentsCreateRoute
@@ -1151,6 +1168,7 @@ export interface FileRoutesByTo {
   '/api/payments/status': typeof ApiPaymentsStatusRoute
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
   '/api/public/audit-report': typeof ApiPublicAuditReportRoute
+  '/api/public/brokkrpay-webhook': typeof ApiPublicBrokkrpayWebhookRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
   '/api/public/cloudflare-secrets-status': typeof ApiPublicCloudflareSecretsStatusRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
@@ -1291,6 +1309,7 @@ export interface FileRoutesById {
   '/api/admin/weekly-briefing': typeof ApiAdminWeeklyBriefingRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
+  '/api/payments/brokkrpay-create': typeof ApiPaymentsBrokkrpayCreateRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/nowpayments-create': typeof ApiPaymentsNowpaymentsCreateRoute
@@ -1298,6 +1317,7 @@ export interface FileRoutesById {
   '/api/payments/status': typeof ApiPaymentsStatusRoute
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
   '/api/public/audit-report': typeof ApiPublicAuditReportRoute
+  '/api/public/brokkrpay-webhook': typeof ApiPublicBrokkrpayWebhookRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
   '/api/public/cloudflare-secrets-status': typeof ApiPublicCloudflareSecretsStatusRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
@@ -1438,6 +1458,7 @@ export interface FileRouteTypes {
     | '/api/admin/weekly-briefing'
     | '/api/config/payments'
     | '/api/dsr/process'
+    | '/api/payments/brokkrpay-create'
     | '/api/payments/cancel'
     | '/api/payments/create'
     | '/api/payments/nowpayments-create'
@@ -1445,6 +1466,7 @@ export interface FileRouteTypes {
     | '/api/payments/status'
     | '/api/public/admin-errors'
     | '/api/public/audit-report'
+    | '/api/public/brokkrpay-webhook'
     | '/api/public/cache-config'
     | '/api/public/cloudflare-secrets-status'
     | '/api/public/coa-pdf'
@@ -1582,6 +1604,7 @@ export interface FileRouteTypes {
     | '/api/admin/weekly-briefing'
     | '/api/config/payments'
     | '/api/dsr/process'
+    | '/api/payments/brokkrpay-create'
     | '/api/payments/cancel'
     | '/api/payments/create'
     | '/api/payments/nowpayments-create'
@@ -1589,6 +1612,7 @@ export interface FileRouteTypes {
     | '/api/payments/status'
     | '/api/public/admin-errors'
     | '/api/public/audit-report'
+    | '/api/public/brokkrpay-webhook'
     | '/api/public/cache-config'
     | '/api/public/cloudflare-secrets-status'
     | '/api/public/coa-pdf'
@@ -1728,6 +1752,7 @@ export interface FileRouteTypes {
     | '/api/admin/weekly-briefing'
     | '/api/config/payments'
     | '/api/dsr/process'
+    | '/api/payments/brokkrpay-create'
     | '/api/payments/cancel'
     | '/api/payments/create'
     | '/api/payments/nowpayments-create'
@@ -1735,6 +1760,7 @@ export interface FileRouteTypes {
     | '/api/payments/status'
     | '/api/public/admin-errors'
     | '/api/public/audit-report'
+    | '/api/public/brokkrpay-webhook'
     | '/api/public/cache-config'
     | '/api/public/cloudflare-secrets-status'
     | '/api/public/coa-pdf'
@@ -1857,6 +1883,7 @@ export interface RootRouteChildren {
   ApiAdminWeeklyBriefingRoute: typeof ApiAdminWeeklyBriefingRoute
   ApiConfigPaymentsRoute: typeof ApiConfigPaymentsRoute
   ApiDsrProcessRoute: typeof ApiDsrProcessRoute
+  ApiPaymentsBrokkrpayCreateRoute: typeof ApiPaymentsBrokkrpayCreateRoute
   ApiPaymentsCancelRoute: typeof ApiPaymentsCancelRoute
   ApiPaymentsCreateRoute: typeof ApiPaymentsCreateRoute
   ApiPaymentsNowpaymentsCreateRoute: typeof ApiPaymentsNowpaymentsCreateRoute
@@ -1864,6 +1891,7 @@ export interface RootRouteChildren {
   ApiPaymentsStatusRoute: typeof ApiPaymentsStatusRoute
   ApiPublicAdminErrorsRoute: typeof ApiPublicAdminErrorsRoute
   ApiPublicAuditReportRoute: typeof ApiPublicAuditReportRoute
+  ApiPublicBrokkrpayWebhookRoute: typeof ApiPublicBrokkrpayWebhookRoute
   ApiPublicCacheConfigRoute: typeof ApiPublicCacheConfigRoute
   ApiPublicCloudflareSecretsStatusRoute: typeof ApiPublicCloudflareSecretsStatusRoute
   ApiPublicCoaPdfRoute: typeof ApiPublicCoaPdfRoute
@@ -2613,6 +2641,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCacheConfigRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/brokkrpay-webhook': {
+      id: '/api/public/brokkrpay-webhook'
+      path: '/api/public/brokkrpay-webhook'
+      fullPath: '/api/public/brokkrpay-webhook'
+      preLoaderRoute: typeof ApiPublicBrokkrpayWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/audit-report': {
       id: '/api/public/audit-report'
       path: '/api/public/audit-report'
@@ -2660,6 +2695,13 @@ declare module '@tanstack/react-router' {
       path: '/api/payments/cancel'
       fullPath: '/api/payments/cancel'
       preLoaderRoute: typeof ApiPaymentsCancelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/payments/brokkrpay-create': {
+      id: '/api/payments/brokkrpay-create'
+      path: '/api/payments/brokkrpay-create'
+      fullPath: '/api/payments/brokkrpay-create'
+      preLoaderRoute: typeof ApiPaymentsBrokkrpayCreateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/dsr/process': {
@@ -3088,6 +3130,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminWeeklyBriefingRoute: ApiAdminWeeklyBriefingRoute,
   ApiConfigPaymentsRoute: ApiConfigPaymentsRoute,
   ApiDsrProcessRoute: ApiDsrProcessRoute,
+  ApiPaymentsBrokkrpayCreateRoute: ApiPaymentsBrokkrpayCreateRoute,
   ApiPaymentsCancelRoute: ApiPaymentsCancelRoute,
   ApiPaymentsCreateRoute: ApiPaymentsCreateRoute,
   ApiPaymentsNowpaymentsCreateRoute: ApiPaymentsNowpaymentsCreateRoute,
@@ -3095,6 +3138,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPaymentsStatusRoute: ApiPaymentsStatusRoute,
   ApiPublicAdminErrorsRoute: ApiPublicAdminErrorsRoute,
   ApiPublicAuditReportRoute: ApiPublicAuditReportRoute,
+  ApiPublicBrokkrpayWebhookRoute: ApiPublicBrokkrpayWebhookRoute,
   ApiPublicCacheConfigRoute: ApiPublicCacheConfigRoute,
   ApiPublicCloudflareSecretsStatusRoute: ApiPublicCloudflareSecretsStatusRoute,
   ApiPublicCoaPdfRoute: ApiPublicCoaPdfRoute,

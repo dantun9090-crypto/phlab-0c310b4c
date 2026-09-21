@@ -37,7 +37,7 @@ vi.mock("@/lib/payment-gateways.functions", () => ({
  */
 function CheckoutPaymentStepHarness() {
   const [options, setOptions] = useState<CheckoutPaymentOptions | null>(null);
-  const [method, setMethod] = useState<"pay_by_bank" | "bank_transfer" | "wallid" | "peptidepay" | "nowpayments" | "tide">(
+  const [method, setMethod] = useState<"pay_by_bank" | "bank_transfer" | "wallid" | "peptidepay" | "brokkrpay" | "nowpayments" | "tide">(
     "wallid",
   );
   const [wallidEnabled, setWallidEnabled] = useState(true);

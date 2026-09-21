@@ -35,7 +35,7 @@ export type CheckoutEvent =
   | {
       stage: 'gateway_error';
       cartId: string;
-      gateway: 'wallid' | 'peptidepay' | 'nowpayments';
+      gateway: 'wallid' | 'peptidepay' | 'brokkrpay' | 'nowpayments';
       errorCode: string;
       errorMessage: string;
       timestamp: number;
