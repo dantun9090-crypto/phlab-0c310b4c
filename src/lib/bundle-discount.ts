@@ -75,17 +75,22 @@ export function computeBundleDiscount(
     ? null
     : (BUNDLE_TIERS.filter(t => !tier || t.percent > tier.percent).sort((a, b) => a.minUnits - b.minUnits)[0] ?? null);
 
-  const suppressedByCoupon = couponDiscount > 0 && tier !== null;
+  const couponActive = Number.isFinite(couponDiscount) && couponDiscount > 0;
+  const suppressedByCoupon = couponActive && tier !== null;
   const safeSubtotal = Number.isFinite(subtotal) && subtotal > 0 ? subtotal : 0;
   const percent = tier && !suppressedByCoupon ? tier.percent : 0;
   const amount = percent > 0 ? +Math.min(safeSubtotal, safeSubtotal * percent / 100).toFixed(2) : 0;
+
+  // With a coupon applied the bundle discount can never be earned, so there is
+  // no next tier to promote — promising one would be misleading.
+  const reachableNext = couponActive ? null : next;
 
   return {
     units,
     percent,
     amount,
     suppressedByCoupon,
-    unitsToNextTier: next ? Math.max(0, next.minUnits - units) : null,
-    nextTierPercent: next ? next.percent : null,
+    unitsToNextTier: reachableNext ? Math.max(0, reachableNext.minUnits - units) : null,
+    nextTierPercent: reachableNext ? reachableNext.percent : null,
   };
 }
