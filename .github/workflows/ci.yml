@@ -299,7 +299,7 @@ jobs:
             dist/sbom.cdx.json
 
       - name: Verify SLSA provenance attestation (self-check)
-        if: always()
+        if: hashFiles('dist/sbom.cdx.json.provenance.intoto.jsonl') != ''
         # See note on "Verify SBOM signature (self-check)" above — Rekor
         # search API change makes this self-check flake even when the
         # underlying attestation is valid. The signed .intoto.jsonl is
