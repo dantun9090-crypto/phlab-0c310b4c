@@ -56,7 +56,7 @@ interface CheckoutForm {
   city: string;
   postcode: string;
   country: string;
-  paymentMethod: '' | 'bank_transfer' | 'pay_by_bank' | 'wallid' | 'peptidepay' | 'nowpayments' | 'tide';
+  paymentMethod: '' | 'bank_transfer' | 'pay_by_bank' | 'wallid' | 'peptidepay' | 'brokkrpay' | 'nowpayments' | 'tide';
   acceptedTerms: boolean;
   ageVerified: boolean;
   createAccount: boolean;
