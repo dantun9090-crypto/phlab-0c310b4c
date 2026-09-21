@@ -33,6 +33,7 @@ import { toast, Toaster as SonnerToaster } from 'sonner';
 
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
 import { usePeptidePayEnabled } from '@/lib/peptidepay-toggle';
+import { useBrokkrPayConfig } from '@/lib/brokkrpay-fx';
 import { useNowPaymentsEnabled } from '@/lib/nowpayments-toggle';
 import { useTideEnabled } from '@/lib/tide-toggle';
 import TidePayPanel from '@/components/TidePayPanel';
@@ -170,6 +171,7 @@ export default function CheckoutPage() {
   const [wallidEnabled, setWallidEnabled] = useState<boolean>(false);
   const [manualTransferEnabled, setManualTransferEnabled] = useState<boolean>(true);
   const { enabled: peptidepayEnabled } = usePeptidePayEnabled();
+  const { enabled: brokkrpayEnabled } = useBrokkrPayConfig();
   const { enabled: nowpaymentsEnabled } = useNowPaymentsEnabled();
   const { enabled: tideEnabled } = useTideEnabled();
 
@@ -2299,6 +2301,7 @@ export default function CheckoutPage() {
                       options={paymentOptions}
                       wallidEnabled={wallidEnabled}
                       peptidepayEnabled={peptidepayEnabled}
+                      brokkrpayEnabled={brokkrpayEnabled}
                       nowpaymentsEnabled={nowpaymentsEnabled}
                       tideEnabled={tideEnabled}
                       manualEnabled={manualTransferEnabled}
