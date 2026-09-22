@@ -62,6 +62,7 @@ const ELIGIBLE_PROVIDERS = new Set([
   "nowpayments",
   "bank_transfer",
   "tide",
+  "wallid_manual",
 ]);
 
 function constantTimeEqual(a: string, b: string): boolean {
