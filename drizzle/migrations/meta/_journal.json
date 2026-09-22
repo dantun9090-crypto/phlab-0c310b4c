@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1790091677322,
+      "tag": "0000_lock_storage_objects_client_roles",
+      "breakpoints": true
+    }
+  ]
+}
