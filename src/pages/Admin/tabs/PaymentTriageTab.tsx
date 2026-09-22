@@ -152,6 +152,9 @@ export default function PaymentTriageTab() {
         </div>
       </div>
 
+      {/* Manual rescue — unsettled orders confirmed on the bank statement */}
+      <PendingPaymentsReviewCard />
+
       {/* Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Stat label="Total attempts" value={counts.total} />
