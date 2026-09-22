@@ -74,7 +74,7 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
           .in("status", ["NEW", "PENDING", "PROCESSING", "FAILED", "EXPIRED", "DECLINED", "CANCELLED"])
           .gte("created_at", cutoff)
           .order("created_at", { ascending: false })
-          .limit(150);
+          .limit(300);
 
         if (error) {
           console.error("[Wallid reconcile] DB lookup failed:", error.message);
@@ -82,6 +82,14 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
         }
         if (!rows || rows.length === 0) {
           return json({ checked: 0, updated: 0 });
+        }
+        // Page cap hit → older non-terminal rows inside the 48h window are
+        // NOT being polled this run. Surface it loudly; the admin fallback is
+        // the manual review list in the Payment triage tab.
+        if (rows.length >= 300) {
+          console.warn(
+            "[Wallid reconcile] PAGE_CAP_REACHED rows=300 — older pending rows in the 48h window were skipped this run",
+          );
         }
 
         let updated = 0;
