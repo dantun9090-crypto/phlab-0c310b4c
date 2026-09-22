@@ -74,7 +74,7 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
           .in("status", ["NEW", "PENDING", "PROCESSING", "FAILED", "EXPIRED", "DECLINED", "CANCELLED"])
           .gte("created_at", cutoff)
           .order("created_at", { ascending: false })
-          .limit(150);
+          .limit(300);
 
         if (error) {
           console.error("[Wallid reconcile] DB lookup failed:", error.message);
