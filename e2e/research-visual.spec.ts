@@ -48,7 +48,7 @@ test.describe("/research visual regression (article page)", () => {
 
     // Hard guard: this MUST be the legacy article page, not the Ads landing.
     await expect(page.locator('[data-source="legacy-research-page"]')).toBeVisible();
-    await expect(page.locator("h1")).toContainText(/Peptide Research/i);
+    await expect(page.locator("h1")).toContainText(/Tested Research Peptides UK/i);
 
     await page.waitForLoadState("load", { timeout: 10_000 }).catch(() => undefined);
     await page.waitForTimeout(500);

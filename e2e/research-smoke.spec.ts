@@ -2,7 +2,8 @@
  * Smoke test for /research.
  *
  * Asserts the route renders the canonical article-rich page from
- * src/pages/Research/index.tsx (Peptide Research & Comparative Science)
+ * src/pages/Research/index.tsx (Tested Research Peptides UK —
+ * Retatrutide, MOTS-C & GHK-Cu Data)
  * and that the previous Google-Ads landing overlay is NOT present.
  * If this test fails, somebody re-introduced a src/routes/research.tsx
  * (or similar) that hijacks the path.
@@ -25,8 +26,8 @@ test.describe("/research = legacy article page only", () => {
     await expect(page.locator('[data-source="legacy-research-page"]')).toBeVisible();
 
     // Canonical H1 from the article page.
-    await expect(page.locator("h1")).toContainText(/Peptide Research/i);
-    await expect(page.locator("h1")).toContainText(/Comparative Science/i);
+    await expect(page.locator("h1")).toContainText(/Tested Research Peptides UK/i);
+    await expect(page.locator("h1")).toContainText(/Retatrutide, MOTS-C & GHK-Cu Data/i);
 
     // Compound sections must be rendered (article-rich layout).
     await expect(page.locator("#incretin")).toBeAttached();
