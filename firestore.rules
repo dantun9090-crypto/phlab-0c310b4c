@@ -604,7 +604,39 @@ service cloud.firestore {
     }
 
     match /checkoutTelemetry/{doc} {
-      allow create: if true;  // anonymous users can create telemetry logs
+      // Shape-locked anonymous create (pattern mirrors /cart_events above).
+      allow create: if request.resource.data.keys().hasOnly([
+                         'type', 'sessionId', 'createdAt',
+                         'path', 'source', 'code', 'message', 'extra'
+                       ])
+                    && request.resource.data.keys().hasAll(['type', 'sessionId', 'createdAt'])
+                    && request.resource.data.type is string
+                    && request.resource.data.type.size() > 0
+                    && request.resource.data.type.size() < 64
+                    && request.resource.data.sessionId is string
+                    && request.resource.data.sessionId.size() > 0
+                    && request.resource.data.sessionId.size() < 80
+                    && request.resource.data.createdAt == request.time
+                    && (!('path' in request.resource.data)
+                        || request.resource.data.path == null
+                        || (request.resource.data.path is string
+                            && request.resource.data.path.size() < 320))
+                    && (!('source' in request.resource.data)
+                        || request.resource.data.source == null
+                        || (request.resource.data.source is string
+                            && request.resource.data.source.size() < 200))
+                    && (!('code' in request.resource.data)
+                        || request.resource.data.code == null
+                        || (request.resource.data.code is string
+                            && request.resource.data.code.size() < 100))
+                    && (!('message' in request.resource.data)
+                        || request.resource.data.message == null
+                        || (request.resource.data.message is string
+                            && request.resource.data.message.size() < 500))
+                    && (!('extra' in request.resource.data)
+                        || request.resource.data.extra == null
+                        || (request.resource.data.extra is string
+                            && request.resource.data.extra.size() < 600));
       allow read: if false;   // no one reads directly — only admin via console
       allow update, delete: if false;
     }
