@@ -41,7 +41,17 @@ export interface BackupAlertPayload {
   extra?: Record<string, unknown>;
 }
 
+function escapeAlertHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function color(p: BackupAlertPayload): string {
+
   if (p.severity === "critical") return "danger";
   if (p.severity === "warn") return "warning";
   return "#3b82f6";
