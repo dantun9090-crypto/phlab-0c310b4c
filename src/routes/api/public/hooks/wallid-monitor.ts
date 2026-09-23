@@ -74,7 +74,7 @@ export const Route = createFileRoute("/api/public/hooks/wallid-monitor")({
           ? authHeader.slice(7).trim()
           : "";
         const provided = bearer || request.headers.get("x-cron-secret") || "";
-        const expected = (process.env.CLEANUP_SECRET_V2 || process.env.CLEANUP_SECRET) || "";
+        const expected = process.env.CLEANUP_SECRET_V2 || "";
         if (!expected || !provided || !timingSafeEqualStr(provided, expected)) {
           return json({ error: "Unauthorized" }, 401);
         }

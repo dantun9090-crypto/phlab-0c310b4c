@@ -14,7 +14,7 @@ export const triggerWatchdogRun = createServerFn({ method: 'POST' })
   .validator((i: unknown) => Input.parse(i))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
-    const secret = (process.env.CLEANUP_SECRET_V2 || process.env.CLEANUP_SECRET);
+    const secret = process.env.CLEANUP_SECRET_V2;
     if (!secret) throw new Error('CLEANUP_SECRET missing');
     const res = await fetch(ENDPOINT, {
       method: 'POST',

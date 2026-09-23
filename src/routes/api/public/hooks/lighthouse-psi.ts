@@ -177,7 +177,7 @@ export const Route = createFileRoute("/api/public/hooks/lighthouse-psi")({
         });
         if (limited) return limited;
 
-        const expected = (process.env.CLEANUP_SECRET_V2 || process.env.CLEANUP_SECRET);
+        const expected = process.env.CLEANUP_SECRET_V2;
         const provided =
           request.headers.get("x-watchdog-secret") ||
           request.headers.get("x-cleanup-secret");
