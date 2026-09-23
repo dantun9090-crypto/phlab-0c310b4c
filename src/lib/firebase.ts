@@ -1545,7 +1545,10 @@ export const redeemReferralBalance = async (userId: string): Promise<string> => 
   // Generate unique coupon code
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let couponCode = 'REFERRAL-';
-  for (let i = 0; i < 8; i++) couponCode += chars[Math.floor(Math.random() * chars.length)];
+  // Cryptographically secure, 16 chars (~80 bits) — unguessable via the public validator.
+  const rnd = new Uint8Array(16);
+  crypto.getRandomValues(rnd);
+  for (let i = 0; i < 16; i++) couponCode += chars[rnd[i] % chars.length]; // 256 % 32 === 0, no bias
 
   const expiryDate = new Date();
   expiryDate.setFullYear(expiryDate.getFullYear() + 1);
