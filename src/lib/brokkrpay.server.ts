@@ -198,9 +198,9 @@ export interface BrokkrPayLink {
 
 export async function createBrokkrPayLink(input: CreateBrokkrPayLinkInput): Promise<BrokkrPayLink> {
   // Charge in GBP (store currency). BrokkrPay still takes WHOLE units only,
-  // so pence are rounded UP to the next pound — never under-charge.
+  // so pence are rounded DOWN (shop absorbs <£1) — never over-charge.
   void gbpPenceToUsdWhole;
-  const amountUsd = Math.max(1, Math.ceil(Math.round(Number(input.amountPence)) / 100));
+  const amountUsd = Math.max(1, Math.floor(Math.round(Number(input.amountPence)) / 100));
   if (!Number.isInteger(amountUsd) || amountUsd < 1 || amountUsd > 100_000) {
     throw new BrokkrPayError(400, "amount_out_of_range", "Order total is out of range for card payment.");
   }
