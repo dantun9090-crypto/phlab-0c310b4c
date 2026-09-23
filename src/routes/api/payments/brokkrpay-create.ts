@@ -121,7 +121,7 @@ export const Route = createFileRoute("/api/payments/brokkrpay-create")({
           return json({ error: "Amount does not match order total" }, 400);
         }
 
-        const amountUsd = gbpPenceToUsdWhole(dbMinor, usdRate);
+        void gbpPenceToUsdWhole;
         const trustedEmail = ctx.customerEmail || customerEmail;
         const returnUrl = `${SITE_ORIGIN}/checkout/success?order_id=${encodeURIComponent(orderId)}${
           paymentToken ? `&pt=${encodeURIComponent(paymentToken)}` : ""
