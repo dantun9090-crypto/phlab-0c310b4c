@@ -187,10 +187,9 @@ export const markOrderPaidManuallyAdmin = createServerFn({ method: "POST" })
     // Telegram alert, explicitly flagged as a human override.
     try {
       const { sendTelegramAlert } = await import("@/lib/server/telegram-alert");
-      const amountPence = Number((prior?.totalAmount as number) ?? (prior?.total as number) ?? 0);
-      const amountText = amountPence
-        ? `£${(amountPence > 1000 ? amountPence / 100 : amountPence).toFixed(2)}`
-        : "";
+      // Orders store totals in pounds (see create-order.server.ts) — no pence conversion.
+      const amountGbp = Number((prior?.totalAmount as number) ?? (prior?.total as number) ?? 0);
+      const amountText = amountGbp ? `£${amountGbp.toFixed(2)}` : "";
       await sendTelegramAlert(
         `🖐 <b>MANUAL_OVERRIDE — zamówienie oznaczone jako opłacone</b>\n` +
           `Zamówienie: <code>${data.orderId}</code>${amountText ? `\nKwota: ${amountText}` : ""}\n` +
