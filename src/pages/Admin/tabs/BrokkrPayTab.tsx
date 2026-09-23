@@ -44,6 +44,7 @@ import {
 import {
   loadBrokkrPayConfig,
   saveBrokkrPayConfig,
+  useBrokkrPayConfig,
   gbpPenceToUsdWhole,
   BROKKRPAY_DISCLOSURE,
 } from '@/lib/brokkrpay-fx';
