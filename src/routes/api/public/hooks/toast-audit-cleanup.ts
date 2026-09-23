@@ -148,7 +148,7 @@ export const Route = createFileRoute('/api/public/hooks/toast-audit-cleanup')({
         });
         if (limited) return limited;
 
-        const expected = process.env.CLEANUP_SECRET;
+        const expected = (process.env.CLEANUP_SECRET_V2 || process.env.CLEANUP_SECRET);
         const provided = request.headers.get('x-cleanup-secret');
         if (!expected || !provided || !timingSafeEqualStr(provided, expected)) {
           const badAuthLimited = await enforceRateLimit(request, ENDPOINT, {

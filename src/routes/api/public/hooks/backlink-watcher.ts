@@ -42,7 +42,7 @@ export const Route = createFileRoute('/api/public/hooks/backlink-watcher')({
         });
         if (limited) return limited;
 
-        const expected = process.env.CLEANUP_SECRET;
+        const expected = (process.env.CLEANUP_SECRET_V2 || process.env.CLEANUP_SECRET);
         const provided =
           request.headers.get('x-watchdog-secret') ||
           request.headers.get('x-cleanup-secret');

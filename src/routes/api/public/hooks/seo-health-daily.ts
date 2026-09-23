@@ -163,7 +163,7 @@ export const Route = createFileRoute('/api/public/hooks/seo-health-daily')({
         const limited = await enforceRateLimit(request, ENDPOINT, { limit: 6, windowMs: 60_000, retryAfterSec: 120 });
         if (limited) return limited;
 
-        const expected = process.env.CLEANUP_SECRET;
+        const expected = (process.env.CLEANUP_SECRET_V2 || process.env.CLEANUP_SECRET);
         const provided = request.headers.get('x-watchdog-secret') || request.headers.get('x-cleanup-secret');
         if (!expected || !provided || !timingSafeEqualStr(provided, expected)) {
           return new Response('Unauthorized', { status: 401 });

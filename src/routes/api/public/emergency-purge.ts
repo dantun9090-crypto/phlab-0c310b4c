@@ -30,7 +30,7 @@ function constantTimeEqual(a: string, b: string): boolean {
 async function readConfiguredToken(): Promise<string | null> {
   const doc = await getDocAdmin('siteConfig', 'emergencyPurgeToken').catch(() => null);
   const firestoreToken = typeof doc?.token === 'string' ? doc.token.trim() : '';
-  const envToken = (process.env.EMERGENCY_PURGE_TOKEN || process.env.CACHE_PURGE_TOKEN || process.env.CLEANUP_SECRET || '').trim();
+  const envToken = (process.env.EMERGENCY_PURGE_TOKEN || process.env.CACHE_PURGE_TOKEN || (process.env.CLEANUP_SECRET_V2 || process.env.CLEANUP_SECRET) || '').trim();
   return firestoreToken || envToken || null;
 }
 
