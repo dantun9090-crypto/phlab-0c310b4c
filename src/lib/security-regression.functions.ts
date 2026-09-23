@@ -173,6 +173,39 @@ export async function runSecurityRegression(): Promise<ProbeReport> {
     www ? `status ${www.status} loc=${wwwLoc || '?'}` : 'unreachable',
   ));
 
+  // 6) Public-read `settings/*` secret-leak guard.
+  // The whole `settings` collection is world-readable (bankTransfer is
+  // shown at checkout by design). If any future admin panel writes a key
+  // that looks like a secret (apiKey/token/password/...) into ANY doc in
+  // this collection, it is instantly public. Keys are matched by NAME —
+  // resilient to schema drift, catches the actual threat.
+  try {
+    const { listDocsAdmin } = await import('./server/firestore-admin');
+    const settingsRows = (await listDocsAdmin('settings', { limit: 200 })) as Array<Record<string, unknown>>;
+    const SENSITIVE_KEY = /secret|token|api[-_]?key|pass(word)?|credential|private|webhook/i;
+    const hits: string[] = [];
+    for (const row of settingsRows) {
+      const docId = typeof row.id === 'string' ? row.id : '?';
+      for (const k of Object.keys(row)) {
+        if (k === 'id') continue;
+        if (SENSITIVE_KEY.test(k)) hits.push(`${docId}.${k}`);
+      }
+    }
+    checks.push(check(
+      'settings-public-read-guard',
+      'No secret-looking keys in public-read settings/*',
+      hits.length === 0,
+      hits.length ? `leaked key names: ${hits.slice(0, 6).join(', ')}` : `${settingsRows.length} docs clean`,
+    ));
+  } catch (e) {
+    checks.push({
+      id: 'settings-public-read-guard',
+      title: 'No secret-looking keys in public-read settings/*',
+      status: 'warn',
+      detail: `probe failed: ${e instanceof Error ? e.message : String(e)}`,
+    });
+  }
+
   const failed = checks.filter((c) => c.status === 'fail').length;
   return {
     ok: failed === 0,
