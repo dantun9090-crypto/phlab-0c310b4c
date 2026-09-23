@@ -1390,12 +1390,15 @@ export default {
       method: request.method,
       path: url.pathname,
       query: url.search || undefined,
-      ip,
+      // Visitor IPs are personal data — never written to the log stream in
+      // full. Keep a coarse prefix for abuse correlation only.
+      ip: maskIpForLog(ip),
       country,
       ua,
       referer,
       cfRay: ray,
     };
+
 
     try {
       // 0. Browser cache reset. Keep this before SSR so `/?sw=off` never loads
