@@ -405,7 +405,7 @@ export const Route = createFileRoute('/api/public/hooks/watchdog')({
         const limited = await enforceRateLimit(request, ENDPOINT, { limit: 30, windowMs: 60_000, retryAfterSec: 120 });
         if (limited) return limited;
 
-        const expected = (process.env.CLEANUP_SECRET_V2 || process.env.CLEANUP_SECRET);
+        const expected = process.env.CLEANUP_SECRET_V2;
         const provided = request.headers.get('x-watchdog-secret') || request.headers.get('x-cleanup-secret');
         if (!expected || !provided || !timingSafeEqualStr(provided, expected)) {
           const bad = await enforceRateLimit(request, ENDPOINT, { limit: 10, windowMs: 60_000, retryAfterSec: 120, bucketKind: 'bad-auth' });
