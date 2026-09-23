@@ -23,6 +23,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { enforceRateLimit, getClientIp } from "@/lib/rate-limit";
 import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
 import { verifyBrokkrPaySignature, readBrokkrPayWebhookSecret } from "@/lib/brokkrpay.server";
+import { allowFromFor } from "@/lib/payment-transitions";
 
 interface BrokkrWebhookBody {
   type?: string;
@@ -45,13 +46,18 @@ function textResp(body: string, status: number): Response {
   });
 }
 
-function mapState(raw: string): "paid" | "failed" | "expired" | null {
+function mapState(raw: string): "paid" | "failed" | "expired" | "cancelled" | null {
   switch (raw.toUpperCase()) {
     case "SUCCESS":
       return "paid";
     case "FAILED":
-    case "CANCELLED":
       return "failed";
+    case "CANCELLED":
+      // Customer abandoned the hosted page OR the 24h payment link expired
+      // unpaid. Kept distinct from "failed" so the panel and the success
+      // page can show the cancelled copy; "cancelled" is in
+      // PAID_ALLOW_FROM so a later "Pay again" can still win.
+      return "cancelled";
     case "FROZEN":
       return null; // needs manual review, never auto-fails the order
     default:
@@ -193,7 +199,10 @@ export const Route = createFileRoute("/api/public/brokkrpay-webhook")({
         }
 
         const { transitioned, prior } = await transitionDocStatusAdmin("orders", reference, {
-          allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
+          // Same allow-lists as the status poller: paid wins from retries
+          // (failed/expired/cancelled), while failed/expired/cancelled can
+          // never pull a settled order backward.
+          allowFrom: allowFromFor(mapped),
           updates: {
             status: mapped,
             paymentProvider: "brokkrpay",
@@ -201,6 +210,7 @@ export const Route = createFileRoute("/api/public/brokkrpay-webhook")({
             brokkrpayState: rawState,
             paymentUpdatedAt: new Date(),
             ...(mapped === "paid" ? { paidAt: new Date() } : {}),
+            ...(mapped === "cancelled" ? { cancelledAt: new Date() } : {}),
             paymentTokenHash: null,
           },
         });

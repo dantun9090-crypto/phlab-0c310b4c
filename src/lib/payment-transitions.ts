@@ -29,6 +29,9 @@ export const PAID_ALLOW_FROM: string[] = [
   "payment_failed",
   "expired",
   "payment_expired",
+  // Customer cancelled (or the 24h link expired unpaid) and then paid via
+  // the "Pay again" link — a genuine payment must ALWAYS win.
+  "cancelled",
   "cancelled_payment",
 ];
 

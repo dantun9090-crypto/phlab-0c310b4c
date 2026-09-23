@@ -219,7 +219,16 @@ function CheckoutSuccessPage() {
           (snap) => {
             if (stopRef.current || !snap.exists()) return;
             const s = String((snap.data() as { status?: unknown }).status ?? "").toLowerCase();
-            if (s === "paid" || s === "processing" || s === "shipped" || s === "delivered") {
+            const d = snap.data() as Record<string, unknown>;
+            // "processing" is an admin fulfilment state, NOT payment
+            // evidence — only treat it as paid when the doc carries
+            // payment evidence (paidAt set by a real settle path).
+            const paidEvidence =
+              typeof d.paidAt !== "undefined" && d.paidAt !== null;
+            if (
+              s === "paid" || s === "shipped" || s === "delivered" ||
+              (s === "processing" && paidEvidence)
+            ) {
               setPhaseSafe("paid");
               void fireGaPurchaseOnce(oid, snap.data() as Record<string, unknown>);
               try {
@@ -470,12 +479,12 @@ function CheckoutSuccessPage() {
             <h1 className="mt-4 text-xl font-bold text-white">
               {escalation === "alert"
                 ? "Still no confirmation from your bank"
-                : "Payment received — confirming with your bank"}
+                : "Confirming your payment with your bank…"}
             </h1>
 
             {escalation === "none" && (
               <p className="mt-2 text-sm text-slate-300">
-                Your bank hasn't sent the final confirmation yet. You can safely close this page — we'll email you as soon as it lands. Order <span className="font-mono text-emerald-400">{orderId}</span>.
+                We haven't received the final confirmation yet — no money is confirmed as taken. You can safely close this page; we'll email you as soon as it lands. Order <span className="font-mono text-emerald-400">{orderId}</span>.
               </p>
             )}
 
