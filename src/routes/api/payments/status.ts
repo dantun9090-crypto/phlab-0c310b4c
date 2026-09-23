@@ -305,7 +305,7 @@ export const Route = createFileRoute("/api/payments/status")({
                       updates: {
                         status: "paid",
                         paymentProvider: "brokkrpay",
-                        brokkrpayOrderId,
+                        brokkrpayOrderId: brokkrOrderId,
                         brokkrpayState: state,
                         paymentUpdatedAt: new Date(),
                         paidAt: new Date(),
