@@ -63,6 +63,7 @@ const ELIGIBLE_PROVIDERS = new Set([
   "bank_transfer",
   "tide",
   "wallid_manual",
+  "brokkrpay",
 ]);
 
 function constantTimeEqual(a: string, b: string): boolean {
