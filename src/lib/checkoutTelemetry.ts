@@ -91,11 +91,39 @@ export async function logCheckoutEvent(event: CheckoutEvent): Promise<void> {
     }
   }
   try {
+    // Shape-locked payload — must match the /checkoutTelemetry rule in
+    // firestore.rules (hasOnly type/sessionId/createdAt/path/source/code/
+    // message/extra, with per-field size limits).
+    const e = event as Record<string, unknown>;
+    const code =
+      e.statusCode !== undefined
+        ? String(e.statusCode)
+        : typeof e.errorCode === 'string'
+          ? e.errorCode
+          : typeof e.errorType === 'string'
+            ? e.errorType
+            : null;
+    const message =
+      typeof e.errorMessage === 'string'
+        ? e.errorMessage
+        : typeof e.error === 'string'
+          ? e.error
+          : null;
+    const extraSource: Record<string, unknown> = {};
+    for (const key of ['gateway', 'orderId', 'durationMs', 'retryCount', 'responseSummary', 'url', 'userAgent'] as const) {
+      if (e[key] !== undefined) extraSource[key] = e[key];
+    }
+    extraSource.userAgent = safeUA().slice(0, 200);
+
     await addDoc(collection(db, 'checkoutTelemetry'), {
-      ...event,
-      userAgent: safeUA(),
-      url: safeUrl(),
-      loggedAt: serverTimestamp(),
+      type: String(event.stage).slice(0, 63),
+      sessionId: String(e.cartId ?? 'unknown').slice(0, 79),
+      createdAt: serverTimestamp(),
+      path: safeUrl().slice(0, 319),
+      source: 'checkout',
+      code: code ? code.slice(0, 99) : null,
+      message: message ? message.slice(0, 499) : null,
+      extra: JSON.stringify(extraSource).slice(0, 599),
     });
   } catch {
     /* telemetry must never block checkout */
