@@ -53,20 +53,20 @@ describe("verifyBackupCaller", () => {
     expect(r.ok).toBe(false);
   });
 
-  it("accepts an exact apikey match (publishable key)", () => {
+  it("rejects the public publishable key (not a credential)", () => {
     const r = verifyBackupCaller(
       reqWith({ apikey: ENV.SUPABASE_PUBLISHABLE_KEY }),
       ENV,
     );
-    expect(r).toEqual({ ok: true, method: "apikey" });
+    expect(r.ok).toBe(false);
   });
 
-  it("accepts an exact apikey match (anon key)", () => {
+  it("rejects the public anon key (not a credential)", () => {
     const r = verifyBackupCaller(
       reqWith({ apikey: ENV.SUPABASE_ANON_KEY }),
       ENV,
     );
-    expect(r.ok).toBe(true);
+    expect(r.ok).toBe(false);
   });
 
   it("accepts an exact x-cron-secret match", () => {
