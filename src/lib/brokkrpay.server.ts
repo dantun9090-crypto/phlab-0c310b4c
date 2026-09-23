@@ -43,6 +43,9 @@ export class BrokkrPayError extends Error {
 }
 
 export function readBrokkrPayApiKey(): string | null {
+  // A live key, when present, always wins over the sandbox key.
+  const live = process.env["BROKKRPAY_LIVE_API_KEY"];
+  if (live && /^bpk_live_/.test(live)) return live;
   return process.env["BROKKRPAY_API_KEY"] || null;
 }
 
