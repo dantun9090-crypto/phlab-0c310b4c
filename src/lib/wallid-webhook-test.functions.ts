@@ -84,7 +84,21 @@ export const sendTestWallidWebhook = createServerFn({ method: "POST" })
       };
     }
 
-    const origin = data.targetOrigin || "https://phlabs.co.uk";
+    // Only our own origins may receive the signed test webhook — otherwise an
+    // admin-supplied URL turns the server into a signed-request proxy (SSRF).
+    const ALLOWED_ORIGINS = [
+      "https://phlabs.co.uk",
+      "https://www.phlabs.co.uk",
+      "http://localhost:8080",
+    ];
+    const requested = (data.targetOrigin || "https://phlabs.co.uk").replace(/\/$/, "");
+    if (!ALLOWED_ORIGINS.includes(requested)) {
+      return {
+        ok: false as const,
+        error: `targetOrigin not allowed. Allowed: ${ALLOWED_ORIGINS.join(", ")}`,
+      };
+    }
+    const origin = requested;
     const url = `${origin.replace(/\/$/, "")}/api/public/hooks/wallid`;
 
     const eventId = `test_evt_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
