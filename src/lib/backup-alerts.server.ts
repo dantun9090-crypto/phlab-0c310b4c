@@ -163,7 +163,10 @@ export async function sendBackupAlert(
     if (p.reason) lines.push(`Reason: ${p.reason}`);
     lines.push("", `Admin: ${ADMIN_LINK}`);
     const text = lines.join("\n");
-    const html = `<p>${text.replace(/\n/g, "<br/>")}</p>`;
+    // Alert fields carry attacker-controlled data (User-Agent, reason) —
+    // escape before embedding in the HTML body.
+    const html = `<p>${escapeAlertHtml(text).replace(/\n/g, "<br/>")}</p>`;
+
 
     await enqueueMailOnce(`backup-alert:${p.type}:${p.ip ?? "noip"}:${bucket}`, {
       to: ADMIN_ALERT_EMAIL,
