@@ -74,7 +74,13 @@ export default function BrokkrPayTab() {
   const [statusBusy, setStatusBusy] = useState(true);
   const [statusErr, setStatusErr] = useState('');
 
+  // Live-subscribed truth for the ON/OFF switch — the same source checkout
+  // reads, so the button can never disagree with what shoppers see.
+  const { enabled: liveEnabled } = useBrokkrPayConfig();
   const [enabled, setEnabled] = useState(false);
+  useEffect(() => {
+    setEnabled(liveEnabled);
+  }, [liveEnabled]);
   const [rate, setRate] = useState('1.30');
   const [cfgBusy, setCfgBusy] = useState(false);
 
