@@ -106,15 +106,10 @@ export const Route = createFileRoute("/api/payments/status")({
           ? await verifyPaymentTokenHash(paymentToken, (order as { paymentTokenHash?: unknown }).paymentTokenHash)
           : false;
 
-        // Fallback: if the Firestore order is already in a terminal state
-        // (paid/failed/expired) — confirmed by webhook or reconcile cron —
-        // allow an unauthenticated read of *just the status*. The success
-        // page often loses its Firebase session after the bank webview
-        // redirect, and the one-shot paymentToken in localStorage may have
-        // been wiped on a prior successful poll. Without this short-circuit
-        // a logged-out user sees an infinite spinner even though the order
-        // is fully paid. The response intentionally omits amount/currency
-        // so it does not leak order details on a guessed orderId.
+        // Ownership is mandatory: either a verified Firebase session that owns
+        // the order, or the one-shot guest paymentToken hash stored on it.
+        // No unauthenticated status reads — otherwise anyone supplying an
+        // orderId could learn whether that order was paid.
         const firestoreStatusLower = String((order as { status?: unknown }).status ?? "").toLowerCase();
         const terminalMap: Record<string, string> = {
           paid: "SUCCESS",
@@ -126,18 +121,12 @@ export const Route = createFileRoute("/api/payments/status")({
           expired: "EXPIRED",
         };
         if (!ownsByUid && !ownsByToken) {
-          if (terminalMap[firestoreStatusLower]) {
-            return json({
-              status: terminalMap[firestoreStatusLower],
-              order_id: orderId,
-              found: true,
-            });
-          }
           if (!idToken && !paymentToken) {
             return json({ error: "Authentication required" }, 401);
           }
           return json({ error: "Forbidden" }, 403);
         }
+
 
         // Analytics ack: the success page fired the GA4/Ads purchase event
         // in the browser — mark the order so the server-side Measurement
