@@ -132,7 +132,7 @@ export const Route = createFileRoute('/api/public/hooks/security-cleanup')({
         });
         if (limited) return limited;
 
-        const expected = process.env.CLEANUP_SECRET;
+        const expected = (process.env.CLEANUP_SECRET_V2 || process.env.CLEANUP_SECRET);
         const provided = request.headers.get('x-cleanup-secret');
         if (!expected || !provided || !timingSafeEqualStr(provided, expected)) {
           // 2) Separate bad-auth bucket — 10 req/min for failed auth.

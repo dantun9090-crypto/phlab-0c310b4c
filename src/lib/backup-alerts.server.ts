@@ -41,7 +41,17 @@ export interface BackupAlertPayload {
   extra?: Record<string, unknown>;
 }
 
+function escapeAlertHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function color(p: BackupAlertPayload): string {
+
   if (p.severity === "critical") return "danger";
   if (p.severity === "warn") return "warning";
   return "#3b82f6";
@@ -163,7 +173,10 @@ export async function sendBackupAlert(
     if (p.reason) lines.push(`Reason: ${p.reason}`);
     lines.push("", `Admin: ${ADMIN_LINK}`);
     const text = lines.join("\n");
-    const html = `<p>${text.replace(/\n/g, "<br/>")}</p>`;
+    // Alert fields carry attacker-controlled data (User-Agent, reason) —
+    // escape before embedding in the HTML body.
+    const html = `<p>${escapeAlertHtml(text).replace(/\n/g, "<br/>")}</p>`;
+
 
     await enqueueMailOnce(`backup-alert:${p.type}:${p.ip ?? "noip"}:${bucket}`, {
       to: ADMIN_ALERT_EMAIL,

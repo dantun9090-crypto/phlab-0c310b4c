@@ -41,7 +41,7 @@ export const Route = createFileRoute("/api/public/hooks/fena-process-retries")({
         });
         if (limited) return limited;
 
-        const expected = process.env.CLEANUP_SECRET || "";
+        const expected = (process.env.CLEANUP_SECRET_V2 || process.env.CLEANUP_SECRET) || "";
         const provided = request.headers.get("x-cleanup-secret") || "";
         if (!expected || !provided || !timingSafeEqualStr(provided, expected)) {
           // Separate bad-auth bucket so brute-force hits a much tighter limit.
