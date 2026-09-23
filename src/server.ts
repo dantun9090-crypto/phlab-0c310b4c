@@ -5,7 +5,7 @@ import { renderErrorPage } from "./lib/error-page";
 import { notifySsrError } from "./lib/ssr-alert";
 import { isGoneLegacyPath, resolveLegacyRedirect } from "./lib/legacy-redirects";
 
-import { extractClientIp, log, truncate } from "./lib/worker-log";
+import { extractClientIp, log, maskIpForLog, truncate } from "./lib/worker-log";
 
 
 type ServerEntry = {
@@ -1572,7 +1572,7 @@ export default {
           const bucket = adminUnlockAttempts.get(ip);
           if (bucket && now - bucket.start < WINDOW_MS) {
             if (bucket.count >= MAX_ATTEMPTS) {
-              log.warn({ event: "admin_unlock.rate_limited", ...baseFields, ip });
+              log.warn({ event: "admin_unlock.rate_limited", ...baseFields });
               return new Response("Too many attempts. Try again later.", {
                 status: 429,
                 headers: { ...STRICT_NO_STORE_HEADERS, "retry-after": String(Math.ceil((WINDOW_MS - (now - bucket.start)) / 1000)) },
