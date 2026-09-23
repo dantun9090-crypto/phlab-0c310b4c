@@ -111,11 +111,16 @@ export const Route = createFileRoute("/api/payments/status")({
         // No unauthenticated status reads — otherwise anyone supplying an
         // orderId could learn whether that order was paid.
         const firestoreStatusLower = String((order as { status?: unknown }).status ?? "").toLowerCase();
+        // `processing` is deliberately NOT a SUCCESS alias: it is an
+        // administrative fulfilment state (admin advances a paid order), not
+        // payment evidence. Reporting SUCCESS for it would show "Payment
+        // successful" + fire the GA4 purchase event on an unpaid order.
+        // answerFromFirestore() gates `processing` on paid evidence below.
         const terminalMap: Record<string, string> = {
           paid: "SUCCESS",
-          processing: "SUCCESS",
           shipped: "SUCCESS",
           delivered: "SUCCESS",
+          completed: "SUCCESS",
           failed: "FAILED",
           cancelled: "CANCELLED",
           expired: "EXPIRED",
@@ -158,7 +163,29 @@ export const Route = createFileRoute("/api/payments/status")({
         const provider = String((order as { paymentProvider?: unknown }).paymentProvider ?? "").toLowerCase();
         const answerFromFirestore = () => {
           const mapped = terminalMap[firestoreStatusLower];
-          if (!mapped) return json({ status: "PENDING", order_id: orderId, found: true });
+          if (!mapped) {
+            // "processing" is set by the admin panel (bank-transfer "mark
+            // paid" flow) — only report SUCCESS when payment evidence
+            // (paidAt / paymentStatus) is on the doc. An admin slip that
+            // moves an unpaid order to "processing" must never surface as
+            // "Payment successful" or fire the purchase conversion.
+            if (firestoreStatusLower === "processing") {
+              const o = order as Record<string, unknown>;
+              const hasPaidEvidence =
+                o.paidAt instanceof Date ||
+                typeof o.paidAt === "string" ||
+                String(o.paymentStatus ?? "").toLowerCase() === "paid";
+              if (hasPaidEvidence) {
+                return json({
+                  status: "SUCCESS",
+                  order_id: orderId,
+                  found: true,
+                  tracking: buildTracking(o),
+                });
+              }
+            }
+            return json({ status: "PENDING", order_id: orderId, found: true });
+          }
           if (mapped === "SUCCESS") {
             try {
               void import("@/lib/server/firestore-admin").then(({ updateDocAdmin }) =>
@@ -200,6 +227,204 @@ export const Route = createFileRoute("/api/payments/status")({
               } catch (err) {
                 console.warn(
                   "[PeptidePay] status fallback failed:",
+                  err instanceof Error ? err.message : err,
+                );
+              }
+            }
+          }
+          // BrokkrPay (hosted card checkout): the signed webhook is the
+          // primary settle path, but a missed/delayed delivery must not
+          // leave the success page claiming "Payment received" on an order
+          // the customer cancelled or never completed. Ask the provider
+          // directly — same webhook-miss safety net as PeptidePay above.
+          // BrokkrPay docs: only state SUCCESS means paid; PROCESSING is a
+          // charge still in progress and must never be fulfilled early.
+          if (provider === "brokkrpay" && !terminalMap[firestoreStatusLower]) {
+            const brokkrOrderId = String(
+              (order as { brokkrpayOrderId?: unknown }).brokkrpayOrderId ?? "",
+            );
+            if (/^[0-9a-fA-F-]{36}$/.test(brokkrOrderId)) {
+              try {
+                const { getBrokkrPayOrder } = await import("@/lib/brokkrpay.server");
+                const remote = await getBrokkrPayOrder(brokkrOrderId);
+                const state = String(remote?.state ?? "").toUpperCase();
+
+                // Keep the stored provider state fresh even while
+                // non-terminal (PENDING/PROCESSING) — admin visibility.
+                if (remote && state) {
+                  const stored = String(
+                    (order as { brokkrpayState?: unknown }).brokkrpayState ?? "",
+                  ).toUpperCase();
+                  if (state !== stored) {
+                    void import("@/lib/server/firestore-admin").then(({ updateDocAdmin }) =>
+                      updateDocAdmin("orders", orderId, {
+                        brokkrpayState: state,
+                        paymentUpdatedAt: new Date(),
+                      }),
+                    );
+                  }
+                }
+
+                if (state === "SUCCESS") {
+                  // Mirror the webhook's amount defence: a SUCCESS whose
+                  // amount/currency disagrees with the link we created is
+                  // flagged for review, never fulfilled.
+                  const expectedUsd = Number(
+                    (order as { brokkrpayAmountUsd?: unknown }).brokkrpayAmountUsd ?? 0,
+                  );
+                  const paidUsd = typeof remote?.amount === "number" ? remote.amount : NaN;
+                  const paidCurrency = String(remote?.currency ?? "USD").toUpperCase();
+                  const expectedCurrency = String(
+                    (order as { brokkrpayCurrency?: unknown }).brokkrpayCurrency ?? "USD",
+                  ).toUpperCase();
+                  const amountOk =
+                    !Number.isFinite(paidUsd) || expectedUsd <= 0
+                      ? true
+                      : Math.abs(paidUsd - expectedUsd) < 0.5 && paidCurrency === expectedCurrency;
+                  if (!amountOk) {
+                    const { updateDocAdmin } = await import("@/lib/server/firestore-admin");
+                    await updateDocAdmin("orders", orderId, {
+                      brokkrpayState: state,
+                      paymentNeedsReview: true,
+                      paymentFailureReason: "BrokkrPay amount/currency mismatch",
+                      paymentUpdatedAt: new Date(),
+                    }).catch(() => undefined);
+                    return json({ status: "PENDING", order_id: orderId, found: true });
+                  }
+
+                  // ATOMIC: poller races the webhook + reconcile cron. Only
+                  // one writer flips the order and sends the mail.
+                  const { transitionDocStatusAdmin } = await import(
+                    "@/lib/server/firestore-admin"
+                  );
+                  const { transitioned, prior } = await transitionDocStatusAdmin(
+                    "orders",
+                    orderId,
+                    {
+                      allowFrom: allowFromFor("paid"),
+                      updates: {
+                        status: "paid",
+                        paymentProvider: "brokkrpay",
+                        brokkrpayOrderId: brokkrOrderId,
+                        brokkrpayState: state,
+                        paymentUpdatedAt: new Date(),
+                        paidAt: new Date(),
+                        paymentTokenHash: null,
+                      },
+                    },
+                  );
+                  if (transitioned) {
+                    if (prior) {
+                      const customerObj =
+                        (prior.customer as Record<string, unknown> | undefined) || {};
+                      const to = String(
+                        prior.customerEmail ?? prior.email ?? customerObj.email ?? "",
+                      );
+                      if (to && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
+                        try {
+                          const { paymentConfirmedEmail } = await import(
+                            "@/templates/paymentConfirmedEmail"
+                          );
+                          const firstName =
+                            String(
+                              (prior.firstName as string) ||
+                                (customerObj.firstName as string) ||
+                                (prior.customerName as string) ||
+                                "",
+                            ).split(" ")[0] || "there";
+                          const amount = Number(
+                            (prior.totalAmount as number) ?? (prior.total as number) ?? 0,
+                          );
+                          const orderNumber = String(prior.orderNumber ?? orderId);
+                          const { subject, html, text } = paymentConfirmedEmail({
+                            firstName,
+                            orderNumber,
+                            amount,
+                            paymentMethod: "Card (BrokkrPay)",
+                            paidAt: new Date(),
+                          });
+                          const { enqueueMailOnce } = await import(
+                            "@/lib/server/enqueue-mail"
+                          );
+                          // Same enqueue key as the webhook — whoever wins
+                          // the transition race sends; the loser's enqueue
+                          // dedupes to a no-op.
+                          await enqueueMailOnce(`payment-confirmed:${orderId}`, {
+                            to,
+                            message: { subject, html, text },
+                            source: "brokkrpay:status-poll",
+                          });
+                        } catch (mailErr) {
+                          console.warn(
+                            "[BrokkrPay status] paymentConfirmedEmail enqueue failed:",
+                            mailErr instanceof Error ? mailErr.message : mailErr,
+                          );
+                        }
+                      }
+                    }
+                    return json({
+                      status: "SUCCESS",
+                      order_id: orderId,
+                      found: true,
+                      tracking: buildTracking(prior ?? (order as Record<string, unknown>)),
+                    });
+                  }
+                  // Lost the race (webhook settled first) — report from the
+                  // fresh prior state the transaction handed back.
+                  const nowStatus = String(prior?.status ?? "").toLowerCase();
+                  if (["paid", "completed", "shipped", "delivered"].includes(nowStatus)) {
+                    return json({
+                      status: "SUCCESS",
+                      order_id: orderId,
+                      found: true,
+                      tracking: buildTracking(
+                        prior ?? (order as Record<string, unknown>),
+                      ),
+                    });
+                  }
+                  return json({ status: "PENDING", order_id: orderId, found: true });
+                }
+
+                if (state === "CANCELLED") {
+                  // Customer cancelled at the hosted page or the 24h payment
+                  // link expired unpaid. Atomic + unpaid-only allow-list, so
+                  // a late CANCELLED can never pull a settled order back.
+                  const { transitionDocStatusAdmin } = await import(
+                    "@/lib/server/firestore-admin"
+                  );
+                  await transitionDocStatusAdmin("orders", orderId, {
+                    allowFrom: allowFromFor("cancelled"),
+                    updates: {
+                      status: "cancelled",
+                      brokkrpayState: state,
+                      paymentUpdatedAt: new Date(),
+                      paymentTokenHash: null,
+                    },
+                  });
+                  return json({ status: "CANCELLED", order_id: orderId, found: true });
+                }
+
+                if (state === "FAILED" || state === "EXPIRED") {
+                  const { transitionDocStatusAdmin } = await import(
+                    "@/lib/server/firestore-admin"
+                  );
+                  await transitionDocStatusAdmin("orders", orderId, {
+                    allowFrom: allowFromFor("failed"),
+                    updates: {
+                      status: "failed",
+                      brokkrpayState: state,
+                      paymentUpdatedAt: new Date(),
+                      paymentTokenHash: null,
+                    },
+                  });
+                  return json({ status: "FAILED", order_id: orderId, found: true });
+                }
+
+                // PENDING / PROCESSING (charge in progress — never fulfil
+                // yet) → fall through to the Firestore answer below.
+              } catch (err) {
+                console.warn(
+                  "[BrokkrPay] status fallback failed:",
                   err instanceof Error ? err.message : err,
                 );
               }
