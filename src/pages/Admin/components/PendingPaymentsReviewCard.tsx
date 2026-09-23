@@ -135,7 +135,7 @@ export default function PendingPaymentsReviewCard() {
                 </span>
                 <span className="text-white">
                   {r.amount != null
-                    ? `${r.currency === 'GBP' ? '£' : `${r.currency} `}${(r.amount > 1000 ? r.amount / 100 : r.amount).toFixed(2)}`
+                    ? `${r.currency === 'GBP' ? '£' : `${r.currency} `}${r.amount.toFixed(2)}`
                     : '—'}
                 </span>
                 <span className="text-slate-300">{r.customerEmail ?? '—'}</span>
