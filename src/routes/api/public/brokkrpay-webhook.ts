@@ -172,10 +172,13 @@ export const Route = createFileRoute("/api/public/brokkrpay-webhook")({
         if (mapped === "paid") {
           const expectedUsd = Number((order as { brokkrpayAmountUsd?: unknown }).brokkrpayAmountUsd ?? 0);
           const paidUsd = typeof ev.amount === "number" ? ev.amount : NaN;
-          const currency = String(ev.currency ?? "USD").toUpperCase();
+          const expectedCurrency = String(
+            (order as { brokkrpayCurrency?: unknown }).brokkrpayCurrency ?? "USD",
+          ).toUpperCase();
+          const currency = String(ev.currency ?? expectedCurrency).toUpperCase();
           const amountOk =
             !Number.isFinite(paidUsd) || expectedUsd <= 0 ? true : Math.abs(paidUsd - expectedUsd) < 0.5;
-          if (!amountOk || currency !== "USD") {
+          if (!amountOk || currency !== expectedCurrency) {
             console.error(
               `[BrokkrPay webhook] amount/currency mismatch order=${reference} expected=${expectedUsd} got=${paidUsd} ${currency}`,
             );

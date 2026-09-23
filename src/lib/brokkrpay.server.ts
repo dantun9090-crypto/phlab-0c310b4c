@@ -197,7 +197,10 @@ export interface BrokkrPayLink {
 }
 
 export async function createBrokkrPayLink(input: CreateBrokkrPayLinkInput): Promise<BrokkrPayLink> {
-  const amountUsd = gbpPenceToUsdWhole(input.amountPence, input.usdRate);
+  // Charge in GBP (store currency). BrokkrPay still takes WHOLE units only,
+  // so pence are rounded UP to the next pound — never under-charge.
+  void gbpPenceToUsdWhole;
+  const amountUsd = Math.max(1, Math.ceil(Math.round(Number(input.amountPence)) / 100));
   if (!Number.isInteger(amountUsd) || amountUsd < 1 || amountUsd > 100_000) {
     throw new BrokkrPayError(400, "amount_out_of_range", "Order total is out of range for card payment.");
   }
@@ -208,7 +211,7 @@ export async function createBrokkrPayLink(input: CreateBrokkrPayLinkInput): Prom
 
   const body: Record<string, unknown> = {
     amount: amountUsd,
-    currency: "USD",
+    currency: "GBP",
     delivery,
     reference: input.reference.slice(0, 200),
     returnUrl: input.returnUrl.slice(0, 2000),
@@ -236,7 +239,7 @@ export async function createBrokkrPayLink(input: CreateBrokkrPayLinkInput): Prom
     state: (typeof parsed.state === "string" ? parsed.state : "PENDING") as BrokkrPayState,
     mode: parsed.mode === "live" ? "live" : "test",
     amountUsd: typeof parsed.amount === "number" ? parsed.amount : amountUsd,
-    currency: typeof parsed.currency === "string" ? parsed.currency : "USD",
+    currency: typeof parsed.currency === "string" ? parsed.currency : "GBP",
     delivery,
     checkoutUrl,
     customerEmailSent: typeof parsed.customerEmailSent === "boolean" ? parsed.customerEmailSent : null,

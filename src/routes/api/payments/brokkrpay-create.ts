@@ -121,7 +121,7 @@ export const Route = createFileRoute("/api/payments/brokkrpay-create")({
           return json({ error: "Amount does not match order total" }, 400);
         }
 
-        const amountUsd = gbpPenceToUsdWhole(dbMinor, usdRate);
+        void gbpPenceToUsdWhole;
         const trustedEmail = ctx.customerEmail || customerEmail;
         const returnUrl = `${SITE_ORIGIN}/checkout/success?order_id=${encodeURIComponent(orderId)}${
           paymentToken ? `&pt=${encodeURIComponent(paymentToken)}` : ""
@@ -146,6 +146,7 @@ export const Route = createFileRoute("/api/payments/brokkrpay-create")({
             brokkrpayMode: link.mode,
             brokkrpayAmountUsd: link.amountUsd,
             brokkrpayUsdRate: usdRate,
+            brokkrpayCurrency: link.currency,
             brokkrpayCheckoutUrl: link.checkoutUrl,
             paymentLinkCreatedAt: new Date(),
             ...(paymentToken ? { paymentTokenUsedAt: new Date() } : {}),
@@ -155,6 +156,7 @@ export const Route = createFileRoute("/api/payments/brokkrpay-create")({
             payment_link: link.checkoutUrl,
             brokkrpay_order_id: link.orderId,
             amount_usd: link.amountUsd,
+            currency: link.currency,
             mode: link.mode || brokkrPayMode(),
             expires_at: link.expiresAt ?? null,
             replayed: link.replayed,
