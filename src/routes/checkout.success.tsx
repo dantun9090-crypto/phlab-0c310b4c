@@ -414,6 +414,8 @@ function CheckoutSuccessPage() {
           );
         } else if (status === "CANCELLED" || status === "CANCELED") {
           setPhaseSafe("cancelled");
+        } else if (status === "NOT_COMPLETED") {
+          setPhaseSafe("notpaid");
         } else if (status === "FAILED" || status === "DECLINED" || status === "EXPIRED") {
           setPhaseSafe("error");
           setError("Your bank did not complete the payment. No money was taken.");
