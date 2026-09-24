@@ -137,27 +137,35 @@ export async function registerAftershipTracking(input: RegisterInput): Promise<{
   trackingId?: string | null;
   error?: string;
 }> {
-  const base = {
+  // 2024-04 API: the request body MUST wrap every field in a `tracking`
+  // object — a flat body is rejected with 400 "`tracking` object is required"
+  // (verified live 2026-09-24). Notification recipients (`emails`) also live
+  // INSIDE `tracking` in this version (moved to customers[] only in 2025-01+).
+  const tracking = {
     tracking_number: input.trackingNumber,
     ...(input.orderId ? { order_id: input.orderId } : {}),
     ...(input.email ? { emails: [input.email] } : {}),
     ...(input.postcode ? { tracking_postal_code: input.postcode } : {}),
     ...(input.title ? { title: input.title } : {}),
+    ...(input.slug ? { slug: input.slug } : {}),
   };
-  // 2024-04 API: flat body, tracking returned directly under `data`.
   // Default is AfterShip courier auto-detection — a hard-coded slug fails with
   // 4000 when that courier isn't activated on the account (free plans can't
   // always add Royal Mail manually).
-  let res = await request<AftershipTracking>("/trackings", {
+  let res = await request<{ id?: string; tracking?: { id?: string } }>("/trackings", {
     method: "POST",
-    body: { ...base, ...(input.slug ? { slug: input.slug } : {}) },
+    body: { tracking },
   });
   // Slug rejected (courier not activated) → retry with auto-detection.
   if (!res.ok && res.status === 400 && input.slug && !/exist/i.test(res.error || "")) {
-    res = await request<AftershipTracking>("/trackings", { method: "POST", body: base });
+    const { slug: _omit, ...autoDetect } = tracking;
+    res = await request<{ id?: string; tracking?: { id?: string } }>("/trackings", {
+      method: "POST",
+      body: { tracking: autoDetect },
+    });
   }
   if (res.ok) {
-    return { ok: true, trackingId: res.data?.id ?? null };
+    return { ok: true, trackingId: res.data?.id ?? res.data?.tracking?.id ?? null };
   }
   if ((res.status === 400 || res.status === 409) && /exist/i.test(res.error || "")) {
     return { ok: true, alreadyExists: true };
