@@ -428,8 +428,15 @@ export const Route = createFileRoute("/api/payments/status")({
                   return json({ status: "FAILED", order_id: orderId, found: true });
                 }
 
-                // PENDING / PROCESSING (charge in progress — never fulfil
-                // yet) → fall through to the Firestore answer below.
+                // PENDING = the customer left the hosted card page without
+                // submitting a card (e.g. pressed back). Nothing was charged,
+                // so never show "confirming" — tell the page it's unpaid.
+                // The order stays pending (link valid 24h; webhook still wins).
+                if (state === "PENDING") {
+                  return json({ status: "NOT_COMPLETED", order_id: orderId, found: true });
+                }
+                // PROCESSING (charge in progress — never fulfil yet) → fall
+                // through to the Firestore answer below.
               } catch (err) {
                 console.warn(
                   "[BrokkrPay] status fallback failed:",
