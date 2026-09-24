@@ -126,6 +126,14 @@ export const Route = createFileRoute("/api/payments/status")({
           expired: "EXPIRED",
         };
         if (!ownsByUid && !ownsByToken) {
+          // Guest reopening the success page after settlement: the one-shot
+          // paymentToken was burned, so ownership can't be proven. Return ONLY
+          // the terminal status label (no amount, email or other order data,
+          // no side effects) so a paid order doesn't show "still waiting".
+          const terminalOnly = terminalMap[firestoreStatusLower];
+          if (terminalOnly && purchaseFired !== true) {
+            return json({ status: terminalOnly });
+          }
           if (!idToken && !paymentToken) {
             return json({ error: "Authentication required" }, 401);
           }
