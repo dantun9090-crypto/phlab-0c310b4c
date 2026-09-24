@@ -84,8 +84,8 @@ jobs:
           set -euo pipefail
           # Main app is a Cloudflare PAGES project ("phlabs", see deploy.yml),
           # not a Worker — pages secrets, not `wrangler secret put`.
-          bunx wrangler@4 pages secret put AFTERSHIP_API_KEY --project-name phlabs <<< "$AS_KEY"
+          npx --yes wrangler@4 pages secret put AFTERSHIP_API_KEY --project-name phlabs <<< "$AS_KEY"
           if [ -n "${AS_HOOK_SECRET:-}" ]; then
-            bunx wrangler@4 pages secret put AFTERSHIP_WEBHOOK_SECRET --project-name phlabs <<< "$AS_HOOK_SECRET"
+            npx --yes wrangler@4 pages secret put AFTERSHIP_WEBHOOK_SECRET --project-name phlabs <<< "$AS_HOOK_SECRET"
           fi
           echo "Secrets written to Pages project phlabs (production)"
