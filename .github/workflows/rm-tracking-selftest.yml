@@ -58,6 +58,6 @@ jobs:
           RM_SECRET: ${{ secrets.ROYAL_MAIL_CLIENT_SECRET }}
         run: |
           set -euo pipefail
-          bunx wrangler@4 secret put ROYAL_MAIL_CLIENT_ID --name royal-mail-order <<< "$RM_ID"
-          bunx wrangler@4 secret put ROYAL_MAIL_CLIENT_SECRET --name royal-mail-order <<< "$RM_SECRET"
+          npx --yes wrangler@4 secret put ROYAL_MAIL_CLIENT_ID --name royal-mail-order <<< "$RM_ID"
+          npx --yes wrangler@4 secret put ROYAL_MAIL_CLIENT_SECRET --name royal-mail-order <<< "$RM_SECRET"
           echo "Secrets written to royal-mail-order worker"
