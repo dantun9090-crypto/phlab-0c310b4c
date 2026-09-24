@@ -20,7 +20,8 @@ permissions:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # 3 attempts x up-to-300s curl + backoff need headroom over the old 10min.
+    timeout-minutes: 20
     steps:
       - name: POST royal-mail-deliveries
         env:
@@ -31,12 +32,30 @@ jobs:
             echo "CRON_SECRET is not configured — cannot run sync." >&2
             exit 1
           fi
-          resp=$(curl -sS -o /tmp/resp.json -w "%{http_code}" \
-            -X POST "https://phlabs.co.uk/api/admin/royal-mail-deliveries" \
-            -H "content-type: application/json" \
-            -H "x-cron-secret: ${CRON_SECRET}" \
-            --max-time 300 \
-            --data '{}') || resp="000"
-          echo "HTTP $resp"
-          cat /tmp/resp.json || true
-          test "$resp" = "200"
+          attempt=1
+          max=3
+          while : ; do
+            resp=$(curl -sS -o /tmp/resp.json -w "%{http_code}" \
+              -X POST "https://phlabs.co.uk/api/admin/royal-mail-deliveries" \
+              -H "content-type: application/json" \
+              -H "x-cron-secret: ${CRON_SECRET}" \
+              --max-time 300 \
+              --data '{}') || resp="000"
+            echo "attempt ${attempt}/${max}: HTTP $resp"
+            cat /tmp/resp.json || true
+            echo
+            # 2xx = success. 5xx/000 (incl. Cloudflare 524 origin timeout —
+            # seen in run 36000401966) are transient infra errors worth a
+            # retry. 4xx is a real failure — do not retry.
+            case "$resp" in
+              2*) exit 0 ;;
+              4*) exit 1 ;;
+            esac
+            if [ "$attempt" -ge "$max" ]; then
+              echo "::error::sync failed after ${max} attempts (last HTTP $resp)"
+              exit 1
+            fi
+            attempt=$((attempt+1))
+            echo "sleeping 60s before retry..."
+            sleep 60
+          done

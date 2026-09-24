@@ -1,0 +1,91 @@
+name: AfterShip self-test
+
+# Verifies the AFTERSHIP_API_KEY GitHub secret against the live AfterShip
+# Tracking API (2024-04), then (on HTTP 200) pushes it into the production
+# Cloudflare Pages project "phlabs" via wrangler — the same pattern as
+# rm-tracking-selftest.yml — so dashboard paste-typos can't recur.
+#
+# AFTERSHIP_WEBHOOK_SECRET cannot be validated from here (only AfterShip's
+# dashboard-side webhook test can); it is reported by LENGTH only and pushed
+# alongside the API key when present.
+#
+# Secret VALUES are never printed — only HTTP status codes and lengths.
+
+on:
+  workflow_dispatch:
+    inputs:
+      push_to_pages:
+        description: "Also write the secrets into the Pages project when the API answers 200"
+        type: boolean
+        required: false
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe AfterShip Tracking API with GitHub-held key
+        id: probe
+        env:
+          AS_KEY: ${{ secrets.AFTERSHIP_API_KEY }}
+          AS_HOOK_SECRET: ${{ secrets.AFTERSHIP_WEBHOOK_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${AS_KEY:-}" ]; then
+            echo "::error::GitHub secret AFTERSHIP_API_KEY is empty. Add it under repo Settings -> Secrets and variables -> Actions (name: AFTERSHIP_API_KEY, value: the API key from admin.aftership.com -> API keys)."
+            exit 1
+          fi
+          echo "AFTERSHIP_API_KEY length: ${#AS_KEY}"
+          if [ -n "${AS_HOOK_SECRET:-}" ]; then
+            echo "AFTERSHIP_WEBHOOK_SECRET present (length ${#AS_HOOK_SECRET})"
+          else
+            echo "::warning::AFTERSHIP_WEBHOOK_SECRET is empty — webhook signature verification will reject all AfterShip events. Copy the webhook secret from the AfterShip dashboard (Notifications -> Webhook) into the AFTERSHIP_WEBHOOK_SECRET GitHub secret."
+          fi
+          code=$(curl -sS -o /tmp/as.json -w "%{http_code}" \
+            "https://api.aftership.com/tracking/2024-04/trackings?limit=1" \
+            -H "as-api-key: ${AS_KEY}" \
+            -H "Accept: application/json" --max-time 30 || echo "000")
+          echo "HTTP $code"
+          case "$code" in
+            200)
+              echo "API key accepted by AfterShip."
+              ;;
+            401)
+              echo "::error::AfterShip rejected the key (401 Unauthorized). Replace the AFTERSHIP_API_KEY secret with a current key from admin.aftership.com -> API keys."
+              exit 1
+              ;;
+            403)
+              echo "::error::AfterShip refused the request (403). Check the key's plan/permissions."
+              exit 1
+              ;;
+            429)
+              echo "::error::Rate limited (429). Wait a minute and re-run."
+              exit 1
+              ;;
+            *)
+              echo "::warning::Unexpected HTTP $code"
+              head -c 300 /tmp/as.json; echo
+              exit 1
+              ;;
+          esac
+          echo "status=$code" >> "$GITHUB_OUTPUT"
+
+      - name: Push secrets into the Pages project (only when API returned 200)
+        if: steps.probe.outputs.status == '200' && github.event.inputs.push_to_pages == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_API }}
+          AS_KEY: ${{ secrets.AFTERSHIP_API_KEY }}
+          AS_HOOK_SECRET: ${{ secrets.AFTERSHIP_WEBHOOK_SECRET }}
+        run: |
+          set -euo pipefail
+          # Main app is a Cloudflare PAGES project ("phlabs", see deploy.yml),
+          # not a Worker — pages secrets, not `wrangler secret put`.
+          bunx wrangler@4 pages secret put AFTERSHIP_API_KEY --project-name phlabs <<< "$AS_KEY"
+          if [ -n "${AS_HOOK_SECRET:-}" ]; then
+            bunx wrangler@4 pages secret put AFTERSHIP_WEBHOOK_SECRET --project-name phlabs <<< "$AS_HOOK_SECRET"
+          fi
+          echo "Secrets written to Pages project phlabs (production)"
