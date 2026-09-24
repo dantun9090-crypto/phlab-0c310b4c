@@ -142,7 +142,7 @@ export const Route = createFileRoute("/checkout/success")({
   component: CheckoutSuccessPage,
 });
 
-type Phase = "checking" | "paid" | "pending" | "cancelled" | "error";
+type Phase = "checking" | "paid" | "pending" | "cancelled" | "notpaid" | "error";
 
 // Escalation tiers shown while the order stays non-terminal:
 //   pending  → standard "we're confirming" copy (after 8s soft deadline)
@@ -332,6 +332,11 @@ function CheckoutSuccessPage() {
             setPhaseSafe("cancelled");
             return; // terminal — stop polling
           }
+          if (status === "NOT_COMPLETED") {
+            // Card page left without paying (e.g. browser back).
+            setPhaseSafe("notpaid");
+            return;
+          }
           if (status === "FAILED" || status === "DECLINED" || status === "EXPIRED") {
             setPhaseSafe("error");
             setError("Your bank did not complete the payment. No money was taken.");
@@ -409,6 +414,8 @@ function CheckoutSuccessPage() {
           );
         } else if (status === "CANCELLED" || status === "CANCELED") {
           setPhaseSafe("cancelled");
+        } else if (status === "NOT_COMPLETED") {
+          setPhaseSafe("notpaid");
         } else if (status === "FAILED" || status === "DECLINED" || status === "EXPIRED") {
           setPhaseSafe("error");
           setError("Your bank did not complete the payment. No money was taken.");
@@ -572,6 +579,22 @@ function CheckoutSuccessPage() {
             <h1 className="mt-4 text-xl font-bold text-white">Payment cancelled</h1>
             <p className="mt-2 text-sm text-slate-300">
               You cancelled the payment. No money was charged.
+            </p>
+            {orderId && (
+              <p className="mt-2 text-[11px] text-slate-500">
+                Reference for support: <span className="font-mono text-slate-400">{orderId}</span>
+              </p>
+            )}
+            <a href="/checkout" className="mt-6 inline-block rounded-lg bg-emerald-500 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-400">Try again</a>
+            <a href="/" className="mt-3 inline-block text-xs text-slate-400 underline hover:text-slate-200">Back to shop</a>
+          </>
+        )}
+        {phase === "notpaid" && (
+          <>
+            <AlertCircle className="w-10 h-10 mx-auto text-amber-400" />
+            <h1 className="mt-4 text-xl font-bold text-white">Payment not completed</h1>
+            <p className="mt-2 text-sm text-slate-300">
+              Your card payment was not completed. No money was charged.
             </p>
             {orderId && (
               <p className="mt-2 text-[11px] text-slate-500">
