@@ -204,6 +204,12 @@ function CheckoutSuccessPage() {
     const hardDeadline = Date.now() + 90_000;
     let attempt = 0;
     let consecutiveErrors = 0;
+    // Card provider reports PENDING both for "left without paying" and for
+    // the short window before a real charge is registered. Only show
+    // "not completed" after a grace period + repeated PENDING answers, and
+    // keep polling so a late confirmation still flips the page to "paid".
+    const notPaidGraceUntil = Date.now() + 30_000;
+    let consecutiveNotCompleted = 0;
 
     // Real-time Firestore listener (Item 1): for authed users only, since
     // orders RLS requires `resource.data.userId == request.auth.uid`. If
@@ -333,9 +339,13 @@ function CheckoutSuccessPage() {
             return; // terminal — stop polling
           }
           if (status === "NOT_COMPLETED") {
-            // Card page left without paying (e.g. browser back).
-            setPhaseSafe("notpaid");
-            return;
+            consecutiveNotCompleted += 1;
+            if (Date.now() > notPaidGraceUntil && consecutiveNotCompleted >= 3) {
+              setPhaseSafe("notpaid");
+            }
+            // Non-terminal: keep polling until hard deadline.
+          } else {
+            consecutiveNotCompleted = 0;
           }
           if (status === "FAILED" || status === "DECLINED" || status === "EXPIRED") {
             setPhaseSafe("error");
