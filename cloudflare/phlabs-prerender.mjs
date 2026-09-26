@@ -1,3 +1,4 @@
+import { resolveFinalRedirect } from "../src/lib/legacy-redirects.ts";
 // cloudflare/phlabs-prerender.mjs
 // Hash-at-cache-miss, serve-raw-on-HIT. ALL HTML routes use this path.
 // Bot/prerender branch: UA sniff -> Prerender.io -> hash-CSP -> cache separately.
@@ -719,7 +720,8 @@ export default {
       path.endsWith("/") &&
       !/\.[a-z0-9]+$/i.test(path.slice(0, -1))
     ) {
-      const target = url.origin + path.slice(0, -1) + url.search;
+      const stripped = path.slice(0, -1);
+      const target = url.origin + (resolveFinalRedirect(stripped) || stripped) + url.search;
       return new Response(null, {
         status: 301,
         headers: {
@@ -728,6 +730,24 @@ export default {
           "Server-Timing": `slash-redirect;dur=${Date.now() - startTime}`,
         },
       });
+    }
+
+    // ── Legacy / consolidated URL redirects (single hop, 2026-09-26) ────
+    // The origin issues these 301s too, but the edge fetches origin and
+    // Prerender.io with redirect-follow, which turned them into 200s on the
+    // OLD URL. Answer them here so browsers and bots get one clean 301.
+    if (request.method === "GET" || request.method === "HEAD") {
+      const legacyDest = resolveFinalRedirect(path);
+      if (legacyDest && legacyDest !== path) {
+        return new Response(null, {
+          status: 301,
+          headers: {
+            Location: url.origin + legacyDest + url.search,
+            "Cache-Control": "public, max-age=3600",
+            "Server-Timing": `legacy-redirect;dur=${Date.now() - startTime}`,
+          },
+        });
+      }
     }
 
     // ── PRERENDER QUOTA GUARDS (2026-07-18) ─────────────────────────────
