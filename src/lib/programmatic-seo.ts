@@ -23,6 +23,12 @@ export interface ProgrammaticPage {
   faqs: Array<{ q: string; a: string }>;
   /** Last content update — drives sitemap <lastmod>. */
   updated: string;         // YYYY-MM-DD
+  /** Optional extra rows appended to the "At a glance" table. */
+  extraRows?: Array<{ label: string; left: string; right: string }>;
+  /** Optional "which one for which research goal" section. */
+  goals?: Array<{ goal: string; pick: string }>;
+  /** Optional in-body contextual links (rendered as a short paragraph). */
+  bodyLinks?: Array<{ href: string; anchor: string; before?: string; after?: string }>;
 }
 
 export interface PeptideRef {
@@ -249,6 +255,36 @@ const PEPTIDES: Record<string, PeptideRef> = {
       "Stored at −20°C lyophilised",
     ],
   },
+  "ghrp-2": {
+    mw: "~818 Da (hexapeptide)",
+    chemClass: "Synthetic hexapeptide (GHRP class)",
+    researchContext: "Reference GHS-R1a agonist in growth-hormone secretagogue literature.",
+    assays: "GHS-R1a binding, calcium-flux and pituitary cell GH-release assays",
+    name: "GHRP-2",
+    slug: "neurological",
+    family: "Growth-hormone-releasing peptide (GHRP)",
+    bullets: [
+      "Synthetic hexapeptide ghrelin-receptor (GHS-R1a) agonist",
+      "Broader receptor/axis activity reported than ipamorelin in published work",
+      "Common comparator arm in GH secretagogue studies",
+      "Lyophilised; reconstitute with bacteriostatic water",
+    ],
+  },
+  "ipamorelin": {
+    mw: "~712 Da (pentapeptide)",
+    chemClass: "Synthetic pentapeptide (GHRP class)",
+    researchContext: "Cited as a highly selective GHS-R1a agonist in secretagogue research.",
+    assays: "GHS-R1a binding, calcium-flux and pituitary cell GH-release assays",
+    name: "Ipamorelin",
+    slug: "neurological",
+    family: "Selective growth-hormone secretagogue (GHRP class)",
+    bullets: [
+      "Synthetic pentapeptide ghrelin-receptor (GHS-R1a) agonist",
+      "Reported high receptor selectivity in published literature",
+      "Frequently used as the selective arm in GHRP comparisons",
+      "Lyophilised; reconstitute with bacteriostatic water",
+    ],
+  },
   "bacteriostatic-water": {
     mw: "n/a — diluent",
     chemClass: "Sterile water with 0.9% benzyl alcohol",
@@ -273,6 +309,9 @@ function pair(slug: string, leftKey: string, rightKey: string, opts: {
   intro: string;
   faqs: Array<{ q: string; a: string }>;
   updated: string;
+  extraRows?: ProgrammaticPage["extraRows"];
+  goals?: ProgrammaticPage["goals"];
+  bodyLinks?: ProgrammaticPage["bodyLinks"];
 }): ProgrammaticPage {
   return {
     slug,
