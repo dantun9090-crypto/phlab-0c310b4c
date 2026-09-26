@@ -112,9 +112,9 @@ const RULES: RedirectRule[] = [
   { type: "exact", from: "/products/kpv-synthetic-tripeptide-lys-pro-val-analytical-standard-99-hplc-cas-67727-97-3-for-research-use-only-ruo", to: "/products/kpv-research-peptide" },
 
   // PT-141
-  { type: "exact", from: "/products/pt-141", to: "/products/pt-141-research-peptide" },
-  { type: "exact", from: "/products/pt-141-bremelanotide", to: "/products/pt-141-research-peptide" },
-  { type: "exact", from: "/products/pt-141-synthetic-cyclic-heptapeptide-analytical-standard-99-hplc-cas-189691-06-3-for-research-use-only-ruo", to: "/products/pt-141-research-peptide" },
+  { type: "exact", from: "/products/pt-141", to: "/products/pt-141-research" },
+  { type: "exact", from: "/products/pt-141-bremelanotide", to: "/products/pt-141-research" },
+  { type: "exact", from: "/products/pt-141-synthetic-cyclic-heptapeptide-analytical-standard-99-hplc-cas-189691-06-3-for-research-use-only-ruo", to: "/products/pt-141-research" },
 
   // TB-500
   { type: "exact", from: "/products/tb-500", to: "/products/tb-500-thymosin-beta-4" },
