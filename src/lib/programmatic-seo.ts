@@ -23,6 +23,12 @@ export interface ProgrammaticPage {
   faqs: Array<{ q: string; a: string }>;
   /** Last content update — drives sitemap <lastmod>. */
   updated: string;         // YYYY-MM-DD
+  /** Optional extra rows appended to the "At a glance" table. */
+  extraRows?: Array<{ label: string; left: string; right: string }>;
+  /** Optional "which one for which research goal" section. */
+  goals?: Array<{ goal: string; pick: string }>;
+  /** Optional in-body contextual links (rendered as a short paragraph). */
+  bodyLinks?: Array<{ href: string; anchor: string; before?: string; after?: string }>;
 }
 
 export interface PeptideRef {
@@ -249,6 +255,36 @@ const PEPTIDES: Record<string, PeptideRef> = {
       "Stored at −20°C lyophilised",
     ],
   },
+  "ghrp-2": {
+    mw: "~818 Da (hexapeptide)",
+    chemClass: "Synthetic hexapeptide (GHRP class)",
+    researchContext: "Reference GHS-R1a agonist in growth-hormone secretagogue literature.",
+    assays: "GHS-R1a binding, calcium-flux and pituitary cell GH-release assays",
+    name: "GHRP-2",
+    slug: "neurological",
+    family: "Growth-hormone-releasing peptide (GHRP)",
+    bullets: [
+      "Synthetic hexapeptide ghrelin-receptor (GHS-R1a) agonist",
+      "Broader receptor/axis activity reported than ipamorelin in published work",
+      "Common comparator arm in GH secretagogue studies",
+      "Lyophilised; reconstitute with bacteriostatic water",
+    ],
+  },
+  "ipamorelin": {
+    mw: "~712 Da (pentapeptide)",
+    chemClass: "Synthetic pentapeptide (GHRP class)",
+    researchContext: "Cited as a highly selective GHS-R1a agonist in secretagogue research.",
+    assays: "GHS-R1a binding, calcium-flux and pituitary cell GH-release assays",
+    name: "Ipamorelin",
+    slug: "neurological",
+    family: "Selective growth-hormone secretagogue (GHRP class)",
+    bullets: [
+      "Synthetic pentapeptide ghrelin-receptor (GHS-R1a) agonist",
+      "Reported high receptor selectivity in published literature",
+      "Frequently used as the selective arm in GHRP comparisons",
+      "Lyophilised; reconstitute with bacteriostatic water",
+    ],
+  },
   "bacteriostatic-water": {
     mw: "n/a — diluent",
     chemClass: "Sterile water with 0.9% benzyl alcohol",
@@ -273,6 +309,9 @@ function pair(slug: string, leftKey: string, rightKey: string, opts: {
   intro: string;
   faqs: Array<{ q: string; a: string }>;
   updated: string;
+  extraRows?: ProgrammaticPage["extraRows"];
+  goals?: ProgrammaticPage["goals"];
+  bodyLinks?: ProgrammaticPage["bodyLinks"];
 }): ProgrammaticPage {
   return {
     slug,
@@ -284,7 +323,7 @@ function pair(slug: string, leftKey: string, rightKey: string, opts: {
 
 const UPDATED = "2026-06-26";
 
-export const PROGRAMMATIC_PAGES: ProgrammaticPage[] = [
+const RAW_PAGES: ProgrammaticPage[] = [
   pair("bpc-157-vs-tb-500", "bpc-157", "tb-500", {
     metaDescription:
       "BPC-157 vs TB-500 — research-peptide comparison covering molecular weight, family, reconstitution and lab storage. UK research-use-only data.",
@@ -632,7 +671,95 @@ export const PROGRAMMATIC_PAGES: ProgrammaticPage[] = [
     ],
     updated: UPDATED,
   } as Omit<ProgrammaticPage, "slug"> & { slug: string }),
+  pair("ghrp-2-vs-ipamorelin", "ghrp-2", "ipamorelin", {
+    metaDescription:
+      "GHRP-2 vs Ipamorelin — GHS-R1a research peptides compared: mechanism, receptor selectivity, half-life and research applications. UK research use only.",
+    intro:
+      "GHRP-2 and ipamorelin are both synthetic growth-hormone secretagogues that act at the ghrelin receptor (GHS-R1a). They are among the most frequently compared compounds in secretagogue research because they share a receptor target but differ in selectivity. This page sets out the laboratory and mechanistic differences for research planning — it contains no guidance on human use.",
+    extraRows: [
+      { label: "Mechanism", left: "GHS-R1a (ghrelin receptor) agonist", right: "GHS-R1a (ghrelin receptor) agonist" },
+      { label: "Receptor selectivity", left: "Lower — co-release of ACTH/cortisol and prolactin reported in published models", right: "Higher — minimal ACTH/cortisol and prolactin co-release reported in published models" },
+      { label: "Reported half-life (literature)", left: "Short — on the order of tens of minutes in published pharmacokinetic studies", right: "Short — roughly two hours reported in published pharmacokinetic studies" },
+      { label: "Research applications", left: "Robust GH-axis stimulation models; comparator arm in secretagogue studies", right: "Selective GHS-R1a signalling studies; isolating GH release from other pituitary axes" },
+    ],
+    goals: [
+      { goal: "Studying maximal GHS-R1a-driven GH release, or needing a well-characterised comparator", pick: "GHRP-2 is the more common choice in published designs." },
+      { goal: "Isolating GH-axis signalling with minimal cortisol/prolactin confounders", pick: "Ipamorelin is usually preferred because of its reported selectivity." },
+      { goal: "Characterising receptor selectivity itself", pick: "Run both side by side — the contrast between them is the variable of interest." },
+    ],
+    faqs: [
+      { q: "Do GHRP-2 and ipamorelin act on the same receptor?", a: "Yes. Both are agonists of the growth-hormone secretagogue receptor GHS-R1a (the ghrelin receptor). They differ mainly in selectivity and in the off-target pituitary responses reported in published research." },
+      { q: "What does receptor selectivity mean for study design?", a: "A more selective compound (ipamorelin) makes it easier to attribute an observed effect to GH-axis signalling. A less selective compound (GHRP-2) produces broader pituitary responses, which can be useful as a comparator but adds confounders." },
+      { q: "How do their reported half-lives compare?", a: "Published pharmacokinetic work describes both as short-acting, with ipamorelin reported at roughly two hours and GHRP-2 shorter. Researchers should rely on the primary literature relevant to their own model." },
+      { q: "How are they stored in the lab?", a: "Both are supplied lyophilised, stored at −20°C and held at 2–8°C after reconstitution with bacteriostatic water." },
+      { q: "Are they sold for human use?", a: "No. Any compound discussed here is For Research Use Only. Not for Human Consumption. This page contains no dosing or administration guidance." },
+    ],
+    bodyLinks: [
+      { before: "For a deeper mechanistic review of the GHRP class, see our ", href: "/resources/ipamorelin-ghrp-research", anchor: "ipamorelin and GHRP research guide", after: "." },
+      { before: " Related receptor-context reading: ", href: "/research/cjc-1295-ipamorelin-synergy", anchor: "CJC-1295 and ipamorelin research notes", after: "," },
+      { before: " and the ", href: "/products/bacteriostatic-water-research-compound", anchor: "bacteriostatic water research diluent", after: " used to reconstitute lyophilised peptides." },
+    ],
+    updated: "2026-09-26",
+  }), 
 ];
+
+/**
+ * Reversed-word-order duplicates consolidated into one kept page
+ * (2026-09-26). The removed slug 301s to the kept slug (see
+ * src/lib/legacy-redirects.ts). Unique FAQs from the removed page are
+ * merged into the kept page before it is dropped from the list.
+ */
+export const COMPARE_CONSOLIDATION: Record<string, string> = {
+  "ghk-cu-vs-bpc-157": "bpc-157-vs-ghk-cu",
+  "ghk-cu-vs-tb-500": "tb-500-vs-ghk-cu",
+  "kpv-vs-bpc-157": "bpc-157-vs-kpv",
+  "nad-plus-vs-mots-c": "mots-c-vs-nad-plus",
+  "klow-vs-glow-blend": "klow-vs-glow",
+};
+
+/** Contextual in-body links added to specific comparison pages. */
+const BODY_LINKS: Record<string, NonNullable<ProgrammaticPage["bodyLinks"]>> = {
+  "tirzepatide-vs-mots-c": [
+    { before: "Batch documentation for the incretin arm of this comparison is on the ", href: "/products/tirzepatide-research-peptide", anchor: "tirzepatide research peptide", after: " page." },
+  ],
+  "tirzepatide-vs-glow": [
+    { before: "Laboratories sourcing the single-agent arm can review the ", href: "/products/tirzepatide-research-peptide", anchor: "UK tirzepatide research peptide", after: " with its batch CoA." },
+  ],
+  "klow-vs-glow": [
+    { before: "Composition and batch CoA for the four-peptide arm are listed on the ", href: "/products/klow-blend", anchor: "KLOW Blend research peptide mix", after: " page." },
+  ],
+};
+
+const CONSOLIDATION_UPDATED = "2026-09-26";
+
+function buildPages(raw: ProgrammaticPage[]): ProgrammaticPage[] {
+  const bySlug = new Map(raw.map((p) => [p.slug, { ...p, faqs: [...p.faqs] }]));
+  for (const [removed, kept] of Object.entries(COMPARE_CONSOLIDATION)) {
+    const from = bySlug.get(removed);
+    const to = bySlug.get(kept);
+    if (from && to) {
+      const known = new Set(to.faqs.map((f) => f.q.trim().toLowerCase()));
+      for (const f of from.faqs) {
+        if (!known.has(f.q.trim().toLowerCase())) {
+          to.faqs.push(f);
+          known.add(f.q.trim().toLowerCase());
+        }
+      }
+      to.updated = CONSOLIDATION_UPDATED;
+    }
+    bySlug.delete(removed);
+  }
+  for (const [slug, links] of Object.entries(BODY_LINKS)) {
+    const p = bySlug.get(slug);
+    if (p) {
+      p.bodyLinks = [...(p.bodyLinks ?? []), ...links];
+      p.updated = CONSOLIDATION_UPDATED;
+    }
+  }
+  return raw.filter((p) => bySlug.has(p.slug)).map((p) => bySlug.get(p.slug)!);
+}
+
+export const PROGRAMMATIC_PAGES: ProgrammaticPage[] = buildPages(RAW_PAGES);
 
 export function findProgrammaticPage(slug: string): ProgrammaticPage | undefined {
   return PROGRAMMATIC_PAGES.find((p) => p.slug === slug);

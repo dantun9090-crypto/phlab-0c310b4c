@@ -76,6 +76,8 @@ export type PageMeta = {
   title: string;
   description: string;
   ogType: "website" | "product" | "article";
+  /** Exact, approved strings — skip length clamping. */
+  exact?: boolean;
 };
 
 export function titleize(slug: string): string {
@@ -116,13 +118,26 @@ export function metaForPath(splat: string): PageMeta {
   // in search (low CTR despite impressions).
   const articleMetaOverrides: Record<string, PageMeta> = {
     "hplc-testing-explained": {
-      title: "HPLC Testing Explained: Peptide Purity & Batch CoA",
+      title: "HPLC Testing Explained: What Peptide Purity % Really Means",
       description:
-        "How to verify research peptide purity from an HPLC chromatogram: peak-area %, retention time, system suitability limits and LC-MS batch CoA checks.",
+        "What an HPLC chromatogram actually tells you about research peptide purity — peak area %, retention time, LC-MS cross-checks, and how to verify any UK supplier's CoA.",
       ogType: "article",
+      exact: true,
     },
-
-
+    "how-to-read-hplc-certificate-of-analysis": {
+      title: "How to Read a Peptide CoA: HPLC Chromatogram Guide | PH Labs",
+      description:
+        "Step by step: batch number, purity %, retention time and peak area — plus the red flags that reveal fake or recycled peptide certificates.",
+      ogType: "article",
+      exact: true,
+    },
+    "ipamorelin-ghrp-research": {
+      title: "Ipamorelin & GHRPs: GH Secretagogue Research Explained | PH Labs",
+      description:
+        "How ipamorelin and GHRP-class peptides signal through GHS-R, what receptor selectivity means for study design, and key differences researchers compare.",
+      ogType: "article",
+      exact: true,
+    },
   };
 
   if ((first === "research" || first === "resources") && segments.length > 1) {

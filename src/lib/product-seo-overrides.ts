@@ -198,7 +198,7 @@ export const PRODUCT_SEO_OVERRIDES: Record<string, ProductSeoOverride> = {
 
   // "klow blend peptide" 170/mo · currently #57
   "klow-blend": {
-    title: "KLOW Blend UK — Research Peptide Mix | PH Labs",
+    title: "KLOW Blend 80mg UK — Research Peptide Mix | PH Labs",
     description:
       "KLOW research peptide blend UK. HPLC-verified components with batch CoA. For laboratory research only — not for human consumption.",
   },

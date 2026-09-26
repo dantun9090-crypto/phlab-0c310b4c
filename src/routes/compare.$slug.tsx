@@ -198,6 +198,13 @@ function ComparePage() {
                   <td className="px-4 py-3">{leftProfile.assays}</td>
                   <td className="px-4 py-3">{rightProfile.assays}</td>
                 </tr>
+                {p.extraRows?.map((r) => (
+                  <tr key={r.label} className="border-t border-slate-800">
+                    <td className="px-4 py-3 text-slate-400">{r.label}</td>
+                    <td className="px-4 py-3">{r.left}</td>
+                    <td className="px-4 py-3">{r.right}</td>
+                  </tr>
+                ))}
                 <tr className="border-t border-slate-800">
                   <td className="px-4 py-3 text-slate-400">Use</td>
                   <td className="px-4 py-3">Research use only</td>
@@ -241,6 +248,33 @@ function ComparePage() {
             </p>
           </div>
         </section>
+
+        {p.bodyLinks && p.bodyLinks.length > 0 && (
+          <p className="mb-12 -mt-6 text-slate-300 text-sm leading-relaxed max-w-3xl">
+            {p.bodyLinks.map((l) => (
+              <span key={l.href}>
+                {l.before}
+                <a href={l.href} className="text-emerald-400 hover:text-emerald-300 underline">
+                  {l.anchor}
+                </a>
+                {l.after}
+              </span>
+            ))}
+          </p>
+        )}
+
+        {p.goals && p.goals.length > 0 && (
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold mb-5">Which one for which research goal</h2>
+            <ul className="space-y-3 text-slate-300 text-sm leading-relaxed max-w-3xl">
+              {p.goals.map((g) => (
+                <li key={g.goal} className="bg-slate-900 border border-slate-700 rounded-lg p-4">
+                  <span className="font-semibold text-white">{g.goal}:</span> {g.pick}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <section className="mb-12">
           <h2 className="text-2xl font-bold mb-5">Quality control and documentation</h2>

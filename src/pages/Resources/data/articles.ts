@@ -112,8 +112,8 @@ The compound is currently progressing through Phase 3 evaluation (TRIUMPH progra
   {
     slug: 'hplc-testing-explained',
     title: 'HPLC Testing Explained: How Peptide Purity Is Verified',
-    seoTitle: 'HPLC Testing Explained: Peptide Purity & Batch CoA',
-    seoDescription: 'How to verify research peptide purity from an HPLC chromatogram: peak-area %, retention time, system suitability limits and LC-MS batch CoA checks.',
+    seoTitle: 'HPLC Testing Explained: What Peptide Purity % Really Means',
+    seoDescription: "What an HPLC chromatogram actually tells you about research peptide purity — peak area %, retention time, LC-MS cross-checks, and how to verify any UK supplier's CoA.",
 
     subtitle: 'Understanding reversed-phase HPLC, analytical method development, and how chromatographic data validates research-grade peptide quality',
     category: 'Analytical Chemistry',
@@ -471,8 +471,8 @@ Cardiovascular outcome data are available only for semaglutide (SUSTAIN-6, SELEC
   {
     slug: 'ipamorelin-ghrp-research',
     title: 'GHRP-2 vs Ipamorelin: A Comparative Research Guide',
-    seoTitle: 'GHRP-2 vs Ipamorelin: Comparative Research Guide | PHLabs',
-    seoDescription: 'Compare GHRP-2 and Ipamorelin: growth hormone secretion, receptor selectivity and long-term safety data. Laboratory-grade research peptides.',
+    seoTitle: 'Ipamorelin & GHRPs: GH Secretagogue Research Explained | PH Labs',
+    seoDescription: 'How ipamorelin and GHRP-class peptides signal through GHS-R, what receptor selectivity means for study design, and key differences researchers compare.',
     subtitle: 'A mechanistic review of ghrelin receptor agonists, comparing ipamorelin, GHRP-2, GHRP-6, and hexarelin across selectivity, pulsatility, and in-vivo GH release data',
     category: 'Endocrine Research',
     readTime: 11,
@@ -1690,7 +1690,7 @@ Animal models typically employed in skin peptide research include: (1) the mouse
       {
         body: `Tissue repair, inflammation resolution, and structural remodelling are interconnected biological processes governed by a network of peptide mediators, growth factors, and transcription regulators. Injury triggers an acute inflammatory cascade (NFκB, IL-1β, TNF-α), followed by a proliferative phase dependent on angiogenesis (VEGF/VEGFR2), cell migration (actin dynamics), and matrix synthesis (collagen, fibronectin). Failure to resolve any phase results in chronic inflammation, fibrosis, or impaired healing — pathologies that underlie tendinopathy, inflammatory bowel disease, delayed wound closure, and degenerative joint conditions.
 
-KLOW Blend is a four-component peptide research formulation designed to address these phases in parallel. BPC-157 (Body Protection Compound-157) activates the growth hormone receptor and VEGFR2 pathway to drive angiogenesis and cell survival. TB-500 (the active fragment Ac-SDKP of Thymosin Beta-4) regulates G-actin sequestration to facilitate cell migration and attenuate myofibroblast-driven fibrosis. GHK-Cu (Glycine-Histidine-Lysine copper complex) stimulates copper-dependent enzymes including lysyl oxidase for collagen crosslinking and activates Nrf2-mediated antioxidant gene transcription. KPV (Lys-Pro-Val, the C-terminal tripeptide of alpha-MSH) binds MC1R and MC3R to suppress NF-κB-driven cytokine production, with demonstrated efficacy in gut epithelial models. Together, these four peptides represent a mechanistically non-overlapping, multi-target approach to repair biology research.`
+KLOW Blend is a four-component peptide research formulation designed to address these phases in parallel. Batch documentation for the formulation is available on the <a href="/products/klow-blend" style="color: #10b981; text-decoration: underline;">KLOW Blend research peptide</a> page. BPC-157 (Body Protection Compound-157) activates the growth hormone receptor and VEGFR2 pathway to drive angiogenesis and cell survival. TB-500 (the active fragment Ac-SDKP of Thymosin Beta-4) regulates G-actin sequestration to facilitate cell migration and attenuate myofibroblast-driven fibrosis. GHK-Cu (Glycine-Histidine-Lysine copper complex) stimulates copper-dependent enzymes including lysyl oxidase for collagen crosslinking and activates Nrf2-mediated antioxidant gene transcription. KPV (Lys-Pro-Val, the C-terminal tripeptide of alpha-MSH) binds MC1R and MC3R to suppress NF-κB-driven cytokine production, with demonstrated efficacy in gut epithelial models. Together, these four peptides represent a mechanistically non-overlapping, multi-target approach to repair biology research.`
       },
       {
         heading: 'BPC-157: VEGFR2/FAK/Src Axis, Angiogenesis, and Tendon–Bone Healing',
@@ -1853,6 +1853,8 @@ For in vitro combination studies, the recommended substrate is primary human der
   {
     slug: 'how-to-read-hplc-certificate-of-analysis',
     title: 'How to Read an HPLC Certificate of Analysis (CoA): UK Guide for Research Peptides',
+    seoTitle: 'How to Read a Peptide CoA: HPLC Chromatogram Guide | PH Labs',
+    seoDescription: 'Step by step: batch number, purity %, retention time and peak area — plus the red flags that reveal fake or recycled peptide certificates.',
     subtitle: 'Understanding HPLC chromatograms, purity percentages, retention times, and analytical validation data on Certificate of Analysis documents for research-grade peptides',
     category: 'Analytical Chemistry',
     readTime: 7,

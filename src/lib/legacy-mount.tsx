@@ -10,8 +10,10 @@ const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
 export function legacyHead(path: string) {
   const splat = path.replace(/^\/+/, "");
   const pageMeta = metaForPath(splat);
-  const title = clamp(pageMeta.title, SEO_LIMITS.titleMax);
-  const description = clamp(pageMeta.description, SEO_LIMITS.descriptionMax);
+  const title = pageMeta.exact ? pageMeta.title : clamp(pageMeta.title, SEO_LIMITS.titleMax);
+  const description = pageMeta.exact
+    ? pageMeta.description
+    : clamp(pageMeta.description, SEO_LIMITS.descriptionMax);
   const url = canonicalUrl(splat);
   return {
     meta: [

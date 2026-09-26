@@ -37,7 +37,6 @@ function buildStaticEntries(): SitemapEntry[] {
 
     { path: "/resources/peptide-categories-uk-research", changefreq: "monthly", priority: "0.6" },
     { path: "/compound", changefreq: "weekly", priority: "0.7" },
-    { path: "/landing/phlabs", changefreq: "weekly", priority: "0.7" },
     { path: "/uk-research-store", changefreq: "weekly", priority: "0.8" },
     { path: "/lab-reports", changefreq: "monthly", priority: "0.6" },
     // Public batch-verification page (lab test lookup). New URL — no existing
@@ -90,7 +89,15 @@ export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
   // Hard exclusion — these paths were decommissioned (410 Gone) and must
   // never appear in any sitemap, even if a future code change accidentally
   // reintroduces them via a static/product/article list.
-  const SITEMAP_EXCLUDE = new Set<string>(["/peptide-calculator", "/calculator"]);
+  const SITEMAP_EXCLUDE = new Set<string>([
+    "/peptide-calculator",
+    "/calculator",
+    // noindex pages (2026-09-26)
+    "/install",
+    "/landing/phlabs",
+    // 301 → /resources/ipamorelin-ghrp-research
+    "/products/ipamorelin",
+  ]);
 
   const seen = new Set<string>();
   return [

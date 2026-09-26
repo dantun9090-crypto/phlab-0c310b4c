@@ -112,9 +112,9 @@ const RULES: RedirectRule[] = [
   { type: "exact", from: "/products/kpv-synthetic-tripeptide-lys-pro-val-analytical-standard-99-hplc-cas-67727-97-3-for-research-use-only-ruo", to: "/products/kpv-research-peptide" },
 
   // PT-141
-  { type: "exact", from: "/products/pt-141", to: "/products/pt-141-research-peptide" },
-  { type: "exact", from: "/products/pt-141-bremelanotide", to: "/products/pt-141-research-peptide" },
-  { type: "exact", from: "/products/pt-141-synthetic-cyclic-heptapeptide-analytical-standard-99-hplc-cas-189691-06-3-for-research-use-only-ruo", to: "/products/pt-141-research-peptide" },
+  { type: "exact", from: "/products/pt-141", to: "/products/pt-141-research" },
+  { type: "exact", from: "/products/pt-141-bremelanotide", to: "/products/pt-141-research" },
+  { type: "exact", from: "/products/pt-141-synthetic-cyclic-heptapeptide-analytical-standard-99-hplc-cas-189691-06-3-for-research-use-only-ruo", to: "/products/pt-141-research" },
 
   // TB-500
   { type: "exact", from: "/products/tb-500", to: "/products/tb-500-thymosin-beta-4" },
@@ -143,7 +143,7 @@ const RULES: RedirectRule[] = [
   { type: "exact", from: "/products/cerebrolysin", to: "/products" },
   { type: "exact", from: "/products/cjc-1295", to: "/products" },
   { type: "exact", from: "/products/igf-1-lr3", to: "/products" },
-  { type: "exact", from: "/products/ipamorelin", to: "/products" },
+  { type: "exact", from: "/products/ipamorelin", to: "/resources/ipamorelin-ghrp-research" },
   { type: "exact", from: "/products/kisspeptin-10", to: "/products" },
   { type: "exact", from: "/products/oxytocin", to: "/products" },
   { type: "exact", from: "/products/selank", to: "/products" },
@@ -220,6 +220,15 @@ const RULES: RedirectRule[] = [
   { type: "exact", from: "/products/u2s8gl", to: "/products/phl-14b" },
   { type: "exact", from: "/products/d9p1ox", to: "/products/phl-15a" },
   { type: "exact", from: "/products/d9p1oy", to: "/products/phl-15b" },
+
+  // === Reversed /compare/ pairs consolidated (2026-09-26) ===
+  // Unique FAQs from the removed pages were merged into the kept page
+  // (see COMPARE_CONSOLIDATION in src/lib/programmatic-seo.ts).
+  { type: "exact", from: "/compare/ghk-cu-vs-bpc-157", to: "/compare/bpc-157-vs-ghk-cu" },
+  { type: "exact", from: "/compare/ghk-cu-vs-tb-500", to: "/compare/tb-500-vs-ghk-cu" },
+  { type: "exact", from: "/compare/kpv-vs-bpc-157", to: "/compare/bpc-157-vs-kpv" },
+  { type: "exact", from: "/compare/nad-plus-vs-mots-c", to: "/compare/mots-c-vs-nad-plus" },
+  { type: "exact", from: "/compare/klow-vs-glow-blend", to: "/compare/klow-vs-glow" },
 ];
 
 
@@ -248,6 +257,24 @@ export function resolveLegacyRedirect(pathname: string): string | null {
     }
   }
   return null;
+}
+
+/**
+ * Resolve a path to its FINAL destination by following rule chains, so
+ * every legacy URL answers with exactly one 301 hop. Returns null when the
+ * path is not redirected. Loop-safe (stops on a revisited path).
+ */
+export function resolveFinalRedirect(pathname: string): string | null {
+  let current = resolveLegacyRedirect(pathname);
+  if (!current) return null;
+  const seen = new Set<string>([pathname, current]);
+  for (let i = 0; i < 8; i++) {
+    const next = resolveLegacyRedirect(current);
+    if (!next || next === current || seen.has(next)) break;
+    seen.add(next);
+    current = next;
+  }
+  return current;
 }
 
 /**
