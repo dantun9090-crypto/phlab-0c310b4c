@@ -3,7 +3,7 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { notifySsrError } from "./lib/ssr-alert";
-import { isGoneLegacyPath, resolveLegacyRedirect } from "./lib/legacy-redirects";
+import { isGoneLegacyPath, resolveFinalRedirect } from "./lib/legacy-redirects";
 
 import { extractClientIp, log, maskIpForLog, truncate } from "./lib/worker-log";
 
@@ -1650,6 +1650,14 @@ export default {
         dest.hostname = CANONICAL_HOST;
         dest.protocol = "https:";
         dest.port = "";
+        // Single hop: apply trailing-slash + legacy path rules in the same 301.
+        {
+          let pth = dest.pathname;
+          if (pth.length > 1 && pth.endsWith("/") && !pth.startsWith("/api/") && !/\.[a-z0-9]+$/i.test(pth)) {
+            pth = pth.replace(/\/+$/, "") || "/";
+          }
+          dest.pathname = resolveFinalRedirect(pth) ?? pth;
+        }
         log.info({ event: "worker.redirect", status: 301, reason: "canonical-host", to: dest.toString(), ...baseFields });
         return applyStrictNoStoreHeaders(Response.redirect(dest.toString(), 301), url.pathname);
       }
@@ -1713,7 +1721,10 @@ export default {
         !/\.[a-z0-9]+$/i.test(url.pathname)
       ) {
         const dest = new URL(url.toString());
-        dest.pathname = url.pathname.replace(/\/+$/, "");
+        const stripped = url.pathname.replace(/\/+$/, "");
+        // Single hop: if the stripped path is itself a legacy URL, go
+        // straight to its final destination.
+        dest.pathname = resolveFinalRedirect(stripped) ?? stripped;
         log.info({ event: "worker.redirect", status: 301, reason: "trailing-slash", to: dest.pathname, ...baseFields });
         return applyStrictNoStoreHeaders(Response.redirect(dest.toString(), 301), url.pathname);
       }
@@ -1721,7 +1732,7 @@ export default {
 
 
       // 2. 301 redirect legacy (Wegic) URLs before SSR runs.
-      const legacy = resolveLegacyRedirect(url.pathname);
+      const legacy = resolveFinalRedirect(url.pathname);
       if (legacy && legacy !== url.pathname) {
         const dest = new URL(legacy, url);
         dest.search = url.search;
