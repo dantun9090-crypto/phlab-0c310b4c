@@ -628,15 +628,18 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
             "delivered",
             "completed",
           ]);
-          for (const order of candidates) {
-            if (!PAID_STATUSES.has(String(order.status ?? "").toLowerCase())) continue;
-
-            {
-              const prov = String((order as { paymentProvider?: unknown }).paymentProvider ?? "").toLowerCase();
-              if (prov !== "wallid" && prov !== "peptidepay") continue;
-            }
-            if ((order as { gaClientPurchaseAt?: unknown }).gaClientPurchaseAt) continue;
-            if ((order as { gaMpPurchaseAt?: unknown }).gaMpPurchaseAt) continue;
+          const eligible = candidates.filter((order) => {
+            if (!PAID_STATUSES.has(String(order.status ?? "").toLowerCase())) return false;
+            const prov = String((order as { paymentProvider?: unknown }).paymentProvider ?? "").toLowerCase();
+            if (prov !== "wallid" && prov !== "peptidepay") return false;
+            if ((order as { gaClientPurchaseAt?: unknown }).gaClientPurchaseAt) return false;
+            if ((order as { gaMpPurchaseAt?: unknown }).gaMpPurchaseAt) return false;
+            return true;
+          });
+          console.info(
+            `[reconcile] GA4 MP backfill: scanned=${candidates.length} eligible=${eligible.length} secretSet=${Boolean(process.env.GA4_MP_API_SECRET)}`,
+          );
+          for (const order of eligible) {
             const orderId = String(order.id);
             const { sendGa4MpPurchase } = await import("@/lib/server/ga-measurement");
             const sent = await sendGa4MpPurchase(orderId, order);
@@ -645,6 +648,7 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
               results.mpBackfill += 1;
             }
           }
+          console.info(`[reconcile] GA4 MP backfill: sent=${results.mpBackfill}/${eligible.length}`);
         } catch (e) {
           console.warn("[reconcile] GA4 MP backfill failed:", e instanceof Error ? e.message : e);
         }
