@@ -227,6 +227,10 @@ const RULES: RedirectRule[] = [
   { type: "exact", from: "/compare/ghk-cu-vs-bpc-157", to: "/compare/bpc-157-vs-ghk-cu" },
   { type: "exact", from: "/compare/ghk-cu-vs-tb-500", to: "/compare/tb-500-vs-ghk-cu" },
   { type: "exact", from: "/compare/kpv-vs-bpc-157", to: "/compare/bpc-157-vs-kpv" },
+  { type: "exact", from: "/compare/ipamorelin-vs-ghrp-2", to: "/compare/ghrp-2-vs-ipamorelin" },
+  { type: "exact", from: "/compare/tirzepatide-vs-retatrutide", to: "/compare/retatrutide-vs-tirzepatide" },
+  { type: "exact", from: "/compare/glow-vs-klow", to: "/compare/klow-vs-glow" },
+  { type: "exact", from: "/compare/tb-500-vs-bpc-157", to: "/compare/bpc-157-vs-tb-500" },
   { type: "exact", from: "/compare/nad-plus-vs-mots-c", to: "/compare/mots-c-vs-nad-plus" },
   { type: "exact", from: "/compare/klow-vs-glow-blend", to: "/compare/klow-vs-glow" },
 ];

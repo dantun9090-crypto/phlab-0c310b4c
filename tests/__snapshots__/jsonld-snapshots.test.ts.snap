@@ -694,7 +694,7 @@ exports[`Article JSON-LD snapshots > /resources/how-to-read-hplc-certificate-of-
       "url": "https://phlabs.co.uk",
     },
     "datePublished": "2026-05-03",
-    "description": "How To Read Hplc Certificate Of Analysis: resource notes and references from PH Labs UK.",
+    "description": "Step by step: batch number, purity %, retention time and peak area — plus the red flags that reveal fake or recycled peptide certificates.",
     "headline": "How to Read an HPLC Certificate of Analysis (CoA): UK Guide for Research Peptides",
     "image": [
       "https://phlabs.co.uk/og-image.jpg",
@@ -756,7 +756,7 @@ exports[`Article JSON-LD snapshots > /resources/hplc-testing-explained 1`] = `
       "url": "https://phlabs.co.uk",
     },
     "datePublished": "2026-03-05",
-    "description": "How to verify research peptide purity from an HPLC chromatogram: peak-area %, retention time, system suitability limits and LC-MS batch CoA checks.",
+    "description": "What an HPLC chromatogram actually tells you about research peptide purity — peak area %, retention time, LC-MS cross-checks, and how to verify any UK…",
     "headline": "HPLC Testing Explained: How Peptide Purity Is Verified",
     "image": [
       "https://phlabs.co.uk/og-image.jpg",
@@ -818,7 +818,7 @@ exports[`Article JSON-LD snapshots > /resources/ipamorelin-ghrp-research 1`] = `
       "url": "https://phlabs.co.uk",
     },
     "datePublished": "2026-01-30",
-    "description": "Ipamorelin Ghrp Research: resource notes and references from PH Labs UK.",
+    "description": "How ipamorelin and GHRP-class peptides signal through GHS-R, what receptor selectivity means for study design, and key differences researchers compare.",
     "headline": "GHRP-2 vs Ipamorelin: A Comparative Research Guide",
     "image": [
       "https://phlabs.co.uk/og-image.jpg",
