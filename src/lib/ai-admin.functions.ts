@@ -243,7 +243,13 @@ export const aiAdminChat = createServerFn({ method: 'POST' })
     const system = SYSTEM[data.mode];
 
     // Inject Firestore context for data-driven modes
-    const messages = [...data.messages];
+    // Roles are assigned server-side: client history is never forwarded as
+    // real assistant turns. Prior replies are folded into labelled user text
+    // so a caller cannot spoof assistant messages to the provider.
+    const transcript = data.messages
+      .map((m) => (m.role === 'assistant' ? `[Earlier assistant reply]\n${m.content}` : m.content))
+      .join('\n\n---\n\n');
+    const messages: { role: 'user'; content: string }[] = [{ role: 'user', content: transcript }];
     if (data.mode === 'insights') {
       const context = await buildInsightsContext();
       messages.unshift({
