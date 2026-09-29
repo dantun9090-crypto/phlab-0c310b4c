@@ -82,12 +82,7 @@ function extractMarker(detailsJson?: string): string | null {
   return null;
 }
 
-function csvEscape(v: unknown): string {
-  if (v === null || v === undefined) return "";
-  const s = String(v);
-  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
-}
+const csvEscape = csvSafeCell;
 
 function downloadBlob(filename: string, content: string, mime: string) {
   const blob = new Blob([content], { type: mime });

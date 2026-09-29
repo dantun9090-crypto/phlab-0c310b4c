@@ -128,7 +128,14 @@ export const getOrderPaymentStatus = createServerFn({ method: "POST" })
     const orderIdFromPayment = data.paymentId
       ? await findDocByFieldAdmin("orders", "truelayerPaymentId", data.paymentId)
       : null;
-    const orderId = data.orderId || (typeof orderIdFromPayment?.__id === "string" ? orderIdFromPayment.__id : "");
+    // When resolved by paymentId, the payment's own order id is authoritative;
+    // a caller-supplied orderId must match it (prevents acting on another order).
+    const resolvedFromPayment = typeof orderIdFromPayment?.__id === "string" ? orderIdFromPayment.__id : "";
+    if (data.paymentId && !resolvedFromPayment) throw new Error("Order not found");
+    if (resolvedFromPayment && data.orderId && data.orderId !== resolvedFromPayment) {
+      throw new Error("Forbidden");
+    }
+    const orderId = resolvedFromPayment || data.orderId || "";
     const order = orderIdFromPayment || (orderId ? await getDocAdmin("orders", orderId) : null);
     if (!order) throw new Error("Order not found");
     if (!orderId) throw new Error("Order id could not be resolved");

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { csvSafeCell } from '@/lib/csv-safe';
 import {
   Mail, Send, Users, FileText, Eye, EyeOff,
   CheckCircle2, AlertCircle, Loader2, ChevronDown,
@@ -317,8 +318,9 @@ export default function EmailMarketingTab() {
   };
 
   const exportSubscribers = () => {
-    const csv = 'Email,Source,Date,Status,Discount Code\n' + subscribers.map(s => 
-      `${s.email},${s.source || 'unknown'},${s.subscribedAt || ''},${s.status || 'pending'},${s.discountCode || 'N/A'}`
+    const csv = 'Email,Source,Date,Status,Discount Code\n' + subscribers.map(s =>
+      [s.email, s.source || 'unknown', s.subscribedAt || '', s.status || 'pending', s.discountCode || 'N/A']
+        .map(csvSafeCell).join(',')
     ).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);

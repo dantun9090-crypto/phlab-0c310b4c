@@ -374,7 +374,7 @@ function SubscribersPanel() {
       'userAgent',
       'ipHash',
     ];
-    const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const esc = (v: unknown) => csvSafeCell(v ?? '');
     const csv = [header.join(',')]
       .concat(
         filtered.map((r) =>

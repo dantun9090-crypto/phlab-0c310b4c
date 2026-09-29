@@ -807,7 +807,7 @@ export default {
     //    marker so the follow-up request skips any lingering edge cache.
     if (path === "/cache-reset") {
       const rawNext = url.searchParams.get("next") || "/";
-      const safeNext = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
+      const safeNext = /^\/(?![\/\\])/.test(rawNext) && !/[\\\x00-\x1f]/.test(rawNext) ? rawNext : "/";
       const sep = safeNext.includes("?") ? "&" : "?";
       return new Response(null, {
         status: 302,
