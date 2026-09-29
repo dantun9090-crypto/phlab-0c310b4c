@@ -113,7 +113,7 @@ The compound is currently progressing through Phase 3 evaluation (TRIUMPH progra
     slug: 'hplc-testing-explained',
     title: 'HPLC Testing Explained: How Peptide Purity Is Verified',
     seoTitle: 'HPLC Testing Explained: What Peptide Purity % Really Means',
-    seoDescription: "What an HPLC chromatogram actually tells you about research peptide purity — peak area %, retention time, LC-MS cross-checks, and how to verify any UK supplier's CoA.",
+    seoDescription: "What is HPLC testing? How reversed-phase HPLC at 214 nm, peak area % and LC-MS confirm research peptide purity, plus how to check any batch CoA line by line.",
 
     subtitle: 'Understanding reversed-phase HPLC, analytical method development, and how chromatographic data validates research-grade peptide quality',
     category: 'Analytical Chemistry',

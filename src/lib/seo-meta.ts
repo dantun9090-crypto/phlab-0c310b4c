@@ -120,7 +120,7 @@ export function metaForPath(splat: string): PageMeta {
     "hplc-testing-explained": {
       title: "HPLC Testing Explained: What Peptide Purity % Really Means",
       description:
-        "What an HPLC chromatogram actually tells you about research peptide purity — peak area %, retention time, LC-MS cross-checks, and how to verify any UK supplier's CoA.",
+        "What is HPLC testing? How reversed-phase HPLC at 214 nm, peak area % and LC-MS confirm research peptide purity, plus how to check any batch CoA line by line.",
       ogType: "article",
       exact: true,
     },
