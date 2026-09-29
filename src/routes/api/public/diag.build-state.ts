@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { enforceRateLimit } from '@/lib/rate-limit';
 import { getDocAdmin, listDocsAdmin } from '@/lib/server/firestore-admin';
+import { timingSafeEqualStr } from '@/lib/timing-safe-equal';
 
 /**
  * Diagnostic: report whether Firestore `_meta/build_state` matches the
@@ -87,6 +88,15 @@ export const Route = createFileRoute('/api/public/diag/build-state')({
         if (!lastBuildId) status = 'unknown';
         else if (match) status = 'ok';
         else status = 'stale';
+
+        // Only callers holding the monitoring secret get build metadata and
+        // audit details; public callers get the status flag only.
+        const expected = process.env.CLEANUP_SECRET_V2;
+        const provided = request.headers.get('x-watchdog-secret') || '';
+        const authed = !!expected && provided.length === expected.length && timingSafeEqualStr(provided, expected);
+        if (!authed) {
+          return json({ status, match, checkedAt: new Date().toISOString() });
+        }
 
         return json({
           status,

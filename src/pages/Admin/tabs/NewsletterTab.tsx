@@ -1,3 +1,4 @@
+import { csvSafeCell } from '@/lib/csv-safe';
 /**
  * Admin → Newsletter management.
  * Subscribers list + popup settings. Uses existing `emailSubscribers`
@@ -374,7 +375,7 @@ function SubscribersPanel() {
       'userAgent',
       'ipHash',
     ];
-    const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const esc = (v: unknown) => csvSafeCell(v ?? '');
     const csv = [header.join(',')]
       .concat(
         filtered.map((r) =>

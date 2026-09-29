@@ -612,7 +612,7 @@ export const Route = createFileRoute('/api/public/post-publish-check')({
         // error body instead of the site. Marked no-store so neither the
         // browser nor Cloudflare caches the bounce.
         const next = new URL(request.url).searchParams.get('next');
-        const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : null;
+        const safeNext = next && /^\/(?![\/\\])/.test(next) && !/[\\\x00-\x1f]/.test(next) ? next : null;
         let res: Response;
         try {
           res = await runCheck(request);

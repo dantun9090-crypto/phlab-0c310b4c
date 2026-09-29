@@ -195,6 +195,7 @@ export const Route = createFileRoute("/api/public/send-mail")({
         let subject: string;
         let html: string;
         let replyTo: string | undefined;
+        let protocolRecipient: string | undefined;
 
         try {
           switch (input.template) {
@@ -224,6 +225,20 @@ export const Route = createFileRoute("/api/public/send-mail")({
               if (typeof expiry === "string" && new Date(expiry) < new Date()) {
                 return json({ error: "discount_code_expired" }, 400);
               }
+              // Recipient must have just signed up via the protocol-library
+              // form, and each address receives this offer at most once —
+              // stops the endpoint being used to email arbitrary inboxes.
+              const recipient = input.email.toLowerCase();
+              const subscriber = await findDocByFieldAdmin("emailSubscribers", "email", input.email)
+                ?? (recipient !== input.email ? await findDocByFieldAdmin("emailSubscribers", "email", recipient) : null);
+              if (!subscriber || subscriber.source !== "homepage_protocol_library") {
+                return json({ error: "not_subscribed" }, 403);
+              }
+              const alreadySent = await findDocByFieldAdmin("mail", "protocolRecipient", recipient);
+              if (alreadySent) {
+                return json({ ok: true, deduped: true });
+              }
+              protocolRecipient = recipient;
               to = input.email;
               subject = "Your Free Research Protocol Library — PH Labs";
               html = protocolLibraryEmail({
@@ -362,6 +377,7 @@ export const Route = createFileRoute("/api/public/send-mail")({
           await addDocAdmin("mail", {
             to,
             ...(replyTo ? { replyTo } : {}),
+            ...(protocolRecipient ? { protocolRecipient } : {}),
             message: { subject, html },
             createdAt: new Date(),
             source: `public:${input.template}`,
