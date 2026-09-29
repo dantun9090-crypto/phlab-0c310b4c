@@ -1,3 +1,4 @@
+import { csvSafeCell } from '@/lib/csv-safe';
 /**
  * Admin → Newsletter management.
  * Subscribers list + popup settings. Uses existing `emailSubscribers`

@@ -1,3 +1,4 @@
+import { csvSafeCell } from '@/lib/csv-safe';
 /**
  * Admin → Research Incidents tab.
  *
