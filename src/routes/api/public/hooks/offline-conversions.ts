@@ -16,11 +16,10 @@
  *     ELIGIBLE_PROVIDERS — gateway `paymentProvider`, or `paymentMethod`
  *     for manual bank transfer / Tide),
  *   - has a captured adClickIds.gclid (see src/lib/gclid-capture.ts),
- *   - NO adsClientConversionAt marker — i.e. the success page never
- *     confirmed a consented browser-side Ads conversion (see
- *     src/routes/api/payments/status.ts). This is the dedup key against the
- *     live tag. Google additionally ignores exact re-uploads (same gclid +
- *     conversion name + timestamp), so re-fetching the same row is safe.
+ *   - regardless of the adsClientConversionAt marker — the website tag is a
+ *     Secondary action, so it never counts as Primary alongside this import.
+ *   - each order once per file (dedup by order id); the "Order ID" column
+ *     lets Google ignore re-uploads of the same order on later fetches.
  *   - paidAt within the last 90 days (Google's click-conversion lookback
  *     limit — older clicks can never match).
  *   - paidAt OLDER than 48 hours. Customers sometimes return to the success
