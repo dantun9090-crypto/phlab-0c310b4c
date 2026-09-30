@@ -24,7 +24,11 @@ const LIMIT = 5;
 
 const ResetInput = z.object({
   email: z.string().trim().email().max(320),
-  continueUrl: z.string().url().max(500).optional(),
+  // Only our own site may be used as the post-reset return address.
+  continueUrl: z.string().url().max(500).optional().refine(
+    (u) => !u || /^https:\/\/(www\.)?phlabs\.co\.uk(\/|$)/.test(u),
+    "continueUrl must be on phlabs.co.uk",
+  ),
 });
 
 export const requestPasswordReset = createServerFn({ method: "POST" })
