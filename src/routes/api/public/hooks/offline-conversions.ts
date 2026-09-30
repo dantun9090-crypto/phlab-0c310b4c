@@ -179,9 +179,14 @@ export async function getOfflineConversionsCsv(request: Request): Promise<Respon
     });
   }
 
+  // "Order ID" (Google template column) doubles as the dedup key: Google
+  // ignores a second upload with the same Order ID for the same action.
+  // No "Email" column: per-customer ad-storage consent is not recorded on
+  // orders, so hashed emails must not be sent.
   const rows: string[] = [
-    "Google Click ID,Conversion Name,Conversion Time,Conversion Value,Conversion Currency",
+    "Google Click ID,Conversion Name,Conversion Time,Conversion Value,Conversion Currency,Order ID",
   ];
+  const seenOrderIds = new Set<string>();
 
   try {
     const { listDocsAdmin } = await import("@/lib/server/firestore-admin");
@@ -205,9 +210,10 @@ export async function getOfflineConversionsCsv(request: Request): Promise<Respon
           "",
       ).toLowerCase();
       if (!ELIGIBLE_PROVIDERS.has(provider)) continue;
-      // Skip orders whose browser Ads conversion was confirmed —
-      // importing those would double count.
-      if ((order as { adsClientConversionAt?: unknown }).adsClientConversionAt) continue;
+      // Every paid order is exported regardless of adsClientConversionAt —
+      // the website tag action is Secondary, so it is not counted as Primary.
+      const orderId = String(order.id || "");
+      if (!orderId || seenOrderIds.has(orderId)) continue;
 
       const clickIds = (order as { adClickIds?: unknown }).adClickIds as
         | { gclid?: unknown }
@@ -236,8 +242,10 @@ export async function getOfflineConversionsCsv(request: Request): Promise<Respon
           csvCell(formatAdsTime(paidAt)),
           value.toFixed(2),
           "GBP",
+          csvCell(orderId),
         ].join(","),
       );
+      seenOrderIds.add(orderId);
     }
   } catch (e) {
     console.error(
