@@ -121,7 +121,7 @@ export default function CompoundNegativesAuditTab() {
    *    operation grouped by correlationId.
    */
   function exportCsv(mode: 'summary' | 'attempts' = 'summary') {
-    const esc = (c: string) => (/[,"\r\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c);
+    const esc = (c: string) => { const s = /^[=+\-@\t\r]/.test(c) ? `'${c}` : c; return /[,"\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
 
     if (mode === 'attempts') {
       const header =
