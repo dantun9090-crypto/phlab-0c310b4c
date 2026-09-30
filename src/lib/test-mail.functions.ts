@@ -17,7 +17,11 @@ import { requireFirebaseAdmin } from "@/lib/server/firebase-auth-admin";
 
 const Input = z.object({
   idToken: z.string().min(10).max(4096),
-  to: z.string().email().max(320).optional(),
+  // Recipient bound server-side: only the shop domain or the owner inbox.
+  to: z.string().trim().toLowerCase().email().max(320).optional().refine(
+    (a) => !a || a.endsWith("@phlabs.co.uk") || a === "dantun90@hotmail.com",
+    "Test mail can only be sent to a phlabs.co.uk address or the owner inbox",
+  ),
 });
 
 export const sendTestMail = createServerFn({ method: "POST" })

@@ -23,8 +23,8 @@ const Mode = z.enum(["normal", "bad-sig", "stale", "duplicate"]);
 const Input = z.object({
   idToken: z.string().min(10).max(4096),
   eventType: z.enum(["SUCCESS", "FAILED", "EXPIRED", "PENDING"]),
-  orderId: z.string().min(1).max(120),
-  apiPaymentId: z.string().min(1).max(120),
+  orderId: z.string().min(1).max(120).regex(/^[A-Za-z0-9_.:-]+$/),
+  apiPaymentId: z.string().min(1).max(120).regex(/^[A-Za-z0-9_.:-]+$/),
   amount: z.number().int().min(1).max(10_000_00),
   mode: Mode.default("normal"),
   targetOrigin: z.string().url().optional(),

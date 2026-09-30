@@ -1,3 +1,4 @@
+import { csvSafeCell } from '@/lib/csv-safe';
 import { useEffect, useMemo, useState } from 'react';
 import { useServerFn } from '@tanstack/react-start';
 import { auth } from '@/lib/firebase';
@@ -218,7 +219,7 @@ export default function CompoundQueriesTab() {
       data.rows
         .map((r) =>
           [
-            JSON.stringify(r.query),
+            csvSafeCell(r.query),
             r.clicks,
             r.impressions,
             (r.ctr * 100).toFixed(2) + '%',
@@ -226,7 +227,7 @@ export default function CompoundQueriesTab() {
             r.deltaImpressions,
             r.deltaClicks,
             r.trending ? 'yes' : 'no',
-            JSON.stringify(r.riskTokens.join('|')),
+            csvSafeCell(r.riskTokens.join("|")),
           ].join(','),
         )
         .join('\n');

@@ -128,7 +128,8 @@ export const listPaymentTriageAdmin = createServerFn({ method: "POST" })
     else if (data.status === "pending") q = q.in("status", ["NEW", "PENDING", "PROCESSING"]);
 
     if (data.search) {
-      const s = data.search.trim();
+      // Strip PostgREST filter syntax (commas, parens, dots-as-operators are safe only as literals).
+      const s = data.search.trim().replace(/[^A-Za-z0-9@_+\-. ]/g, "").replace(/\./g, "_");
       if (s) q = q.or(`order_id.ilike.%${s}%,api_payment_id.ilike.%${s}%,customer_email.ilike.%${s}%`);
     }
 

@@ -171,7 +171,7 @@ function LegacyMount() {
  * pipeline (src/lib/error-capture.ts → src/lib/ssr-alert.ts) can pick it
  * up and alert on catastrophic failures.
  */
-function SplatErrorBoundary({ error, reset }: { error: Error; reset: () => void }) {
+function SplatErrorBoundary({ error, reset }: { error: unknown; reset: () => void }) {
   const router = useRouter();
   const splat = Route.useParams()._splat ?? "";
   console.error("[splat.errorComponent]", { path: `/${splat}`, error });

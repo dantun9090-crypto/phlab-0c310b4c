@@ -71,7 +71,7 @@ export const Route = createFileRoute("/landing/$slug")({
   errorComponent: ({ error }) => (
     <div className="min-h-screen bg-[#060f1e] flex flex-col items-center justify-center text-center p-8">
       <h1 className="text-2xl font-bold text-white mb-3">Could not load landing page</h1>
-      <p className="text-[#9cb8d9] text-sm">{error.message}</p>
+      <p className="text-[#9cb8d9] text-sm">{error instanceof Error ? error.message : String(error)}</p>
     </div>
   ),
 });

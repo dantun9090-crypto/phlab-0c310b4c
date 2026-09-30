@@ -98,7 +98,7 @@ export const Route = createFileRoute("/compare/$slug")({
       <h1 className="text-2xl font-bold text-white mb-3">
         Could not load comparison
       </h1>
-      <p className="text-slate-400 text-sm">{error.message}</p>
+      <p className="text-slate-400 text-sm">{error instanceof Error ? error.message : String(error)}</p>
     </div>
   ),
   component: ComparePage,
