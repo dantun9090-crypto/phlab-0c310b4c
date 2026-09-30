@@ -16,11 +16,10 @@
  *     ELIGIBLE_PROVIDERS — gateway `paymentProvider`, or `paymentMethod`
  *     for manual bank transfer / Tide),
  *   - has a captured adClickIds.gclid (see src/lib/gclid-capture.ts),
- *   - NO adsClientConversionAt marker — i.e. the success page never
- *     confirmed a consented browser-side Ads conversion (see
- *     src/routes/api/payments/status.ts). This is the dedup key against the
- *     live tag. Google additionally ignores exact re-uploads (same gclid +
- *     conversion name + timestamp), so re-fetching the same row is safe.
+ *   - regardless of the adsClientConversionAt marker — the website tag is a
+ *     Secondary action, so it never counts as Primary alongside this import.
+ *   - each order once per file (dedup by order id); the "Order ID" column
+ *     lets Google ignore re-uploads of the same order on later fetches.
  *   - paidAt within the last 90 days (Google's click-conversion lookback
  *     limit — older clicks can never match).
  *   - paidAt OLDER than 48 hours. Customers sometimes return to the success
@@ -179,9 +178,14 @@ export async function getOfflineConversionsCsv(request: Request): Promise<Respon
     });
   }
 
+  // "Order ID" (Google template column) doubles as the dedup key: Google
+  // ignores a second upload with the same Order ID for the same action.
+  // No "Email" column: per-customer ad-storage consent is not recorded on
+  // orders, so hashed emails must not be sent.
   const rows: string[] = [
-    "Google Click ID,Conversion Name,Conversion Time,Conversion Value,Conversion Currency",
+    "Google Click ID,Conversion Name,Conversion Time,Conversion Value,Conversion Currency,Order ID",
   ];
+  const seenOrderIds = new Set<string>();
 
   try {
     const { listDocsAdmin } = await import("@/lib/server/firestore-admin");
@@ -205,9 +209,10 @@ export async function getOfflineConversionsCsv(request: Request): Promise<Respon
           "",
       ).toLowerCase();
       if (!ELIGIBLE_PROVIDERS.has(provider)) continue;
-      // Skip orders whose browser Ads conversion was confirmed —
-      // importing those would double count.
-      if ((order as { adsClientConversionAt?: unknown }).adsClientConversionAt) continue;
+      // Every paid order is exported regardless of adsClientConversionAt —
+      // the website tag action is Secondary, so it is not counted as Primary.
+      const orderId = String(order.id || "");
+      if (!orderId || seenOrderIds.has(orderId)) continue;
 
       const clickIds = (order as { adClickIds?: unknown }).adClickIds as
         | { gclid?: unknown }
@@ -236,8 +241,10 @@ export async function getOfflineConversionsCsv(request: Request): Promise<Respon
           csvCell(formatAdsTime(paidAt)),
           value.toFixed(2),
           "GBP",
+          csvCell(orderId),
         ].join(","),
       );
+      seenOrderIds.add(orderId);
     }
   } catch (e) {
     console.error(
