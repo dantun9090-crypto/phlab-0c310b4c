@@ -23,6 +23,11 @@
  *     conversion name + timestamp), so re-fetching the same row is safe.
  *   - paidAt within the last 90 days (Google's click-conversion lookback
  *     limit — older clicks can never match).
+ *   - paidAt OLDER than 48 hours. Customers sometimes return to the success
+ *     page hours after paying; the browser tag then fires and sets
+ *     adsClientConversionAt only after the daily import already exported
+ *     the order, double counting it. Waiting 48h lets that marker land
+ *     first; orders whose buyer never returns are still exported after 48h.
  *
  * Auth: reuses CRON_SECRET (constant-time compare). Accepted either as the
  * `key` query param or as the HTTP Basic password (the Ads scheduled-upload
@@ -43,6 +48,8 @@ import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
 const CONVERSION_NAME =
   (process.env.ADS_IMPORT_CONVERSION_NAME || "").trim() || "Purchase (offline import)";
 const LOOKBACK_MS = 90 * 24 * 60 * 60_000;
+/** Minimum order age before export — see "Which orders are exported". */
+const MIN_AGE_MS = 48 * 60 * 60_000;
 
 const PAID_STATUSES = new Set([
   "paid",
@@ -212,6 +219,8 @@ export async function getOfflineConversionsCsv(request: Request): Promise<Respon
         toDate((order as { paidAt?: unknown }).paidAt) ??
         toDate((order as { createdAt?: unknown }).createdAt);
       if (!paidAt) continue;
+      // Too fresh — give the browser tag 48h to set adsClientConversionAt.
+      if (Date.now() - paidAt.getTime() < MIN_AGE_MS) continue;
 
       const value = Number(
         (order as { totalAmount?: unknown }).totalAmount ??
