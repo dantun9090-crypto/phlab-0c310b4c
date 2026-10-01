@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useServerFn } from '@tanstack/react-start';
-import { db, doc, getDoc, setDoc, collection, getDocs, auth, storage, storageRef, uploadBytesResumable, getDownloadURL } from '@/lib/firebase';
+import { db, doc, getDoc, setDoc, deleteDoc, collection, getDocs, auth, storage, storageRef, uploadBytesResumable, getDownloadURL } from '@/lib/firebase';
 import { Search, Globe, FileText, Package, BookOpen, Save, AlertCircle, CheckCircle2, Eye, Image as ImageIcon, RefreshCw, Map, Zap, ExternalLink, Key, Loader2, Trash2, Clock, Gauge, SearchCode, Loader } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { recachePrerenderUrlsBulk } from '@/lib/prerender-status.functions';
@@ -183,7 +183,7 @@ export default function SEOTab() {
       localStorage.setItem('php_prerender_token', prerenderToken.trim());
       // Clean up any previously-stored token in Firestore (best-effort).
       try {
-        await setDoc(doc(db, 'settings', 'prerenderio'), { token: '' }, { merge: true });
+        await deleteDoc(doc(db, 'settings', 'prerenderio'));
       } catch { /* ignore */ }
       setTokenSaved(true);
       setTimeout(() => setTokenSaved(false), 3000);
