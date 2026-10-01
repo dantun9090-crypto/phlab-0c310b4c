@@ -35,7 +35,7 @@ jobs:
       COMPOUND_BASE_URL: http://127.0.0.1:8080
       ROUTE_POLICY_BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
