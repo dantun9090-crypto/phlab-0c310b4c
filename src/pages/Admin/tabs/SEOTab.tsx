@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useServerFn } from '@tanstack/react-start';
-import { db, doc, getDoc, setDoc, collection, getDocs, auth, storage, storageRef, uploadBytesResumable, getDownloadURL } from '@/lib/firebase';
+import { db, doc, getDoc, setDoc, deleteDoc, collection, getDocs, auth, storage, storageRef, uploadBytesResumable, getDownloadURL } from '@/lib/firebase';
 import { Search, Globe, FileText, Package, BookOpen, Save, AlertCircle, CheckCircle2, Eye, Image as ImageIcon, RefreshCw, Map, Zap, ExternalLink, Key, Loader2, Trash2, Clock, Gauge, SearchCode, Loader } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { recachePrerenderUrlsBulk } from '@/lib/prerender-status.functions';
