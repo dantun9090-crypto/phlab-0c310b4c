@@ -103,7 +103,9 @@ export const Route = createFileRoute("/api/payments/status")({
         const ownerUid = typeof order.userId === "string" ? order.userId : null;
         const ownsByUid = userUid !== null && ownerUid !== null && ownerUid === userUid;
         const ownsByToken = paymentToken
-          ? await verifyPaymentTokenHash(paymentToken, (order as { paymentTokenHash?: unknown }).paymentTokenHash)
+          ? (await verifyPaymentTokenHash(paymentToken, (order as { paymentTokenHash?: unknown }).paymentTokenHash)) ||
+            // Burned one-shot token: still proves ownership for this read-only check.
+            (await verifyPaymentTokenHash(paymentToken, (order as { statusTokenHash?: unknown }).statusTokenHash))
           : false;
 
         // Ownership is mandatory: either a verified Firebase session that owns

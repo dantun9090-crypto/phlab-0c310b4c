@@ -536,6 +536,19 @@ export async function transitionDocStatusAdmin(
 
   // 3) Commit the patch atomically. We use `update` + `updateMask` so other
   //    fields stay intact — same semantics as updateDocAdmin.
+  // When a writer burns the one-shot guest paymentToken, keep its hash as a
+  // READ-ONLY `statusTokenHash` so the guest can still reopen the
+  // confirmation page and see the outcome. Only /api/payments/status accepts
+  // it; payment init, cancel and survey still require paymentTokenHash.
+  if (
+    Object.prototype.hasOwnProperty.call(opts.updates, "paymentTokenHash") &&
+    opts.updates.paymentTokenHash === null &&
+    typeof prior.paymentTokenHash === "string" &&
+    prior.paymentTokenHash &&
+    !Object.prototype.hasOwnProperty.call(opts.updates, "statusTokenHash")
+  ) {
+    opts = { ...opts, updates: { ...opts.updates, statusTokenHash: prior.paymentTokenHash } };
+  }
   const fieldPaths = Object.keys(opts.updates);
   if (fieldPaths.length === 0) {
     await rollback();
