@@ -183,7 +183,7 @@ export default function SEOTab() {
       localStorage.setItem('php_prerender_token', prerenderToken.trim());
       // Clean up any previously-stored token in Firestore (best-effort).
       try {
-        await setDoc(doc(db, 'settings', 'prerenderio'), { token: '' }, { merge: true });
+        await deleteDoc(doc(db, 'settings', 'prerenderio'));
       } catch { /* ignore */ }
       setTokenSaved(true);
       setTimeout(() => setTokenSaved(false), 3000);
