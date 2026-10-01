@@ -135,13 +135,18 @@ async function maybeSendPendingReminder(
     ``,
     `— PH Labs`,
   ].join("\n");
+  const escHtml = (v: unknown) =>
+    String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
+  const firstNameHtml = escHtml(firstName);
+  const refHtml = escHtml(ref);
+  const linkHtml = escHtml(link);
   const html = `<!doctype html><html><body style="margin:0;background:#0b1220;padding:24px;font-family:Arial,Helvetica,sans-serif;color:#e5e7eb">
   <div style="max-width:520px;margin:0 auto;background:#0f1d33;border:1px solid rgba(16,185,129,.25);border-radius:12px;padding:28px">
     <h1 style="margin:0 0 12px;font-size:18px;color:#fff">Payment still pending</h1>
-    <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#cbd5e1">Hi ${firstName},</p>
-    <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#cbd5e1">Your order <strong style="color:#fff">${ref}</strong> is reserved, but your bank hasn't confirmed the payment yet.</p>
+    <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#cbd5e1">Hi ${firstNameHtml},</p>
+    <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#cbd5e1">Your order <strong style="color:#fff">${refHtml}</strong> is reserved, but your bank hasn't confirmed the payment yet.</p>
     <p style="margin:0 0 18px;font-size:14px;line-height:1.6;color:#cbd5e1">If your bank app didn't redirect you back to the shop, that's fine — check the live status here:</p>
-    <p style="margin:0 0 18px"><a href="${link}" style="display:inline-block;background:#059669;color:#fff;text-decoration:none;font-size:14px;font-weight:bold;padding:12px 22px;border-radius:8px">Check order status</a></p>
+    <p style="margin:0 0 18px"><a href="${linkHtml}" style="display:inline-block;background:#059669;color:#fff;text-decoration:none;font-size:14px;font-weight:bold;padding:12px 22px;border-radius:8px">Check order status</a></p>
     <p style="margin:0 0 8px;font-size:12px;line-height:1.6;color:#94a3b8">Already paid in the app? The page confirms automatically within a few minutes.<br/>Changed your mind? Just ignore this email — unpaid reservations expire automatically.</p>
     <p style="margin:16px 0 0;font-size:12px;color:#64748b">— PH Labs</p>
   </div>

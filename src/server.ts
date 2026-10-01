@@ -5,7 +5,7 @@ import { renderErrorPage } from "./lib/error-page";
 import { notifySsrError } from "./lib/ssr-alert";
 import { isGoneLegacyPath, resolveFinalRedirect } from "./lib/legacy-redirects";
 
-import { extractClientIp, log, maskIpForLog, truncate } from "./lib/worker-log";
+import { extractClientIp, log, maskIpForLog, redactQueryForLog, truncate } from "./lib/worker-log";
 
 
 type ServerEntry = {
@@ -1348,7 +1348,7 @@ async function normalizeCatastrophicSsrResponse(
         captured: Boolean(captured),
         method: request.method,
         path: u.pathname,
-        query: u.search.slice(0, 200),
+        query: redactQueryForLog(u.search),
         ua: (request.headers.get("user-agent") ?? "").slice(0, 160),
         referer: (request.headers.get("referer") ?? "").slice(0, 200),
         message: err.message.slice(0, 300),
@@ -1389,7 +1389,7 @@ export default {
     const baseFields = {
       method: request.method,
       path: url.pathname,
-      query: url.search || undefined,
+      query: redactQueryForLog(url.search),
       // Visitor IPs are personal data — never written to the log stream in
       // full. Keep a coarse prefix for abuse correlation only.
       ip: maskIpForLog(ip),

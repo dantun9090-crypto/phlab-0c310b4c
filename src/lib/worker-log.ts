@@ -93,3 +93,24 @@ export function truncate(value: string | null | undefined, max = 256): string | 
   if (value == null) return null;
   return value.length > max ? value.slice(0, max) + "…" : value;
 }
+
+const SENSITIVE_QUERY_KEY = /^(key|token|secret|pt|password|pass|apikey|api_key|access_token|id_token|auth|signature|sig|code)$/i;
+
+/**
+ * Redact credential-like query parameters (e.g. the offline-conversions
+ * `key`, guest payment tokens) before a query string is written to logs.
+ */
+export function redactQueryForLog(search: string | null | undefined, max = 200): string | undefined {
+  if (!search) return undefined;
+  try {
+    const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
+    const out: string[] = [];
+    for (const [k, v] of params) {
+      out.push(`${encodeURIComponent(k)}=${SENSITIVE_QUERY_KEY.test(k) ? "[REDACTED]" : encodeURIComponent(v)}`);
+    }
+    const s = out.length ? `?${out.join("&")}` : "";
+    return s.length > max ? s.slice(0, max) + "…" : s || undefined;
+  } catch {
+    return "[unparseable]";
+  }
+}
