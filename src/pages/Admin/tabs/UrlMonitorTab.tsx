@@ -1,3 +1,4 @@
+import { adminFetch } from '@/lib/admin-fetch';
 import { useEffect, useState } from 'react';
 import { useServerFn } from '@tanstack/react-start';
 import {
@@ -73,7 +74,7 @@ export default function UrlMonitorTab() {
     setRunning(true);
     setErr(null);
     try {
-      const res = await fetch(ENDPOINT, {
+      const res = await adminFetch(ENDPOINT, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
       });

@@ -325,7 +325,10 @@ export const listCompoundHistory = createServerFn({ method: 'POST' })
  * needed, escapes embedded quotes by doubling them.
  */
 function csvCell(value: string | number): string {
-  const s = String(value);
+  let s = String(value);
+  // Neutralise spreadsheet formulas (= + - @ TAB CR) so an exported keyword
+  // can never execute when opened in Excel / Sheets.
+  if (typeof value === 'string' && /^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
 }

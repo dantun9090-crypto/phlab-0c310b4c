@@ -1,3 +1,4 @@
+import { adminFetch } from '@/lib/admin-fetch';
 import { useEffect, useState } from 'react';
 
 /**
@@ -84,8 +85,8 @@ export default function PublishStatusTab() {
     const load = async () => {
       try {
         const [res, detailRes] = await Promise.all([
-          fetch('/api/public/publish-status', { cache: 'no-store' }),
-          fetch('/api/public/post-publish-status', { cache: 'no-store' }),
+          adminFetch('/api/public/publish-status', { cache: 'no-store' }),
+          adminFetch('/api/public/post-publish-status', { cache: 'no-store' }),
         ]);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = (await res.json()) as PublishStatus;

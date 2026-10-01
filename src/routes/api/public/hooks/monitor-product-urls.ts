@@ -1,3 +1,4 @@
+import { requireAdminRequest } from '@/lib/server/admin-request-auth';
 import { createFileRoute } from "@tanstack/react-router";
 import { fetchAllProducts } from "@/lib/firestore-rest";
 import { addDocAdmin } from "@/lib/server/firestore-admin";
@@ -234,6 +235,8 @@ async function handler(request: Request): Promise<Response> {
     retryAfterSec: 60,
   });
   if (limited) return limited;
+        const denied = await requireAdminRequest(request);
+        if (denied) return denied;
 
   try {
     const result = await runScan();
