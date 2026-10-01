@@ -450,7 +450,7 @@ function CheckoutSuccessPage() {
   // Inline critical styles mirror the Tailwind classes so the page stays
   // centered/readable even when the CSS bundle 404s (stale-asset webview).
   return (
-    <div
+    <main
       className="min-h-screen flex items-center justify-center px-4 py-12 bg-slate-950"
       style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "3rem 1rem", background: "#020617", fontFamily: "system-ui, -apple-system, sans-serif" }}
     >
@@ -633,6 +633,6 @@ function CheckoutSuccessPage() {
           </>
         )}
       </div>
-    </div>
+    </main>
   );
 }
