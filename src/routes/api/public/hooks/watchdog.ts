@@ -218,8 +218,9 @@ async function prerenderRecache(): Promise<{ ok: boolean; detail: string }> {
       return { ok: false, status: 0 };
     }
   };
-  const [d, m] = await Promise.all([post('desktop'), post('mobile')]);
-  return { ok: d.ok && m.ok, detail: `desktop ${d.status} / mobile ${m.status}` };
+  // Mobile adaptive rendering is disabled on our Prerender.io plan (API 400s).
+  const d = await post('desktop');
+  return { ok: d.ok, detail: `desktop ${d.status}` };
 }
 
 async function getDevmodeDoc(acct: SA, token: string): Promise<Record<string, any> | null> {
