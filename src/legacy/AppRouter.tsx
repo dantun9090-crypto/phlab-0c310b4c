@@ -193,6 +193,7 @@ const routes = [
       { path: 'privacy-requests',  element: <PrivacyRequests /> },
       { path: 'payment',           element: <Payment /> },
       { path: 'checkout',           element: <Checkout /> },
+      { path: 'cart',              element: <Navigate to="/checkout" replace /> },
       { path: 'landing/peptides',  element: <Navigate to="/products" replace /> },
       { path: 'landing/:slug',     element: <LandingPage /> },
       { path: 'lp/:slug',          element: <CampaignLanding /> },

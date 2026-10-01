@@ -321,8 +321,12 @@ async function recachePrerender(): Promise<{ desktop: number; mobile: number; ur
       return 0;
     }
   };
-  const [desktop, mobile] = await Promise.all([post('desktop'), post('mobile')]);
-  return { desktop, mobile, urls: urls.length, ok: desktop < 400 && mobile < 400 };
+  // Mobile adaptive rendering is disabled on our Prerender.io plan — the
+  // API answers 400 "Mobile adaptive feature is disabled!" for every
+  // mobile request, which marked every publish as a failed recache.
+  // Desktop recache covers all bots (single cache variant).
+  const desktop = await post('desktop');
+  return { desktop, mobile: 0, urls: urls.length, ok: desktop >= 200 && desktop < 400 };
 }
 
 async function markInvalidationComplete(

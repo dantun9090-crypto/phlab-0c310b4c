@@ -301,11 +301,13 @@ const SSR_HYDRATION_ROUTES: string[] = [
 // that requires React to hydrate.
 // ============================================================
 const SKIP_CSR_ROUTES: readonly string[] = [
+  "/downloads",
   "/research/bpc-157-tb-500-synergy",
   "/research/bpc-157-uk",
   "/research/bpc-157-vs-tb-500",
   "/research/cjc-1295-ipamorelin-synergy",
   "/research/ghk-cu-guide",
+  "/research/pt-141-uk",
   "/research/retatrutide-comprehensive-guide",
   "/research/retatrutide-uk",
   "/research/tirzepatide-vs-retatrutide",
