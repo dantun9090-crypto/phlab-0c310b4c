@@ -19,9 +19,12 @@ service cloud.firestore {
     }
     // Prevent users from elevating their own privileges.
     function notTouchingPrivilegedFields() {
-      return !('isAdmin' in request.resource.data.diff(resource.data).affectedKeys())
-          && !('role'    in request.resource.data.diff(resource.data).affectedKeys())
-          && !('isVip'   in request.resource.data.diff(resource.data).affectedKeys());
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+        'isAdmin', 'role', 'isVip',
+        // Referral / spend fields are server-derived — never self-writable.
+        'referredBy', 'totalSpend', 'referralBalance', 'referralCount',
+        'referralRewardClaimed', 'referralCode'
+      ]);
     }
 
     // ---------- customers ----------
