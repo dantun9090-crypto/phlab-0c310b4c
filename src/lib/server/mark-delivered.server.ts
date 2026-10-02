@@ -63,8 +63,19 @@ export async function processReferralRewardAdmin(buyerUid: string): Promise<void
     if (!buyer) return;
     const hasReferrer = typeof buyer.referredBy === "string" && buyer.referredBy.length > 0;
     const alreadyClaimed = buyer.referralRewardClaimed === true;
-    const thresholdMet = Number(buyer.totalSpend || 0) >= REWARD_THRESHOLD_GBP;
-    if (!hasReferrer || alreadyClaimed || !thresholdMet) return;
+    if (!hasReferrer || alreadyClaimed) return;
+    // SECURITY: never trust the client-writable customers.totalSpend field —
+    // derive qualifying spend from server-written delivered orders only.
+    const buyerOrders = await listDocsAdmin("orders", {
+      where: { field: "userId", value: buyerUid },
+      limit: 500,
+    }).catch(() => [] as Array<Record<string, unknown>>);
+    const deliveredSpend = buyerOrders
+      .filter((o) => (o as Record<string, unknown>).status === "delivered")
+      .reduce((s, o) => s + Number((o as Record<string, unknown>).totalAmount || 0), 0);
+    if (deliveredSpend < REWARD_THRESHOLD_GBP) return;
+    // The referrer must not be the buyer themselves.
+    if (typeof buyer.referralCode === "string" && buyer.referralCode === buyer.referredBy) return;
 
     await updateDocAdmin("customers", buyerUid, { referralRewardClaimed: true });
 
