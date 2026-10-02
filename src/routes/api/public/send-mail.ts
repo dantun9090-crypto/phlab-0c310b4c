@@ -234,6 +234,12 @@ export const Route = createFileRoute("/api/public/send-mail")({
               if (!subscriber || subscriber.source !== "homepage_protocol_library") {
                 return json({ error: "not_subscribed" }, 403);
               }
+              // Only a fresh sign-up (last 15 min) may trigger the offer, so an
+              // old subscriber address can't be targeted by third parties.
+              const subTs = Date.parse(String(subscriber.timestamp ?? ""));
+              if (!Number.isFinite(subTs) || Date.now() - subTs > 15 * 60_000 || subTs > Date.now() + 60_000) {
+                return json({ error: "not_subscribed" }, 403);
+              }
               const alreadySent = await findDocByFieldAdmin("mail", "protocolRecipient", recipient);
               if (alreadySent) {
                 return json({ ok: true, deduped: true });

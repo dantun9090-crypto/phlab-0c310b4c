@@ -363,7 +363,9 @@ setAuto(true);
 
   if (req.method !== "POST") return new Response("ok");
 
-  if (WEBHOOK_SECRET) {
+  // Fail closed: without a configured secret, no update is trusted.
+  if (!WEBHOOK_SECRET) return new Response("webhook secret not configured", { status: 503 });
+  {
     const got = req.headers.get("X-Telegram-Bot-Api-Secret-Token") ?? "";
     if (got !== WEBHOOK_SECRET) return new Response("unauthorized", { status: 401 });
   }
