@@ -137,8 +137,26 @@ async function todaysVisitsSummary(): Promise<string> {
   }
 }
 
+function hasAdminSecret(req: Request): boolean {
+  const supplied = req.headers.get("x-setup-secret") ?? "";
+  if (!WEBHOOK_SECRET || supplied.length !== WEBHOOK_SECRET.length) return false;
+  let diff = 0;
+  for (let i = 0; i < supplied.length; i++) diff |= supplied.charCodeAt(i) ^ WEBHOOK_SECRET.charCodeAt(i);
+  return diff === 0;
+}
+
 Deno.serve(async (req) => {
   const url = new URL(req.url);
+
+  // Diagnostics (JSON + HTML) are admin-only: require the server-held secret.
+  if (
+    req.method === "GET" &&
+    (url.searchParams.get("diag") === "1" || url.searchParams.get("diag") === "ui" || url.pathname.endsWith("/diag")) &&
+    !hasAdminSecret(req)
+  ) {
+    return new Response("Forbidden", { status: 403 });
+  }
+
 
   // Setup: register webhook
   if (req.method === "GET" && url.searchParams.get("setup") === "1") {
