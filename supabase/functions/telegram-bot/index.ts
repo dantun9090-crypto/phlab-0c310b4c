@@ -142,6 +142,14 @@ Deno.serve(async (req) => {
 
   // Setup: register webhook
   if (req.method === "GET" && url.searchParams.get("setup") === "1") {
+    // Admin-only: require the server-held webhook secret as a header.
+    const supplied = req.headers.get("x-setup-secret") ?? "";
+    if (!WEBHOOK_SECRET || supplied.length !== WEBHOOK_SECRET.length) {
+      return new Response("Forbidden", { status: 403 });
+    }
+    let diff = 0;
+    for (let i = 0; i < supplied.length; i++) diff |= supplied.charCodeAt(i) ^ WEBHOOK_SECRET.charCodeAt(i);
+    if (diff !== 0) return new Response("Forbidden", { status: 403 });
     const webhookUrl = `${SUPABASE_URL}/functions/v1/telegram-bot`;
     const body: Record<string, unknown> = { url: webhookUrl, allowed_updates: ["message"] };
     if (WEBHOOK_SECRET) body.secret_token = WEBHOOK_SECRET;
