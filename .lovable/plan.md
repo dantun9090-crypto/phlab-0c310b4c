@@ -1,14 +1,17 @@
 # Regenerate bun.lock after security overrides
 
 ## Context
-- Sandbox bun is 1.3.3 (not 1.4); it writes `bun.lock` with `lockfileVersion: 1` — the same text format already in the repo, readable by bun 1.2.x. No v3 format risk.
-- `git add/commit/push` cannot be run by me: git is managed by the platform, and every change auto-commits and syncs to GitHub.
+- package.json has overrides `@fastify/busboy@3.2.1` and `@grpc/grpc-js@^1.14.5` (overrides + resolutions); committed bun.lock is stale.
+- Sandbox bun 1.3.3 writes `lockfileVersion: 1` (readable by bun 1.2.x). Do not upgrade bun.
+- git add/commit/push is handled by the platform auto-sync.
 
 ## Steps
-1. Run `bun install` once to re-resolve against the current `overrides` in package.json.
-2. Confirm `bun.lock` still starts with `"lockfileVersion": 1` (if anything else appears, revert and stop).
-3. Check the lockfile now resolves each overridden package to the required version.
-4. Run the build to confirm nothing broke.
-5. The updated lockfile syncs to GitHub automatically (commit message set by the platform).
+1. `bun install` (no flags).
+2. Confirm bun.lock starts with `"lockfileVersion": 1`; otherwise revert and stop.
+3. Verify: `@fastify/busboy@3.2.1` exactly; `@grpc/grpc-js@1.14.5+` (1.14.x).
+4. `bun run security:scan` must exit 0 (skip if network blocked).
+5. `bun run build`.
+6. Lockfile syncs to GitHub automatically.
 
-No source, design, checkout, payment, or /compound changes. Not published unless you ask.
+## Boundaries
+- No source/design/checkout/payment//compound changes; package.json untouched; no other upgrades; no publish.
