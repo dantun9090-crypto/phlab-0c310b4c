@@ -98,8 +98,10 @@ test.describe("Cloudflare Worker: /api/public/live-orders", () => {
     expect(String(example.id).length).toBeGreaterThan(0);
 
     expect(typeof example.initial, "order.initial string").toBe("string");
-    // "J." — one letter + dot (or just a letter). Never a full name.
-    expect(String(example.initial)).toMatch(/^[A-Za-z]\.?$/);
+    // Public feed is fully anonymised: either a single-letter initial
+    // ("J.") from legacy rows or the hardened constant "A researcher".
+    // Never a full name.
+    expect(String(example.initial)).toMatch(/^([A-Za-z]\.?|A researcher)$/);
 
     expect(typeof example.city, "order.city string").toBe("string");
     expect(String(example.city).length).toBeGreaterThan(0);
