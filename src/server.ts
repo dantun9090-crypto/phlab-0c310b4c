@@ -1173,7 +1173,9 @@ async function handleImageProxy(request: Request, url: URL): Promise<Response> {
     return imageProxyError("Image unavailable", 502);
   }
   if (!upstream.ok && upstream.status !== 206) {
-    return imageProxyError("Image unavailable", upstream.status === 404 ? 404 : 502);
+    // Upstream client errors (404, 402 billing/quota, 403) are "image missing",
+    // not a gateway fault — return 404 so the <img> onError fallback handles it.
+    return imageProxyError("Image unavailable", upstream.status >= 400 && upstream.status < 500 ? 404 : 502);
   }
   const contentType = (upstream.headers.get("content-type") || "").toLowerCase();
   if (!contentType.startsWith("image/")) return imageProxyError("Not an image", 415);
