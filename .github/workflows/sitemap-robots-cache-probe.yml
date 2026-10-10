@@ -31,7 +31,7 @@ jobs:
   sitemap-robots-cache-probe:
     name: /robots.txt & sitemap*.xml must be CDN no-store
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     permissions:
       contents: read
       issues: write
@@ -48,17 +48,23 @@ jobs:
       # newly-published edge, not the version still propagating.
       - name: Wait for edge propagation
         if: github.event_name == 'push' || github.event_name == 'workflow_run'
-        run: sleep 90
+        run: sleep 120
 
       - name: Probe
         id: probe
         run: |
           set +e
-          bun run scripts/probe-sitemap-robots.ts
-          rc1=$?
-          bun run scripts/check-decommissioned-routes.ts
-          rc2=$?
-          rc=$(( rc1 > rc2 ? rc1 : rc2 ))
+          rc=1
+          for attempt in 1 2 3; do
+            bun run scripts/probe-sitemap-robots.ts
+            rc1=$?
+            bun run scripts/check-decommissioned-routes.ts
+            rc2=$?
+            rc=$(( rc1 > rc2 ? rc1 : rc2 ))
+            [ "$rc" = "0" ] && break
+            echo "::warning::Attempt $attempt failed (rc=$rc)"
+            [ "$attempt" != "3" ] && sleep 120
+          done
           echo "exit_code=$rc" >> "$GITHUB_OUTPUT"
         continue-on-error: true
 
@@ -75,11 +81,23 @@ jobs:
         uses: actions/github-script@v8
         with:
           script: |
-            const sha = context.sha.slice(0, 7);
+            const title = `robots/sitemap edge-cache regression`;
+            const { data: open } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo, state: 'open', labels: 'cache', per_page: 100,
+            });
+            const existing = open.find((i) => i.title === title);
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number,
+                body: `Failed again on ${context.sha.slice(0, 7)} after 3 attempts. Run: ${runUrl}`,
+              });
+              return;
+            }
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `robots/sitemap edge-cache regression on ${sha}`,
+              title,
               labels: ['regression', 'cache', 'seo', 'post-deploy', 'critical'],
               body: [
                 `/robots.txt or /sitemap*.xml is not being served with the`,
