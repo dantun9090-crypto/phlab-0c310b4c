@@ -481,6 +481,11 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
 
           for (const order of stuck) {
             const orderId = String(order.id);
+            // BrokkrPay orders are reconciled by their own sweep (2b) —
+            // never poll Wallid or flag them here.
+            if (String((order as { paymentProvider?: unknown }).paymentProvider ?? "") === "brokkrpay") {
+              continue;
+            }
             const o = order as {
               paymentRef?: string;
               apiPaymentId?: string;
@@ -597,6 +602,125 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
           }
         } catch (e) {
           console.warn("[reconcile] stuck-order sweep failed:", e);
+        }
+
+        // ---- 2b) BrokkrPay stuck-order sweep -----------------------
+        // A BrokkrPay order whose webhook never arrived used to sit on
+        // `pending` forever. Poll the operator for `pending` brokkrpay
+        // orders older than 30 min and apply the state with the SAME
+        // allow-lists as the webhook (allowFromFor).
+        try {
+          const { getBrokkrPayOrder, isBrokkrPayConfigured } = await import("@/lib/brokkrpay.server");
+          const { allowFromFor } = await import("@/lib/payment-transitions");
+          if (isBrokkrPayConfigured()) {
+            const cutoff = new Date(Date.now() - 30 * 60_000);
+            const horizon = new Date(Date.now() - 14 * 24 * 60 * 60_000);
+            const rows = (await listDocsAdmin("orders", {
+              orderBy: "createdAt",
+              direction: "DESCENDING",
+              limit: 50,
+              where: { field: "status", op: "EQUAL", value: "pending" },
+              rangeFilter: { field: "createdAt", gte: horizon, lte: cutoff },
+            })) as Array<Record<string, unknown> & { id: string }>;
+            const brokkr = rows.filter((r) => String(r.paymentProvider ?? "") === "brokkrpay").slice(0, 20);
+
+            for (const order of brokkr) {
+              const orderId = String(order.id);
+              const brokkrOrderId = String(order.brokkrpayOrderId ?? "");
+              if (!brokkrOrderId) continue;
+              let state = "";
+              try {
+                const bo = await getBrokkrPayOrder(brokkrOrderId);
+                state = String(bo?.state ?? "").toUpperCase();
+              } catch (e) {
+                console.warn(`[reconcile] BrokkrPay getOrder failed for ${orderId}:`, e instanceof Error ? e.message : e);
+                continue;
+              }
+
+              if (state === "FROZEN") {
+                if (!order.paymentNeedsReview) {
+                  await updateDocAdmin("orders", orderId, {
+                    brokkrpayState: state,
+                    paymentNeedsReview: true,
+                    paymentFailureReason: "BrokkrPay order frozen — manual review required",
+                    lastReconciledAt: new Date(),
+                    paymentUpdatedAt: new Date(),
+                  }).catch(() => undefined);
+                  results.flagged += 1;
+                }
+                continue;
+              }
+
+              const mapped =
+                state === "SUCCESS" ? "paid"
+                : state === "FAILED" ? "failed"
+                : state === "CANCELLED" ? "cancelled"
+                : null;
+              if (!mapped) continue; // PENDING / PROCESSING / unknown — wait
+
+              const { transitioned, prior } = await transitionDocStatusAdmin("orders", orderId, {
+                allowFrom: allowFromFor(mapped),
+                updates: {
+                  status: mapped,
+                  paymentProvider: "brokkrpay",
+                  brokkrpayOrderId: brokkrOrderId,
+                  brokkrpayState: state,
+                  lastReconciledAt: new Date(),
+                  paymentUpdatedAt: new Date(),
+                  ...(mapped === "paid" ? { paidAt: new Date() } : {}),
+                  ...(mapped === "cancelled" ? { cancelledAt: new Date() } : {}),
+                  paymentTokenHash: null,
+                },
+              });
+              if (!transitioned) continue;
+
+              await reliability.writePaymentTimelineAdmin(orderId, {
+                actor: "cron_job",
+                eventType: "reconciliation_run",
+                statusFrom: "pending",
+                statusTo: mapped,
+                metadata: { reason: "BrokkrPay webhook missing — polled operator", brokkrOrderId, state },
+              });
+
+              if (mapped === "paid" && prior) {
+                const customerObj = (prior.customer as Record<string, unknown> | undefined) || {};
+                const to = String(prior.customerEmail ?? prior.email ?? customerObj.email ?? "");
+                if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
+                  try {
+                    const { paymentConfirmedEmail } = await import("@/templates/paymentConfirmedEmail");
+                    const firstName =
+                      String(
+                        (prior.firstName as string) ||
+                          (customerObj.firstName as string) ||
+                          (prior.customerName as string) ||
+                          "",
+                      ).split(" ")[0] || "there";
+                    const { subject, html, text } = paymentConfirmedEmail({
+                      firstName,
+                      orderNumber: String(prior.orderNumber ?? orderId),
+                      amount: Number((prior.totalAmount as number) ?? (prior.total as number) ?? 0),
+                      paymentMethod: "Card (BrokkrPay)",
+                      paidAt: new Date(),
+                    });
+                    const { enqueueMailOnce } = await import("@/lib/server/enqueue-mail");
+                    // Same dedup key as the webhook — never a double email.
+                    await enqueueMailOnce(`payment-confirmed:${orderId}`, {
+                      to,
+                      message: { subject, html, text },
+                      source: "brokkrpay:reconcile",
+                    });
+                  } catch (mailErr) {
+                    console.warn("[reconcile] BrokkrPay confirmation email failed:", mailErr instanceof Error ? mailErr.message : mailErr);
+                  }
+                }
+              }
+
+              results.stuck += 1;
+              results.processed += 1;
+            }
+          }
+        } catch (e) {
+          console.warn("[reconcile] BrokkrPay sweep failed:", e instanceof Error ? e.message : e);
         }
 
 
