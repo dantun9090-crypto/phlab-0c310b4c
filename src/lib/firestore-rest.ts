@@ -228,18 +228,77 @@ function isHidden(p: SeoProduct): boolean {
   return false;
 }
 
+/**
+ * Server-side in-memory cache for the product list (per Worker isolate).
+ * Every product page, sitemap and feed used to re-read the whole
+ * `product_stock` collection on each request, which exhausted the daily
+ * Firestore read quota on 2026-10-09. Fresh for 10 min; on a Firestore
+ * error (quota, 5xx) the last good copy is served for up to 24 h instead
+ * of failing the page with a 500.
+ */
+const PRODUCTS_TTL_MS = 10 * 60 * 1000;
+const PRODUCTS_STALE_MAX_MS = 24 * 60 * 60 * 1000;
+let productsCache: { value: SeoProduct[]; at: number } | null = null;
+let productsInflight: Promise<SeoProduct[]> | null = null;
+let lastQuotaAlertAt = 0;
+
+/** Drop the cached product list so the next server read hits Firestore. */
+export function invalidateProductsCache(): void {
+  productsCache = null;
+}
+
+async function reportQuotaError(status: number, body: string): Promise<void> {
+  if (!import.meta.env.SSR) return;
+  const now = Date.now();
+  if (now - lastQuotaAlertAt < 60 * 60 * 1000) return; // max 1 alert/h/isolate
+  lastQuotaAlertAt = now;
+  console.error(`[firestore-rest] quota/read failure ${status}: ${body.slice(0, 120)}`);
+  try {
+    const { addDocAdmin } = await import("./server/firestore-admin");
+    await addDocAdmin("admin_alerts", {
+      severity: "critical",
+      message: `Firestore read limit hit (HTTP ${status}) — product pages served from cache.`,
+      source: "firestore-quota",
+      acknowledged: false,
+      timestamp: now,
+      createdAt: new Date(now).toISOString(),
+    });
+  } catch { /* alert write may also be blocked by quota */ }
+}
+
 /** Fetch all active, visible products from Firestore via REST. */
 export async function fetchAllProducts(): Promise<SeoProduct[]> {
+  const isBrowser = typeof window !== "undefined";
+  if (isBrowser) return fetchAllProductsUncached();
+  const now = Date.now();
+  if (productsCache && now - productsCache.at < PRODUCTS_TTL_MS) return productsCache.value;
+  if (productsInflight) return productsInflight;
+  productsInflight = (async () => {
+    try {
+      const value = await fetchAllProductsUncached();
+      productsCache = { value, at: Date.now() };
+      return value;
+    } catch (err) {
+      if (productsCache && Date.now() - productsCache.at < PRODUCTS_STALE_MAX_MS) {
+        console.warn("[firestore-rest] serving stale products after error", String(err).slice(0, 160));
+        return productsCache.value;
+      }
+      throw err;
+    } finally {
+      productsInflight = null;
+    }
+  })();
+  return productsInflight;
+}
+
+async function fetchAllProductsUncached(): Promise<SeoProduct[]> {
   // Firestore's REST list endpoint rejects unknown query params, so cache busting
   // must happen through Fetch cache semantics/headers rather than `&v=...`.
-  // The per-request timestamp keeps request metadata unique for intermediate
-  // proxies while preserving a valid Google API URL.
   const url = `${BASE}/product_stock?key=${API_KEY}&pageSize=300`;
   const isBrowser = typeof window !== "undefined";
   const res = await fetch(url, {
     // Browser-side route loaders must remain CORS-simple. Firestore REST does
-    // not answer preflights for custom no-cache headers, but server-side SSR,
-    // sitemaps, and Merchant feeds still need a cache-busted fresh read.
+    // not answer preflights for custom no-cache headers.
     headers: isBrowser
       ? { Accept: "application/json" }
       : {
@@ -252,6 +311,9 @@ export async function fetchAllProducts(): Promise<SeoProduct[]> {
   });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
+    if (res.status === 429 || /RESOURCE_EXHAUSTED|Quota/i.test(body)) {
+      void reportQuotaError(res.status, body);
+    }
     throw new Error(`firestore_rest_${res.status}: ${body.slice(0, 160)}`);
   }
   const json: any = await res.json();

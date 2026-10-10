@@ -148,6 +148,12 @@ export const invalidateProductCache = createServerFn({ method: 'POST' })
       } as const;
     }
 
+    // Drop this isolate's in-memory product list so edits show immediately.
+    try {
+      const { invalidateProductsCache } = await import('./firestore-rest');
+      invalidateProductsCache();
+    } catch { /* non-fatal */ }
+
     const slugs = Array.from(
       new Set([data.slug, ...(data.slugs ?? [])].filter((slug): slug is string => typeof slug === 'string' && slug.length > 0)),
     );
