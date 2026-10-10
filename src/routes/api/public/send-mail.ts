@@ -196,6 +196,7 @@ export const Route = createFileRoute("/api/public/send-mail")({
         let html: string;
         let replyTo: string | undefined;
         let protocolRecipient: string | undefined;
+        let confirmationOrderId: string | undefined;
 
         try {
           switch (input.template) {
@@ -276,6 +277,18 @@ export const Route = createFileRoute("/api/public/send-mail")({
               ) {
                 return json({ error: "email_mismatch" }, 403);
               }
+              // Public resend is one-shot per order and only for fresh orders
+              // (24 h), so a known order id + email can't be used to flood the
+              // customer's inbox. Admin resends use a separate, authenticated path.
+              const createdTs = Date.parse(String(order.createdAt ?? ""));
+              if (Number.isFinite(createdTs) && Date.now() - createdTs > 24 * 3600_000) {
+                return json({ error: "order_too_old" }, 403);
+              }
+              const alreadyConfirmed = await findDocByFieldAdmin("mail", "confirmationOrderId", input.orderId);
+              if (alreadyConfirmed) {
+                return json({ ok: true, deduped: true });
+              }
+              confirmationOrderId = input.orderId;
 
               // Pull ALL financial / item / address data from the trusted
               // Firestore order document — never from the client body.
@@ -384,6 +397,7 @@ export const Route = createFileRoute("/api/public/send-mail")({
             to,
             ...(replyTo ? { replyTo } : {}),
             ...(protocolRecipient ? { protocolRecipient } : {}),
+            ...(confirmationOrderId ? { confirmationOrderId } : {}),
             message: { subject, html },
             createdAt: new Date(),
             source: `public:${input.template}`,
