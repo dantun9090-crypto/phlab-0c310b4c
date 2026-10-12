@@ -1,5 +1,10 @@
+import type { CSSProperties } from "react";
+import { cfImgProps } from "@/lib/cf-image";
+import type { PromoBannerLite } from "@/lib/firestore-rest";
+
 /**
- * Static home hero shell — dependency-free (no imports beyond JSX) so it is
+ * Static home hero shell — no browser APIs and only pure, dependency-free
+ * imports (cf-image is pure URL building, no window/document), so it stays
  * safe for the SSR worker bundle AND for the client pre-mount window.
  *
  * Two render paths:
@@ -13,8 +18,68 @@
  *
  * The hero footprint + skeleton grid mirror the real Home layout to keep
  * CLS at ~0 when React swaps in the live component.
+ *
+ * Optional `banner`: when the route loader resolved the active promo banner
+ * (SSR fetch with a 300 ms budget), the shell renders the REAL banner <img>
+ * at the top with geometry identical to src/pages/Home/index.tsx. The banner
+ * is the mobile LCP element — the <link rel="preload"> already fetched the
+ * bytes early, but the PAINT still waited for the full CSR boot (~5–7s on
+ * mobile). Painting it straight from SSR HTML removes that wait; the swap
+ * into the live component reuses the same preloaded candidate at the same
+ * size, so CLS stays at ~0.
  */
-export function LegacySsrShell() {
+export function LegacySsrShell({ banner }: { banner?: PromoBannerLite | null } = {}) {
+  // Same gating as `bannerVisible` in src/pages/Home/index.tsx.
+  const activeBanner =
+    banner &&
+    typeof banner.imageUrl === "string" &&
+    banner.imageUrl.length > 0 &&
+    banner.active !== false &&
+    banner.isActive !== false
+      ? banner
+      : null;
+
+  // Same height math as Home: admin heightPx is the mobile baseline, wider
+  // viewports scale with 22vw, capped at half of max(heightPx, 560).
+  const baseH = activeBanner?.heightPx || 320;
+  const capH = Math.max(baseH, 560);
+  const desktopCap = Math.round(capH / 2);
+  const mobileMin = Math.round(baseH * 0.7);
+  const responsiveHeight = `clamp(${mobileMin}px, 22vw, ${desktopCap}px)`;
+
+  const rawHref = (activeBanner?.ctaUrl || activeBanner?.linkUrl || "").trim();
+  const bannerHref =
+    rawHref.startsWith("/") || /^https?:\/\//i.test(rawHref) ? rawHref : "";
+
+  const bannerImg = activeBanner ? (
+    <img
+      {...cfImgProps(activeBanner.imageUrl, {
+        // Mirror src/pages/Home/index.tsx and the preload in
+        // src/routes/index.tsx EXACTLY so the browser reuses the preloaded
+        // candidate instead of double-fetching.
+        widths: [480, 640, 800, 1024, 1280, 1600, 1920],
+        sizes: "(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1600px",
+        quality: 78,
+        fallbackWidth: 1280,
+      })}
+      alt={
+        activeBanner.altText ||
+        "PH Labs research peptides — homepage hero banner"
+      }
+      width={1600}
+      height={desktopCap}
+      fetchPriority="high"
+      style={{
+        width: "100%",
+        height: responsiveHeight,
+        objectFit:
+          (activeBanner.objectFit as CSSProperties["objectFit"]) || "cover",
+        objectPosition: `${activeBanner.objectPositionX ?? 50}% ${activeBanner.objectPositionY ?? 50}%`,
+        display: "block",
+      }}
+    />
+  ) : null;
+
   return (
     <div
       className="phl-ssr-shell"
@@ -33,6 +98,30 @@ export function LegacySsrShell() {
           'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
       }}
     >
+      {/* Real promo banner painted with the first HTML frame (LCP). The
+          decorative overlays/gradient/edge-fades from the live component are
+          intentionally skipped — they are absolutely positioned, so they do
+          not affect layout and pop in with the React swap. */}
+      {bannerImg ? (
+        <div
+          data-home-promo-banner
+          style={{
+            position: "relative",
+            width: "100%",
+            overflow: "hidden",
+            minHeight: responsiveHeight,
+          }}
+        >
+          {bannerHref ? (
+            <a href={bannerHref} style={{ display: "block" }}>
+              {bannerImg}
+            </a>
+          ) : (
+            bannerImg
+          )}
+        </div>
+      ) : null}
+
       {/* Static hero shell — paints LCP text without waiting for JS chunks.
           React replaces this with the real Home component once mounted. */}
       <section
