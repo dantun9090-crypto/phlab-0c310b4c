@@ -199,13 +199,17 @@ function LegacyMount() {
  * LegacySsrShell carries the static hero (no fixed header, explicit
  * system-sans fontFamily) — addressing both bugs that killed the earlier
  * shell attempt (serif H1 flash; fixed-header overlapping Navigation).
+ *
+ * The loader-resolved promo banner is handed through so the shell paints
+ * the REAL banner <img> (the mobile LCP element) with the first HTML frame
+ * instead of waiting for the CSR boot — the <link rel="preload"> above only
+ * fetched the bytes early, it could not make the paint happen sooner.
  */
 function HomeSsrFallback() {
+  const { banner } = Route.useLoaderData();
   return (
     <div data-phl-app-ready="ssr-home" aria-busy="true">
-      <LegacySsrShell />
+      <LegacySsrShell banner={banner ?? null} />
     </div>
   );
 }
-
-
