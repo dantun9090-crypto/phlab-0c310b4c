@@ -28,11 +28,11 @@ const HOME_OG_IMAGE = "https://phlabs.co.uk/og-image.jpg";
 // Kept inline so the FAQPage JSON-LD ships in SSR HTML (crawler-visible)
 // rather than being injected client-side after hydration.
 const HOME_FAQS: { q: string; a: string }[] = [
-  { q: 'Are these peptides legal to buy in the UK?', a: 'Yes. Research peptides are legal to purchase in the UK for laboratory and research purposes. All products are sold strictly for in-vitro research use only, not for human or veterinary consumption.' },
+  { q: 'Are these peptides legal to buy in the UK?', a: 'Supplying peptides for genuine laboratory research is not prohibited under UK medicines law, provided they are not presented or supplied as medicinal products. Our products are sold strictly for in-vitro research use only. Buyers are responsible for checking that their own use complies with UK law. For Research Use Only. Not for Human Consumption.' },
   { q: 'What testing do you carry out?', a: 'Every batch is tested using HPLC (High-Performance Liquid Chromatography) methodology. Certificates of Analysis are available for all products and provided with each order.' },
   { q: 'How quickly will my order arrive?', a: 'Standard UK delivery is 1–3 business days. Express next-day options are available at checkout. Orders placed before 2pm on weekdays are dispatched the same day.' },
   { q: 'How should peptides be stored?', a: 'Lyophilised (freeze-dried) peptides should be stored at -20°C for long-term stability. Reconstituted peptides should be kept at 2–8°C and used within 30 days. See our full Storage Guide for details.' },
-  { q: 'What payment methods do you accept?', a: 'We accept secure UK bank transfer (Open Banking) via our trusted payment partner. All transactions are secured with 256-bit SSL encryption.' },
+  { q: 'What payment methods do you accept?', a: 'We accept secure UK bank transfer (Open Banking) via our trusted payment partner, and card payment where shown at checkout. Manual bank transfer is also available. All transactions are secured with 256-bit SSL encryption.' },
 ];
 
 // Fetch banner with a hard timeout so a slow Firestore call never
