@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  Users, Search, DollarSign, ShoppingBag, UserX, RefreshCw, Shield, ChevronDown, Crown, Trash2, AlertTriangle, X, KeyRound
+  Users, Search, DollarSign, ShoppingBag, UserX, RefreshCw, Shield, ChevronDown, Crown, Trash2, AlertTriangle, X, KeyRound, MailCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db, collection, getDocs, updateDoc, doc, auth } from '@/lib/firebase';
@@ -38,6 +38,33 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 export default function CustomersTab() {
+  /** Admin confirms a customer's email when their emailed link expired. */
+  const handleMarkVerified = async (c: CustomerProfile) => {
+    if (!window.confirm(`Confirm email for ${c.email}? Only do this if you trust this is their address.`)) return;
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Not signed in');
+      const idToken = await user.getIdToken();
+      const res = await fetch('/api/admin/customer-verify-email', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ idToken, uid: c.uid }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || `Failed (${res.status})`);
+      window.alert(`Email confirmed for ${c.email}. Ask them to sign out and sign in again.`);
+    } catch (err: any) {
+      const code = err?.message || 'unknown_error';
+      const friendly: Record<string, string> = {
+        forbidden: 'Your account is not an admin.',
+        unauthorized: 'Session expired — sign in again.',
+        not_found: 'Customer record no longer exists.',
+        auth_user_not_found: 'No sign-in account exists for this customer.',
+      };
+      window.alert(friendly[code] || 'Could not confirm email — try again.');
+    }
+  };
+
   const [customers, setCustomers] = useState<CustomerProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -512,6 +539,15 @@ export default function CustomersTab() {
                             className="min-w-[44px] min-h-[44px] flex items-center justify-center bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded transition-colors disabled:opacity-50"
                           >
                             <KeyRound className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleMarkVerified(c)}
+                            disabled={saving === c.uid}
+                            title="Confirm email (use when their confirmation link expired)"
+                            aria-label="Confirm customer email"
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded transition-colors disabled:opacity-50"
+                          >
+                            <MailCheck className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
                           </button>
                           <button
                             onClick={() => openRemove(c)}
