@@ -343,7 +343,7 @@ export default function CategoryPage() {
                 {config?.description}
               </p>
               <p className="mt-2 text-xs" style={{ color: '#1e3a2a' }}>
-                For laboratory research use only · MHRA compliant · Not for human use
+                For laboratory research use only · Not evaluated by the MHRA · Not for human use
               </p>
             </div>
           </div>
