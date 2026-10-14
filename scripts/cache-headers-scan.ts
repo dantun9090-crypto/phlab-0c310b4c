@@ -28,6 +28,14 @@ import { dirname, join } from "node:path";
 const BASE = process.env.CACHE_SCAN_BASE_URL || process.env.TEST_BASE_URL || "https://phlabs.co.uk";
 const OUT_DIR = process.env.CACHE_SCAN_OUT_DIR || "cache-headers-report";
 const TTL_CEILING = 3600;
+// A violation must PERSIST across confirmation probes before it fails the
+// run. Edge states like cf-cache-status UPDATING/STALE during a post-deploy
+// purge clear within seconds; single-probe failures produced intermittent
+// red runs on an otherwise healthy site (e.g. scheduled guard firing inside
+// the purge window). Real regressions (a cache rule matching HTML) persist
+// and still fail after all confirmations.
+const CONFIRM_ROUNDS = 2;
+const CONFIRM_DELAY_MS = 15_000;
 
 // HTML shells MUST NEVER be edge-cached. A cached shell after a publish points
 // at hashed JS/CSS chunks that may have been evicted from the new build,
@@ -246,7 +254,21 @@ async function main() {
     ...HTML_SHELL_PATHS.map((p) => probe(p, "html-shell")),
     ...SENSITIVE_PATHS.map((p) => probe(p, "sensitive")),
   ];
-  const results = await Promise.all(work);
+  let results = await Promise.all(work);
+
+  // Confirmation pass: re-probe only the violating paths, up to
+  // CONFIRM_ROUNDS times with CONFIRM_DELAY_MS between rounds. Transient
+  // purge-window states recover and flip to ok; persistent violations stay.
+  for (let round = 1; round <= CONFIRM_ROUNDS; round++) {
+    const failed = results.filter((r) => !r.ok);
+    if (!failed.length) break;
+    console.log(
+      `${failed.length} path(s) still violating — re-probing in ${CONFIRM_DELAY_MS / 1000}s (confirmation round ${round}/${CONFIRM_ROUNDS})...`,
+    );
+    await new Promise((r) => setTimeout(r, CONFIRM_DELAY_MS));
+    const confirmed = await Promise.all(failed.map((f) => probe(f.path, f.kind)));
+    results = results.map((r) => confirmed.find((c) => c.path === r.path) ?? r);
+  }
 
   if (existsSync(OUT_DIR)) rmSync(OUT_DIR, { recursive: true, force: true });
   mkdirSync(OUT_DIR, { recursive: true });
