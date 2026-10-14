@@ -164,3 +164,25 @@ export async function sendPasswordResetLink(
   console.error("[auth-password] reset link failed", { status: res.status });
   throw new Error("reset_link_failed");
 }
+
+/**
+ * Mark the account's email as verified (admin-assisted confirmation when the
+ * customer's emailed link has expired). Caller MUST already be a verified admin.
+ */
+export async function markAuthUserEmailVerified(uid: string): Promise<void> {
+  const acct = getServiceAccount();
+  const token = await getIdentityAccessToken();
+  const res = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/projects/${acct.project_id}/accounts:update`,
+    {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({ localId: uid, emailVerified: true }),
+    },
+  );
+  if (res.ok) return;
+  const text = await res.text().catch(() => "");
+  if (/USER_NOT_FOUND/i.test(text) || res.status === 404) throw new Error("auth_user_not_found");
+  console.error("[auth-password] verify email failed", { status: res.status });
+  throw new Error("verify_email_failed");
+}
