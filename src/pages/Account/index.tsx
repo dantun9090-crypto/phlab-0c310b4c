@@ -901,7 +901,7 @@ export default function AccountPage() {
                         disabled={verifSending || verifCooldown > 0}
                         className="flex-shrink-0 text-xs px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/25 transition-colors disabled:opacity-50"
                       >
-                        {verifSending ? 'Sending…' : verifCooldown > 0 ? `Wait ${verifCooldown}s` : 'Resend'}
+                        {verifSending ? 'Sending…' : verifCooldown > 0 ? `Wait ${verifCooldown}s` : 'Send confirmation email'}
                       </button>
                     </div>
                   )}
