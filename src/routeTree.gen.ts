@@ -86,6 +86,7 @@ import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as ApiAdminCustomerDeleteRouteImport } from './routes/api/admin/customer-delete'
 import { Route as ApiAdminCustomerPasswordRouteImport } from './routes/api/admin/customer-password'
+import { Route as ApiAdminCustomerVerifyEmailRouteImport } from './routes/api/admin/customer-verify-email'
 import { Route as ApiAdminOrderRemindersRouteImport } from './routes/api/admin/order-reminders'
 import { Route as ApiAdminRoyalMailDeliveriesRouteImport } from './routes/api/admin/royal-mail-deliveries'
 import { Route as ApiAdminSendPaymentLinkRouteImport } from './routes/api/admin/send-payment-link'
@@ -553,6 +554,12 @@ const ApiAdminCustomerPasswordRoute =
     path: '/api/admin/customer-password',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminCustomerVerifyEmailRoute =
+  ApiAdminCustomerVerifyEmailRouteImport.update({
+    id: '/api/admin/customer-verify-email',
+    path: '/api/admin/customer-verify-email',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminOrderRemindersRoute = ApiAdminOrderRemindersRouteImport.update({
   id: '/api/admin/order-reminders',
   path: '/api/admin/order-reminders',
@@ -1008,6 +1015,7 @@ export interface FileRoutesByFullPath {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/customer-delete': typeof ApiAdminCustomerDeleteRoute
   '/api/admin/customer-password': typeof ApiAdminCustomerPasswordRoute
+  '/api/admin/customer-verify-email': typeof ApiAdminCustomerVerifyEmailRoute
   '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute
   '/api/admin/royal-mail-deliveries': typeof ApiAdminRoyalMailDeliveriesRoute
   '/api/admin/send-payment-link': typeof ApiAdminSendPaymentLinkRoute
@@ -1154,6 +1162,7 @@ export interface FileRoutesByTo {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/customer-delete': typeof ApiAdminCustomerDeleteRoute
   '/api/admin/customer-password': typeof ApiAdminCustomerPasswordRoute
+  '/api/admin/customer-verify-email': typeof ApiAdminCustomerVerifyEmailRoute
   '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute
   '/api/admin/royal-mail-deliveries': typeof ApiAdminRoyalMailDeliveriesRoute
   '/api/admin/send-payment-link': typeof ApiAdminSendPaymentLinkRoute
@@ -1303,6 +1312,7 @@ export interface FileRoutesById {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/customer-delete': typeof ApiAdminCustomerDeleteRoute
   '/api/admin/customer-password': typeof ApiAdminCustomerPasswordRoute
+  '/api/admin/customer-verify-email': typeof ApiAdminCustomerVerifyEmailRoute
   '/api/admin/order-reminders': typeof ApiAdminOrderRemindersRoute
   '/api/admin/royal-mail-deliveries': typeof ApiAdminRoyalMailDeliveriesRoute
   '/api/admin/send-payment-link': typeof ApiAdminSendPaymentLinkRoute
@@ -1452,6 +1462,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/api/admin/customer-delete'
     | '/api/admin/customer-password'
+    | '/api/admin/customer-verify-email'
     | '/api/admin/order-reminders'
     | '/api/admin/royal-mail-deliveries'
     | '/api/admin/send-payment-link'
@@ -1598,6 +1609,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/api/admin/customer-delete'
     | '/api/admin/customer-password'
+    | '/api/admin/customer-verify-email'
     | '/api/admin/order-reminders'
     | '/api/admin/royal-mail-deliveries'
     | '/api/admin/send-payment-link'
@@ -1746,6 +1758,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/api/admin/customer-delete'
     | '/api/admin/customer-password'
+    | '/api/admin/customer-verify-email'
     | '/api/admin/order-reminders'
     | '/api/admin/royal-mail-deliveries'
     | '/api/admin/send-payment-link'
@@ -1877,6 +1890,7 @@ export interface RootRouteChildren {
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiAdminCustomerDeleteRoute: typeof ApiAdminCustomerDeleteRoute
   ApiAdminCustomerPasswordRoute: typeof ApiAdminCustomerPasswordRoute
+  ApiAdminCustomerVerifyEmailRoute: typeof ApiAdminCustomerVerifyEmailRoute
   ApiAdminOrderRemindersRoute: typeof ApiAdminOrderRemindersRoute
   ApiAdminRoyalMailDeliveriesRoute: typeof ApiAdminRoyalMailDeliveriesRoute
   ApiAdminSendPaymentLinkRoute: typeof ApiAdminSendPaymentLinkRoute
@@ -2485,6 +2499,13 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/customer-password'
       fullPath: '/api/admin/customer-password'
       preLoaderRoute: typeof ApiAdminCustomerPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/customer-verify-email': {
+      id: '/api/admin/customer-verify-email'
+      path: '/api/admin/customer-verify-email'
+      fullPath: '/api/admin/customer-verify-email'
+      preLoaderRoute: typeof ApiAdminCustomerVerifyEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/order-reminders': {
@@ -3124,6 +3145,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiAdminCustomerDeleteRoute: ApiAdminCustomerDeleteRoute,
   ApiAdminCustomerPasswordRoute: ApiAdminCustomerPasswordRoute,
+  ApiAdminCustomerVerifyEmailRoute: ApiAdminCustomerVerifyEmailRoute,
   ApiAdminOrderRemindersRoute: ApiAdminOrderRemindersRoute,
   ApiAdminRoyalMailDeliveriesRoute: ApiAdminRoyalMailDeliveriesRoute,
   ApiAdminSendPaymentLinkRoute: ApiAdminSendPaymentLinkRoute,
