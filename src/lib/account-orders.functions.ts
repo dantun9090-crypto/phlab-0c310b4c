@@ -79,6 +79,29 @@ export const getOrdersForVerifiedEmail = createServerFn({ method: 'POST' })
         }
       }
 
+      // Permanently attach unowned guest orders to this verified account so
+      // they stay in history (and in admin views) without manual fixes.
+      // Orders already owned by a different UID are never reassigned.
+      const { updateDocAdmin, addDocAdmin } = await import('@/lib/server/firestore-admin');
+      for (const row of found.values()) {
+        if (row.userId) continue;
+        try {
+          await updateDocAdmin('orders', row.id, { userId: uid });
+          row.userId = uid;
+          await addDocAdmin('auditLogs', {
+            adminUid: 'system',
+            action: 'order.auto_link_verified_email',
+            target: `orders/${row.id}`,
+            before: { userId: null },
+            after: { userId: uid },
+            meta: { source: 'account.order_history' },
+            timestamp: new Date().toISOString(),
+          });
+        } catch (err) {
+          console.error('[account-orders] auto-link failed', row.id, err);
+        }
+      }
+
       return { ok: true, orders: [...found.values()] as any[] };
     } catch {
       // Never break the account page over this convenience lookup.
