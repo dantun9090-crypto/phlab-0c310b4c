@@ -45,12 +45,15 @@ export type SendMailInput =
       bankInstructions?: string;
     };
 
-export async function sendPublicMail(input: SendMailInput): Promise<boolean> {
+export async function sendPublicMail(input: SendMailInput, timeoutMs = 10_000): Promise<boolean> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const res = await fetch("/api/public/send-mail", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input),
+      signal: ctrl.signal,
     });
     if (!res.ok) {
       let detail = "";
@@ -69,5 +72,7 @@ export async function sendPublicMail(input: SendMailInput): Promise<boolean> {
   } catch (err) {
     console.error("[sendPublicMail] network/transport error", err);
     return false;
+  } finally {
+    clearTimeout(timer);
   }
 }
