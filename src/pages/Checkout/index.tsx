@@ -2066,11 +2066,16 @@ export default function CheckoutPage() {
                 {currentStep === 1 && (
                   <div className="px-5 pb-5 space-y-4">
                     {!firebaseUser && (
-                      <p className="text-xs text-gray-400">
-                        Already have an account?{' '}
-                        <Link to="/login" className="text-emerald-400 hover:text-emerald-300 underline">Sign in</Link>
-                        {' '}for faster checkout.
-                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="rounded-lg border-2 border-emerald-500 bg-emerald-500/10 px-3 py-2.5 text-center">
+                          <p className="text-sm font-semibold text-white">Guest checkout</p>
+                          <p className="text-[11px] text-emerald-300">No account needed</p>
+                        </div>
+                        <Link to="/login" className="rounded-lg border-2 border-slate-700 px-3 py-2.5 text-center hover:border-emerald-500">
+                          <p className="text-sm font-semibold text-white">Sign in</p>
+                          <p className="text-[11px] text-gray-400">Faster checkout</p>
+                        </Link>
+                      </div>
                     )}
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
