@@ -255,6 +255,20 @@ export default function Privacy() {
             </div>
           </section>
 
+          {/* Advertising measurement */}
+          <section id="advertising-measurement" className="bg-[#0b1a30]/70 border border-white/[0.07] rounded-2xl p-6 md:p-8">
+            <h2 className="text-xl font-semibold text-[#f0f6ff] mb-4">Advertising Measurement</h2>
+            <div className="space-y-3 text-[#9cb8d9]">
+              <p>We advertise on Google Ads and Microsoft Advertising (Bing). To measure which adverts lead to orders, we process the following:</p>
+              <p><strong className="text-white">Ad click identifiers:</strong> when you arrive from one of our adverts, the link contains a click identifier (for example gclid, gbraid or wbraid). We store it in your browser for up to 90 days and, if you place an order, save it with that order.</p>
+              <p><strong className="text-white">Conversion reporting:</strong> for paid orders, we share the click identifier, order reference, order value and time of purchase with Google Ads so that it can count the sale. We do not share your name, address or email address for this purpose.</p>
+              <p><strong className="text-white">Advertising cookies:</strong> with your consent, Google and Microsoft tags may set advertising cookies to measure adverts. You can accept or reject these in Cookie Settings.</p>
+              <p><strong className="text-white">Legal basis and retention:</strong> click identifiers are processed on the basis of our legitimate interest in measuring advertising spend. They are kept with the order record and are not used beyond Google's 90-day measurement window.</p>
+              <p><strong className="text-white">Your choices:</strong> you may object to this processing at any time by contacting us, clear your browser storage, or manage ad settings at <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer" className="underline">adssettings.google.com</a>.</p>
+              <p>Learn how Google uses data from sites that use its services: <a href="https://business.safety.google/privacy/" target="_blank" rel="noopener noreferrer" className="underline">business.safety.google/privacy</a>. Microsoft: <a href="https://privacy.microsoft.com/privacystatement" target="_blank" rel="noopener noreferrer" className="underline">privacy.microsoft.com</a>.</p>
+            </div>
+          </section>
+
           {/* Implementation Checklist */}
           <section className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-6 md:p-8">
             <div className="flex items-start gap-4">

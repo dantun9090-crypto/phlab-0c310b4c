@@ -81,9 +81,43 @@ export default function CookiePolicy() {
           </div>
           <div className="mt-4 p-3 rounded-lg border" style={{ background: 'rgba(59,130,246,0.05)', borderColor: 'rgba(59,130,246,0.15)' }}>
             <p className="text-xs leading-relaxed" style={{ color: '#3b82f6' }}>
-              <span className="font-semibold">Google Analytics 4 (GA4):</span> All data is anonymised and aggregated. No personally identifiable information is collected. Google's privacy policy applies to this data.
+              <span className="font-semibold">Google Analytics 4 (GA4):</span> Data is reported to us in aggregated form. We do not send your name, address or email address to Google Analytics. Google's privacy policy applies to this data.
             </p>
           </div>
+        </>
+      ),
+    },
+    {
+      id: 'advertising',
+      icon: BarChart2,
+      iconColor: '#f59e0b',
+      title: 'Advertising Cookies & Ad Click Measurement',
+      content: (
+        <>
+          <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
+            With your consent, Google Ads and Microsoft Advertising (Bing) tags set the cookies below to measure which adverts lead to orders. You can accept or reject them in Cookie Settings.
+          </p>
+          <div className="space-y-3">
+            {[
+              { name: '_gcl_au / _gcl_aw', purpose: 'Links an ad click to a later purchase', duration: '90 days', provider: 'Google Ads' },
+              { name: '_uetsid / _uetvid', purpose: 'Measures visits and purchases from Bing adverts', duration: 'Up to 13 months', provider: 'Microsoft Advertising' },
+              { name: 'php_ad_click_ids_v1', purpose: 'Stores the ad click identifier (gclid, gbraid or wbraid) from the advert link so it can be saved with your order', duration: '90 days', provider: 'PH Labs (browser storage)' },
+            ].map(({ name, purpose, duration, provider }) => (
+              <div key={name} className="p-3 rounded-lg border" style={{ background: '#0b1a30', borderColor: 'rgba(245,158,11,0.15)' }}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-semibold font-mono" style={{ color: '#f59e0b' }}>{name}</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>{duration}</span>
+                </div>
+                <p className="text-[10px] mb-1" style={{ color: '#9cb8d9' }}>{purpose}</p>
+                <p className="text-[10px]" style={{ color: '#3a5a82' }}>
+                  <span className="font-semibold">Provider:</span> {provider}
+                </p>
+              </div>
+            ))}
+          </div>
+          <p className="leading-relaxed text-xs mt-4" style={{ color: '#9cb8d9' }}>
+            The ad click identifier comes from the advert link itself, not from a cookie. For paid orders we share it with Google Ads together with the order reference, value and time, so the sale can be counted. See our <a href="/privacy#advertising-measurement" className="underline">Privacy Policy</a> and how Google uses this data: <a href="https://business.safety.google/privacy/" target="_blank" rel="noopener noreferrer" className="underline">business.safety.google/privacy</a>.
+          </p>
         </>
       ),
     },
@@ -135,6 +169,8 @@ export default function CookiePolicy() {
           <ul className="space-y-3">
             {[
               { service: 'Google Analytics', purpose: 'Site analytics', policy: 'https://policies.google.com/privacy' },
+              { service: 'Google Ads', purpose: 'Advert measurement', policy: 'https://business.safety.google/privacy/' },
+              { service: 'Microsoft Advertising', purpose: 'Advert measurement (Bing)', policy: 'https://privacy.microsoft.com/privacystatement' },
               { service: 'YouTube', purpose: 'Embedded videos (if applicable)', policy: 'https://policies.google.com/privacy' },
               { service: 'Social Media', purpose: 'Share buttons (if applicable)', policy: 'Varies by platform' },
             ].map(({ service, purpose, policy }) => {
