@@ -9,5 +9,8 @@ export default defineConfig({
     environment: "happy-dom",
     setupFiles: ["./src/test/setup.ts"],
     globals: true,
+    // e2e/ holds Playwright specs — they require the Playwright runner and a
+    // live/preview target, and must never be picked up by the unit runner.
+    exclude: ["**/node_modules/**", "**/dist/**", "**/e2e/**", "**/*.e2e.test.ts"],
   },
 });
