@@ -25,5 +25,12 @@
 - **Audit log**: every create, edit, duplicate, delete and apply goes to `/auditLogs` through the existing admin audit path. It records the admin, the action, the template ID and before/after values.
 - **Checks**: build and typecheck, then Playwright screenshots of the admin tab on desktop and mobile. I'll show you these and wait for your approval before publishing or changing anything else.
 
-## Open point
-- Applying a custom template does change the shop's look, just as Apply does today. If you'd rather custom templates stay admin-only drafts that can't be applied for now, tell me and I'll hide Apply on them.
+## Additions you approved
+1. **Code splitting**: the new template code (components, framer-motion, the wizard) is lazy-loaded from inside the admin Templates tab only. Before and after the change I'll build the app and compare the shop's JavaScript file sizes (entry, home, product and products pages). If the shop's files grow by even 1 byte, I'll fix that before showing you anything.
+2. **Firestore rules**: the new `themeTemplates` block is only added inside the existing documents match. No existing rule is rewritten, reordered or changed. I'll show you the full `firestore.rules` diff and won't deploy until you say OK.
+3. **Rollback**: before every Apply, the current active theme is saved to `settings/themeHistory` (the last 5 are kept). The Templates tab gets an "Undo last apply" button, which asks you to confirm, restores the previous theme, removes that snapshot and logs it in `/auditLogs`.
+4. **Previews**: all thumbnails and the full-screen preview are built from small scaled mock components on the page itself. No iframes, no loading of live pages, and no change to CSP or frame-src.
+5. **Custom templates can be applied**, using the same flow as built-in ones, including the confirm dialog and the snapshot.
+
+## Delivery
+- I'll send you Playwright screenshots on desktop and mobile, the bundle size comparison and the rules diff. I won't publish or deploy the rules until you give your OK.
