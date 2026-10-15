@@ -41,6 +41,7 @@ import ImageUploader from '@/components/admin/ImageUploader';
 import { logAdminAction } from '@/lib/admin-audit';
 import { getAdminIdToken } from '@/lib/auth-ready';
 import { uploadNewsletterPopupImage } from '@/lib/newsletter-image-upload.functions';
+import { getKlaviyoStatus, syncSubscribersToKlaviyo } from '@/lib/klaviyo.functions';
 import {
   clearNewsletterCooldown,
   setNewsletterDebug,
@@ -97,6 +98,77 @@ function StatusBadge({ status }: { status?: SubscriberStatus }) {
   );
 }
 
+interface KlaviyoStatus {
+  connected: boolean;
+  listName: string | null;
+  lastSyncAt: string | null;
+  lastSyncResult: { sent: number; skipped: number; errors: number } | null;
+}
+
+function KlaviyoPanel() {
+  const [status, setStatus] = useState<KlaviyoStatus | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = async () => {
+    try {
+      const idToken = await getAdminIdToken();
+      setStatus((await getKlaviyoStatus({ data: { idToken } })) as KlaviyoStatus);
+    } catch (err) {
+      console.error(err);
+      setStatus({ connected: false, listName: null, lastSyncAt: null, lastSyncResult: null });
+    }
+  };
+
+  useEffect(() => {
+    void load();
+  }, []);
+
+  const sync = async () => {
+    setBusy(true);
+    try {
+      const idToken = await getAdminIdToken();
+      const r = await syncSubscribersToKlaviyo({ data: { idToken } });
+      toast.success(`Klaviyo: ${r.sent} sent, ${r.skipped} skipped, ${r.errors} errors.`);
+      await load();
+    } catch (err) {
+      console.error(err);
+      toast.error('Klaviyo sync failed. Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mb-6 rounded-lg border border-slate-700 bg-slate-900 p-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="text-sm">
+        <p className="text-white font-semibold">Klaviyo</p>
+        {!status ? (
+          <p className="text-slate-400">Checking…</p>
+        ) : (
+          <p className="text-slate-300">
+            {status.connected ? 'Connected' : 'Not connected'} · List: {status.listName ?? 'PH Labs Newsletter (created on first sync)'}
+            {status.lastSyncAt && (
+              <>
+                {' '}· Last sync {new Date(status.lastSyncAt).toLocaleString('en-GB')}
+                {status.lastSyncResult &&
+                  ` (${status.lastSyncResult.sent} sent, ${status.lastSyncResult.skipped} skipped, ${status.lastSyncResult.errors} errors)`}
+              </>
+            )}
+          </p>
+        )}
+      </div>
+      <button
+        onClick={sync}
+        disabled={busy || !status?.connected}
+        className="inline-flex items-center gap-2 min-h-[40px] px-4 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-200 text-sm disabled:opacity-40"
+      >
+        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+        Sync to Klaviyo
+      </button>
+    </div>
+  );
+}
+
 export default function NewsletterTab() {
   const [tab, setTab] = useState<SubTab>('subscribers');
 
@@ -111,6 +183,8 @@ export default function NewsletterTab() {
           Manage subscribers and the on-site newsletter popup.
         </p>
       </header>
+
+      <KlaviyoPanel />
 
       <div className="flex gap-1 mb-6 border-b border-slate-700">
         {(
