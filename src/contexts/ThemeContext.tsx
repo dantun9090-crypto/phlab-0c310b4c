@@ -202,7 +202,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const snap = await getDoc(doc(db, 'settings', 'activeTheme'));
         if (snap.exists()) {
           const id = snap.data()?.templateId as string;
-          const firestoreTheme = getTemplateById(id);
+          const firestoreTheme = getTemplateById(id) ?? (snap.data()?.customTemplate as ThemeTemplate | undefined);
           if (firestoreTheme && firestoreTheme.id !== localTheme.id) {
             setActiveThemeId(firestoreTheme.id);
             setTheme(firestoreTheme);

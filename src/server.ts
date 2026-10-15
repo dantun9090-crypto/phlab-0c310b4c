@@ -5,6 +5,21 @@ import { renderErrorPage } from "./lib/error-page";
 import { notifySsrError } from "./lib/ssr-alert";
 import { isGoneLegacyPath, resolveFinalRedirect } from "./lib/legacy-redirects";
 
+// Firestore quota alert writer used by src/lib/firestore-rest.ts (kept here so
+// that shared module never imports ./server/*).
+(globalThis as { __phlQuotaAlert?: (status: number, now: number) => Promise<void> }).__phlQuotaAlert =
+  async (status, now) => {
+    const { addDocAdmin } = await import("./lib/server/firestore-admin");
+    await addDocAdmin("admin_alerts", {
+      severity: "critical",
+      message: `Firestore read limit hit (HTTP ${status}) — product pages served from cache.`,
+      source: "firestore-quota",
+      acknowledged: false,
+      timestamp: now,
+      createdAt: new Date(now).toISOString(),
+    });
+  };
+
 import { extractClientIp, log, maskIpForLog, redactQueryForLog, truncate } from "./lib/worker-log";
 
 
