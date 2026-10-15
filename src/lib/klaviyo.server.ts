@@ -1,20 +1,14 @@
 /**
  * Klaviyo gateway helper (server-only). Sends only email, source and
  * sign-up date — never product or substance names.
- *
- * Consent flows in both directions, but only ever *down* on admin action:
- * sign-ups subscribe, opt-outs suppress. Nothing here re-subscribes anyone
- * who was previously suppressed.
  */
-import { z } from "zod";
-import { addDocAdmin, getDocAdmin, listDocsAdmin, updateDocAdmin } from "@/lib/server/firestore-admin";
+import { addDocAdmin, getDocAdmin, updateDocAdmin } from "@/lib/server/firestore-admin";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/klaviyo";
 const LIST_NAME = "PH Labs Newsletter";
 const CONFIG_COLLECTION = "site_config";
 const CONFIG_ID = "klaviyo";
 const REQUEST_TIMEOUT_MS = 10_000;
-const BATCH_SIZE = 100;
 
 function headers(): Record<string, string> {
   const lovable = process.env.LOVABLE_API_KEY;
@@ -43,7 +37,7 @@ async function fetchWithTimeout(url: string, init: RequestInit): Promise<Respons
 
 /** Fetch with backoff on 429/5xx and network/timeout errors; other 4xx fail immediately. */
 async function kfetch(path: string, init: RequestInit = {}): Promise<Response> {
-  const hdrs = headers(); // throws immediately on missing env — not retriable
+  const hdrs = headers(); // missing env throws immediately — not retriable
   let delay = 1000;
   for (let attempt = 0; attempt < 4; attempt++) {
     let res: Response;
@@ -167,68 +161,6 @@ export async function unsubscribeEmails(emails: string[]): Promise<void> {
   });
 }
 
-export interface ReconcileResult {
-  sent: number;
-  suppressed: number;
-  skipped: number;
-  errors: number;
-}
-
-/**
- * Full reconciliation between Firestore `emailSubscribers` and the Klaviyo
- * list: subscribe every active subscriber, suppress anyone
- * unsubscribed/bounced/deleted. Idempotent — safe to run daily.
- */
-export async function reconcileKlaviyoList(): Promise<ReconcileResult> {
-  const docs = (await listDocsAdmin("emailSubscribers", { limit: 10000 })) as Record<
-    string,
-    unknown
-  >[];
-  const seen = new Set<string>();
-  const toSend: { email: string; source: string }[] = [];
-  const toSuppress: string[] = [];
-  let skipped = 0;
-  for (const d of docs) {
-    const email = String(d.email ?? "").trim().toLowerCase();
-    const status = String(d.status ?? "active");
-    if (!z.string().email().safeParse(email).success || seen.has(email)) {
-      skipped++;
-      continue;
-    }
-    seen.add(email);
-    if (status === "active" && !d.deleted) {
-      toSend.push({ email, source: String(d.source ?? "newsletter") });
-    } else {
-      toSuppress.push(email);
-    }
-  }
-
-  let sent = 0;
-  let suppressed = 0;
-  let errors = 0;
-  for (let i = 0; i < toSend.length; i += BATCH_SIZE) {
-    const batch = toSend.slice(i, i + BATCH_SIZE);
-    try {
-      await subscribeEmails(batch);
-      sent += batch.length;
-    } catch (err) {
-      console.error("[klaviyo] subscribe batch failed:", err);
-      errors += batch.length;
-    }
-  }
-  for (let i = 0; i < toSuppress.length; i += BATCH_SIZE) {
-    const batch = toSuppress.slice(i, i + BATCH_SIZE);
-    try {
-      await unsubscribeEmails(batch);
-      suppressed += batch.length;
-    } catch (err) {
-      console.error("[klaviyo] suppress batch failed:", err);
-      errors += batch.length;
-    }
-  }
-  return { sent, suppressed, skipped, errors };
-}
-
 export async function klaviyoConnected(): Promise<boolean> {
   try {
     await kfetch("/accounts/");
@@ -236,4 +168,124 @@ export async function klaviyoConnected(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/**
+ * Sync Firestore newsletter subscribers with Klaviyo (deduped, batches of
+ * 100). Two directions, both one-shot per doc and marker-driven:
+ *  - send:      active docs without `klaviyoSyncedAt` → subscribe + mark
+ *  - suppress:  unsubscribed/bounced/deleted docs without
+ *               `klaviyoUnsubscribedAt` → unsubscribe + mark
+ * Never re-sends (avoids repeat double opt-in emails) and never
+ * re-subscribes a suppressed address. Records result + auditLogs entry.
+ */
+export async function runSubscriberSync(actor: { uid: string; email: string | null }): Promise<{
+  sent: number;
+  suppressed: number;
+  skipped: number;
+  errors: number;
+}> {
+  const { listDocsAdmin } = await import("@/lib/server/firestore-admin");
+  const docs = (await listDocsAdmin("emailSubscribers", { limit: 10000 })) as Record<string, unknown>[];
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+  // Pass 1: emails with at least one active doc always win over opt-outs.
+  const activeEmails = new Set<string>();
+  for (const d of docs) {
+    const email = String(d.email ?? "").trim().toLowerCase();
+    if (emailRe.test(email) && String(d.status ?? "active") === "active" && !d.deleted) {
+      activeEmails.add(email);
+    }
+  }
+
+  const seen = new Set<string>();
+  const suppressSeen = new Set<string>();
+  const toSend: { email: string; source: string; ids: string[] }[] = [];
+  const toSuppress: { email: string; ids: string[] }[] = [];
+  let skipped = 0;
+  for (const d of docs) {
+    const email = String(d.email ?? "").trim().toLowerCase();
+    const status = String(d.status ?? "active");
+    const inactive = status !== "active" || !!d.deleted;
+
+    if (inactive) {
+      // Already suppressed once, twin is active, or not an email — skip.
+      if (d.klaviyoUnsubscribedAt || activeEmails.has(email) || !emailRe.test(email)) {
+        skipped++;
+        continue;
+      }
+      if (suppressSeen.has(email)) {
+        toSuppress.find((t) => t.email === email)?.ids.push(String(d.id));
+        skipped++;
+        continue;
+      }
+      suppressSeen.add(email);
+      toSuppress.push({ email, ids: [String(d.id)] });
+      continue;
+    }
+
+    // Already sent once — never re-send (avoids repeat double opt-in emails).
+    if (d.klaviyoSyncedAt) {
+      skipped++;
+      continue;
+    }
+    if (!emailRe.test(email)) {
+      skipped++;
+      continue;
+    }
+    if (seen.has(email)) {
+      toSend.find((t) => t.email === email)?.ids.push(String(d.id));
+      skipped++;
+      continue;
+    }
+    seen.add(email);
+    toSend.push({ email, source: String(d.source ?? "newsletter"), ids: [String(d.id)] });
+  }
+
+  let sent = 0;
+  let suppressed = 0;
+  let errors = 0;
+  for (let i = 0; i < toSend.length; i += 100) {
+    const batch = toSend.slice(i, i + 100);
+    try {
+      await subscribeEmails(batch);
+      sent += batch.length;
+      const at = new Date().toISOString();
+      await Promise.all(
+        batch.flatMap((b) => b.ids).map((id) =>
+          updateDocAdmin("emailSubscribers", id, { klaviyoSyncedAt: at }).catch(() => undefined),
+        ),
+      );
+    } catch (err) {
+      console.error("[klaviyo] subscribe batch failed:", err);
+      errors += batch.length;
+    }
+  }
+  for (let i = 0; i < toSuppress.length; i += 100) {
+    const batch = toSuppress.slice(i, i + 100);
+    try {
+      await unsubscribeEmails(batch.map((b) => b.email));
+      suppressed += batch.length;
+      const at = new Date().toISOString();
+      await Promise.all(
+        batch.flatMap((b) => b.ids).map((id) =>
+          updateDocAdmin("emailSubscribers", id, { klaviyoUnsubscribedAt: at }).catch(() => undefined),
+        ),
+      );
+    } catch (err) {
+      console.error("[klaviyo] suppress batch failed:", err);
+      errors += batch.length;
+    }
+  }
+
+  const result = { sent, suppressed, skipped, errors };
+  await saveKlaviyoConfig({ lastSyncAt: new Date().toISOString(), lastSyncResult: result, lastSyncBy: actor.uid });
+  await addDocAdmin("auditLogs", {
+    action: "klaviyo.sync_subscribers",
+    adminUid: actor.uid,
+    adminEmail: actor.email,
+    details: result,
+    timestamp: new Date(),
+  }).catch(() => undefined);
+  return result;
 }

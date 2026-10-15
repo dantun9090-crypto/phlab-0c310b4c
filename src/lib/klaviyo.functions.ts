@@ -54,28 +54,11 @@ export const getKlaviyoStatus = createServerFn({ method: "POST" })
     return { connected, ...cfg };
   });
 
-/**
- * Admin: full reconciliation — subscribes active subscribers and suppresses
- * unsubscribed/bounced/deleted ones in Klaviyo. Same core as the scheduled
- * /api/public/hooks/klaviyo-sync run.
- */
 export const syncSubscribersToKlaviyo = createServerFn({ method: "POST" })
   .inputValidator((d) => TokenInput.parse(d))
   .handler(async ({ data }) => {
     const { requireFirebaseAdmin } = await import("./server/firebase-auth-admin");
     const admin = await requireFirebaseAdmin(data.idToken);
-    const { addDocAdmin } = await import("./server/firestore-admin");
-    const k = await import("./klaviyo.server");
-
-    const result = await k.reconcileKlaviyoList();
-    const now = new Date().toISOString();
-    await k.saveKlaviyoConfig({ lastSyncAt: now, lastSyncResult: result });
-    await addDocAdmin("auditLogs", {
-      action: "klaviyo.sync_subscribers",
-      adminUid: admin.uid,
-      adminEmail: admin.email ?? null,
-      details: result,
-      timestamp: new Date(),
-    }).catch(() => undefined);
-    return result;
+    const { runSubscriberSync } = await import("./klaviyo.server");
+    return runSubscriberSync({ uid: admin.uid, email: admin.email ?? null });
   });
