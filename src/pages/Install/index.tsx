@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Smartphone, Apple, Monitor, Chrome, Share, MoreVertical, Download, CheckCircle2 } from 'lucide-react';
+import { Smartphone, Apple, Monitor, Globe, Share, MoreVertical, Download, CheckCircle2 } from 'lucide-react';
 import InstallAppButton from '@/components/InstallAppButton';
 import InstallDiagnostics from '@/components/InstallDiagnostics';
 
@@ -143,7 +143,7 @@ export default function InstallPage() {
             ]}
           />
           <Guide
-            icon={<Chrome className="w-5 h-5" />}
+            icon={<Globe className="w-5 h-5" />}
             title="Desktop (Chrome / Edge / Brave)"
             steps={[
               <>Open <strong>phlabs.co.uk</strong>.</>,
