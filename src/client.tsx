@@ -281,6 +281,7 @@ const SSR_HYDRATION_ROUTES: string[] = [
   "/e2e/payment-options",
   "/e2e/orders-modal",
   "/e2e/watchdog-panel",
+  "/e2e/templates-gallery",
 ];
 
 // ============================================================
