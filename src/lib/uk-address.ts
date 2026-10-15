@@ -55,6 +55,8 @@ export function validateUkAddressLine(
   const value = String(address ?? '').trim();
   if (!value) return 'Required';
   if (hasHouseNumber(value)) return '';
+  // Named properties ("The Barn, Lower Whiddon Farm") are deliverable without a number.
+  if (looksLikeNamedProperty(value)) return '';
   if (allowNoNumber) return '';
   return NO_HOUSE_NUMBER_MESSAGE;
 }
