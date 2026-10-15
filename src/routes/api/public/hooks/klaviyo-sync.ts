@@ -1,39 +1,66 @@
 /**
- * Daily newsletter → Klaviyo sync.
- * URL: POST https://phlabs.co.uk/api/public/hooks/klaviyo-sync
- * Auth: `x-cron-secret: ${CRON_SECRET}` (constant-time compare).
- * Called once a day by .github/workflows/klaviyo-sync.yml. Idempotent.
+ * Scheduled Klaviyo reconciliation hook — run daily via GitHub Actions cron.
+ *
+ * POST /api/public/hooks/klaviyo-sync
+ * Header: x-klaviyo-sync-secret: <KLAVIYO_SYNC_SECRET>
+ *
+ * Subscribes active Firestore subscribers to the Klaviyo newsletter list and
+ * suppresses unsubscribed/bounced/deleted ones. Idempotent — safe to re-run.
+ * Catches any sign-up whose real-time mirror failed (Klaviyo outage, network
+ * hiccup) and keeps marketing consent enforceable in Klaviyo.
+ *
+ * Auth: dedicated pre-shared secret (KLAVIYO_SYNC_SECRET env var). The route
+ * lives under /api/public/* so it bypasses edge auth — verification is here.
  */
-import { createFileRoute } from "@tanstack/react-router";
-import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
+import { createFileRoute } from '@tanstack/react-router';
+import { timingSafeEqualStr } from '@/lib/timing-safe-equal';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json", ...NO_STORE_HEADERS },
-  });
-}
-
-function secretOk(provided: string): boolean {
-  const expected = process.env.CRON_SECRET || "";
-  if (!expected || provided.length !== expected.length) return false;
-  let diff = 0;
-  for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ provided.charCodeAt(i);
-  return diff === 0;
-}
-
-export const Route = createFileRoute("/api/public/hooks/klaviyo-sync")({
+export const Route = createFileRoute('/api/public/hooks/klaviyo-sync')({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        if (!secretOk(request.headers.get("x-cron-secret") || "")) return json({ error: "forbidden" }, 403);
+        const ENDPOINT = '/api/public/hooks/klaviyo-sync';
+
+        // 1) Default per-IP throttle.
+        const limited = await enforceRateLimit(request, ENDPOINT, {
+          limit: 30,
+          windowMs: 60_000,
+          retryAfterSec: 120,
+        });
+        if (limited) return limited;
+
+        const expected = process.env.KLAVIYO_SYNC_SECRET;
+        const provided = request.headers.get('x-klaviyo-sync-secret');
+        if (!expected || !provided || !timingSafeEqualStr(provided, expected)) {
+          // 2) Separate bad-auth bucket.
+          const badAuthLimited = await enforceRateLimit(request, ENDPOINT, {
+            limit: 10,
+            windowMs: 60_000,
+            retryAfterSec: 120,
+            bucketKind: 'bad-auth',
+          });
+          if (badAuthLimited) return badAuthLimited;
+          return new Response('Unauthorized', { status: 401 });
+        }
+
         try {
-          const { runSubscriberSync } = await import("@/lib/klaviyo.server");
-          const result = await runSubscriberSync({ uid: "system", email: null });
-          return json({ ok: true, ...result });
+          const { reconcileKlaviyoList, saveKlaviyoConfig } = await import('@/lib/klaviyo.server');
+          const { addDocAdmin } = await import('@/lib/server/firestore-admin');
+          const result = await reconcileKlaviyoList();
+          const now = new Date().toISOString();
+          await saveKlaviyoConfig({ lastSyncAt: now, lastSyncResult: result });
+          await addDocAdmin('auditLogs', {
+            action: 'klaviyo.scheduled_sync',
+            adminUid: 'cron',
+            adminEmail: null,
+            details: result,
+            timestamp: new Date(),
+          }).catch(() => undefined);
+          return Response.json({ ok: true, ...result });
         } catch (err) {
-          console.error("[klaviyo-sync] failed:", err);
-          return json({ ok: false, error: err instanceof Error ? err.message : "sync failed" }, 500);
+          console.error('[klaviyo-sync] reconciliation failed:', err);
+          return Response.json({ ok: false, error: 'sync_failed' }, { status: 500 });
         }
       },
     },
