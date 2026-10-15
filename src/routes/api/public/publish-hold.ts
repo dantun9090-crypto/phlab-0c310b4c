@@ -90,9 +90,31 @@ export const Route = createFileRoute("/api/public/publish-hold")({
         }
       },
       GET: async ({ request }) => {
-        // Public read: admin UI + release pipeline poll this.
+        // Restricted read: admin UI (Firebase admin ID token as Bearer) or
+        // automation (x-phl-read-secret = PUBLISH_HOLD_SECRET).
         // - ?buildId=X       → single doc status
         // - (no params)      → latest active holds (for the admin banner)
+        const secret = process.env.PUBLISH_HOLD_SECRET || "";
+        const readSecret = request.headers.get("x-phl-read-secret") || "";
+        let authorised = false;
+        if (secret && readSecret) {
+          const a = Buffer.from(readSecret);
+          const b = Buffer.from(secret);
+          authorised = a.length === b.length && timingSafeEqual(a, b);
+        }
+        if (!authorised) {
+          const bearer = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+          if (bearer.length >= 10) {
+            try {
+              const { requireFirebaseAdmin } = await import("@/lib/server/firebase-auth-admin");
+              await requireFirebaseAdmin(bearer);
+              authorised = true;
+            } catch {
+              authorised = false;
+            }
+          }
+        }
+        if (!authorised) return json({ error: "unauthorized" }, 401);
         const url = new URL(request.url);
         const buildId = url.searchParams.get("buildId");
         if (buildId) {
