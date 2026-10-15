@@ -644,6 +644,9 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ---------- admin theme templates (custom, admin-only) ----------
+    match /themeTemplates/{id} { allow read: if isAdmin(); allow write: if isAdmin(); }
+
     // ---------- default deny ----------
 
     match /{document=**} {
