@@ -116,3 +116,69 @@ export async function klaviyoConnected(): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Copy every active Firestore newsletter subscriber to Klaviyo (deduped,
+ * batches of 100). Idempotent: re-subscribing an existing profile is a no-op
+ * in Klaviyo. Records the result and an auditLogs entry.
+ */
+export async function runSubscriberSync(actor: { uid: string; email: string | null }): Promise<{
+  sent: number;
+  skipped: number;
+  errors: number;
+}> {
+  const { listDocsAdmin } = await import("@/lib/server/firestore-admin");
+  const docs = (await listDocsAdmin("emailSubscribers", { limit: 10000 })) as Record<string, unknown>[];
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const seen = new Set<string>();
+  const toSend: { email: string; source: string; ids: string[] }[] = [];
+  let skipped = 0;
+  for (const d of docs) {
+    // Already sent once — never re-send (avoids repeat double opt-in emails).
+    if (d.klaviyoSyncedAt) {
+      skipped++;
+      continue;
+    }
+    const email = String(d.email ?? "").trim().toLowerCase();
+    const status = String(d.status ?? "active");
+    if (!emailRe.test(email) || status !== "active" || d.deleted) {
+      skipped++;
+      continue;
+    }
+    if (seen.has(email)) {
+      toSend.find((t) => t.email === email)?.ids.push(String(d.id));
+      skipped++;
+      continue;
+    }
+    seen.add(email);
+    toSend.push({ email, source: String(d.source ?? "newsletter"), ids: [String(d.id)] });
+  }
+  let sent = 0;
+  let errors = 0;
+  for (let i = 0; i < toSend.length; i += 100) {
+    const batch = toSend.slice(i, i + 100);
+    try {
+      await subscribeEmails(batch);
+      sent += batch.length;
+      const at = new Date().toISOString();
+      await Promise.all(
+        batch.flatMap((b) => b.ids).map((id) =>
+          updateDocAdmin("emailSubscribers", id, { klaviyoSyncedAt: at }).catch(() => undefined),
+        ),
+      );
+    } catch (err) {
+      console.error("[klaviyo] batch failed:", err);
+      errors += batch.length;
+    }
+  }
+  const result = { sent, skipped, errors };
+  await saveKlaviyoConfig({ lastSyncAt: new Date().toISOString(), lastSyncResult: result, lastSyncBy: actor.uid });
+  await addDocAdmin("auditLogs", {
+    action: "klaviyo.sync_subscribers",
+    adminUid: actor.uid,
+    adminEmail: actor.email,
+    details: result,
+    timestamp: new Date(),
+  }).catch(() => undefined);
+  return result;
+}

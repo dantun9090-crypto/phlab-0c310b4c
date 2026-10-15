@@ -38,46 +38,6 @@ export const syncSubscribersToKlaviyo = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { requireFirebaseAdmin } = await import("./server/firebase-auth-admin");
     const admin = await requireFirebaseAdmin(data.idToken);
-    const { listDocsAdmin, addDocAdmin } = await import("./server/firestore-admin");
-    const k = await import("./klaviyo.server");
-
-    const docs = (await listDocsAdmin("emailSubscribers", { limit: 10000 })) as Record<string, unknown>[];
-    const seen = new Set<string>();
-    const toSend: { email: string; source: string }[] = [];
-    let skipped = 0;
-    for (const d of docs) {
-      const email = String(d.email ?? "").trim().toLowerCase();
-      const status = String(d.status ?? "active");
-      if (!z.string().email().safeParse(email).success || status !== "active" || d.deleted || seen.has(email)) {
-        skipped++;
-        continue;
-      }
-      seen.add(email);
-      toSend.push({ email, source: String(d.source ?? "newsletter") });
-    }
-
-    let sent = 0;
-    let errors = 0;
-    for (let i = 0; i < toSend.length; i += 100) {
-      const batch = toSend.slice(i, i + 100);
-      try {
-        await k.subscribeEmails(batch);
-        sent += batch.length;
-      } catch (err) {
-        console.error("[klaviyo] batch failed:", err);
-        errors += batch.length;
-      }
-    }
-
-    const result = { sent, skipped, errors };
-    const now = new Date().toISOString();
-    await k.saveKlaviyoConfig({ lastSyncAt: now, lastSyncResult: result });
-    await addDocAdmin("auditLogs", {
-      action: "klaviyo.sync_subscribers",
-      adminUid: admin.uid,
-      adminEmail: admin.email ?? null,
-      details: result,
-      timestamp: new Date(),
-    }).catch(() => undefined);
-    return result;
+    const { runSubscriberSync } = await import("./klaviyo.server");
+    return runSubscriberSync({ uid: admin.uid, email: admin.email ?? null });
   });
