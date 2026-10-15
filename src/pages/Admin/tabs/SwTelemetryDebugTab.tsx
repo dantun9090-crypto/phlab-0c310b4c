@@ -313,7 +313,12 @@ export default function SwTelemetryDebugTab() {
   const loadHold = async () => {
     try {
       const data = await fetchWithBackoff(async () => {
-        const res = await fetch('/api/public/publish-hold', { cache: 'no-store' });
+        const { auth } = await import('@/lib/firebase');
+        const idToken = await auth.currentUser?.getIdToken();
+        const res = await fetch('/api/public/publish-hold', {
+          cache: 'no-store',
+          headers: idToken ? { authorization: `Bearer ${idToken}` } : undefined,
+        });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json() as Promise<{ hold?: boolean; current?: PublishHoldDoc | null }>;
       });
