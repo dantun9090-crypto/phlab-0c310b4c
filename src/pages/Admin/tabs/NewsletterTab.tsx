@@ -102,7 +102,7 @@ interface KlaviyoStatus {
   connected: boolean;
   listName: string | null;
   lastSyncAt: string | null;
-  lastSyncResult: { sent: number; skipped: number; errors: number } | null;
+  lastSyncResult: { sent: number; suppressed?: number; skipped: number; errors: number } | null;
 }
 
 function KlaviyoPanel() {
@@ -128,7 +128,9 @@ function KlaviyoPanel() {
     try {
       const idToken = await getAdminIdToken();
       const r = await syncSubscribersToKlaviyo({ data: { idToken } });
-      toast.success(`Klaviyo: ${r.sent} sent, ${r.skipped} skipped, ${r.errors} errors.`);
+      toast.success(
+        `Klaviyo: ${r.sent} sent, ${r.suppressed} suppressed, ${r.skipped} skipped, ${r.errors} errors.`,
+      );
       await load();
     } catch (err) {
       console.error(err);
@@ -151,12 +153,11 @@ function KlaviyoPanel() {
               <>
                 {' '}· Last sync {new Date(status.lastSyncAt).toLocaleString('en-GB')}
                 {status.lastSyncResult &&
-                  ` (${status.lastSyncResult.sent} sent, ${status.lastSyncResult.skipped} skipped, ${status.lastSyncResult.errors} errors)`}
+                  ` (${status.lastSyncResult.sent} sent, ${status.lastSyncResult.suppressed ?? 0} suppressed, ${status.lastSyncResult.skipped} skipped, ${status.lastSyncResult.errors} errors)`}
               </>
             )}
           </p>
         )}
-        <p className="text-slate-400 text-xs mt-1">Automatic sync runs every day at about 05:15 (London). Only new subscribers are sent.</p>
       </div>
       <button
         onClick={sync}
@@ -298,7 +299,7 @@ function SubscribersPanel() {
       const visible = new Set(filtered.map((r) => r.id));
       const next = new Set<string>();
       prev.forEach((id) => visible.has(id) && next.add(id));
-      return next.size === prev.size ? prev : next;
+      return next.size === prev.size ? next : next;
     });
   }, [filtered]);
 
@@ -345,9 +346,9 @@ function SubscribersPanel() {
 
   const clearSelection = () => setSelected(new Set());
 
-  const changeStatus = async (id: string, status: SubscriberStatus) => {
+  const changeStatus = async (id: string, status: SubscriberStatus, email: string) => {
     try {
-      await updateSubscriberStatus(id, status);
+      await updateSubscriberStatus(id, status, email);
       setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
       toast.success(`Marked as ${status}.`);
       void logAdminAction({
@@ -389,7 +390,9 @@ function SubscribersPanel() {
     if (ids.length === 0) return;
     setBulkBusy(true);
     const results = await Promise.allSettled(
-      ids.map((id) => updateSubscriberStatus(id, status)),
+      ids.map((id) =>
+        updateSubscriberStatus(id, status, rows.find((r) => r.id === id)?.email),
+      ),
     );
     const ok: string[] = [];
     let failed = 0;
@@ -658,7 +661,7 @@ function SubscribersPanel() {
                           <select
                             value={r.status ?? 'active'}
                             onChange={(e) =>
-                              changeStatus(r.id, e.target.value as SubscriberStatus)
+                              changeStatus(r.id, e.target.value as SubscriberStatus, r.email)
                             }
                             className="min-h-[36px] px-2 rounded-md bg-slate-800 border border-slate-600 text-white text-xs focus:border-emerald-500 focus:outline-none"
                             aria-label={`Change status for ${r.email}`}
@@ -1235,4 +1238,3 @@ function DebugPanel() {
     </div>
   );
 }
-
