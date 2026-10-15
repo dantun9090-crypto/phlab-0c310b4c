@@ -247,19 +247,14 @@ export function invalidateProductsCache(): void {
   productsCache = null;
 }
 
-// createServerOnlyFn strips the body (and its server-only import) from the
-// client bundle, so the browser graph never resolves ./server/firestore-admin.
-const writeQuotaAlert = createServerOnlyFn(async (status: number, now: number) => {
-  const { addDocAdmin } = await import("./server/firestore-admin");
-  await addDocAdmin("admin_alerts", {
-    severity: "critical",
-    message: `Firestore read limit hit (HTTP ${status}) — product pages served from cache.`,
-    source: "firestore-quota",
-    acknowledged: false,
-    timestamp: now,
-    createdAt: new Date(now).toISOString(),
-  });
-});
+// The admin-alert writer is registered by src/server.ts on globalThis so this
+// shared (client-reachable) module never imports ./server/* — the dev
+// import-protection plugin rejects that even inside SSR-only branches.
+type QuotaAlertWriter = (status: number, now: number) => Promise<void>;
+function writeQuotaAlert(status: number, now: number): Promise<void> {
+  const fn = (globalThis as { __phlQuotaAlert?: QuotaAlertWriter }).__phlQuotaAlert;
+  return fn ? fn(status, now) : Promise.resolve();
+}
 
 async function reportQuotaError(status: number, body: string): Promise<void> {
   if (!import.meta.env.SSR) return;
