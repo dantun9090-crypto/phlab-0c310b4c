@@ -40,7 +40,7 @@ function TemplateCard({ t, index, active, view, onPreview, onEdit, onDuplicate, 
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.96 }}
       transition={{ duration: 0.22, delay: Math.min(index, 12) * 0.04 }}
-      className={`group relative bg-[#0b1a30]/70 border rounded-2xl overflow-hidden ${view === 'list' ? 'flex flex-col sm:flex-row gap-4 p-3' : ''} ${active ? 'border-blue-500/50 ring-1 ring-blue-500/30' : 'border-white/[0.08] hover:border-white/[0.18]'}`}
+      className={`group relative bg-[#0b1a30]/70 border rounded-2xl ${view === 'list' ? 'flex flex-col sm:flex-row gap-4 p-3' : ''} ${active ? 'border-blue-500/50 ring-1 ring-blue-500/30' : 'border-white/[0.08] hover:border-white/[0.18]'}`}
     >
       <button type="button" onClick={onPreview} className={`relative block text-left ${view === 'list' ? 'sm:w-56 shrink-0' : 'p-3 pb-0 w-full'}`} aria-label={`Preview ${t.name}`}>
         <TemplateThumb template={t} />
