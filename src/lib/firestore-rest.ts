@@ -247,6 +247,20 @@ export function invalidateProductsCache(): void {
   productsCache = null;
 }
 
+// createServerOnlyFn strips the body (and its server-only import) from the
+// client bundle, so the browser graph never resolves ./server/firestore-admin.
+const writeQuotaAlert = createServerOnlyFn(async (status: number, now: number) => {
+  const { addDocAdmin } = await import("./server/firestore-admin");
+  await addDocAdmin("admin_alerts", {
+    severity: "critical",
+    message: `Firestore read limit hit (HTTP ${status}) — product pages served from cache.`,
+    source: "firestore-quota",
+    acknowledged: false,
+    timestamp: now,
+    createdAt: new Date(now).toISOString(),
+  });
+});
+
 async function reportQuotaError(status: number, body: string): Promise<void> {
   if (!import.meta.env.SSR) return;
   const now = Date.now();
@@ -254,15 +268,7 @@ async function reportQuotaError(status: number, body: string): Promise<void> {
   lastQuotaAlertAt = now;
   console.error(`[firestore-rest] quota/read failure ${status}: ${body.slice(0, 120)}`);
   try {
-    const { addDocAdmin } = await import("./server/firestore-admin");
-    await addDocAdmin("admin_alerts", {
-      severity: "critical",
-      message: `Firestore read limit hit (HTTP ${status}) — product pages served from cache.`,
-      source: "firestore-quota",
-      acknowledged: false,
-      timestamp: now,
-      createdAt: new Date(now).toISOString(),
-    });
+    await writeQuotaAlert(status, now);
   } catch { /* alert write may also be blocked by quota */ }
 }
 
