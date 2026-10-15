@@ -202,7 +202,7 @@ export default function TemplateGallery() {
       {/* Full-screen preview */}
       <AnimatePresence>
         {preview && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-[#020617]/95 backdrop-blur-sm flex flex-col" role="dialog" aria-modal="true" aria-label={`${preview.name} preview`}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-[#020617] flex flex-col" role="dialog" aria-modal="true" aria-label={`${preview.name} preview`}
             onKeyDown={(e) => e.key === 'Escape' && setPreview(null)}>
             <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-3 border-b border-white/[0.08]">
               <div>
