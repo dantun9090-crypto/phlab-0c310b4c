@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AdminModal } from './AdminOverlay';
 import type { ThemeTemplate } from '@/themes/templates';
 import { TemplateThumb } from './TemplateThumb';
 import type { GalleryTemplate } from './useThemeTemplates';
@@ -69,12 +69,11 @@ export function TemplateWizard({ open, initial, mode, onClose, onSave }: Templat
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl bg-[#0b1a30] border-white/[0.12] text-[#f0f6ff] max-h-[92vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{mode === 'create' ? 'Create template' : `Edit ${initial?.name ?? 'template'}`}</DialogTitle>
-          <DialogDescription className="text-[#9cb8d9]">Step {step + 1} of {STEPS.length} · {STEPS[step]}</DialogDescription>
-        </DialogHeader>
+    <AdminModal open={open} onClose={onClose} label={mode === 'create' ? 'Create template' : 'Edit template'} className="max-w-2xl max-h-[92vh] overflow-y-auto space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold">{mode === 'create' ? 'Create template' : `Edit ${initial?.name ?? 'template'}`}</h3>
+          <p className="text-sm text-[#9cb8d9]">Step {step + 1} of {STEPS.length} · {STEPS[step]}</p>
+        </div>
 
         <ol className="flex gap-2" aria-label="Progress">
           {STEPS.map((s, i) => (
@@ -166,7 +165,6 @@ export function TemplateWizard({ open, initial, mode, onClose, onSave }: Templat
             </button>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+    </AdminModal>
   );
 }

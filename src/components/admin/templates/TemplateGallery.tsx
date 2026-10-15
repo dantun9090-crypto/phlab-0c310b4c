@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Copy, Eye, LayoutGrid, List, MoreHorizontal, Palette, Pencil, Plus, Search, Sparkles, Trash2, Undo2, X } from 'lucide-react';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AdminMenu, AdminModal } from './AdminOverlay';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TemplateThumb } from './TemplateThumb';
 import { TemplateWizard } from './TemplateWizard';
@@ -60,16 +59,8 @@ function TemplateCard({ t, index, active, view, onPreview, onEdit, onDuplicate, 
           <h3 className="font-semibold text-[#f0f6ff] text-sm leading-snug truncate">{t.name}</h3>
           <div className="flex items-center gap-1 shrink-0">
             <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-200 capitalize">{t.isCustom ? 'custom' : t.category}</span>
-            <DropdownMenu>
-              <DropdownMenuTrigger className="lg:hidden w-8 h-8 rounded-lg flex items-center justify-center text-[#9cb8d9] hover:text-white" aria-label={`Actions for ${t.name}`}>
-                <MoreHorizontal className="w-4 h-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-[#0b1a30] border-white/[0.12] text-[#f0f6ff]">
-                {actions.map((a) => (
-                  <DropdownMenuItem key={a.label} onSelect={a.run} className={a.label === 'Delete' ? 'text-red-300' : ''}><a.icon className="w-4 h-4 mr-2" />{a.label}</DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <AdminMenu className="lg:hidden" label={`Actions for ${t.name}`} trigger={<MoreHorizontal className="w-4 h-4" />}
+              items={actions.map((a) => ({ label: a.label, icon: a.icon, run: a.run, danger: a.label === 'Delete' }))} />
           </div>
         </div>
         <p className="text-xs text-[#6f8fb8] mt-1">{t.isCustom ? `Last edited ${fmt(t.updatedAt) ?? '—'}` : 'Built-in — duplicate to edit'}</p>
@@ -241,24 +232,20 @@ export default function TemplateGallery() {
           onSave={(t) => saveTemplate(t, wizard.mode === 'update' ? 'update' : wizard.dup ? 'duplicate' : 'create')} />
       )}
 
-      <AlertDialog open={!!confirm} onOpenChange={(o) => !o && !busy && setConfirm(null)}>
-        <AlertDialogContent className="bg-[#0b1a30] border-white/[0.12] text-[#f0f6ff]">
-          <AlertDialogHeader>
-            <AlertDialogTitle>{confirm?.kind === 'apply' ? `Apply ${confirm.t.name}?` : confirm?.kind === 'delete' ? `Delete ${confirm.t.name}?` : 'Undo last apply?'}</AlertDialogTitle>
-            <AlertDialogDescription className="text-[#9cb8d9]">
-              {confirm?.kind === 'apply' ? 'All visitors will see this theme. The current theme is saved so you can undo.'
-                : confirm?.kind === 'delete' ? 'This custom template will be removed permanently.'
-                  : 'The previous theme will be restored for all visitors.'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy} className="bg-transparent border-white/[0.12] text-[#c4d6ee]">Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled={busy} onClick={(e) => { e.preventDefault(); void runConfirm(); }} className={confirm?.kind === 'delete' ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-blue-600 hover:bg-blue-500 text-white'}>
-              {busy ? 'Working…' : confirm?.kind === 'delete' ? 'Delete' : 'Confirm'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <AdminModal open={!!confirm} onClose={() => !busy && setConfirm(null)} label="Confirm action" className="max-w-md">
+        <h3 className="text-lg font-semibold">{confirm?.kind === 'apply' ? `Apply ${confirm.t.name}?` : confirm?.kind === 'delete' ? `Delete ${confirm.t.name}?` : 'Undo last apply?'}</h3>
+        <p className="text-sm text-[#9cb8d9] mt-2">
+          {confirm?.kind === 'apply' ? 'All visitors will see this theme. The current theme is saved so you can undo.'
+            : confirm?.kind === 'delete' ? 'This custom template will be removed permanently.'
+              : 'The previous theme will be restored for all visitors.'}
+        </p>
+        <div className="flex justify-end gap-2 mt-6">
+          <button type="button" disabled={busy} onClick={() => setConfirm(null)} className="min-h-[44px] px-4 rounded-xl border border-white/[0.12] text-[#c4d6ee]">Cancel</button>
+          <button type="button" disabled={busy} onClick={() => void runConfirm()} className={`min-h-[44px] px-4 rounded-xl text-white font-medium disabled:opacity-50 ${confirm?.kind === 'delete' ? 'bg-red-600 hover:bg-red-500' : 'bg-blue-600 hover:bg-blue-500'}`}>
+            {busy ? 'Working…' : confirm?.kind === 'delete' ? 'Delete' : 'Confirm'}
+          </button>
+        </div>
+      </AdminModal>
     </div>
   );
 }
