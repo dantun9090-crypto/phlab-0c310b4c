@@ -158,6 +158,7 @@ function KlaviyoPanel() {
             )}
           </p>
         )}
+        <p className="text-slate-400 text-xs mt-1">Automatic sync runs every day at about 05:15 (London). New subscribers are sent; opt-outs are suppressed in Klaviyo.</p>
       </div>
       <button
         onClick={sync}
@@ -299,7 +300,7 @@ function SubscribersPanel() {
       const visible = new Set(filtered.map((r) => r.id));
       const next = new Set<string>();
       prev.forEach((id) => visible.has(id) && next.add(id));
-      return next.size === prev.size ? next : next;
+      return next.size === prev.size ? prev : next;
     });
   }, [filtered]);
 
@@ -1238,3 +1239,4 @@ function DebugPanel() {
     </div>
   );
 }
+
