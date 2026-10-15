@@ -60,6 +60,7 @@ import { Route as DownloadsIndexRouteImport } from './routes/downloads.index'
 import { Route as DownloadsFileRouteImport } from './routes/downloads.$file'
 import { Route as E2eOrdersModalRouteImport } from './routes/e2e/orders-modal'
 import { Route as E2ePaymentOptionsRouteImport } from './routes/e2e/payment-options'
+import { Route as E2eTemplatesGalleryRouteImport } from './routes/e2e/templates-gallery'
 import { Route as E2eWatchdogPanelRouteImport } from './routes/e2e/watchdog-panel'
 import { Route as LandingSlugRouteImport } from './routes/landing.$slug'
 import { Route as LandingPhlabsRouteImport } from './routes/landing.phlabs'
@@ -416,6 +417,11 @@ const E2eOrdersModalRoute = E2eOrdersModalRouteImport.update({
 const E2ePaymentOptionsRoute = E2ePaymentOptionsRouteImport.update({
   id: '/e2e/payment-options',
   path: '/e2e/payment-options',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const E2eTemplatesGalleryRoute = E2eTemplatesGalleryRouteImport.update({
+  id: '/e2e/templates-gallery',
+  path: '/e2e/templates-gallery',
   getParentRoute: () => rootRouteImport,
 } as any)
 const E2eWatchdogPanelRoute = E2eWatchdogPanelRouteImport.update({
@@ -995,6 +1001,7 @@ export interface FileRoutesByFullPath {
   '/downloads/$file': typeof DownloadsFileRoute
   '/e2e/orders-modal': typeof E2eOrdersModalRoute
   '/e2e/payment-options': typeof E2ePaymentOptionsRoute
+  '/e2e/templates-gallery': typeof E2eTemplatesGalleryRoute
   '/e2e/watchdog-panel': typeof E2eWatchdogPanelRoute
   '/landing/$slug': typeof LandingSlugRoute
   '/landing/phlabs': typeof LandingPhlabsRoute
@@ -1143,6 +1150,7 @@ export interface FileRoutesByTo {
   '/downloads/$file': typeof DownloadsFileRoute
   '/e2e/orders-modal': typeof E2eOrdersModalRoute
   '/e2e/payment-options': typeof E2ePaymentOptionsRoute
+  '/e2e/templates-gallery': typeof E2eTemplatesGalleryRoute
   '/e2e/watchdog-panel': typeof E2eWatchdogPanelRoute
   '/landing/$slug': typeof LandingSlugRoute
   '/landing/phlabs': typeof LandingPhlabsRoute
@@ -1294,6 +1302,7 @@ export interface FileRoutesById {
   '/downloads/$file': typeof DownloadsFileRoute
   '/e2e/orders-modal': typeof E2eOrdersModalRoute
   '/e2e/payment-options': typeof E2ePaymentOptionsRoute
+  '/e2e/templates-gallery': typeof E2eTemplatesGalleryRoute
   '/e2e/watchdog-panel': typeof E2eWatchdogPanelRoute
   '/landing/$slug': typeof LandingSlugRoute
   '/landing/phlabs': typeof LandingPhlabsRoute
@@ -1445,6 +1454,7 @@ export interface FileRouteTypes {
     | '/downloads/$file'
     | '/e2e/orders-modal'
     | '/e2e/payment-options'
+    | '/e2e/templates-gallery'
     | '/e2e/watchdog-panel'
     | '/landing/$slug'
     | '/landing/phlabs'
@@ -1593,6 +1603,7 @@ export interface FileRouteTypes {
     | '/downloads/$file'
     | '/e2e/orders-modal'
     | '/e2e/payment-options'
+    | '/e2e/templates-gallery'
     | '/e2e/watchdog-panel'
     | '/landing/$slug'
     | '/landing/phlabs'
@@ -1743,6 +1754,7 @@ export interface FileRouteTypes {
     | '/downloads/$file'
     | '/e2e/orders-modal'
     | '/e2e/payment-options'
+    | '/e2e/templates-gallery'
     | '/e2e/watchdog-panel'
     | '/landing/$slug'
     | '/landing/phlabs'
@@ -1886,6 +1898,7 @@ export interface RootRouteChildren {
   DownloadsFileRoute: typeof DownloadsFileRoute
   E2eOrdersModalRoute: typeof E2eOrdersModalRoute
   E2ePaymentOptionsRoute: typeof E2ePaymentOptionsRoute
+  E2eTemplatesGalleryRoute: typeof E2eTemplatesGalleryRoute
   E2eWatchdogPanelRoute: typeof E2eWatchdogPanelRoute
   LandingSlugRoute: typeof LandingSlugRoute
   LandingPhlabsRoute: typeof LandingPhlabsRoute
@@ -2331,6 +2344,13 @@ declare module '@tanstack/react-router' {
       path: '/e2e/payment-options'
       fullPath: '/e2e/payment-options'
       preLoaderRoute: typeof E2ePaymentOptionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/e2e/templates-gallery': {
+      id: '/e2e/templates-gallery'
+      path: '/e2e/templates-gallery'
+      fullPath: '/e2e/templates-gallery'
+      preLoaderRoute: typeof E2eTemplatesGalleryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/e2e/watchdog-panel': {
@@ -3148,6 +3168,7 @@ const rootRouteChildren: RootRouteChildren = {
   DownloadsFileRoute: DownloadsFileRoute,
   E2eOrdersModalRoute: E2eOrdersModalRoute,
   E2ePaymentOptionsRoute: E2ePaymentOptionsRoute,
+  E2eTemplatesGalleryRoute: E2eTemplatesGalleryRoute,
   E2eWatchdogPanelRoute: E2eWatchdogPanelRoute,
   LandingSlugRoute: LandingSlugRoute,
   LandingPhlabsRoute: LandingPhlabsRoute,
