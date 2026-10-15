@@ -138,6 +138,7 @@ import { Route as ApiPublicHooksFenaRouteImport } from './routes/api/public/hook
 import { Route as ApiPublicHooksFenaProcessRetriesRouteImport } from './routes/api/public/hooks/fena-process-retries'
 import { Route as ApiPublicHooksFirestoreBackupRouteImport } from './routes/api/public/hooks/firestore-backup'
 import { Route as ApiPublicHooksHealthCheckRouteImport } from './routes/api/public/hooks/health-check'
+import { Route as ApiPublicHooksKlaviyoSyncRouteImport } from './routes/api/public/hooks/klaviyo-sync'
 import { Route as ApiPublicHooksLighthousePsiRouteImport } from './routes/api/public/hooks/lighthouse-psi'
 import { Route as ApiPublicHooksMonitorProductUrlsRouteImport } from './routes/api/public/hooks/monitor-product-urls'
 import { Route as ApiPublicHooksOfflineConversionsRouteImport } from './routes/api/public/hooks/offline-conversions'
@@ -833,6 +834,12 @@ const ApiPublicHooksHealthCheckRoute =
     path: '/api/public/hooks/health-check',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksKlaviyoSyncRoute =
+  ApiPublicHooksKlaviyoSyncRouteImport.update({
+    id: '/api/public/hooks/klaviyo-sync',
+    path: '/api/public/hooks/klaviyo-sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksLighthousePsiRoute =
   ApiPublicHooksLighthousePsiRouteImport.update({
     id: '/api/public/hooks/lighthouse-psi',
@@ -1067,6 +1074,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
   '/api/public/hooks/firestore-backup': typeof ApiPublicHooksFirestoreBackupRoute
   '/api/public/hooks/health-check': typeof ApiPublicHooksHealthCheckRoute
+  '/api/public/hooks/klaviyo-sync': typeof ApiPublicHooksKlaviyoSyncRoute
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/offline-conversions': typeof ApiPublicHooksOfflineConversionsRoute
@@ -1214,6 +1222,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
   '/api/public/hooks/firestore-backup': typeof ApiPublicHooksFirestoreBackupRoute
   '/api/public/hooks/health-check': typeof ApiPublicHooksHealthCheckRoute
+  '/api/public/hooks/klaviyo-sync': typeof ApiPublicHooksKlaviyoSyncRoute
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/offline-conversions': typeof ApiPublicHooksOfflineConversionsRoute
@@ -1364,6 +1373,7 @@ export interface FileRoutesById {
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
   '/api/public/hooks/firestore-backup': typeof ApiPublicHooksFirestoreBackupRoute
   '/api/public/hooks/health-check': typeof ApiPublicHooksHealthCheckRoute
+  '/api/public/hooks/klaviyo-sync': typeof ApiPublicHooksKlaviyoSyncRoute
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/offline-conversions': typeof ApiPublicHooksOfflineConversionsRoute
@@ -1514,6 +1524,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/fena-process-retries'
     | '/api/public/hooks/firestore-backup'
     | '/api/public/hooks/health-check'
+    | '/api/public/hooks/klaviyo-sync'
     | '/api/public/hooks/lighthouse-psi'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/offline-conversions'
@@ -1661,6 +1672,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/fena-process-retries'
     | '/api/public/hooks/firestore-backup'
     | '/api/public/hooks/health-check'
+    | '/api/public/hooks/klaviyo-sync'
     | '/api/public/hooks/lighthouse-psi'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/offline-conversions'
@@ -1810,6 +1822,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/fena-process-retries'
     | '/api/public/hooks/firestore-backup'
     | '/api/public/hooks/health-check'
+    | '/api/public/hooks/klaviyo-sync'
     | '/api/public/hooks/lighthouse-psi'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/offline-conversions'
@@ -1940,6 +1953,7 @@ export interface RootRouteChildren {
   ApiPublicHooksFenaProcessRetriesRoute: typeof ApiPublicHooksFenaProcessRetriesRoute
   ApiPublicHooksFirestoreBackupRoute: typeof ApiPublicHooksFirestoreBackupRoute
   ApiPublicHooksHealthCheckRoute: typeof ApiPublicHooksHealthCheckRoute
+  ApiPublicHooksKlaviyoSyncRoute: typeof ApiPublicHooksKlaviyoSyncRoute
   ApiPublicHooksLighthousePsiRoute: typeof ApiPublicHooksLighthousePsiRoute
   ApiPublicHooksMonitorProductUrlsRoute: typeof ApiPublicHooksMonitorProductUrlsRoute
   ApiPublicHooksOfflineConversionsRoute: typeof ApiPublicHooksOfflineConversionsRoute
@@ -2865,6 +2879,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksHealthCheckRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/klaviyo-sync': {
+      id: '/api/public/hooks/klaviyo-sync'
+      path: '/api/public/hooks/klaviyo-sync'
+      fullPath: '/api/public/hooks/klaviyo-sync'
+      preLoaderRoute: typeof ApiPublicHooksKlaviyoSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/lighthouse-psi': {
       id: '/api/public/hooks/lighthouse-psi'
       path: '/api/public/hooks/lighthouse-psi'
@@ -3196,6 +3217,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksFenaProcessRetriesRoute: ApiPublicHooksFenaProcessRetriesRoute,
   ApiPublicHooksFirestoreBackupRoute: ApiPublicHooksFirestoreBackupRoute,
   ApiPublicHooksHealthCheckRoute: ApiPublicHooksHealthCheckRoute,
+  ApiPublicHooksKlaviyoSyncRoute: ApiPublicHooksKlaviyoSyncRoute,
   ApiPublicHooksLighthousePsiRoute: ApiPublicHooksLighthousePsiRoute,
   ApiPublicHooksMonitorProductUrlsRoute: ApiPublicHooksMonitorProductUrlsRoute,
   ApiPublicHooksOfflineConversionsRoute: ApiPublicHooksOfflineConversionsRoute,
