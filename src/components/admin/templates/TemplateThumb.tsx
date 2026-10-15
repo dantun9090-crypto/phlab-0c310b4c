@@ -55,6 +55,15 @@ export function TemplateThumb({ template, size = 'sm' }: TemplateThumbProps) {
           ))}
         </div>
       </div>
+      <div className={`grid grid-cols-4 ${lg ? 'gap-4 px-6 pb-6' : 'gap-2 px-3 pb-3'}`}>
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className={`border ${lg ? 'p-3 space-y-2' : 'p-1.5 space-y-1'}`} style={{ backgroundColor: c.surface, borderColor: c.border, borderRadius: r }}>
+            <div className={lg ? 'h-24' : 'h-8'} style={{ backgroundColor: c.background, borderRadius: r }} />
+            <div className={`${lg ? 'h-2' : 'h-1'} w-3/4 rounded-full`} style={{ backgroundColor: c.text.primary }} />
+            <div className={`${lg ? 'h-2' : 'h-1'} w-1/3 rounded-full`} style={{ backgroundColor: c.primary }} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
