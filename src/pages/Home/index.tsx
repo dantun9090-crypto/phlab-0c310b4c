@@ -1,4 +1,4 @@
-import { ArrowRight, CheckCircle2, ShieldCheck, Zap, Mail, Microscope, CreditCard, Truck, Flame, Star, Dna, Activity, Brain, RefreshCw, Shield, Snowflake, FileCheck, FlaskConical, ChevronDown, Lock, Loader2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2, ShieldCheck, Zap, Mail, Microscope, CreditCard, Truck, Flame, Dna, Activity, Brain, RefreshCw, Shield, Snowflake, FileCheck, FlaskConical, ChevronDown, Lock, Loader2 } from 'lucide-react';
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 const NewsletterPopup = lazy(() => import('@/components/NewsletterPopup'));
 import SmartBanner from '@/components/SmartBanner';
@@ -104,30 +104,6 @@ const benefits = [
     tag: 'Melanocortin',
     color: '#ec4899',
     slug: '/products',
-  },
-];
-
-const testimonials = [
-  {
-    name: 'James R.',
-    role: 'Researcher · London',
-    content: 'Exceptional purity documentation. The CoA was detailed — full HPLC trace, molecular weight confirmation. Exactly what you expect from a professional supplier.',
-    rating: 5,
-    date: '12 April 2026',
-  },
-  {
-    name: 'Sarah T.',
-    role: 'GB · Verified Buyer',
-    content: 'Third order now. Packaging is consistently excellent — cold-pack, sealed vials, documentation in every box. Dispatch is fast. Highly recommend.',
-    rating: 5,
-    date: '2 April 2026',
-  },
-  {
-    name: 'Mark D.',
-    role: 'GB · Verified Buyer',
-    content: 'Genuinely impressed by the quality. Packaging was secure, CoA included, and delivery was next day. Best peptide supplier in the UK.',
-    rating: 5,
-    date: '8 March 2026',
   },
 ];
 
@@ -701,7 +677,7 @@ export default function HomePage() {
         className="relative overflow-hidden"
         style={{
           background: 'radial-gradient(ellipse 120% 80% at 60% 40%, #061428 0%, #030a14 60%)',
-          minHeight: 'min(100svh, 940px)',
+          minHeight: 'min(85svh, 780px)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
@@ -839,7 +815,7 @@ export default function HomePage() {
                         const purityNum = parseFloat(purityRaw.replace(/[^0-9.]/g, '')) || 99;
                         return (
                           <div key={p.id} className="flex items-center gap-4">
-                            <span style={{ color: '#8db4d8', fontSize: '0.8rem', width: '90px', flexShrink: 0 }} className="truncate">{p.name}</span>
+                            <span title={p.name} style={{ color: '#8db4d8', fontSize: '0.8rem', width: '112px', flexShrink: 0 }} className="truncate">{p.name.replace(/\s+Research\s+Peptide$/i, '')}</span>
                             <div className="flex-1 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
                               <div className="h-full rounded-full" style={{ width: `${Math.min(purityNum, 100)}%`, background: color, opacity: 0.85 }} />
                             </div>
@@ -1147,43 +1123,6 @@ export default function HomePage() {
                 <div style={{ fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', fontWeight: 900, color: '#10b981', letterSpacing: '-0.04em', lineHeight: 1 }}>{val}</div>
                 <div className="font-semibold text-sm mt-1.5" style={{ color: '#d8ecff' }}>{label}</div>
                 <div className="text-xs mt-0.5" style={{ color: '#3a5a82' }}>{sub}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ════════════════════════════════
-          TESTIMONIALS
-      ════════════════════════════════ */}
-      <section id="testimonials" className="py-20 cv-auto" style={{ background: 'linear-gradient(180deg, #040d1a 0%, #030a14 100%)' }}>
-        <div className="container mx-auto px-6">
-          <div className="will-fade max-w-2xl mb-14">
-            <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: '#10b981' }}>Researcher Feedback</p>
-            <h2 style={{ fontSize: 'clamp(1.7rem, 3vw, 2.4rem)', fontWeight: 800, color: '#f0f8ff', letterSpacing: '-0.025em', lineHeight: 1.15 }}>
-              Trusted by UK Researchers
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-5 will-fade">
-            {testimonials.map((t, i) => (
-              <div key={i} className="rounded-2xl p-6 flex flex-col gap-4" style={{
-                background: 'rgba(255,255,255,0.025)',
-                border: '1px solid rgba(255,255,255,0.06)',
-              }}>
-                <div className="flex gap-0.5">
-                  {Array.from({ length: t.rating }).map((_, s) => (
-                    <Star key={s} style={{ width: 13, height: 13, color: '#f59e0b', fill: '#f59e0b' }} />
-                  ))}
-                </div>
-                <p className="text-sm leading-relaxed flex-1" style={{ color: '#9cb8d9' }}>"{t.content}"</p>
-                <div className="flex items-center justify-between pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div>
-                    <div className="font-bold text-sm" style={{ color: '#c8dff5' }}>{t.name}</div>
-                    <div className="text-xs" style={{ color: '#3a5a82' }}>{t.role}</div>
-                  </div>
-                  <div className="text-xs" style={{ color: '#3a5a82' }}>{t.date}</div>
-                </div>
               </div>
             ))}
           </div>

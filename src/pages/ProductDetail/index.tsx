@@ -1630,9 +1630,9 @@ export default function ProductDetail() {
 
               {/* "Also known as" — captures organic long-tail misspellings
                   (Semrush UK: ~1.3k/mo combined, near-zero competition).
-                  Subtle styling so it reads as a helpful synonym list, not SEO spam. */}
+                  sr-only: visible to crawlers and screen readers, hidden visually. */}
               {!merchantAliasInfo && product.slug && PRODUCT_SEO_OVERRIDES[product.slug]?.misspellings?.length ? (
-                <p className="text-xs text-[#6b829e] mb-3 leading-relaxed">
+                <p className="sr-only">
                   <span className="font-semibold text-[#8aa3c0]">Also searched as:</span>{' '}
                   {PRODUCT_SEO_OVERRIDES[product.slug]!.misspellings!.join(', ')}.
                 </p>
@@ -1807,7 +1807,7 @@ export default function ProductDetail() {
               {/* ── Trust signals row ── */}
               <div className="flex flex-wrap gap-1.5 mb-3">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-[11px] font-semibold">
-                  <Microscope className="w-3 h-3" /> HPLC-verified ≥98%
+                  <Microscope className="w-3 h-3" /> HPLC-verified ≥99%
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/25 text-blue-300 text-[11px] font-semibold">
                   <FileText className="w-3 h-3" /> COA per batch

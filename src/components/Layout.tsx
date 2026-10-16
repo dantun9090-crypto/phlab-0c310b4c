@@ -1604,7 +1604,11 @@ export function Layout({ children }: LayoutProps) {
             <p className="text-[#7a9ec2] text-xs">
               © 2026 PH Labs Ltd — All rights reserved. Registered in England &amp; Wales, United Kingdom.
 
-              {siteSettings.companyRegNumber && <> Company No. {siteSettings.companyRegNumber}.</>}
+              {siteSettings.companyRegNumber && (
+                /sole\s*trader/i.test(siteSettings.companyRegNumber)
+                  ? <> {siteSettings.companyRegNumber}.</>
+                  : <> Company No. {siteSettings.companyRegNumber}.</>
+              )}
               {siteSettings.companyAddress && <> {siteSettings.companyAddress}.</>}
             </p>
             {!isContactPage && (
@@ -1710,6 +1714,8 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* ── Sticky MHRA Disclaimer Bar — hidden on auth/admin pages ── */}
+      {/* In-flow spacer so the fixed bar never covers the footer at page end */}
+      {!isCleanPage && !isContactPage && <div aria-hidden="true" style={{ height: '44px' }} />}
       {!isCleanPage && !isContactPage && <div className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none">
         <div
           className="px-4 py-2.5 text-center"
