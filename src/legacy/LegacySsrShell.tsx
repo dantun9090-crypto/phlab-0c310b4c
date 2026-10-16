@@ -163,8 +163,8 @@ export function LegacySsrShell({ banner }: { banner?: PromoBannerLite | null } =
               margin: 0,
             }}
           >
-            <span style={{ display: 'block' }}>Pro Peptide Research Lab </span>
-            <span style={{ display: 'block', color: '#10b981' }}>For In-Vitro Research</span>
+            <span style={{ display: 'block' }}>Tested Research Peptides UK</span>
+            <span style={{ display: 'block', color: '#10b981' }}>Retatrutide · MOTS-C · GHK-Cu</span>
             <span
               style={{
                 display: 'block',
@@ -186,7 +186,7 @@ export function LegacySsrShell({ banner }: { banner?: PromoBannerLite | null } =
               margin: 0,
             }}
           >
-            As a pro peptide research lab, PH Labs synthesises high-purity amino acids and analytical-grade laboratory reagents for qualified UK researchers — supplied for in-vitro scientific research purposes only. HPLC and mass-spectrometry verified, Certificate of Analysis with every batch.{' '}
+            PH Labs supplies tested research peptides and analytical-grade laboratory reagents to qualified UK researchers — including retatrutide, MOTS-C, GHK-Cu and bacteriostatic water, held in UK stock. Every batch is HPLC and mass-spectrometry verified with a Certificate of Analysis.{' '}
             <strong style={{ color: '#f0a0a0' }}>
               Research Use Only — Not For Human Consumption.
             </strong>
