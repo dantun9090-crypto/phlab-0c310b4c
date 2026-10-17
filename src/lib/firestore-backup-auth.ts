@@ -31,29 +31,35 @@ export interface BackupAuthEnv {
 
 /**
  * Accept ONLY:
- *   1. `apikey` header EXACT match (timing-safe) against the configured
- *      Supabase publishable/anon key — this is the pg_cron path.
- *   2. `x-cron-secret` header EXACT match against CLEANUP_SECRET — this is
+ *   1. `x-cron-secret` header EXACT match against CLEANUP_SECRET — this is
  *      the manual curl / GitHub Actions path.
- * Every other value is rejected with 401. Any non-empty string used to be
- * accepted here — do not regress that behaviour.
+ * The `apikey` header (retired pg_cron path) is NOT accepted: the Supabase
+ * publishable/anon key is public (it ships in the client bundle) and must
+ * never act as a credential. Requests presenting any credential that is not
+ * the cron secret are rejected as "invalid" (alert-worthy); requests with no
+ * credential at all are "missing". Any non-empty string used to be accepted
+ * here — do not regress that behaviour.
  */
-export function verifyBackupCaller(
-  request: Request,
-  env: BackupAuthEnv,
-): VerifyResult {
+export function verifyBackupCaller(request: Request, env: BackupAuthEnv): VerifyResult {
   // The publishable/anon key is PUBLIC (shipped in the client bundle), so it
   // is NOT accepted as a credential. Only the server-side cron secret works.
   void env.SUPABASE_PUBLISHABLE_KEY;
   const secret = request.headers.get("x-cron-secret");
-  if (!secret) return { ok: false, status: 401, reason: "missing" };
   if (secret) {
     const expected = env.CLEANUP_SECRET;
     if (expected && timingSafeStringEqual(secret, expected)) {
       return { ok: true, method: "cron_secret" };
     }
+    return { ok: false, status: 401, reason: "invalid" };
   }
-  return { ok: false, status: 401, reason: "invalid" };
+  // No cron secret. If the caller presented ANY credential header (e.g. an
+  // `apikey` from the retired pg_cron path), that is a REJECTED credential,
+  // not a missing one — the distinction feeds the securityEvents pipeline
+  // (invalid = attack/probe signal, missing = misconfigured caller).
+  if (request.headers.get("apikey")) {
+    return { ok: false, status: 401, reason: "invalid" };
+  }
+  return { ok: false, status: 401, reason: "missing" };
 }
 
 /**
@@ -170,4 +176,3 @@ export function _resetFailureTrackerForTests(): void {
   failures.length = 0;
   ipStates.clear();
 }
-
