@@ -16,6 +16,7 @@ import { validateCartPrices } from '@/lib/cart-validation.functions';
 import { computeBundleDiscount } from '@/lib/bundle-discount';
 import { parseCartTransferParam } from '@/lib/legacy-host';
 import { createOrder } from '@/lib/create-order.functions';
+import { useCheckoutPaused } from '@/lib/checkout-pause';
 import { getStoredAdClickIds } from '@/lib/gclid-capture';
 import { createGatewayPaymentLink, getCheckoutPaymentOptions } from '@/lib/payment-gateways.functions';
 import type { CheckoutPaymentOptions } from '@/lib/payments/types';
@@ -109,6 +110,7 @@ const iconInputStyle = (hasError?: boolean): React.CSSProperties => ({
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
+  const checkoutPaused = useCheckoutPaused();
   const [cart, setCart] = useState<CartItem[]>([]);
   const freeGiftCfg = useFreeGiftConfig();
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
@@ -1804,6 +1806,20 @@ export default function CheckoutPage() {
   const step2Summary = addressLine1
     ? formatShippingAddressInline({ address: addressLine1, city: form.city, postcode: form.postcode, country: form.country })
     : null;
+
+  if (checkoutPaused) {
+    return (
+      <section id="checkout" data-checkout-scope className="min-h-screen bg-[#060f1e] flex items-center justify-center px-4 py-16">
+        <NoCacheHead title="Checkout — PH Labs" />
+        <div className="w-full max-w-lg text-center bg-slate-900 border border-slate-700 rounded-lg p-8">
+          <h1 className="text-2xl font-bold text-white">Checkout temporarily unavailable</h1>
+          <p className="text-slate-300 mt-3">
+            We're not taking new orders at the moment. Your basket is saved — please check back soon.
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <>

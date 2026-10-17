@@ -159,6 +159,12 @@ async function hashPaymentToken(token: string): Promise<string> {
 }
 
 export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrderResult> {
+  // Admin "pause checkout" switch (site_config/checkoutPause).
+  const pauseDoc = await getDocAdmin('site_config', 'checkoutPause').catch(() => null);
+  if (pauseDoc?.paused === true) {
+    throw new Error('Checkout is temporarily unavailable. Please try again later.');
+  }
+
   // ── Sync contract with the Checkout UI ─────────────────────────────
   // The UI in src/pages/Checkout/index.tsx hides `next_day_12` when EITHER
   //   (a) `country !== 'United Kingdom'`  (isUkAddress === false), OR

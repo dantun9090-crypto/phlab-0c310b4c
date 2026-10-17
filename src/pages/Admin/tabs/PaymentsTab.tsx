@@ -22,6 +22,7 @@ import PeptidePayTestPaymentCard from '../components/PeptidePayTestPaymentCard';
 import NowPaymentsToggleCard from '../components/NowPaymentsToggleCard';
 import NowPaymentsTestPaymentCard from '../components/NowPaymentsTestPaymentCard';
 import TideToggleCard from '../components/TideToggleCard';
+import CheckoutPauseCard from '../components/CheckoutPauseCard';
 
 
 
@@ -145,6 +146,7 @@ export default function PaymentsTab() {
       <NowPaymentsToggleCard />
       <NowPaymentsTestPaymentCard />
 
+      <CheckoutPauseCard />
       {/* Tide alternative payment — hosted payment link (QR / Open Banking) */}
       <TideToggleCard />
 
