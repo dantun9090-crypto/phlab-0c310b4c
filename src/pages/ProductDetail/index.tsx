@@ -324,8 +324,12 @@ export default function ProductDetail() {
 
   // Touch swipe support
   const touchStartX = useRef<number | null>(null);
+  // Set when a horizontal swipe (>=40px) just changed the image — the synthetic
+  // click mobile browsers fire right after touchend must NOT open the lightbox.
+  const touchSwipedRef = useRef(false);
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
+    touchSwipedRef.current = false;
   }, []);
 
   const refetchAdverts = useCallback(() => {
@@ -348,6 +352,7 @@ export default function ProductDetail() {
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     touchStartX.current = null;
     if (Math.abs(dx) < 40) return;
+    touchSwipedRef.current = true;
     if (dx < 0) setSelectedImageIdx(i => Math.min(i + 1, imgCount - 1));
     else setSelectedImageIdx(i => Math.max(i - 1, 0));
   }, []);
@@ -1288,7 +1293,15 @@ export default function ProductDetail() {
                       aria-label={`View ${product.name} image enlarged`}
                       onTouchStart={handleTouchStart}
                       onTouchEnd={(e) => handleTouchEnd(e, count)}
-                      onClick={() => setLightboxOpen(true)}
+                      onClick={() => {
+                        // A horizontal swipe also fires a synthetic click on mobile —
+                        // swallow it so swiping between photos doesn't pop the lightbox.
+                        if (touchSwipedRef.current) {
+                          touchSwipedRef.current = false;
+                          return;
+                        }
+                        setLightboxOpen(true);
+                      }}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setLightboxOpen(true); } }}
                     >
                       <AnimatePresence mode="wait">
