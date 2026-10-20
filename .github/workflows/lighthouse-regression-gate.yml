@@ -65,7 +65,7 @@ jobs:
     # process). Skip cleanly rather than fail.
     if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 55
     strategy:
       fail-fast: false
       matrix:
@@ -83,9 +83,37 @@ jobs:
         run: npm i -g @lhci/cli@0.14.x
 
       - name: Run Lighthouse CI (${{ matrix.profile }})
-        # `autorun` runs collect + assert. `assert` failures exit non-zero,
-        # which fails the job — that is the regression gate.
-        run: lhci autorun --config=.lighthouserc.${{ matrix.profile }}.json
+        # Retry up to 3 full attempts. Shared-CI CPU/network noise alone can
+        # trip the assert thresholds on a single attempt (see header comments:
+        # TBT medians swung 315-720ms on identical code). The gate now fails
+        # only when ALL attempts fail = persistent regression, not one noisy
+        # runner. Normal-case cost is unchanged (1 attempt); retries happen
+        # only after a failure. Failed attempts' reports are preserved for
+        # forensics in .lighthouseci-attempt-N/ and uploaded as artifacts.
+        run: |
+          set +e
+          LAST_CODE=1
+          for attempt in 1 2 3; do
+            rm -rf .lighthouseci
+            lhci autorun --config=.lighthouserc.${{ matrix.profile }}.json
+            code=$?
+            if [ $code -eq 0 ]; then
+              echo "::notice::Lighthouse gate passed on attempt $attempt"
+              exit 0
+            fi
+            LAST_CODE=$code
+            echo "::warning::Lighthouse attempt $attempt/3 failed (exit $code)"
+            if [ -d .lighthouseci ]; then
+              cp -r .lighthouseci ".lighthouseci-attempt-$attempt"
+            fi
+            sleep 20
+          done
+          # Restore the last attempt's reports so the Summarise CWV step and
+          # the uploaded artifact reflect the most recent failure.
+          if [ -d .lighthouseci-attempt-3 ]; then
+            cp -r .lighthouseci-attempt-3 .lighthouseci
+          fi
+          exit $LAST_CODE
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
 
@@ -94,7 +122,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: lighthouse-gate-${{ matrix.profile }}-${{ github.run_id }}
-          path: .lighthouseci/
+          path: |
+            .lighthouseci/
+            .lighthouseci-attempt-*/
           retention-days: 30
 
       - name: Summarise CWV
