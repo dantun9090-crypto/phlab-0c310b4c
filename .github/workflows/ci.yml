@@ -89,18 +89,7 @@ jobs:
       - name: /compound + /research visual regression
         env:
           TEST_BASE_URL: http://127.0.0.1:8080
-        # TEMP (this branch only): regenerate the /research baseline in CI so
-        # fonts/chromium match the runner exactly, then upload it. Reverted
-        # before merge.
-        run: bun run test:compound:visual -- --update-snapshots
-
-      - name: Upload refreshed visual baselines (temp)
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: refreshed-snapshots-${{ github.run_id }}
-          path: e2e/*-visual.spec.ts-snapshots/
-          retention-days: 5
+        run: bun run test:compound:visual
 
       # Idempotent cache invalidation unit tests — guards the dedupe key
       # so repeated purchase events do not thrash the edge.
