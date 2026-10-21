@@ -174,10 +174,11 @@
     "prettier": "^3.7.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
-    "vite": "^7.3.5",
+    "vite": "^7.3.7",
     "vitest": "^4.1.11"
   },
   "overrides": {
+    "launch-editor": "^2.14.2",
     "@babel/core": "^7.29.6",
     "@hono/node-server": "^2.0.11",
     "@vitest/mocker": "^4.1.11",
@@ -189,7 +190,7 @@
     "fast-uri": "^3.1.8",
     "fast-xml-parser": "^5.10.1",
     "form-data": "^2.5.6",
-    "hono": "^4.13.5",
+    "hono": "^4.13.11",
     "ip-address": "^10.5.1",
     "js-yaml": "^5.4.1",
     "nanoid": "^3.3.18",
@@ -202,7 +203,7 @@
     "react-router": "^7.18.2",
     "postcss": "^8.5.23",
     "glob": "^10.5.0",
-    "vite": "^7.3.5",
+    "vite": "^7.3.7",
     "browserslist": "^4.28.7",
     "qs": "^6.16.0",
     "three-stdlib": {
@@ -216,6 +217,7 @@
     "source-map-js": "^1.2.2"
   },
   "resolutions": {
+    "launch-editor": "^2.14.2",
     "@babel/core": "^7.29.6",
     "@hono/node-server": "^2.0.11",
     "@vitest/mocker": "^4.1.11",
@@ -227,7 +229,7 @@
     "fast-uri": "^3.1.8",
     "fast-xml-parser": "^5.10.1",
     "form-data": "^2.5.6",
-    "hono": "^4.13.5",
+    "hono": "^4.13.11",
     "ip-address": "^10.5.1",
     "js-yaml": "^5.4.1",
     "nanoid": "^3.3.18",
@@ -240,7 +242,7 @@
     "react-router": "^7.18.2",
     "postcss": "^8.5.23",
     "glob": "^10.5.0",
-    "vite": "^7.3.5",
+    "vite": "^7.3.7",
     "browserslist": "^4.28.7",
     "qs": "^6.16.0",
     "three-stdlib/fflate": "^0.6.11",

@@ -11,7 +11,7 @@ permissions:
 jobs:
   worker-build-and-check:
     name: Production build + Worker import guard
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
       contents: read
@@ -373,7 +373,7 @@ jobs:
   # failing cosign output rendered on the Check page.
   attestation-verify:
     name: Attestation verify (SLSA + CycloneDX)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: worker-build-and-check
     if: always() && needs.worker-build-and-check.result == 'success'
     timeout-minutes: 5
@@ -422,7 +422,7 @@ jobs:
   # Keeps PR feedback under a minute for touch-and-go UI tweaks.
   checkout-orders-regression:
     name: Checkout + Admin Orders regression (fast)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     if: github.event_name == 'pull_request'
     steps:

@@ -34,6 +34,9 @@ async function seedCart(page: Page) {
   await page.addInitScript((item) => {
     try {
       window.localStorage.setItem('php_cart', JSON.stringify([item]));
+      // The checkout UI reads the admin pause switch from production
+      // Firestore; an intentional pause must not red this pipeline.
+      window.localStorage.setItem('phl_e2e_checkout_unpaused', '1');
     } catch {
       /* ignore — private mode */
     }
