@@ -24,7 +24,7 @@ permissions:
 jobs:
   security-scan:
     name: Dependency vulnerability scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # 8 min was too tight: cosign attest-blob (Rekor) intermittently hangs
     # ~7 min, so runs died at the timeout during cleanup even when the
     # audit gate itself passed. 15 min matches the real p95 of this job.
@@ -387,7 +387,7 @@ jobs:
   # rendered on the Check page.
   attestation-verify:
     name: Attestation verify (SLSA + CycloneDX)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: security-scan
     if: always() && needs.security-scan.result == 'success'
     timeout-minutes: 5
@@ -432,7 +432,7 @@ jobs:
   # unstable map ordering, network response ordering).
   determinism-check:
     name: Determinism check (cached vs fresh)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: security-scan
     if: always() && needs.security-scan.result == 'success'
     timeout-minutes: 10
