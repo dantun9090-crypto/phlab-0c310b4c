@@ -285,6 +285,8 @@ export function Layout({ children }: LayoutProps) {
   
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  // Packing staff (staffRole 'orders') only get the admin entry link.
+  const [isOrdersStaff, setIsOrdersStaff] = useState(false);
   const [isVip, setIsVip] = useState(false);
   // settingsLoaded removed - no longer needed without Age Gate
   const [siteSettings, setSiteSettings] = useState<SiteSettings>({
@@ -458,6 +460,7 @@ export function Layout({ children }: LayoutProps) {
             getDoc(doc(db, 'customers', user.uid)).then(snap => {
               if (snap.exists()) {
                 setIsAdmin(snap.data()?.isAdmin === true);
+                setIsOrdersStaff(snap.data()?.staffRole === 'orders');
                 setIsVip(snap.data()?.isVip === true);
               }
             }).catch(() => { /* ignore */ });
@@ -469,6 +472,7 @@ export function Layout({ children }: LayoutProps) {
           }
         } else {
           setIsAdmin(false);
+          setIsOrdersStaff(false);
           setIsVip(false);
         }
       });
@@ -730,7 +734,7 @@ export function Layout({ children }: LayoutProps) {
             {/* ── Desktop + Mobile Nav (Navigation component) ── */}
             <Navigation
               user={firebaseUser}
-              isAdmin={isAdmin}
+              isAdmin={isAdmin || isOrdersStaff}
               isMobileMenuOpen={isMobileMenuOpen}
               onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             />
@@ -1626,8 +1630,8 @@ export function Layout({ children }: LayoutProps) {
         <Suspense fallback={null}><CookieConsent /></Suspense>
       )}
 
-      {/* Admin Quick-Access Button — only visible to admins */}
-      {isAdmin && (
+      {/* Admin Quick-Access Button — admins + packing staff */}
+      {(isAdmin || isOrdersStaff) && (
         <div className="fixed z-[9999]" style={{ bottom: '5.5rem', right: '1.5rem' }}>
           {/* Tooltip label */}
           <div className="group relative flex items-center justify-end">
