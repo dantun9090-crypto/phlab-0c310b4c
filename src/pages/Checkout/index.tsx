@@ -68,7 +68,7 @@ interface CheckoutForm {
 
 import { checkNextDayEligibility, SHIPPING_CONFIG, formatLondonDate } from '@/lib/shipping/next-day';
 import { formatShippingAddressInline, formatShippingAddressLines, shortPostcodeLabel } from '@/lib/format-address';
-import { joinAddressLine, validateUkAddressLine, hasHouseNumber, NO_HOUSE_NUMBER_CHECKBOX_LABEL } from '@/lib/uk-address';
+import { joinAddressLine, validateUkAddressLine, hasHouseNumber, HAS_HOUSE_NUMBER_OPTION_LABEL, HAS_HOUSE_NUMBER_OPTION_HINT, NO_HOUSE_NUMBER_OPTION_LABEL, NO_HOUSE_NUMBER_OPTION_HINT } from '@/lib/uk-address';
 import { suggestEmailTypo } from '@/lib/email-typo';
 
 
@@ -880,9 +880,15 @@ export default function CheckoutPage() {
     if (step === 2) {
       if (!addressLine1.trim()) e.address = 'Required';
       else if (form.country === 'United Kingdom') {
-        // Royal Mail labels need a house number (or a confirmed named property).
-        const addrError = validateUkAddressLine(addressLine1, form.addressNoHouseNumber);
-        if (addrError) e.address = addrError;
+        // A zero-like placeholder ("0") means the shopper needs the
+        // "No house number" option, not a fake number on the label.
+        if (!form.addressNoHouseNumber && /^0+[a-z]?$/i.test(form.houseNumber.trim())) {
+          e.address = '"0" is not a house number — pick "No house number" above and enter the property name';
+        } else {
+          // Royal Mail labels need a house number (or a confirmed named property).
+          const addrError = validateUkAddressLine(addressLine1, form.addressNoHouseNumber);
+          if (addrError) e.address = addrError;
+        }
       }
       else if (form.country === 'Germany') {
         // Mirror the server-side `superRefine` rule so Step 2 blocks the
@@ -2239,7 +2245,42 @@ export default function CheckoutPage() {
                       />
                     )}
 
-                    <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,9rem)_1fr] gap-3">
+                    {form.country === 'United Kingdom' && (
+                      <div>
+                        <p className="text-xs font-medium text-gray-300 mb-2">Does your home have a house number?</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {([
+                            { value: false, label: HAS_HOUSE_NUMBER_OPTION_LABEL, hint: HAS_HOUSE_NUMBER_OPTION_HINT },
+                            { value: true, label: NO_HOUSE_NUMBER_OPTION_LABEL, hint: NO_HOUSE_NUMBER_OPTION_HINT },
+                          ] as const).map(opt => {
+                            const isSelected = form.addressNoHouseNumber === opt.value;
+                            return (
+                              <button
+                                key={String(opt.value)}
+                                type="button"
+                                onClick={() => {
+                                  setForm(prev => ({
+                                    ...prev,
+                                    addressNoHouseNumber: opt.value,
+                                    // Selecting "no number" clears any placeholder like 0.
+                                    houseNumber: opt.value ? '' : prev.houseNumber,
+                                  }));
+                                  setErrors(prev => ({ ...prev, address: '' }));
+                                }}
+                                aria-pressed={isSelected}
+                                className={`px-3 py-2.5 rounded-xl border text-left transition-all duration-200 ${isSelected ? 'border-emerald-500/60 bg-emerald-500/10' : 'border-white/10 bg-white/[0.02] hover:border-white/25 hover:bg-white/[0.04]'}`}
+                              >
+                                <p className={`text-xs font-semibold ${isSelected ? 'text-white' : 'text-gray-300'}`}>{opt.label}</p>
+                                <p className="text-[11px] text-gray-400 mt-0.5">{opt.hint}</p>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className={`grid grid-cols-1 gap-3 ${form.addressNoHouseNumber && form.country === 'United Kingdom' ? '' : 'sm:grid-cols-[minmax(0,9rem)_1fr]'}`}>
+                      {!(form.addressNoHouseNumber && form.country === 'United Kingdom') && (
                       <div>
                         <label htmlFor="houseNumber" className="block text-xs font-medium text-gray-300 mb-1">
                           House no. / name {form.country === 'United Kingdom' && !form.addressNoHouseNumber && <span className="text-red-400">*</span>}
@@ -2249,11 +2290,21 @@ export default function CheckoutPage() {
                           type="text"
                           autoComplete="address-line2"
                           value={form.houseNumber}
-                          onChange={e => { setField('houseNumber', e.target.value.slice(0, 40)); setErrors(prev => ({ ...prev, address: '' })); }}
+                          onChange={e => {
+                            const value = e.target.value.slice(0, 40);
+                            setField('houseNumber', value);
+                            setErrors(prev => ({
+                              ...prev,
+                              address: /^0+[a-z]?$/i.test(value.trim())
+                                ? '"0" is not a house number — pick "No house number" above and enter the property name'
+                                : '',
+                            }));
+                          }}
                           placeholder="42"
                           style={inputStyle(!!errors.address && !form.address.trim())}
                         />
                       </div>
+                      )}
                       <div>
                         <label htmlFor="address" className="block text-xs font-medium text-gray-300 mb-1">Street Address <span className="text-red-400">*</span></label>
                         <div className="relative">
@@ -2264,17 +2315,10 @@ export default function CheckoutPage() {
                     </div>
                     {errors.address && <p className="text-red-400 text-xs -mt-2">{errors.address}</p>}
 
-                    {form.country === 'United Kingdom' && (
-                      <label htmlFor="addressNoHouseNumber" className="flex items-start gap-2 text-xs text-gray-400 cursor-pointer">
-                        <input
-                          id="addressNoHouseNumber"
-                          type="checkbox"
-                          checked={form.addressNoHouseNumber}
-                          onChange={e => { setField('addressNoHouseNumber', e.target.checked); setErrors(prev => ({ ...prev, address: '' })); }}
-                          className="mt-0.5 w-4 h-4 accent-emerald-500"
-                        />
-                        <span>{NO_HOUSE_NUMBER_CHECKBOX_LABEL}</span>
-                      </label>
+                    {form.country === 'United Kingdom' && form.addressNoHouseNumber && (
+                      <p className="text-xs text-gray-400 -mt-1">
+                        No house number — make sure the street field contains the full property name (e.g. <span className="text-gray-300">Rose Cottage, High Street</span>) so Royal Mail can find it.
+                      </p>
                     )}
 
                     <div>
