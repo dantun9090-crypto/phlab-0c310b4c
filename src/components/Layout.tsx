@@ -460,6 +460,7 @@ export function Layout({ children }: LayoutProps) {
             getDoc(doc(db, 'customers', user.uid)).then(snap => {
               if (snap.exists()) {
                 setIsAdmin(snap.data()?.isAdmin === true);
+                setIsOrdersStaff(snap.data()?.staffRole === "orders");
                 setIsOrdersStaff(snap.data()?.staffRole === 'orders');
                 setIsVip(snap.data()?.isVip === true);
               }
@@ -472,6 +473,7 @@ export function Layout({ children }: LayoutProps) {
           }
         } else {
           setIsAdmin(false);
+          setIsOrdersStaff(false);
           setIsVip(false);
         }
       });
