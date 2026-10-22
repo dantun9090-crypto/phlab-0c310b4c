@@ -191,11 +191,14 @@ export default function AdminPage() {
   const navigate = useNavigate();
   // Admin gating lives in one shared hook (customers/{uid}.isAdmin).
   // redirectTo: null → keep the in-place "Access Denied" screen below.
-  const { isAdmin, loading: adminLoading, firestoreError } = useAdminGuard({
+  const { isAdmin: isFullAdmin, ordersOnly, loading: adminLoading, firestoreError } = useAdminGuard({
     redirectTo: null,
     onRedirect: (path) => navigate(path),
   });
   const authChecked = !adminLoading;
+  // Packing staff get into the panel but only see the Orders tab.
+  const isAdmin = isFullAdmin || ordersOnly;
+  const ORDERS_ONLY_TABS = ['orders'];
 
   const [ipChecked, setIpChecked] = useState(false);
   const [ipAllowed, setIpAllowed] = useState(true);
@@ -484,6 +487,7 @@ export default function AdminPage() {
 
   const renderTab = () => {
     const tab = (() => {
+      if (ordersOnly) return <OrdersTab />;
       switch (activeTab) {
 
         case 'dashboard': return <DashboardTab />;
@@ -606,11 +610,11 @@ export default function AdminPage() {
     securityaudit: 'Security Audit', fena: 'Fena Payments', payments: 'Payment Gateways', brokkrpay: 'BrokkrPay (Cards)', shopify: 'Shopify', semrush: 'Semrush', seoopportunities: 'SEO Opportunities', backlinkoutreach: 'Backlink Outreach', backlinkchanges: 'Backlink Changes', googleads: 'Google Ads Campaigns', compoundqueries: '/compound Queries', compoundnegativesaudit: 'Compound Negatives Audit', internallinks: 'Internal Links', webvitals: 'Web Vitals',
     royalmail: 'Royal Mail Labels', webhooktest: 'Webhook Test', wallidpreview: 'Wallid Preview', wallidbadges: 'Wallid Badges', wallidbanks: 'Wallid Banks', watchdog: 'Watchdog', blankwatchdog: 'Blank-Page Watchdog', healthmonitor: 'Health Monitor', infrahealth: 'Infrastructure Health', researchincidents: 'Research Incidents', purgeincidents: 'Purge Incidents', swtelemetrydebug: 'SW Telemetry Debug', monitorlog: 'Monitor Log (HEAD/GET)', staleassets: 'Stale Asset 404s', sentryissues: 'Sentry Issues', publishstatus: 'Publish Status', auditreport: 'Audit Report', emergencypurge: 'Emergency Purge', cloudflarestatus: 'Cloudflare Status', taggateway: 'Google Tag Gateway (Ads)', newsletter: 'Newsletter', cloudflareanalytics: 'CF Analytics (Human Traffic)', cfvsanalytics: 'CF vs GA4/Plausible',
   };
-  const activeLabel = TAB_LABELS[activeTab] ?? activeTab;
+  const activeLabel = ordersOnly ? 'Orders' : (TAB_LABELS[activeTab] ?? activeTab);
 
   // Command palette items: every tab + quick actions
   const paletteItems: CommandItem[] = [
-    ...Object.entries(TAB_LABELS).map(([id, label]) => ({
+    ...Object.entries(TAB_LABELS).filter(([id]) => !ordersOnly || ORDERS_ONLY_TABS.includes(id)).map(([id, label]) => ({
       id: `tab:${id}`,
       label,
       group: 'Navigate',
@@ -663,6 +667,7 @@ export default function AdminPage() {
         <AdminSidebar
           activeTab={activeTab}
           setActiveTab={(tab) => setActiveTab(tab as Tab)}
+          allowedTabs={ordersOnly ? ORDERS_ONLY_TABS : undefined}
           collapsed={sidebarCollapsed}
           setCollapsed={setSidebarCollapsed}
         />
@@ -696,6 +701,7 @@ export default function AdminPage() {
             <AdminSidebar
               activeTab={activeTab}
               setActiveTab={(tab) => setActiveTab(tab as Tab)}
+              allowedTabs={ordersOnly ? ORDERS_ONLY_TABS : undefined}
               collapsed={false}
               setCollapsed={() => {}}
               isMobileOpen={isMobileSidebarOpen}

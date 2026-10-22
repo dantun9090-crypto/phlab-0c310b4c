@@ -17,10 +17,17 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/customers/$(request.auth.uid))
         && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.isAdmin == true;
     }
+    // Packing staff: customers/{uid}.staffRole == 'orders'. Server-set only.
+    // May read/update orders (no delete) and send order emails. Nothing else.
+    function isOrdersStaff() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/customers/$(request.auth.uid))
+        && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.staffRole == 'orders';
+    }
     // Prevent users from elevating their own privileges.
     function notTouchingPrivilegedFields() {
       return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-        'isAdmin', 'role', 'isVip',
+        'isAdmin', 'role', 'isVip', 'staffRole',
         // Referral / spend fields are server-derived — never self-writable.
         'referredBy', 'totalSpend', 'referralBalance', 'referralCount',
         'referralRewardClaimed', 'referralCode'
@@ -35,7 +42,8 @@ service cloud.firestore {
       allow create: if isSelf(uid)
                     && !('isAdmin' in request.resource.data)
                     && !('role'    in request.resource.data)
-                    && !('isVip'   in request.resource.data);
+                    && !('isVip'   in request.resource.data)
+                    && !('staffRole' in request.resource.data);
       allow update: if (isSelf(uid) && notTouchingPrivilegedFields()) || isAdmin();
       allow delete: if isAdmin();
     }
@@ -64,15 +72,15 @@ service cloud.firestore {
     }
     match /orders/{orderId} {
       allow create: if false; // server-only — see createOrder server fn
-      allow read:   if isAdmin() || isOrderOwner();
-      allow update: if isAdmin() || (isOrderOwner() && ownerNoteOnlyUpdate());
+      allow read:   if isAdmin() || isOrdersStaff() || isOrderOwner();
+      allow update: if isAdmin() || isOrdersStaff() || (isOrderOwner() && ownerNoteOnlyUpdate());
       allow delete: if isAdmin();
 
       // Payment audit trail — admin panel PaymentTimeline reads via client SDK;
       // server writes bypass rules via service account, but the admin
       // "Force Reconciliation" control also appends here client-side.
       match /paymentTimeline/{eventId} {
-        allow read:   if isAdmin();
+        allow read:   if isAdmin() || isOrdersStaff();
         allow create: if isAdmin();
         allow update, delete: if false;
       }
@@ -198,7 +206,7 @@ service cloud.firestore {
       // by the /api/public/send-mail server route using a service-account
       // credential (which bypasses rules). Client writes are restricted to
       // admins so an attacker cannot use this collection as an open relay.
-      allow create: if isAdmin()
+      allow create: if (isAdmin() || isOrdersStaff())
                     && request.resource.data.to is string
                     && request.resource.data.to.size() > 3
                     && request.resource.data.to.size() < 320
