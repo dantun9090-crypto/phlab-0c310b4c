@@ -17,7 +17,6 @@ import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 
-import { supabase } from "@/integrations/supabase/client";
 import { useVerifyBatchEnabled } from "@/lib/verify-feature";
 import { safeJsonLd } from "@/lib/safe-json-ld";
 import {
@@ -184,6 +183,7 @@ export function VerifyPage() {
   const batchQuery = useLabTestQuery(
     hydrated && verifyEnabled && !!batch,
     async () => {
+      const { supabase } = await import("@/integrations/supabase/client");
       const { data, error } = await supabase
         .from("lab_tests")
         .select(SELECT_COLUMNS)
@@ -198,6 +198,7 @@ export function VerifyPage() {
   const productQuery = useLabTestQuery(
     hydrated && verifyEnabled && !!productKey && !batch,
     async () => {
+      const { supabase } = await import("@/integrations/supabase/client");
       const { data, error } = await supabase
         .from("lab_tests")
         .select(SELECT_COLUMNS)
@@ -245,8 +246,8 @@ export function VerifyPage() {
         <section className="mt-12 rounded-xl border border-slate-800 bg-slate-900 p-5">
           <h2 className="text-lg font-semibold">How verification works</h2>
           <p className="mt-2 text-sm text-slate-300">
-            Each batch of our research materials is analysed by an independent analytical laboratory (Janoshik,
-            Chromate, CuriousChems). Open the report link to confirm the result directly at source.
+            Each batch of our research materials is analysed by an independent laboratory (Janoshik, Chromate,
+            CuriousChems). Open the report link to confirm the result directly at source.
           </p>
           <dl className="mt-4 space-y-3">
             {FAQS.map((f) => (
@@ -399,7 +400,7 @@ function ProductView({ productKey, query }: { productKey: string; query: QueryLi
   return (
     <section>
       <h2 className="text-2xl font-bold">Lab tests: {label}</h2>
-      <p className="mt-1 text-sm text-slate-400">
+      <p className="mt-2 text-sm text-slate-400">
         {tests.length} published test{tests.length === 1 ? "" : "s"}, newest first.
       </p>
       <ul className="mt-4 space-y-3">
@@ -461,6 +462,7 @@ function SearchView() {
       // Escape PostgREST `or()` separators so a stray comma/paren cannot
       // rewrite the filter expression.
       const safe = term.replace(/[,()]/g, " ").trim();
+      const { supabase } = await import("@/integrations/supabase/client");
       const { data, error } = await supabase
         .from("lab_tests")
         .select(SELECT_COLUMNS)

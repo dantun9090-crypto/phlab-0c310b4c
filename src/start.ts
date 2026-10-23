@@ -4,12 +4,9 @@ import { renderErrorPage } from "./lib/error-page";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
-// attachSupabaseAuth intentionally NOT registered. It was a Lovable
-// template leftover whose .client() middleware pulled the ENTIRE
-// @supabase/supabase-js stack (~730 KB of source: auth-js, postgrest,
-// storage, realtime) into the eager client chunk of every page — only to
-// attach a Supabase bearer token to serverFn RPCs. App auth is Firebase;
-// no server function ever consumed a Supabase token.
+// Protected server functions still require a Supabase bearer token, so this
+// middleware stays registered. Its client callback loads the Supabase SDK on
+// demand to keep it out of the eager browser graph; app auth itself is Firebase.
 
 
 // NOTE: prerenderMiddleware intentionally NOT registered here.
@@ -86,6 +83,7 @@ export const startInstance = createStart(() => ({
   functionMiddleware: [attachSupabaseAuth],
   requestMiddleware: [errorMiddleware, publicApiRateLimitMiddleware],
 }));
+
 
 
 
