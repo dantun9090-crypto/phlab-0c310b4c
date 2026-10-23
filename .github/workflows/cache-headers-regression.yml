@@ -35,7 +35,7 @@ permissions:
 jobs:
   cache-headers-regression:
     name: Cache headers must match per-category contract
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -49,11 +49,34 @@ jobs:
         with:
           bun-version: "1.2.21"
 
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
       - name: Install deps
         run: bash scripts/ci-bun-install.sh
 
+      - name: Resolve Playwright version
+        id: pw-version
+        run: |
+          VERSION="$(node -p "require('./node_modules/@playwright/test/package.json').version")"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.pw-version.outputs.version }}-chromium
+          restore-keys: ${{ runner.os }}-playwright-${{ steps.pw-version.outputs.version }}-
+
       - name: Install Playwright chromium
-        run: bunx playwright install --with-deps chromium
+        run: |
+          if [ "${{ steps.pw-cache.outputs.cache-hit }}" = "true" ]; then
+            bunx playwright install-deps chromium
+          else
+            bunx playwright install --with-deps chromium
+          fi
 
       # Give CF/origin a moment after a fresh deploy so we assert on the
       # newly-published edge, not the version still propagating.
