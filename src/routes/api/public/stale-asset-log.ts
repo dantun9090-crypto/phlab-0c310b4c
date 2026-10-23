@@ -46,15 +46,21 @@ export const Route = createFileRoute("/api/public/stale-asset-log")({
 
         const { listDocsAdmin } = await import("@/lib/server/firestore-admin");
         try {
-          const rows = await listDocsAdmin("stale_asset_reports", {
-            orderBy: "createdAt",
-            direction: "DESCENDING",
-            limit: body.limit,
-            where: body.host ? { field: "host", value: body.host } : undefined,
-            rangeFilter: body.since
-              ? { field: "createdAt", gte: new Date(body.since) }
-              : undefined,
-          });
+          // host filter is applied in memory: where(host)+orderBy(createdAt)
+          // needs a composite index that may not be deployed yet.
+          const hostFilter = body.host ?? null;
+          const rows = (
+            await listDocsAdmin("stale_asset_reports", {
+              orderBy: "createdAt",
+              direction: "DESCENDING",
+              limit: hostFilter ? 500 : body.limit,
+              rangeFilter: body.since
+                ? { field: "createdAt", gte: new Date(body.since) }
+                : undefined,
+            })
+          )
+            .filter((r) => (hostFilter ? String(r.host ?? "") === hostFilter : true))
+            .slice(0, body.limit);
 
           // Distinct hosts + assets for filter dropdowns (small).
           const hosts = Array.from(

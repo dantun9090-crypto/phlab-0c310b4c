@@ -79,6 +79,38 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "error_events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "stale_asset_reports",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "host", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fena_webhook_events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "level", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "auditLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "kind", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

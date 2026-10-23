@@ -81,7 +81,18 @@ export const Route = createFileRoute('/api/public/diag/build-state')({
           });
           lastAudit = rows[0] ?? null;
         } catch {
-          /* ignore */
+          // composite index may not be deployed yet — scan latest and filter.
+          try {
+            const rows = await listDocsAdmin('auditLogs', {
+              orderBy: 'createdAt',
+              direction: 'DESCENDING',
+              limit: 100,
+            });
+            lastAudit =
+              rows.find((r) => String(r.kind ?? '') === 'post_publish_auto_invalidation') ?? null;
+          } catch {
+            /* ignore */
+          }
         }
 
         let status: 'ok' | 'stale' | 'unknown';

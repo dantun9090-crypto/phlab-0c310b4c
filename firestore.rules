@@ -304,6 +304,23 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // ---------- error events (server-written, admin-read) ----------
+    // Written by /api/public/error-monitor via firebase-admin (bypasses
+    // rules). Admins read them in the Blank Watchdog tab. Clients never
+    // write directly.
+    match /error_events/{id} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    // ---------- cache purge history (server-written, admin-read) ----------
+    // Written by src/lib/cache-admin.functions.ts via firebase-admin.
+    // Admins read it in the Purge Incidents tab. Clients never write.
+    match /cache_purge_history/{id} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
     // ---------- compound query history (server-written, admin-read) ----------
     // Written by /api/public/hooks/compound-query-history (weekly cron) via
     // the Firebase service account. Stores GSC query snapshots for /compound
