@@ -21,13 +21,39 @@ permissions:
 
 jobs:
   live-orders-api:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 6
     steps:
       - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.2.21"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
       - run: bash scripts/ci-bun-install.sh
-      - run: bunx playwright install --with-deps chromium
+
+      - name: Resolve Playwright version
+        id: pw-version
+        run: |
+          VERSION="$(node -p "require('./node_modules/@playwright/test/package.json').version")"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.pw-version.outputs.version }}-chromium
+          restore-keys: ${{ runner.os }}-playwright-${{ steps.pw-version.outputs.version }}-
+
+      - name: Install Playwright Chromium
+        run: |
+          if [ "${{ steps.pw-cache.outputs.cache-hit }}" = "true" ]; then
+            bunx playwright install-deps chromium
+          else
+            bunx playwright install --with-deps chromium
+          fi
 
       - name: Exercise /api/public/live-orders on the live Worker
         env:
