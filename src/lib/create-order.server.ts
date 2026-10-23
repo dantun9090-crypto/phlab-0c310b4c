@@ -14,7 +14,7 @@ import { z } from 'zod';
 import { validateUkAddressLine } from './uk-address';
 import { computeBundleDiscount } from './bundle-discount';
 import { runValidateCart, type ValidateCartResult } from './cart-validation.server';
-import { addDocAdmin, getDocAdmin, updateDocAdmin } from './server/firestore-admin';
+import { addDocAdmin, adjustProductStockAdmin, getDocAdmin, updateDocAdmin } from './server/firestore-admin';
 import { verifyFirebaseIdToken } from './server/firebase-auth-admin';
 import { invalidateProductCacheFromServer } from './server/cache-invalidation';
 import {
@@ -145,6 +145,14 @@ export interface CreateOrderResult {
   totalAmount: number;
   couponCode: string | null;
   paymentToken: string | null;
+}
+
+/** Short random suffix so two orders placed in the same millisecond never collide. */
+function orderIdSuffix(len = 3): string {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const bytes = new Uint8Array(len);
+  globalThis.crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => alphabet[b % alphabet.length]).join('');
 }
 
 function createPaymentToken(): string {
@@ -278,7 +286,7 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
     }
   }
 
-  const orderId = 'PHP-' + Date.now().toString(36).toUpperCase();
+  const orderId = 'PHP-' + Date.now().toString(36).toUpperCase() + orderIdSuffix();
   // Manual bank transfer reference — invoice style, e.g. INV-2026-MT32LX6S.
   // Derived 1:1 from orderId so it is globally unique and the admin invoice
   // number for the same order always matches this reference exactly.
@@ -477,24 +485,13 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
   const touchedProducts = await Promise.all(
     input.items.map(async (item) => {
       try {
-        const doc = await getDocAdmin('products', item.productId);
-        if (!doc) return null;
-        if (Array.isArray(doc.variants) && doc.variants.length > 0 && item.variantId) {
-          const variants = (doc.variants as Array<Record<string, any>>).map((v) =>
-            v?.id === item.variantId
-              ? { ...v, stock: Math.max(0, Number(v?.stock ?? 0) - item.quantity) }
-              : v,
-          );
-          await updateDocAdmin('products', item.productId, { variants });
-        } else if (typeof doc.stock === 'number') {
-          await updateDocAdmin('products', item.productId, {
-            stock: Math.max(0, doc.stock - item.quantity),
-          });
-        }
-        return {
-          slug: typeof doc.slug === 'string' ? doc.slug : null,
-          category: typeof doc.category === 'string' ? doc.category : null,
-        };
+        // Atomic read-write transaction — two simultaneous orders for the
+        // same variant can no longer lose a decrement (was: plain
+        // read-modify-write with a lost-update race).
+        return await adjustProductStockAdmin(item.productId, {
+          variantId: item.variantId ?? null,
+          quantity: item.quantity,
+        });
       } catch {
         // Swallow — order is already placed, manual reconciliation possible.
         return null;
