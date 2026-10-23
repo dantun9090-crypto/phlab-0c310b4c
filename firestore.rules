@@ -218,6 +218,32 @@ service cloud.firestore {
                     && request.resource.data.message.html.size() < 200000;
       allow read, update, delete: if isAdmin();
     }
+
+    // ---------- contact form enquiries (public create, admin read) ----------
+    // The /contact page persists every enquiry here (durable record; the
+    // email notification goes out separately via /api/public/send-mail).
+    // Anyone may CREATE a validated enquiry; only admins can read. No
+    // client updates or deletes.
+    match /contactMessages/{id} {
+      allow read: if isAdmin();
+      allow create: if request.resource.data.keys().hasOnly(
+                        ['name', 'email', 'subject', 'message', 'createdAt', 'status'])
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.name.size() < 200
+                    && request.resource.data.email is string
+                    && request.resource.data.email.size() > 3
+                    && request.resource.data.email.size() < 320
+                    && request.resource.data.email.matches('.+@.+\\..+')
+                    && request.resource.data.subject is string
+                    && request.resource.data.subject.size() < 300
+                    && request.resource.data.message is string
+                    && request.resource.data.message.size() > 0
+                    && request.resource.data.message.size() < 5000
+                    && request.resource.data.status == 'new'
+                    && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
     match /invoices/{id}        { allow read: if isAdmin(); allow write: if isAdmin(); }
     match /backups/{id}         { allow read: if isAdmin(); allow write: if isAdmin(); }
     match /emailMarketing/{id}  { allow read: if isAdmin(); allow write: if isAdmin(); }
