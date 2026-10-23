@@ -10,7 +10,6 @@ import {
   collection,
   limit as fbLimit,
   onSnapshot,
-  orderBy,
   query,
   Timestamp,
   where,
@@ -45,16 +44,21 @@ export default function BlankWatchdogTab() {
     const q = query(
       collection(db, "error_events"),
       where("type", "==", "blank_watchdog"),
-      orderBy("createdAt", "desc"),
-      fbLimit(100),
+      fbLimit(200),
     );
     const unsub = onSnapshot(
       q,
       (snap) => {
-        const list: BlankWatchdogEvent[] = snap.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as Omit<BlankWatchdogEvent, "id">),
-        }));
+        const list: BlankWatchdogEvent[] = snap.docs
+          .map((d) => ({
+            id: d.id,
+            ...(d.data() as Omit<BlankWatchdogEvent, "id">),
+          }))
+          .sort(
+            (a, b) =>
+              (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0),
+          )
+          .slice(0, 100);
         setEvents(list);
         setLoading(false);
         setError(null);
