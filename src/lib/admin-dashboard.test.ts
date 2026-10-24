@@ -205,6 +205,9 @@ describe('getAdminDashboardAnalytics', () => {
     mocks.getAggregateFromServer.mockImplementation(async () => ({
       data: () => ({ count: 0, revenue: 0 }),
     }));
+    mocks.getCountFromServer.mockImplementation(async () => ({
+      data: () => ({ count: 0 }),
+    }));
 
     const result = await getAdminDashboardAnalytics();
 
