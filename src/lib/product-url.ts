@@ -1,6 +1,10 @@
 import type { SeoProduct } from "./firestore-rest";
 import { SITE_URL } from "./seo-meta";
 
+export function nameToSlug(name: string): string {
+  return name.toLowerCase().replace(/[()[\]]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
 /**
  * Canonical product URL builder.
  *
