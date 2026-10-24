@@ -39,6 +39,17 @@ describe("logSecurityEvent", () => {
     });
   });
 
+  it("keeps an explicitly anonymous actor instead of using the current user", async () => {
+    logSecurityEvent({ type: "admin_logout", actorUid: null });
+
+    await vi.waitFor(() => {
+      expect(mocks.addDoc).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ uid: null }),
+      );
+    });
+  });
+
   it("falls back to the current user when no actor UID is provided", async () => {
     logSecurityEvent({ type: "password_changed" });
 
