@@ -7,7 +7,6 @@
  */
 import { useEffect, useState } from 'react';
 import { ShieldCheck, ExternalLink } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { toShopProductKey, verifyProductUrl } from '@/lib/lab-tests';
 import { useVerifyBatchEnabled } from '@/lib/verify-feature';
 
@@ -26,6 +25,7 @@ export function LabTestBadge({ productName }: Props) {
     let alive = true;
     void (async () => {
       try {
+        const { supabase } = await import('@/integrations/supabase/client');
         const { count: c, error } = await supabase
           .from('lab_tests')
           .select('id', { count: 'exact', head: true })

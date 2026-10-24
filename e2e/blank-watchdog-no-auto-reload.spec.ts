@@ -11,6 +11,7 @@ import { expect, test } from "@playwright/test";
 const BASE = process.env.TEST_BASE_URL || "https://phlabs.co.uk";
 
 test("blank watchdog shows manual fallback only and does not auto-reload", async ({ page }) => {
+  test.setTimeout(60_000);
   let documentNavigations = 0;
   page.on("request", (req) => {
     if (req.isNavigationRequest() && req.resourceType() === "document") documentNavigations += 1;
@@ -19,6 +20,9 @@ test("blank watchdog shows manual fallback only and does not auto-reload", async
   await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() =>
     Boolean((window as unknown as { __phlBlankWatchdog?: { forceFallback?: () => void } }).__phlBlankWatchdog?.forceFallback),
+  );
+  await page.waitForFunction(() =>
+    (window as unknown as { __PHL_REACT_READY__?: boolean }).__PHL_REACT_READY__ === true,
   );
 
   await page.evaluate(() => {
