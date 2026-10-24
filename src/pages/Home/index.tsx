@@ -886,16 +886,20 @@ export default function HomePage() {
         </Suspense>
       )}
 
-      {/* Mid advert slot — reserves card banner height (h-64 + py-6) to prevent CLS. */}
-      <div
-        className="container mx-auto px-6 py-6"
-        style={{ minHeight: 'clamp(280px, 24vw, 320px)' }}
-        data-advert-reserve="homepage_mid"
-      >
-        <Suspense fallback={<div aria-hidden="true" style={{ minHeight: 256 }} />}>
-          <MarketingAdvertSlot adverts={adverts} placement="homepage_mid" className="" variant="card" />
-        </Suspense>
-      </div>
+      {/* Mid advert slot — rendered only when a mid advert actually exists.
+          It sits below the fold, so mounting late causes no visible shift;
+          the old always-on reserve left a ~280px empty gap with no advert. */}
+      {adverts.some((a: any) => a.placement === 'homepage_mid') && (
+        <div
+          className="container mx-auto px-6 py-6"
+          style={{ minHeight: 'clamp(280px, 24vw, 320px)' }}
+          data-advert-reserve="homepage_mid"
+        >
+          <Suspense fallback={<div aria-hidden="true" style={{ minHeight: 256 }} />}>
+            <MarketingAdvertSlot adverts={adverts} placement="homepage_mid" className="" variant="card" />
+          </Suspense>
+        </div>
+      )}
 
 
 
