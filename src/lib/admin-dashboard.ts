@@ -31,7 +31,6 @@ export async function getAdminDashboardAnalytics(): Promise<AdminDashboardAnalyt
   const firebase = await import('@/lib/firebase');
   const firestore = await import('firebase/firestore');
   const {
-    count,
     getAggregateFromServer,
     getCountFromServer,
     sum,
@@ -63,8 +62,10 @@ export async function getAdminDashboardAnalytics(): Promise<AdminDashboardAnalyt
   );
 
   const [
-    allOrdersAggregate,
-    cancelledOrdersAggregate,
+    allOrdersRevenueAggregate,
+    cancelledOrdersRevenueAggregate,
+    allOrdersCount,
+    cancelledOrdersCount,
     pendingCount,
     processingCount,
     shippedCount,
@@ -73,8 +74,10 @@ export async function getAdminDashboardAnalytics(): Promise<AdminDashboardAnalyt
     recentOrderSnapshots,
     products,
   ] = await Promise.all([
-    getAggregateFromServer(allOrdersQuery, { count: count(), revenue: sum('totalAmount') }),
-    getAggregateFromServer(cancelledOrdersQuery, { count: count(), revenue: sum('totalAmount') }),
+    getAggregateFromServer(allOrdersQuery, { revenue: sum('totalAmount') }),
+    getAggregateFromServer(cancelledOrdersQuery, { revenue: sum('totalAmount') }),
+    getCountFromServer(allOrdersQuery),
+    getCountFromServer(cancelledOrdersQuery),
     getCountFromServer(statusCountQuery('pending')),
     getCountFromServer(statusCountQuery('processing')),
     getCountFromServer(statusCountQuery('shipped')),
@@ -84,10 +87,13 @@ export async function getAdminDashboardAnalytics(): Promise<AdminDashboardAnalyt
     getAllProducts(),
   ]);
 
-  const allOrdersData = allOrdersAggregate.data();
-  const cancelledOrdersData = cancelledOrdersAggregate.data();
-  const totalOrders = Math.max(0, allOrdersData.count - cancelledOrdersData.count);
-  const gmv = allOrdersData.revenue - cancelledOrdersData.revenue;
+  const allOrdersRevenue = allOrdersRevenueAggregate.data().revenue;
+  const cancelledOrdersRevenue = cancelledOrdersRevenueAggregate.data().revenue;
+  const totalOrders = Math.max(
+    0,
+    allOrdersCount.data().count - cancelledOrdersCount.data().count,
+  );
+  const gmv = allOrdersRevenue - cancelledOrdersRevenue;
   const totalRegisteredCustomers = customerCount.data().count;
   const nonCustomerUsers = roleDocs.docs.filter((userDoc) => Boolean(userDoc.data().role)).length;
   const totalUsers = Math.max(0, totalRegisteredCustomers - nonCustomerUsers);

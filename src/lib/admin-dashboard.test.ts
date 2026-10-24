@@ -36,7 +36,6 @@ vi.mock('@/lib/firebase', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
-  count: () => ({ type: 'count' }),
   sum: (field: string) => ({ type: 'sum', field }),
   getAggregateFromServer: mocks.getAggregateFromServer,
   getCountFromServer: mocks.getCountFromServer,
@@ -106,8 +105,13 @@ describe('getAdminDashboardAnalytics', () => {
       constraints: Array<{ value: unknown }>;
     }) => {
       const status = firestoreQuery.constraints[0]?.value;
-      const counts: Record<string, number> = { pending: 3, processing: 4, shipped: 5 };
-      return { data: () => ({ count: firestoreQuery.reference.collectionName === 'customers' ? mocks.state.customerCount : counts[String(status)] }) };
+      const counts: Record<string, number> = { cancelled: 2, pending: 3, processing: 4, shipped: 5 };
+      const result = firestoreQuery.reference.collectionName === 'customers'
+        ? mocks.state.customerCount
+        : firestoreQuery.constraints.length === 0
+          ? 20
+          : (counts[String(status)] ?? 0);
+      return { data: () => ({ count: result }) };
     });
   });
 
@@ -174,6 +178,26 @@ describe('getAdminDashboardAnalytics', () => {
     expect(mocks.state.orderQueries.every((firestoreQuery) =>
       firestoreQuery.constraints.some((clause) => clause.operator === '<'),
     )).toBe(true);
+  });
+
+  it('counts orders omitted by revenue sums when totalAmount is missing', async () => {
+    mocks.getAggregateFromServer.mockImplementation(async () => ({
+      data: () => ({ revenue: 0 }),
+    }));
+    mocks.getCountFromServer.mockImplementation(async (firestoreQuery: {
+      reference: { collectionName: string };
+      constraints: Array<{ value: unknown }>;
+    }) => {
+      const result = firestoreQuery.reference.collectionName === 'orders'
+        && firestoreQuery.constraints.length === 0 ? 1 : 0;
+      return { data: () => ({ count: result }) };
+    });
+
+    const result = await getAdminDashboardAnalytics();
+
+    expect(result.totalOrders).toBe(1);
+    expect(result.gmv).toBe(0);
+    expect(result.avgOrderValue).toBe(0);
   });
 
   it('returns zero conversion and order value when there are no registered customers or orders', async () => {
