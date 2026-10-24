@@ -181,9 +181,28 @@ export const PRODUCT_SEO_OVERRIDES: Record<string, ProductSeoOverride> = {
   // "ghk-cu uk" 90/mo · KD 11 — easy win
   // Semrush UK typo cluster: ~7k/mo combined (ghkcu 5.4k, ghk 1.6k), near-zero competition
   "ghk-cu-research-peptide": {
-    title: "GHK-Cu UK — Copper Tripeptide Research | PH Labs",
+    // Semrush UK 2026-10-24: "ghk cu" 18.1k, "ghk-cu" 18.1k, "ghkcu" 12.1k, "ghk cu peptide" 12.1k — not ranking yet
+    title: "GHK-Cu Peptide UK (GHK Cu) — Research Grade | PH Labs",
     description:
-      "GHK-Cu (copper tripeptide) UK research reagent. HPLC ≥99% purity, batch CoA included. For laboratory research only — not for human consumption.",
+      "GHK-Cu (GHK Cu) copper tripeptide UK. HPLC ≥99% purity, batch CoA, UK dispatch. For research use only. Not for human consumption.",
+    faqs: [
+      {
+        q: "What is GHK-Cu (GHK Cu)?",
+        a: "GHK-Cu, also written GHK Cu or GHKCu, is the copper(II) complex of the tripeptide glycyl-L-histidyl-L-lysine (CAS 49557-75-7). It is supplied by PH Labs as a lyophilised research reagent for in-vitro laboratory study. For Research Use Only. Not for Human Consumption.",
+      },
+      {
+        q: "Where can I buy GHK-Cu peptide in the UK?",
+        a: "PH Labs supplies GHK-Cu research peptide from the UK with HPLC-verified ≥99% purity and a batch Certificate of Analysis. Orders are dispatched from the UK and sold only to researchers aged 18+.",
+      },
+      {
+        q: "Is GHK-Cu the same as copper peptide or copper tripeptide?",
+        a: "Yes. 'Copper peptide', 'copper tripeptide-1' and 'GHK copper' are common names for the same GHK-Cu complex. Our listing covers the research-grade lyophilised compound only.",
+      },
+      {
+        q: "How is GHK-Cu stored in the laboratory?",
+        a: "Lyophilised GHK-Cu is typically kept sealed, dry and protected from light at −20 °C for long-term storage. Refer to the batch CoA for handling information.",
+      },
+    ],
     misspellings: [
       "ghkcu",
       "ghk",
