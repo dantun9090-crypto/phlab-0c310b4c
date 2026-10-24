@@ -8,7 +8,7 @@ import {
 import { motion } from 'framer-motion';
 import { db, collection, query, orderBy, limit, onSnapshot } from '@/lib/firebase';
 
-import { getAdminAnalytics } from '@/lib/firebase';
+import { getAdminDashboardAnalytics, type AdminDashboardAnalytics } from '@/lib/admin-dashboard';
 import { toDateSafe } from '@/lib/to-date';
 
 interface ActivityItem {
@@ -87,7 +87,7 @@ const MiniBar = ({ data }: { data: { label: string; revenue: number }[] }) => {
 };
 
 export default function DashboardTab() {
-  const [analytics, setAnalytics] = useState<any>(null);
+  const [analytics, setAnalytics] = useState<AdminDashboardAnalytics | null>(null);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -95,7 +95,7 @@ export default function DashboardTab() {
 
   const fetchAnalytics = useCallback(async () => {
     try {
-      const data = await getAdminAnalytics();
+      const data = await getAdminDashboardAnalytics();
       setAnalytics(data);
     } catch (e) {
       console.error(e);
@@ -108,7 +108,7 @@ export default function DashboardTab() {
   useEffect(() => { fetchAnalytics(); }, [fetchAnalytics]);
 
   useEffect(() => {
-    const q = query(collection(db, 'orders'), orderBy('orderDate', 'desc'), limit(20));
+    const q = query(collection(db, 'orders'), orderBy('orderDate', 'desc'), limit(8));
     const unsub = onSnapshot(q, (snap) => {
       const items: ActivityItem[] = snap.docs.slice(0, 8).map(d => {
         const data = d.data();
@@ -167,28 +167,25 @@ export default function DashboardTab() {
   const stats = [
     {
       title: 'Total Revenue', icon: PoundSterling,
-      value: analytics ? fmt(analytics.gmv ?? analytics.totalRevenue ?? 0) : '—',
+      value: analytics ? fmt(analytics.gmv) : '—',
       sub: 'all time',
-      trend: analytics?.revenueGrowth,
       accent: 'bg-blue-600',
     },
     {
       title: 'Orders', icon: ShoppingCart,
       value: analytics ? String(analytics.totalOrders ?? 0) : '—',
       sub: 'total orders',
-      trend: analytics?.ordersGrowth,
       accent: 'bg-blue-600',
     },
     {
       title: 'Customers', icon: Users,
-      value: analytics ? String(analytics.totalUsers ?? analytics.totalCustomers ?? 0) : '—',
+      value: analytics ? String(analytics.totalUsers) : '—',
       sub: 'registered',
-      trend: analytics?.customersGrowth,
       accent: 'bg-blue-700',
     },
     {
       title: 'Products', icon: Package,
-      value: analytics ? String(analytics.allProducts?.length ?? analytics.totalProducts ?? 0) : '—',
+      value: analytics ? String(analytics.totalProducts ?? 0) : '—',
       sub: `${analytics?.lowStockProducts?.length ?? analytics?.lowStockCount ?? 0} low stock`,
       accent: 'bg-cyan-600',
     },
@@ -273,7 +270,7 @@ export default function DashboardTab() {
         <div className={`${card} ${cardPad} flex flex-col gap-3`}>
           <h3 className="text-[#c8daf0] font-semibold text-sm mb-1">Quick Stats</h3>
           {[
-            { label: 'Avg. Order Value', value: analytics ? fmt((analytics.totalRevenue ?? 0) / Math.max(analytics.totalOrders ?? 1, 1)) : '—', icon: ArrowUpRight, color: 'text-emerald-400' },
+            { label: 'Avg. Order Value', value: analytics ? fmt(analytics.avgOrderValue ?? 0) : '—', icon: ArrowUpRight, color: 'text-emerald-400' },
             { label: 'Pending Orders', value: String(analytics?.pendingOrders ?? 0), icon: Zap, color: 'text-amber-400' },
             { label: 'Low Stock Items', value: String(analytics?.lowStockCount ?? 0), icon: AlertTriangle, color: 'text-red-400' },
           ].map(item => (
@@ -379,7 +376,7 @@ export default function DashboardTab() {
             <h3 className="text-[#c8daf0] font-semibold text-sm">Low Stock</h3>
             {(analytics?.lowStockProducts?.length ?? 0) > 0 && (
               <span className="ml-auto bg-red-500/15 text-red-400 text-[10px] px-2 py-0.5 rounded-full border border-red-500/25 font-semibold">
-                {analytics.lowStockProducts.length}
+                {analytics?.lowStockProducts.length}
               </span>
             )}
           </div>
@@ -396,7 +393,7 @@ export default function DashboardTab() {
             </div>
           ) : (
             <div className="space-y-2">
-              {analytics.lowStockProducts.map((p: any) => (
+              {analytics?.lowStockProducts.map((p) => (
                 <div key={p.id} className="flex items-center justify-between px-3 py-2 bg-red-500/[0.06] border border-red-500/[0.12] rounded-xl">
                   <span className="text-[#c8daf0] text-xs font-medium truncate mr-2">{p.name}</span>
                   <span className="shrink-0 text-red-400 text-xs font-bold">{p.stock} left</span>

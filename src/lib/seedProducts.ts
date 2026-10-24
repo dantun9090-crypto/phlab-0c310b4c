@@ -1,18 +1,11 @@
 import { collection, addDoc, getDocs, deleteDoc, doc, Timestamp, updateDoc } from 'firebase/firestore';
 import { db } from './firebase';
+import { nameToSlug } from './product-url';
+export { nameToSlug } from './product-url';
 
 const PRODUCTS_COL = 'product_stock';
 
 const IMG_VIAL = 'https://cdn.wegic.ai/assets/onepage/agent/images/1773194743033.jpg?imageMogr2/format/webp';
-
-/** Convert a product name to a URL-safe slug */
-export function nameToSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[()[\]]/g, '')         // remove brackets
-    .replace(/[^a-z0-9]+/g, '-')    // non-alphanumeric → hyphen
-    .replace(/^-+|-+$/g, '');       // trim leading/trailing hyphens
-}
 
 const INITIAL_PRODUCTS = [
   // ─── Retatrutide ───────────────────────────────────────────────
