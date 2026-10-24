@@ -7,7 +7,7 @@ export const attachSupabaseAuth = createMiddleware({ type: 'function' }).client(
   async ({ next }) => {
     // Preserve this deferred import on regeneration so Supabase stays out of the
     // initial browser graph; load it only when a server function needs the session.
-    const { supabase } = await import('./client')
+    const { supabase } = await import("./client");
     const { data } = await supabase.auth.getSession()
     const token = data.session?.access_token
     return next({
