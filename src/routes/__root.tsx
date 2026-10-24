@@ -306,7 +306,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "PH Labs UK — HPLC-Verified Research Peptides" },
       { property: "og:description", content: "UK supplier of HPLC-verified research peptides. Lab-tested purity, transparent COAs, and fast UK dispatch for research professionals. For research use only." },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://phlabs.co.uk/" },
       { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/df310206-836b-4b3a-b755-a2a78b9ddd1a" },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
