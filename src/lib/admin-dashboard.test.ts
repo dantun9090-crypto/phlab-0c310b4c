@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getAdminDashboardAnalytics } from './admin-dashboard';
 
@@ -186,5 +187,22 @@ describe('getAdminDashboardAnalytics', () => {
     expect(result.gmv).toBe(0);
     expect(result.conversionRate).toBe('0');
     expect(result.avgOrderValue).toBe(0);
+  });
+});
+
+describe('admin dashboard Firestore indexes', () => {
+  it('covers the cancelled-order count and revenue aggregation', () => {
+    const config = JSON.parse(
+      readFileSync(new URL('../../firestore.indexes.json', import.meta.url), 'utf8'),
+    ) as { indexes: Array<Record<string, unknown>> };
+
+    expect(config.indexes).toContainEqual({
+      collectionGroup: 'orders',
+      queryScope: 'COLLECTION',
+      fields: [
+        { fieldPath: 'status', order: 'ASCENDING' },
+        { fieldPath: 'totalAmount', order: 'ASCENDING' },
+      ],
+    });
   });
 });
