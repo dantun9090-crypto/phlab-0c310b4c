@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, Component, ReactNode, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { logoutUser } from '@/lib/firebase';
+import { auth, logoutUser } from '@/lib/firebase';
 import { useAdminGuard } from '@/hooks/useAdminGuard';
 
 import { checkAdminIpAllowed } from '@/lib/admin-ip-gate.functions';
@@ -337,7 +337,12 @@ export default function AdminPage() {
 
     const doLogout = async () => {
       clearAll();
-      logSecurityEvent({ type: 'admin_idle_logout', route: '/admin', message: 'idle-15m' });
+      logSecurityEvent({
+        type: 'admin_idle_logout',
+        route: '/admin',
+        message: 'idle-15m',
+        actorUid: auth.currentUser?.uid,
+      });
       try { await logoutUser(); } catch { /* ignore */ }
       navigate('/login');
     };

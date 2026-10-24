@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { db, doc, getDoc } from '@/lib/firebase';
 import { markPrerenderReady } from '@/lib/prerender-ready';
 
 interface SEOData {
@@ -182,6 +181,7 @@ export function useSEO(pageKey: string, fallback: SEOData) {
     // Then asynchronously merge Firestore overrides if present.
     (async () => {
       try {
+        const { db, doc, getDoc } = await import("@/lib/firebase");
         const snap = await getDoc(doc(db, 'settings', 'seoPages'));
         if (!mounted || !snap.exists()) return;
         const allPages = snap.data();

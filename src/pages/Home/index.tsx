@@ -26,7 +26,7 @@ import { excludeVipProducts } from '@/lib/vip-visibility';
 
 // Firebase is dynamically imported below to keep it off the home-route critical chunk.
 const loadFirebase = () => import('@/lib/firebase');
-import { nameToSlug } from '@/lib/seedProducts';
+import { nameToSlug } from '@/lib/product-url';
 import { markPrerenderPending, markPrerenderReady, flipPrerenderReadyWhenRendered } from '@/lib/prerender-ready';
 import { sendPublicMail } from '@/lib/sendPublicMail';
 import { cfImgProps } from '@/lib/cf-image';

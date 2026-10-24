@@ -70,6 +70,9 @@ export default defineConfig({
             // ~540 KB firebase chunk to load + execute on EVERY page.
             // Give tslib its own tiny chunk instead.
             if (id.includes("/tslib/")) return "vendor-tslib";
+            // Keep the SDK in its own async chunk: auth-attacher imports it only
+            // when a server function needs a session, not during initial render.
+            if (id.includes("/@supabase/")) return "vendor-supabase";
             if (id.includes("/firebase/") || id.includes("@firebase/")) return "vendor-firebase";
             if (id.includes("/@sentry/") || id.includes("/sentry-")) return "vendor-sentry";
             if (id.includes("/recharts/") || id.includes("/d3-")) return "vendor-charts";

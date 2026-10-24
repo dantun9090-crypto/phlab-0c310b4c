@@ -4,9 +4,6 @@
  *
  * Writes to Firestore `securityEvents` collection. Fire-and-forget; never throws.
  */
-import { db, auth } from '@/lib/firebase';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-
 export type SecurityEventType =
   | 'error_boundary'
   | 'login_lockout'
@@ -23,6 +20,7 @@ export interface SecurityEventInput {
   errorType?: string | null;
   message?: string | null;
   meta?: Record<string, unknown>;
+  actorUid?: string | null;
 }
 
 function safe(s: string | null | undefined, max: number): string | null {
@@ -34,23 +32,27 @@ export function logSecurityEvent(input: SecurityEventInput): void {
   try {
     const route = input.route ?? (typeof window !== 'undefined' ? window.location.pathname : null);
     const userAgent = typeof navigator !== 'undefined' ? safe(navigator.userAgent, 300) : null;
-    const uid = auth.currentUser?.uid ?? null;
+    void Promise.all([import("@/lib/firebase"), import("firebase/firestore")])
+      .then(([firebase, firestore]) => {
+        const payload = {
+          type: input.type,
+          route: safe(route, 300),
+          userAgent,
+          uid:
+            input.actorUid !== undefined
+              ? input.actorUid
+              : (firebase.auth.currentUser?.uid ?? null),
+          errorType: safe(input.errorType ?? null, 120),
+          message: safe(input.message ?? null, 500),
+          meta: input.meta ?? null,
+          // IP is captured server-side via the dedicated server function below
+          // when the caller passes it; here client cannot know its public IP.
+          createdAt: firestore.serverTimestamp(),
+        };
 
-    const payload = {
-      type: input.type,
-      route: safe(route, 300),
-      userAgent,
-      uid,
-      errorType: safe(input.errorType ?? null, 120),
-      message: safe(input.message ?? null, 500),
-      meta: input.meta ?? null,
-      // IP is captured server-side via the dedicated server function below
-      // when the caller passes it; here client cannot know its public IP.
-      createdAt: serverTimestamp(),
-    };
-
-    // Fire-and-forget — never block on the write
-    addDoc(collection(db, 'securityEvents'), payload).catch(() => {});
+        return firebase.addDoc(firebase.collection(firebase.db, "securityEvents"), payload);
+      })
+      .catch(() => {});
   } catch {
     /* logging must never break the app */
   }

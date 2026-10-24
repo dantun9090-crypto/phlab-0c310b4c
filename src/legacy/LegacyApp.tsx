@@ -7,17 +7,6 @@ import { SSRDataProvider, type SSRBanner } from "./SSRDataContext";
 import { LegacySsrShell } from "./LegacySsrShell";
 import "@/legacy-styles.css";
 
-// Kick off the Home chunk download at module-eval time (parallel with
-// LegacyApp's own mount). Without this the waterfall is:
-//   LegacyApp chunk → LegacyApp mount → RouterProvider matches "/" →
-//   THEN fetch @/pages/Home chunk → parse → first render.
-// That waterfall was the ~2.5 s LegacyApp→HomePage gap in perf logs.
-// Firing the import here overlaps the Home chunk fetch with LegacyApp
-// rendering, so by the time the router matches "/" the module is ready.
-if (typeof window !== "undefined" && window.location.pathname === "/") {
-  void import("@/pages/Home");
-}
-
 let browserRouter: ReturnType<typeof createLegacyRouter> | null = null;
 
 export function primeLegacyRouter() {
@@ -54,17 +43,6 @@ export default function LegacyApp({
     const onVis = () => { if (document.visibilityState === 'hidden') wasHidden = true; };
     if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVis);
     primeLegacyRouter();
-
-    // Preload HomePage lazy children in parallel with LegacyApp mount so they
-    // don't waterfall after HomePage's own chunk resolves. Fire-and-forget:
-    // Vite resolves these to the built chunk URLs and the browser downloads
-    // them alongside the LegacyApp chunk. When HomePage's React.lazy() reads
-    // the same modules the promise is already fulfilled — no extra RTT.
-    if (typeof window !== 'undefined' && window.location.pathname === '/') {
-      void import('@/components/AnimatedBackground');
-      void import('@/components/NewsletterPopup');
-      void import('@/components/MarketingAdvertSlot');
-    }
 
     if (!mounted) setMounted(true);
     requestAnimationFrame(() => {
