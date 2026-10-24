@@ -40,7 +40,7 @@ describe("logSecurityEvent", () => {
   });
 
   it("keeps an explicitly anonymous actor instead of using the current user", async () => {
-    logSecurityEvent({ type: "admin_logout", actorUid: null });
+    logSecurityEvent({ type: "admin_idle_logout", actorUid: null });
 
     await vi.waitFor(() => {
       expect(mocks.addDoc).toHaveBeenCalledWith(
