@@ -9,6 +9,17 @@ type LegacyAppComponent = ComponentType<{
   initialBanner?: SSRBanner | null;
 }>;
 
+// Start the browser downloads during module evaluation instead of waiting for
+// the first mount. SSR stays untouched, while safeDynamicImport below remains
+// responsible for retries, recovery and component state. The catch handlers
+// only prevent an unhandled rejection from this optional warm-up.
+if (typeof window !== "undefined") {
+  void import("./LegacyApp").catch(() => undefined);
+  if (window.location.pathname === "/") {
+    void import("@/pages/Home").catch(() => undefined);
+  }
+}
+
 export default function LegacyClientApp({
   initialPath = "/",
   initialBanner = null,

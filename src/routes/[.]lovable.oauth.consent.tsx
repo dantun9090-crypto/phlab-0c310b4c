@@ -1,6 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 type OAuthResult = { redirect_url?: string; redirect_to?: string; client?: { name?: string } | null };
 
@@ -10,7 +9,8 @@ type OAuthNamespace = {
   denyAuthorization: (id: string) => Promise<{ data: OAuthResult | null; error: { message: string } | null }>;
 };
 
-function oauth(): OAuthNamespace {
+async function oauth(): Promise<OAuthNamespace> {
+  const { supabase } = await import("@/integrations/supabase/client");
   return (supabase.auth as unknown as { oauth: OAuthNamespace }).oauth;
 }
 
@@ -24,10 +24,11 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
     const authorizationId = new URLSearchParams(location.search).get("authorization_id");
     if (!authorizationId) throw new Error("Missing authorization_id");
 
+    const { supabase } = await import("@/integrations/supabase/client");
     const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData.session) return { needsSignIn: true as const, details: null };
 
-    const { data, error } = await oauth().getAuthorizationDetails(authorizationId);
+    const { data, error } = await (await oauth()).getAuthorizationDetails(authorizationId);
     if (error) throw new Error(error.message);
 
     const immediate = data?.redirect_url ?? data?.redirect_to;
@@ -63,6 +64,7 @@ function SignIn() {
   async function magicLink() {
     setBusy(true);
     setError(null);
+    const { supabase } = await import("@/integrations/supabase/client");
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: { emailRedirectTo: window.location.href },
@@ -75,6 +77,7 @@ function SignIn() {
   async function google() {
     setBusy(true);
     setError(null);
+    const { supabase } = await import("@/integrations/supabase/client");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: window.location.href },
@@ -142,9 +145,10 @@ function Consent() {
   async function decide(approve: boolean) {
     setBusy(true);
     setError(null);
+    const oauthClient = await oauth();
     const { data: result, error } = approve
-      ? await oauth().approveAuthorization(authorization_id)
-      : await oauth().denyAuthorization(authorization_id);
+      ? await oauthClient.approveAuthorization(authorization_id)
+      : await oauthClient.denyAuthorization(authorization_id);
     if (error) {
       setBusy(false);
       setError(error.message);
