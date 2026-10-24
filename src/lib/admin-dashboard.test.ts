@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getAdminDashboardAnalytics } from './admin-dashboard';
 
@@ -193,7 +194,7 @@ describe('getAdminDashboardAnalytics', () => {
 describe('admin dashboard Firestore indexes', () => {
   it('covers the cancelled-order count and revenue aggregation', () => {
     const config = JSON.parse(
-      readFileSync(new URL('../../firestore.indexes.json', import.meta.url), 'utf8'),
+      readFileSync(resolve(process.cwd(), 'firestore.indexes.json'), 'utf8'),
     ) as { indexes: Array<Record<string, unknown>> };
 
     expect(config.indexes).toContainEqual({
