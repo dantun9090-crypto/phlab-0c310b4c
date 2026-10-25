@@ -14,7 +14,6 @@ import { z } from "zod";
 
 import { addDocAdmin, findDocByFieldAdmin, getDocAdmin } from "@/lib/server/firestore-admin";
 import { buildContactFormEmail } from "@/templates/contactFormEmail";
-import { protocolLibraryEmail } from "@/templates/protocolLibraryEmail";
 import { buildProfessionalInvoiceEmail } from "@/templates/professionalInvoiceEmail";
 
 const INTERNAL_RECIPIENT = "info@phlabs.co.uk";
