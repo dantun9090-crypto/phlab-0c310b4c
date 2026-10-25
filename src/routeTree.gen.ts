@@ -119,6 +119,7 @@ import { Route as ApiPublicNowpaymentsWebhookRouteImport } from './routes/api/pu
 import { Route as ApiPublicPeptidepayWebhookRouteImport } from './routes/api/public/peptidepay-webhook'
 import { Route as ApiPublicPostPublishCheckRouteImport } from './routes/api/public/post-publish-check'
 import { Route as ApiPublicPostPublishStatusRouteImport } from './routes/api/public/post-publish-status'
+import { Route as ApiPublicProtocolConfirmRouteImport } from './routes/api/public/protocol-confirm'
 import { Route as ApiPublicPublishHoldRouteImport } from './routes/api/public/publish-hold'
 import { Route as ApiPublicPublishStatusRouteImport } from './routes/api/public/publish-status'
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
@@ -732,6 +733,12 @@ const ApiPublicPostPublishStatusRoute =
     path: '/api/public/post-publish-status',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicProtocolConfirmRoute =
+  ApiPublicProtocolConfirmRouteImport.update({
+    id: '/api/public/protocol-confirm',
+    path: '/api/public/protocol-confirm',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPublishHoldRoute = ApiPublicPublishHoldRouteImport.update({
   id: '/api/public/publish-hold',
   path: '/api/public/publish-hold',
@@ -1055,6 +1062,7 @@ export interface FileRoutesByFullPath {
   '/api/public/peptidepay-webhook': typeof ApiPublicPeptidepayWebhookRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/post-publish-status': typeof ApiPublicPostPublishStatusRoute
+  '/api/public/protocol-confirm': typeof ApiPublicProtocolConfirmRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
   '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -1203,6 +1211,7 @@ export interface FileRoutesByTo {
   '/api/public/peptidepay-webhook': typeof ApiPublicPeptidepayWebhookRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/post-publish-status': typeof ApiPublicPostPublishStatusRoute
+  '/api/public/protocol-confirm': typeof ApiPublicProtocolConfirmRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
   '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -1354,6 +1363,7 @@ export interface FileRoutesById {
   '/api/public/peptidepay-webhook': typeof ApiPublicPeptidepayWebhookRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/post-publish-status': typeof ApiPublicPostPublishStatusRoute
+  '/api/public/protocol-confirm': typeof ApiPublicProtocolConfirmRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
   '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -1505,6 +1515,7 @@ export interface FileRouteTypes {
     | '/api/public/peptidepay-webhook'
     | '/api/public/post-publish-check'
     | '/api/public/post-publish-status'
+    | '/api/public/protocol-confirm'
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
@@ -1653,6 +1664,7 @@ export interface FileRouteTypes {
     | '/api/public/peptidepay-webhook'
     | '/api/public/post-publish-check'
     | '/api/public/post-publish-status'
+    | '/api/public/protocol-confirm'
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
@@ -1803,6 +1815,7 @@ export interface FileRouteTypes {
     | '/api/public/peptidepay-webhook'
     | '/api/public/post-publish-check'
     | '/api/public/post-publish-status'
+    | '/api/public/protocol-confirm'
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
@@ -1936,6 +1949,7 @@ export interface RootRouteChildren {
   ApiPublicPeptidepayWebhookRoute: typeof ApiPublicPeptidepayWebhookRoute
   ApiPublicPostPublishCheckRoute: typeof ApiPublicPostPublishCheckRoute
   ApiPublicPostPublishStatusRoute: typeof ApiPublicPostPublishStatusRoute
+  ApiPublicProtocolConfirmRoute: typeof ApiPublicProtocolConfirmRoute
   ApiPublicPublishHoldRoute: typeof ApiPublicPublishHoldRoute
   ApiPublicPublishStatusRoute: typeof ApiPublicPublishStatusRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
@@ -2746,6 +2760,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPostPublishStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/protocol-confirm': {
+      id: '/api/public/protocol-confirm'
+      path: '/api/public/protocol-confirm'
+      fullPath: '/api/public/protocol-confirm'
+      preLoaderRoute: typeof ApiPublicProtocolConfirmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/publish-hold': {
       id: '/api/public/publish-hold'
       path: '/api/public/publish-hold'
@@ -3199,6 +3220,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicPeptidepayWebhookRoute: ApiPublicPeptidepayWebhookRoute,
   ApiPublicPostPublishCheckRoute: ApiPublicPostPublishCheckRoute,
   ApiPublicPostPublishStatusRoute: ApiPublicPostPublishStatusRoute,
+  ApiPublicProtocolConfirmRoute: ApiPublicProtocolConfirmRoute,
   ApiPublicPublishHoldRoute: ApiPublicPublishHoldRoute,
   ApiPublicPublishStatusRoute: ApiPublicPublishStatusRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,

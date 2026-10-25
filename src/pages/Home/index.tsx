@@ -1187,7 +1187,7 @@ export default function HomePage() {
                     </p>
                     <p className="text-sm mb-5" style={{ color: '#7a98b8' }}>
                       {emailStatus === 'sent'
-                        ? 'Check your inbox for the PDF download link.'
+                        ? 'Check your inbox and confirm your email to get the PDF download link.'
                         : 'Your discount code is still valid — use it at checkout.'}
                     </p>
                     <div className="rounded-xl p-5" style={{ background: 'rgba(16,185,129,0.06)', border: '1px dashed rgba(16,185,129,0.35)' }}>
