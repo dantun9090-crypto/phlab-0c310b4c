@@ -4,6 +4,7 @@
 - Google zwykle sprawdza poprawiony produkt ponownie w ciągu 1–3 dni roboczych, czasem do 7 dni.
 - Szybciej idzie, gdy w Merchant Center kliknie się „Poproś o weryfikację” przy produkcie albo gdy Google pobierze plik produktów od nowa (zwykle raz dziennie).
 - Gdy produkt wróci jako „Zatwierdzony”, reklamy Performance Max zaczynają go pokazywać w ciągu kilku godzin.
+- **Usunięty produkt nadal widoczny jako problem:** to normalne. Merchant Center pokazuje stary błąd, dopóki nie pobierze pliku produktów od nowa (do 24 h), a usunięty produkt znika z listy zwykle w 1–3 dni. Sprawdzę, czy ten produkt naprawdę zniknął z pliku, który Google pobiera, oraz kiedy Google ostatnio pobrał plik.
 
 ## Co sprawdzę (bez żadnych zmian)
 1. **Plik produktów:** czy MOTS-c i 2 poprawione produkty są w pliku, z poprawnymi danymi (kategoria, MPN, cena, link, opis bez zakazanych słów).
