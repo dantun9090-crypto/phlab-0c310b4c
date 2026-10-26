@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { pickAdClickId } from "@/routes/api/public/hooks/offline-conversions";
+import { pickAdClickId } from "../src/routes/api/public/hooks/offline-conversions";
 
 const W = "wbraid_ABCdef1234567";
 const G = "gbraid_ABCdef1234567";
