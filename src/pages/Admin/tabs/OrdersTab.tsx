@@ -2265,7 +2265,8 @@ export default function OrdersTab() {
                     <ul className="mt-2 space-y-1 rounded-lg border border-white/[0.07] bg-[#060f1e]/60 p-2">
                       {order.items.map((it: any, idx: number) => {
                         const name = it?.name || it?.productName || 'Item';
-                        const variant = it?.variant || it?.size || it?.variantLabel || '';
+                        const rawVariant = it?.variantName || it?.dosage || it?.variant || it?.size || it?.variantLabel || '';
+                        const variant = rawVariant && !String(name).toLowerCase().includes(String(rawVariant).toLowerCase()) ? rawVariant : (rawVariant && /mg|ml|mcg|iu/i.test(String(rawVariant)) ? rawVariant : '');
                         const qty = Number(it?.quantity ?? 1);
                         const price = Number(it?.price ?? it?.unitPrice ?? 0);
                         return (
