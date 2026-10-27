@@ -2261,6 +2261,35 @@ export default function OrdersTab() {
                       <span className="text-[#2a4a7a]"> · Wallid ID: {wallidApiRef}</span>
                     </p>
                   )}
+                  {Array.isArray(order.items) && order.items.length > 0 && (
+                    <ul className="mt-2 space-y-1 rounded-lg border border-white/[0.07] bg-[#060f1e]/60 p-2">
+                      {order.items.map((it: any, idx: number) => {
+                        const name = it?.name || it?.productName || 'Item';
+                        const variant = it?.variant || it?.size || it?.variantLabel || '';
+                        const qty = Number(it?.quantity ?? 1);
+                        const price = Number(it?.price ?? it?.unitPrice ?? 0);
+                        return (
+                          <li key={idx} className="flex items-center justify-between gap-2 text-xs">
+                            <span className="text-white min-w-0 break-words">
+                              <span className="font-semibold text-emerald-300">{qty}×</span> {name}
+                              {variant ? <span className="text-[#9cb8d9]"> · {String(variant)}</span> : null}
+                            </span>
+                            {price > 0 && (
+                              <span className="text-[#9cb8d9] shrink-0">£{(price * qty).toFixed(2)}</span>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => openOrder(order)}
+                    className="mt-2 inline-flex items-center gap-1.5 min-h-[40px] px-3 py-2 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-200 rounded-lg text-xs font-medium"
+                  >
+                    <Eye className="w-4 h-4" /> Open full order
+                  </button>
+
 
                 </div>
                 <div className="flex items-center gap-3 flex-wrap sm:shrink-0">
