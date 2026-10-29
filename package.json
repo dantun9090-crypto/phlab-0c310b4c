@@ -181,7 +181,7 @@
   "overrides": {
     "launch-editor": "^2.14.2",
     "@babel/core": "^7.29.6",
-    "@hono/node-server": "^2.0.11",
+    "@hono/node-server": "^2.1.5",
     "@vitest/mocker": "^4.1.12",
     "@tanstack/react-router": "1.170.41",
     "@tanstack/router-core": "1.171.34",
@@ -216,12 +216,14 @@
     "source-map-js": "^1.2.2",
     "body-parser": "^2.4.0",
     "zod": "^4.6.6",
-    "happy-dom": "^21.0.4"
+    "happy-dom": "^21.0.4",
+    "seroval": "^1.7.5",
+    "seroval-plugins": "^1.7.5"
   },
   "resolutions": {
     "launch-editor": "^2.14.2",
     "@babel/core": "^7.29.6",
-    "@hono/node-server": "^2.0.11",
+    "@hono/node-server": "^2.1.5",
     "@vitest/mocker": "^4.1.12",
     "@tanstack/react-router": "1.170.41",
     "@tanstack/router-core": "1.171.34",
@@ -256,6 +258,8 @@
     "source-map-js": "^1.2.2",
     "body-parser": "^2.4.0",
     "zod": "^4.6.6",
-    "happy-dom": "^21.0.4"
+    "happy-dom": "^21.0.4",
+    "seroval": "^1.7.5",
+    "seroval-plugins": "^1.7.5"
   }
 }
