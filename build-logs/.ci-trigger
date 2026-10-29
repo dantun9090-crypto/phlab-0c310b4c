@@ -1,1 +1,0 @@
-Trigger CI for PR #835 (copilot-authored pushes do not emit workflow events). Removed before merge.
