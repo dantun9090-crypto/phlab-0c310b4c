@@ -400,7 +400,7 @@ jobs:
         run: bash scripts/install-cosign.sh
 
       - name: Download SBOM bundle artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: sbom-${{ github.sha }}
           path: sbom-bundle
@@ -464,7 +464,7 @@ jobs:
           cp dist/sbom.cdx.json dist/security-audit.json fresh/
 
       - name: Download cached-run determinism inputs
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: determinism-cached-${{ github.sha }}
           path: cached
