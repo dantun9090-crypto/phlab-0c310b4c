@@ -75,7 +75,7 @@ jobs:
       - name: Clean stale Lighthouse artifacts
         run: rm -rf .lighthouseci
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
 
