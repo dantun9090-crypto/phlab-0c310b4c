@@ -1,0 +1,40 @@
+name: Marketing Email Drip
+
+# Every 10 minutes: releases queued campaign emails so total outgoing mail
+# stays under the mail host's 100/hour limit. Auth via CRON_SECRET.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: marketing-drip
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  drip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: POST marketing-drip
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "CRON_SECRET is not configured." >&2
+            exit 1
+          fi
+          resp=$(curl -sS -o /tmp/resp.json -w "%{http_code}" \
+            -X POST "https://phlabs.co.uk/api/public/hooks/marketing-drip" \
+            -H "content-type: application/json" \
+            -H "x-cron-secret: ${CRON_SECRET}" \
+            --max-time 120 \
+            --data '{}') || resp="000"
+          echo "HTTP $resp"
+          cat /tmp/resp.json || true
+          test "$resp" = "200"
