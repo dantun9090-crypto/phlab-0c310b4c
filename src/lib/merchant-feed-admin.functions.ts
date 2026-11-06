@@ -40,10 +40,47 @@ export const getMerchantFeedConfig = createServerFn({ method: "POST" })
 
 // ---------------- save config ----------------
 
+// Whitelist of writable feed-config fields. Anything else in the patch is
+// dropped so a caller cannot inject arbitrary keys into the stored document.
+const ConfigPatchSchema = z
+  .object({
+    enabled: z.boolean(),
+    brand: z.string().max(200),
+    currency: z.string().max(8),
+    baseUrl: z.string().max(300),
+    categoryId: z.string().max(100),
+    categoryPath: z.string().max(300),
+    productType: z.string().max(300),
+    condition: z.enum(["new", "refurbished", "used"]),
+    identifierExists: z.enum(["true", "false"]),
+    ageGroup: z.string().max(40),
+    adult: z.enum(["yes", "no"]),
+    titleTemplate: z.string().max(1000),
+    descriptionTemplate: z.string().max(5000),
+    disclaimers: z.string().max(2000),
+    promoIds: z.array(z.string().max(120)).max(50),
+    shippingCountry: z.string().max(8),
+    shippingService: z.string().max(120),
+    shippingPrice: z.string().max(40),
+    cacheTtl: z.number().int().min(0).max(86_400),
+    bannedTokens: z.array(z.string().max(120)).max(500),
+    hardBlockedSlugs: z.array(z.string().max(200)).max(500),
+    highRiskTokens: z.array(z.string().max(120)).max(500),
+    skuOverrides: z.record(z.string(), z.record(z.string(), z.unknown())),
+    customLabel0: z.string().max(200),
+    customLabel1: z.string().max(200),
+    customLabel2: z.string().max(200),
+    customLabel3: z.string().max(200),
+    customLabel4: z.string().max(200),
+  })
+  .partial()
+  .strip();
+
 const SaveConfigSchema = IdTokenSchema.extend({
   feedKey: FeedKeyEnum,
-  patch: z.record(z.string(), z.unknown()),
+  patch: ConfigPatchSchema,
 });
+
 
 export const saveMerchantFeedConfig = createServerFn({ method: "POST" })
   .validator((d) => SaveConfigSchema.parse(d))

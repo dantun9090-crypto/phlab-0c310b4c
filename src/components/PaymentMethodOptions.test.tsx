@@ -215,7 +215,7 @@ describe("PaymentMethodOptions", () => {
       expect(manual.textContent).toMatch(/Receive bank details by email/i);
     });
 
-    it("renders the 3-step Open Banking instructions when pay_by_bank is selected", async () => {
+    it("expands the Open Banking panel with supported banks and trust badges when pay_by_bank is selected", async () => {
       render(
         <PaymentMethodOptions
           options={FENA_PRIMARY}
@@ -225,10 +225,13 @@ describe("PaymentMethodOptions", () => {
       );
       const region = document.getElementById("pay-by-bank-instructions")!;
       expect(region).toBeInTheDocument();
-      // Steps live behind the "What happens next?" accordion — expand first.
-      fireEvent.click(screen.getByText(/what happens next/i));
-      expect(region.querySelectorAll("ol > li").length).toBe(3);
+      // The redesigned panel shows a short summary plus the supported-bank
+      // and security sections (no nested "what happens next" accordion).
+      expect(region.textContent).toMatch(/supported banks/i);
+      expect(region.textContent).toMatch(/why it is secure/i);
+      expect(region.textContent).toMatch(/no card needed/i);
     });
+
 
     it("renders the 4-step Manual Bank Transfer instructions when bank_transfer is selected", () => {
       render(
@@ -290,14 +293,10 @@ describe("PaymentMethodOptions", () => {
       // Container width must not exceed the viewport.
       expect(region.scrollWidth).toBeLessThanOrEqual(SMALL);
 
-      // Expand the accordion, then every step must keep its full text.
-      fireEvent.click(screen.getByText(/what happens next/i));
-      const steps = region.querySelectorAll("ol > li");
-      expect(steps.length).toBe(3);
-      steps.forEach((li) => {
-        expect(li.textContent?.trim().length ?? 0).toBeGreaterThan(10);
-        expect(li.className).not.toMatch(/\btruncate\b/);
-      });
+      // Panel copy must stay intact (no truncation) at the smallest viewport.
+      expect(region.textContent).toMatch(/supported banks/i);
+      expect(region.querySelector(".truncate")).toBeNull();
+
 
       // The wrapping payment selector itself must not overflow.
       const root = container.firstElementChild as HTMLElement;

@@ -35,3 +35,11 @@ domain:panwest.co.kr
 domain:uxcorp.net
 domain:opendialogue.health
 domain:wadopp.com
+
+# --- Round 3 (2026-09-29): high-volume spam with medical-context anchors
+# ("treatment", "medical", "surgery", "patients"), all AS <= 11/100.
+domain:shosting.cyou
+domain:charms.co.kr
+domain:ophot.net
+domain:kfoe.or.kr
+domain:wiseservice.co.kr

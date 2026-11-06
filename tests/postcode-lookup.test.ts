@@ -115,3 +115,37 @@ describe('runPostcodeLookup', () => {
     expect(r.message).toMatch(/manually/i);
   });
 });
+
+describe('paid provider circuit breaker', () => {
+  beforeEach(async () => {
+    vi.restoreAllMocks();
+    const m = await import('../src/lib/postcode-lookup.server');
+    m.clearPaidProviderOutage();
+    process.env['IDEAL_POSTCODES_API_KEY'] = 'test-key';
+    delete process.env['GETADDRESS_API_KEY'];
+    delete process.env['GETADDRESS_ADMINISTRATION_KEY'];
+  });
+  afterEach(() => { delete process.env['IDEAL_POSTCODES_API_KEY']; });
+
+  it('falls back to the free lookup and trips the breaker on 402 (out of credit)', async () => {
+    const { runPostcodeLookup, getPaidProviderOutage } = await import('../src/lib/postcode-lookup.server');
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url: any) => {
+      if (String(url).includes('ideal-postcodes')) {
+        return { ok: false, status: 402, json: async () => ({ code: 4021 }) } as unknown as Response;
+      }
+      return { ok: true, json: async () => ({ result: { post_town: 'LONDON', admin_county: 'Greater London' } }) } as unknown as Response;
+    });
+
+    const first = await runPostcodeLookup('SW1A 2AA');
+    expect(first.ok).toBe(true);
+    expect(first.mode).toBe('outcode');
+    expect(first.city).toBe('London');
+    expect(getPaidProviderOutage()?.reason).toMatch(/credit/i);
+
+    // Second (uncached) postcode must skip the paid provider entirely.
+    fetchSpy.mockClear();
+    await runPostcodeLookup('M1 1AH');
+    const called = fetchSpy.mock.calls.map(c => String(c[0]));
+    expect(called.some(u => u.includes('ideal-postcodes'))).toBe(false);
+  });
+});

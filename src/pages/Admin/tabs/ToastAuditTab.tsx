@@ -8,13 +8,10 @@ import {
 } from '@/lib/firebase';
 import HealthMetrics from '@/components/admin/HealthMetrics';
 
-/** Escape a value for CSV (RFC 4180): wrap in quotes if it contains comma/quote/newline. */
-function csvCell(value: unknown): string {
-  if (value === null || value === undefined) return '';
-  const s = String(value);
-  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
-}
+import { csvSafeCell } from '@/lib/csv-safe';
+
+/** CSV cell with RFC 4180 quoting + spreadsheet-formula neutralisation. */
+const csvCell = csvSafeCell;
 
 type OutcomeFilter = 'all' | 'delivered' | 'suppressed' | 'suppressed:pref-off' | 'suppressed:quiet-hours' | 'suppressed:dedup' | 'suppressed:bot';
 type KindFilter = 'all' | 'signup' | 'visitor';

@@ -116,6 +116,11 @@ export default function WallidSyncCard() {
       <div className="rounded border border-slate-700 bg-slate-900">
         <div className="border-b border-slate-700 px-3 py-2 text-xs font-medium text-slate-300">
           Stuck Wallid payments (last 7 days) — {rows.length}
+          {rows.some((r) => r.mismatch) && (
+            <span className="ml-2 text-amber-300">
+              {rows.filter((r) => r.mismatch).length} paid at Wallid but not settled
+            </span>
+          )}
         </div>
         {rows.length === 0 ? (
           <div className="px-3 py-4 text-xs text-slate-500">
@@ -130,6 +135,12 @@ export default function WallidSyncCard() {
                   <div className="text-slate-500">
                     {r.status} · {new Date(r.createdAt).toLocaleString()}
                   </div>
+                  {r.mismatch && (
+                    <span className="mt-1 inline-flex items-center gap-1 rounded border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-300">
+                      <AlertTriangle className="w-3 h-3" />
+                      Wallid: SUCCESS — order not paid{r.orderStatus ? ` (${r.orderStatus})` : ''}
+                    </span>
+                  )}
                 </div>
                 <button
                   type="button"

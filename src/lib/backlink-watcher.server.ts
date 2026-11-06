@@ -253,16 +253,20 @@ async function sendTelegram(text: string): Promise<boolean> {
   }
 }
 
+function escHtml(v: unknown): string {
+  return String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
+}
+
 function buildEmailHtml(
   snap: BacklinkSnapshot,
   diff: BacklinkDiff,
   reasons: string[],
 ): string {
   const refRow = (r: RefDomain) =>
-    `<tr><td><a href="https://${r.domain}">${r.domain}</a></td><td>${r.ascore ?? '-'}</td><td>${r.backlinks_num ?? '-'}</td><td>${r.country ?? '-'}</td></tr>`;
+    `<tr><td><a href="https://${encodeURIComponent(String(r.domain ?? '')).replace(/%2E/gi, '.')}">${escHtml(r.domain)}</a></td><td>${escHtml(r.ascore ?? '-')}</td><td>${escHtml(r.backlinks_num ?? '-')}</td><td>${escHtml(r.country ?? '-')}</td></tr>`;
   return `<!doctype html><html><body style="font-family:system-ui,sans-serif;max-width:720px">
     <h2>Backlink Watcher Alert — phlabs.co.uk</h2>
-    <p><strong>Why this fired:</strong> ${reasons.join('; ')}</p>
+    <p><strong>Why this fired:</strong> ${escHtml(reasons.join('; '))}</p>
     <p>Authority Score: <strong>${snap.ascore ?? '-'}</strong> (Δ ${diff.ascoreDelta ?? '0'}) ·
        Referring domains: <strong>${snap.domains_num ?? '-'}</strong> (Δ ${diff.domainsDelta ?? '0'}) ·
        Total backlinks: <strong>${snap.total ?? '-'}</strong></p>
@@ -273,7 +277,7 @@ function buildEmailHtml(
       <table border="1" cellpadding="6"><tr><th>Domain</th><th>AS</th><th>Links</th><th>CC</th></tr>${diff.newDomains.slice(0, 30).map(refRow).join('')}</table>` : ''}
     ${diff.lostDomains.length ? `<h3>Lost referring domains (${diff.lostDomains.length})</h3>
       <table border="1" cellpadding="6"><tr><th>Domain</th><th>AS</th><th>Links</th><th>CC</th></tr>${diff.lostDomains.slice(0, 30).map(refRow).join('')}</table>` : ''}
-    <p style="margin-top:24px;font-size:12px;color:#666">Run at ${snap.fetchedAt} · See Admin → SEO → Backlink Changes</p>
+    <p style="margin-top:24px;font-size:12px;color:#666">Run at ${escHtml(snap.fetchedAt)} · See Admin → SEO → Backlink Changes</p>
   </body></html>`;
 }
 

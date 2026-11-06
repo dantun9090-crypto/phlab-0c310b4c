@@ -76,6 +76,8 @@ export type PageMeta = {
   title: string;
   description: string;
   ogType: "website" | "product" | "article";
+  /** Exact, approved strings — skip length clamping. */
+  exact?: boolean;
 };
 
 export function titleize(slug: string): string {
@@ -112,7 +114,35 @@ export function metaForPath(splat: string): PageMeta {
     };
   }
 
+  // Per-slug overrides for articles where the generic pattern under-performs
+  // in search (low CTR despite impressions).
+  const articleMetaOverrides: Record<string, PageMeta> = {
+    "hplc-testing-explained": {
+      title: "HPLC Testing Explained: What Peptide Purity % Really Means",
+      description:
+        "What is HPLC testing? How reversed-phase HPLC at 214 nm, peak area % and LC-MS confirm research peptide purity, plus how to check any batch CoA line by line.",
+      ogType: "article",
+      exact: true,
+    },
+    "how-to-read-hplc-certificate-of-analysis": {
+      title: "How to Read a Peptide CoA: HPLC Chromatogram Guide | PH Labs",
+      description:
+        "Step by step: batch number, purity %, retention time and peak area — plus the red flags that reveal fake or recycled peptide certificates.",
+      ogType: "article",
+      exact: true,
+    },
+    "ipamorelin-ghrp-research": {
+      title: "Ipamorelin & GHRPs: GH Secretagogue Research Explained | PH Labs",
+      description:
+        "How ipamorelin and GHRP-class peptides signal through GHS-R, what receptor selectivity means for study design, and key differences researchers compare.",
+      ogType: "article",
+      exact: true,
+    },
+  };
+
   if ((first === "research" || first === "resources") && segments.length > 1) {
+    const override = articleMetaOverrides[last];
+    if (override) return override;
     const name = titleize(last);
     const parent = first === "research" ? "Research" : "Resource";
     return {
@@ -124,6 +154,7 @@ export function metaForPath(splat: string): PageMeta {
       ogType: "article",
     };
   }
+
 
   const presets: Record<string, PageMeta> = {
     products: {

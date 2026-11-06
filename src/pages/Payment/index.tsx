@@ -159,7 +159,7 @@ export default function PaymentPage() {
       }
 
       try {
-        localStorage.setItem('php_pending_order', loadState.orderId);
+        localStorage.setItem('php_pending_order', loadState.orderId); localStorage.setItem('php_pending_order_at', String(Date.now()));
       } catch { /* ignore */ }
 
       setStatus({ message: 'Redirecting to your bank…', type: 'success' });

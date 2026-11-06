@@ -137,11 +137,37 @@ async function todaysVisitsSummary(): Promise<string> {
   }
 }
 
+function hasAdminSecret(req: Request): boolean {
+  const supplied = req.headers.get("x-setup-secret") ?? "";
+  if (!WEBHOOK_SECRET || supplied.length !== WEBHOOK_SECRET.length) return false;
+  let diff = 0;
+  for (let i = 0; i < supplied.length; i++) diff |= supplied.charCodeAt(i) ^ WEBHOOK_SECRET.charCodeAt(i);
+  return diff === 0;
+}
+
 Deno.serve(async (req) => {
   const url = new URL(req.url);
 
+  // Diagnostics (JSON + HTML) are admin-only: require the server-held secret.
+  if (
+    req.method === "GET" &&
+    (url.searchParams.get("diag") === "1" || url.searchParams.get("diag") === "ui" || url.pathname.endsWith("/diag")) &&
+    !hasAdminSecret(req)
+  ) {
+    return new Response("Forbidden", { status: 403 });
+  }
+
+
   // Setup: register webhook
   if (req.method === "GET" && url.searchParams.get("setup") === "1") {
+    // Admin-only: require the server-held webhook secret as a header.
+    const supplied = req.headers.get("x-setup-secret") ?? "";
+    if (!WEBHOOK_SECRET || supplied.length !== WEBHOOK_SECRET.length) {
+      return new Response("Forbidden", { status: 403 });
+    }
+    let diff = 0;
+    for (let i = 0; i < supplied.length; i++) diff |= supplied.charCodeAt(i) ^ WEBHOOK_SECRET.charCodeAt(i);
+    if (diff !== 0) return new Response("Forbidden", { status: 403 });
     const webhookUrl = `${SUPABASE_URL}/functions/v1/telegram-bot`;
     const body: Record<string, unknown> = { url: webhookUrl, allowed_updates: ["message"] };
     if (WEBHOOK_SECRET) body.secret_token = WEBHOOK_SECRET;
@@ -363,7 +389,9 @@ setAuto(true);
 
   if (req.method !== "POST") return new Response("ok");
 
-  if (WEBHOOK_SECRET) {
+  // Fail closed: without a configured secret, no update is trusted.
+  if (!WEBHOOK_SECRET) return new Response("webhook secret not configured", { status: 503 });
+  {
     const got = req.headers.get("X-Telegram-Bot-Api-Secret-Token") ?? "";
     if (got !== WEBHOOK_SECRET) return new Response("unauthorized", { status: 401 });
   }

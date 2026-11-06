@@ -12,6 +12,8 @@ import {
 // the initial bundle. All runtime access goes through dynamic import()
 // inside effects (the SDK chunk loads once, on demand, after first paint).
 import type { FirebaseUser, Product } from '@/lib/firebase';
+import { excludeVipProducts } from '@/lib/vip-visibility';
+
 
 // Articles bundle (~196KB) is loaded lazily — only when the search panel opens —
 // to keep it off the critical path of every page render.
@@ -68,6 +70,8 @@ interface SiteSettings {
   companyAddress?: string;
   // MHRA banner
   mhraDisclaimerEnabled?: boolean;
+  // Batch verification feature (/verify) — absent means ON
+  verifyBatchEnabled?: boolean;
   // Maintenance
   maintenanceMode?: boolean;
   maintenanceEndDate?: string;
@@ -217,6 +221,9 @@ export function Layout({ children }: LayoutProps) {
       if (cached) id = (JSON.parse(cached) as { googleAnalyticsId?: string }).googleAnalyticsId?.trim() || undefined;
     } catch { /* ignore */ }
     initAnalytics(id);
+    // Recover purchase conversions for buyers who never returned to the
+    // checkout success page after the bank app-switch.
+    void import('@/lib/purchase-recovery').then((m) => m.recoverPendingPurchase());
     // Google Customer Reviews floating badge (sitewide trust signal).
     // Skips admin/auth pages where the badge would obscure UI.
     // Deferred until first user interaction OR 10s — whichever comes first.
@@ -278,6 +285,8 @@ export function Layout({ children }: LayoutProps) {
   
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  // Packing staff (staffRole 'orders') only get the admin entry link.
+  const [isOrdersStaff, setIsOrdersStaff] = useState(false);
   const [isVip, setIsVip] = useState(false);
   // settingsLoaded removed - no longer needed without Age Gate
   const [siteSettings, setSiteSettings] = useState<SiteSettings>({
@@ -451,6 +460,7 @@ export function Layout({ children }: LayoutProps) {
             getDoc(doc(db, 'customers', user.uid)).then(snap => {
               if (snap.exists()) {
                 setIsAdmin(snap.data()?.isAdmin === true);
+                setIsOrdersStaff(snap.data()?.staffRole === 'orders');
                 setIsVip(snap.data()?.isVip === true);
               }
             }).catch(() => { /* ignore */ });
@@ -462,6 +472,7 @@ export function Layout({ children }: LayoutProps) {
           }
         } else {
           setIsAdmin(false);
+          setIsOrdersStaff(false);
           setIsVip(false);
         }
       });
@@ -557,7 +568,7 @@ export function Layout({ children }: LayoutProps) {
     let cancelled = false;
     const load = () => {
       import('@/lib/firebase').then(({ getAllProducts }) => getAllProducts()).then((prods) => {
-        if (!cancelled) setSearchProducts(prods);
+        if (!cancelled) setSearchProducts(excludeVipProducts(prods));
       }).catch(() => {
         if (!cancelled) setSearchProducts([]);
       });
@@ -723,7 +734,7 @@ export function Layout({ children }: LayoutProps) {
             {/* ── Desktop + Mobile Nav (Navigation component) ── */}
             <Navigation
               user={firebaseUser}
-              isAdmin={isAdmin}
+              isAdmin={isAdmin || isOrdersStaff}
               isMobileMenuOpen={isMobileMenuOpen}
               onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             />
@@ -1381,11 +1392,12 @@ export function Layout({ children }: LayoutProps) {
                   isContactPage
                     ? { label: 'Lab Reports', href: '/lab-reports' }
                     : { label: 'HPLC Lab Reports', href: '/lab-reports' },
+                  { label: 'Lab Test Verification', href: '/verify' },
                   { label: 'FAQ', href: '/#faq' },
                   { label: 'Contact Us', href: '/contact' },
                   { label: 'Storage Guide', href: '/storage-guide' },
                   
-                ].map(l => (
+                ].filter(l => l.href !== '/verify' || siteSettings.verifyBatchEnabled !== false).map(l => (
                   <li key={l.label}>
                     <a href={l.href} className="group flex items-center gap-2 text-[#5a80a6] hover:text-[#8caad4] transition-colors text-sm">
                       <span className="w-1 h-1 rounded-full bg-blue-600/40 group-hover:bg-blue-400 transition-colors flex-shrink-0" />
@@ -1596,7 +1608,11 @@ export function Layout({ children }: LayoutProps) {
             <p className="text-[#7a9ec2] text-xs">
               © 2026 PH Labs Ltd — All rights reserved. Registered in England &amp; Wales, United Kingdom.
 
-              {siteSettings.companyRegNumber && <> Company No. {siteSettings.companyRegNumber}.</>}
+              {siteSettings.companyRegNumber && (
+                /sole\s*trader/i.test(siteSettings.companyRegNumber)
+                  ? <> {siteSettings.companyRegNumber}.</>
+                  : <> Company No. {siteSettings.companyRegNumber}.</>
+              )}
               {siteSettings.companyAddress && <> {siteSettings.companyAddress}.</>}
             </p>
             {!isContactPage && (
@@ -1614,8 +1630,8 @@ export function Layout({ children }: LayoutProps) {
         <Suspense fallback={null}><CookieConsent /></Suspense>
       )}
 
-      {/* Admin Quick-Access Button — only visible to admins */}
-      {isAdmin && (
+      {/* Admin Quick-Access Button — admins + packing staff */}
+      {(isAdmin || isOrdersStaff) && (
         <div className="fixed z-[9999]" style={{ bottom: '5.5rem', right: '1.5rem' }}>
           {/* Tooltip label */}
           <div className="group relative flex items-center justify-end">
@@ -1702,6 +1718,8 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* ── Sticky MHRA Disclaimer Bar — hidden on auth/admin pages ── */}
+      {/* In-flow spacer so the fixed bar never covers the footer at page end */}
+      {!isCleanPage && !isContactPage && <div aria-hidden="true" style={{ height: '44px' }} />}
       {!isCleanPage && !isContactPage && <div className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none">
         <div
           className="px-4 py-2.5 text-center"

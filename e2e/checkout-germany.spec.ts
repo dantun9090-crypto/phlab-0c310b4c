@@ -34,6 +34,9 @@ async function seedCart(page: Page) {
   await page.addInitScript((item) => {
     try {
       window.localStorage.setItem('php_cart', JSON.stringify([item]));
+      // The checkout UI reads the admin pause switch from production
+      // Firestore; an intentional pause must not red this pipeline.
+      window.localStorage.setItem('phl_e2e_checkout_unpaused', '1');
     } catch {
       /* ignore — private mode */
     }
@@ -317,6 +320,20 @@ test.describe('Checkout — Germany', () => {
     // causing a strict-mode locator conflict.
     await page.locator('label', { has: page.locator('#acceptedTerms') }).click();
     await expect(page.locator('#acceptedTerms')).toBeChecked();
+    // Select a payment method. Since the "collapsed payment options" change
+    // nothing is pre-selected any more, and step-3 validation blocks the
+    // order until the user picks one (`paymentMethod: ''` + e.paymentMethod).
+    // In this hermetic run no online provider is configured, so only the
+    // manual bank-transfer card renders. Same swallowed-click hazard as the
+    // continue buttons — click, assert the selection stuck, retry once.
+    const manualPayment = page.getByTestId('manual-bank-transfer-button');
+    await manualPayment.click();
+    try {
+      await expect(manualPayment).toHaveAttribute('aria-checked', 'true', { timeout: 10_000 });
+    } catch {
+      await manualPayment.click();
+      await expect(manualPayment).toHaveAttribute('aria-checked', 'true', { timeout: 20_000 });
+    }
     // Click the REAL place-order button by its stable test id: a role+name
     // locator matches the step-3 accordion header ("3 Payment") first, so
     // .first() toggled the accordion instead of placing the order — the

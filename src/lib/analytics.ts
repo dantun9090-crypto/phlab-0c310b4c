@@ -14,6 +14,8 @@
  * with `{ analytics: boolean, marketing: boolean }` — we listen here.
  */
 
+import { captureAdClickIdsFromUrl } from './gclid-capture';
+
 declare global {
   interface Window {
     dataLayer?: unknown[];
@@ -28,7 +30,7 @@ const GOOGLE_ADS_CONVERSION_ID =
   (import.meta.env.VITE_GOOGLE_ADS_CONVERSION_ID as string | undefined)?.trim() ||
   DEFAULT_GOOGLE_ADS_CONVERSION_ID;
 // Conversion label issued by Google Ads for the "Purchase" action.
-const DEFAULT_GOOGLE_ADS_PURCHASE_LABEL = 'YLzWCKDk7MIcENyUyNlD';
+const DEFAULT_GOOGLE_ADS_PURCHASE_LABEL = 'ksL0COOWrt0cENyUyNlD';
 const GOOGLE_ADS_PURCHASE_LABEL =
   (import.meta.env.VITE_GOOGLE_ADS_PURCHASE_LABEL as string | undefined)?.trim() ||
   DEFAULT_GOOGLE_ADS_PURCHASE_LABEL;
@@ -53,6 +55,15 @@ const GTAG_GATEWAY_BASE =
   (import.meta.env.VITE_GTAG_GATEWAY_BASE as string | undefined)?.trim() ||
   '/metrics';
 const GTAG_DIRECT_BASE = 'https://www.googletagmanager.com';
+// Google Tag Manager web container for phlabs.co.uk. Loaded through the same
+// first-party gateway as gtag.js (ad-blocker bypass) with a CDN fallback.
+// Set VITE_GTM_CONTAINER_ID to '' to disable.
+const GTM_CONTAINER_ID = (() => {
+  const raw = import.meta.env.VITE_GTM_CONTAINER_ID as string | undefined;
+  const value = raw === undefined ? 'GTM-MT4BZ2X8' : raw.trim();
+  return /^GTM-[A-Z0-9]{4,}$/i.test(value) ? value : '';
+})();
+
 // First-party endpoint for gtag hits (/g/collect etc.). Always the
 // canonical gateway origin so mirrored domains without a local /metrics
 // route still deliver events first-party (worker sets ACAO:*).
@@ -134,9 +145,13 @@ function readStoredConsent(): { analytics: boolean; marketing: boolean } {
   }
 }
 
-function gtag(...args: unknown[]) {
+function gtag(..._args: unknown[]) {
   window.dataLayer = window.dataLayer || [];
-  window.dataLayer.push(args);
+  // Push the Arguments object, NOT a rest-param Array — gtag.js silently
+  // ignores plain-Array dataLayer entries (official stub: dataLayer.push(arguments)).
+  // An array-style stub here killed all GA4/Ads hits (zero /g/collect on 2026-08-10).
+  // eslint-disable-next-line prefer-rest-params
+  window.dataLayer.push(arguments);
 }
 
 function injectScript(id: string): Promise<void> {
@@ -180,6 +195,37 @@ function injectScript(id: string): Promise<void> {
 }
 
 /**
+ * Load the Google Tag Manager web container once, sharing the same
+ * `window.dataLayer` (and therefore the Consent Mode v2 defaults already
+ * queued by initAnalytics). Gateway-first with a CDN fallback.
+ */
+function injectGtmContainer(): void {
+  if (!GTM_CONTAINER_ID) return;
+  if (document.querySelector(`script[data-gtm-id="${GTM_CONTAINER_ID}"]`)) return;
+  if (document.querySelector('script[src*="gtm.js?id="]')) return;
+
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+
+  const append = (base: string, direct: boolean) => {
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = `${base}/gtm.js?id=${GTM_CONTAINER_ID}`;
+    s.dataset.gtmId = GTM_CONTAINER_ID;
+    if (direct) s.dataset.direct = '1';
+    s.onerror = () => {
+      if (!direct && GTAG_GATEWAY_BASE !== GTAG_DIRECT_BASE) append(GTAG_DIRECT_BASE, true);
+      else log('GTM container failed to load', GTM_CONTAINER_ID);
+    };
+    s.onload = () => log('GTM container loaded', GTM_CONTAINER_ID);
+    document.head.appendChild(s);
+  };
+  append(GTAG_GATEWAY_BASE, false);
+}
+
+
+
+/**
  * Initialise GA4. Safe to call multiple times — only loads once.
  * Pass a custom Measurement ID to override the default.
  */
@@ -187,6 +233,12 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
   if (typeof window === 'undefined') return;
   if (loaded) return;
   if (isBot() || dntEnabled()) return;
+
+  // Capture ad click IDs (gclid/gbraid/wbraid) from the landing URL into
+  // localStorage. They live in the query string, not cookies, so they are
+  // available even when the visitor declines marketing cookies — they power
+  // the server-side Google Ads offline conversion import for those buyers.
+  captureAdClickIdsFromUrl();
 
   const id = (measurementId && measurementId.trim()) || DEFAULT_MEASUREMENT_ID;
   if (!/^G-[A-Z0-9]{6,}$/i.test(id)) return;
@@ -196,7 +248,10 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
   debugMode = isDebug();
 
   window.dataLayer = window.dataLayer || [];
-  window.gtag = function (...args: unknown[]) { window.dataLayer!.push(args); };
+  // Official gtag stub — forward the Arguments object, not a rest array
+  // (gtag.js only replays Arguments-shaped queued entries).
+  // eslint-disable-next-line prefer-rest-params
+  window.gtag = function () { window.dataLayer!.push(arguments); };
 
   // GDPR Consent Mode v2 — defaults BEFORE any tag load
   const consent = readStoredConsent();
@@ -224,6 +279,11 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
     return;
   }
 
+  // GTM web container (phlabs.co.uk) — shares dataLayer + consent defaults.
+  injectGtmContainer();
+
+
+
   // If the hardcoded <head> bootstrap already ran (window.__phlGaBootstrapped),
   // it called gtag('config', id) which fired the initial page_view. Skip our
   // own config to avoid a duplicate hit, and just register the GT- container.
@@ -244,16 +304,26 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
   }
   // Google destinations — activates linked GA4, Google Ads and Merchant Center destinations.
   for (const destinationId of GOOGLE_DESTINATION_IDS) {
-    if (destinationId !== id) gtag('config', destinationId, { send_page_view: false, cookie_domain: 'auto' });
+    if (destinationId === id) continue;
+    const isAds = destinationId.startsWith('AW-');
+    gtag('config', destinationId, {
+      send_page_view: false,
+      cookie_domain: 'auto',
+      ...(isAds ? { allow_enhanced_conversions: true } : {}),
+    });
+    if (isAds) (window as unknown as { __phlAdsConfigured?: boolean }).__phlAdsConfigured = true;
   }
+
 
   // Fire initial page view (skip if the hardcoded <head> script already
   // triggered an auto-config page_view — deduplicate via lastTrackedPath).
   if (bootstrapped) {
     lastTrackedPath = window.location.pathname + window.location.search;
+    try { (window as unknown as { __phlPageViewSent?: boolean }).__phlPageViewSent = true; } catch { /* ignore */ }
   } else {
     trackPageView(window.location.pathname + window.location.search);
   }
+
 
   // Listen for consent changes from the cookie banner
   window.addEventListener('php:cookie-consent-changed', ((e: Event) => {
@@ -274,6 +344,9 @@ export function trackPageView(path: string): void {
   if (!ga) return;
   if (path === lastTrackedPath) return;
   lastTrackedPath = path;
+  // Claim the initial page_view so the deferred __root bootstrap (which may
+  // run AFTER this on Layout pages) does not fire a second one.
+  try { (window as unknown as { __phlPageViewSent?: boolean }).__phlPageViewSent = true; } catch { /* ignore */ }
   log('page_view', path);
   ga('event', 'page_view', {
     page_path: path,
@@ -283,6 +356,7 @@ export function trackPageView(path: string): void {
     debug_mode: debugMode,
   });
 }
+
 
 export function trackEvent(name: string, params?: Record<string, unknown>): void {
   if (!ensureAnalyticsReady()) return;
@@ -484,17 +558,45 @@ async function buildUserData(u: NonNullable<PurchaseExtras['userData']>): Promis
 }
 
 /**
+ * Ensure `window.gtag` exists AND the Google Ads destination has been
+ * configured, so a `conversion` event actually has somewhere to go.
+ *
+ * The order-confirmation routes (/checkout/success, /payment/success) do not
+ * render <Layout>, so `initAnalytics()` never runs there — the only tag is
+ * the inline bootstrap in __root, which is itself deferred until LCP+idle.
+ * Firing a purchase before that lands silently dropped the Google Ads
+ * conversion (30+ days of zero recorded conversions). Poll for up to ~20s.
+ */
+async function awaitAdsDestinationReady(timeoutMs = 20_000): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const w = window as unknown as { gtag?: unknown; __phlAdsConfigured?: boolean };
+    if (typeof w.gtag === 'function' && (w.__phlAdsConfigured === true || !GOOGLE_ADS_CONVERSION_ID)) {
+      return true;
+    }
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  return typeof (window as unknown as { gtag?: unknown }).gtag === 'function';
+}
+
+/**
  * GA4 + Google Ads purchase. `value` is gross/VAT-inclusive (£) — UK B2C.
  * `extras.tax` and `extras.shipping` are surfaced as native GA4 fields so
  * Google Ads reports net revenue correctly. `extras.userData` enables
  * Enhanced Conversions (PII hashed client-side; raw values never leave).
+ *
+ * Resolves `true` only when both the GA4 event and the Google Ads conversion
+ * reached `dataLayer`. Callers MUST use this to decide whether to write their
+ * "already fired" idempotency flag — marking a dropped event as fired
+ * permanently disables both the client retry and the server-side backfill.
  */
-export function trackPurchase(
+export async function trackPurchase(
   transactionId: string,
   value: number,
   items: GaItem[],
   extras: PurchaseExtras = {},
-): void {
+): Promise<boolean> {
   const params: Record<string, unknown> = {
     transaction_id: transactionId,
     currency: 'GBP',
@@ -504,42 +606,54 @@ export function trackPurchase(
   if (typeof extras.tax === 'number' && Number.isFinite(extras.tax)) params.tax = extras.tax;
   if (typeof extras.shipping === 'number' && Number.isFinite(extras.shipping)) params.shipping = extras.shipping;
 
-  const fire = (userData?: Record<string, string>) => {
-    if (userData && Object.keys(userData).length) params.user_data = userData;
-    trackEvent('purchase', params);
-    trackAdsPurchaseConversion(transactionId, value, userData);
-    // Mark purchase done so the abandoned-cart recovery timer skips re-firing.
-    try { sessionStorage.setItem('php_ec_purchase_done', '1'); } catch { /* ignore */ }
-  };
-
+  let userData: Record<string, string> | undefined;
   if (extras.userData) {
-    buildUserData(extras.userData).then(fire).catch(() => fire());
-  } else {
-    fire();
+    try { userData = await buildUserData(extras.userData); } catch { /* ignore */ }
   }
+  if (userData && Object.keys(userData).length) params.user_data = userData;
+
+  const ready = await awaitAdsDestinationReady();
+  if (!ready) {
+    log('purchase dropped — gtag never became ready', transactionId);
+    return false;
+  }
+
+  trackEvent('purchase', params);
+  const adsOk = trackAdsPurchaseConversion(transactionId, value, userData);
+  // Mark purchase done so the abandoned-cart recovery timer skips re-firing.
+  try { sessionStorage.setItem('php_ec_purchase_done', '1'); } catch { /* ignore */ }
+  return adsOk;
 }
 
 /**
  * Fire a Google Ads `conversion` event for a purchase. Requires both
  * VITE_GOOGLE_ADS_CONVERSION_ID (AW-XXXXXXXXXX) and
- * VITE_GOOGLE_ADS_PURCHASE_LABEL to be set at build time. No-op otherwise.
+ * VITE_GOOGLE_ADS_PURCHASE_LABEL to be set at build time.
+ * Returns true when the event was queued into `dataLayer`.
  */
 export function trackAdsPurchaseConversion(
   transactionId: string,
   value: number,
   userData?: Record<string, string>,
-): void {
-  if (!GOOGLE_ADS_CONVERSION_ID) return;
+): boolean {
+  if (!GOOGLE_ADS_CONVERSION_ID) return false;
   if (!GOOGLE_ADS_PURCHASE_LABEL) {
     // Without the per-action label Google Ads cannot attribute the sale.
     console.warn(
       '[analytics] VITE_GOOGLE_ADS_PURCHASE_LABEL is not set — Google Ads purchase conversion skipped.',
     );
-    return;
+    return false;
   }
-  if (!ensureAnalyticsReady()) return;
+  if (!ensureAnalyticsReady()) return false;
   const ga = window.gtag;
-  if (!ga) return;
+  if (!ga) return false;
+  // Belt-and-braces: if nothing configured the AW destination yet, do it now
+  // so the conversion event is not dropped on the floor.
+  const w = window as unknown as { __phlAdsConfigured?: boolean };
+  if (!w.__phlAdsConfigured) {
+    ga('config', GOOGLE_ADS_CONVERSION_ID, { send_page_view: false, allow_enhanced_conversions: true });
+    w.__phlAdsConfigured = true;
+  }
   log('ads conversion', { transactionId, value });
   const payload: Record<string, unknown> = {
     send_to: `${GOOGLE_ADS_CONVERSION_ID}/${GOOGLE_ADS_PURCHASE_LABEL}`,
@@ -549,7 +663,9 @@ export function trackAdsPurchaseConversion(
   };
   if (userData && Object.keys(userData).length) payload.user_data = userData;
   ga('event', 'conversion', payload);
+  return true;
 }
+
 
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -694,4 +810,16 @@ export function getAnalyticsStatus() {
     measurementId: currentId,
     consent: readStoredConsent(),
   };
+}
+
+/**
+ * True when the visitor has granted marketing (ads) consent in the cookie
+ * banner. Used by the success page to tell the server whether the Google
+ * Ads purchase conversion could actually leave the device — in
+ * consent-denied mode gtag still queues the event locally without sending
+ * it, so "queued" alone cannot distinguish real delivery. The server gates
+ * the offline gclid import dedup marker on this flag.
+ */
+export function hasMarketingConsent(): boolean {
+  return readStoredConsent().marketing;
 }

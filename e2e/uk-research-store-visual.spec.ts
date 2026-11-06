@@ -56,6 +56,48 @@ async function loadPage(page: Page) {
   // tests can race the render and see 0 `a.inline-flex` elements.
   await page.locator("a.inline-flex").first().waitFor({ state: "attached", timeout: 15_000 });
   await page.waitForLoadState("load", { timeout: 15_000 }).catch(() => undefined);
+  // Wait for the very last section of the page. The hero + CTA checks above
+  // only prove above-the-fold hydration; below-the-fold sections stream in
+  // later, so a full-page screenshot taken right after the hero can catch a
+  // half-rendered (viewport-height) document — which is exactly how the
+  // 2026-07 seed ended up with blank 900/1400/1800px baselines. Waiting for
+  // the final "Research use disclaimer" heading makes the captured height
+  // deterministic across mobile/tablet/desktop.
+  const disclaimer = page
+    .locator("h2")
+    .filter({ hasText: /research use disclaimer/i })
+    .first();
+  await expect(disclaimer).toBeVisible({ timeout: 25_000 });
+  // ...but even that is not enough: the page hydrates in two phases.
+  // SSR/prerendered HTML (full content, disclaimer visible) -> React reclaim
+  // swaps in a "Loading PH Labs..." boot fallback (document collapses to
+  // viewport height) -> hydrated app (full content again). A screenshot
+  // taken during the reclaim captures the collapsed fallback — this is how
+  // the seeded baselines ended up as blank 900/1400px shells on mobile and
+  // tablet. Wait for the fallback to disappear, then require the disclaimer
+  // once more, now guaranteed to be in the hydrated tree.
+  // Checking for the fallback *text* races the body wipe: on mobile the
+  // check runs during the SSR phase (count=0) and the screenshot still
+  // catches the boot skeleton. `.phl-boot` is the class shared by both boot
+  // UIs (the innerHTML shimmer skeleton and the React "Loading PH Labs…"
+  // fallback), so wait for it to appear AND detach instead. The attached
+  // wait is best-effort: on a warm chunk cache the skeleton may never show.
+  await page
+    .waitForSelector(".phl-boot", { state: "attached", timeout: 10_000 })
+    .catch(() => undefined);
+  await page.waitForSelector(".phl-boot", { state: "detached", timeout: 25_000 });
+  await expect(disclaimer).toBeVisible({ timeout: 25_000 });
+  // Final insurance: the document height must stop changing (three
+  // consecutive equal samples) before we trust a full-page screenshot.
+  let prevHeight = -1;
+  let stableSamples = 0;
+  const settleDeadline = Date.now() + 15_000;
+  while (stableSamples < 3 && Date.now() < settleDeadline) {
+    const h = await page.evaluate(() => document.documentElement.scrollHeight);
+    stableSamples = h === prevHeight ? stableSamples + 1 : 0;
+    prevHeight = h;
+    if (stableSamples < 3) await page.waitForTimeout(250);
+  }
   await page.waitForTimeout(400);
   // Collapse any open <details> so FAQ height is deterministic.
   await page.evaluate(() => {

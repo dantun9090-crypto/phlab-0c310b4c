@@ -284,7 +284,12 @@ export const Route = createFileRoute("/products_/$slug")({
       });
     }
     if (product?.price) {
-      const inStock = typeof product?.stock === "number" ? product.stock > 0 : true;
+      const inStock =
+        (product as any)?.visibility === "out_of_stock"
+          ? false
+          : typeof product?.stock === "number"
+            ? product.stock > 0
+            : true;
       // Offer validity window — Google Merchant listings flag `validFrom` as
       // "Missing" without it. Anchor to the first of the current month so the
       // value is stable across renders and cacheable, and set `priceValidUntil`

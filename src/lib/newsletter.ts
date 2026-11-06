@@ -84,6 +84,12 @@ export async function subscribeToNewsletter(
       subscribedAt: Timestamp.now(),
       timestamp: new Date().toISOString(),
     });
+    // Mirror into Klaviyo; never blocks or fails the sign-up.
+    void import('@/lib/klaviyo.functions')
+      .then(({ subscribeNewsletterToKlaviyo }) =>
+        subscribeNewsletterToKlaviyo({ data: { email, source } }),
+      )
+      .catch((err) => console.warn('[newsletter] klaviyo mirror skipped:', err));
     return { success: true, message: "You're subscribed! Check your inbox soon." };
   } catch (err) {
     console.error('[newsletter] subscribe failed:', err);

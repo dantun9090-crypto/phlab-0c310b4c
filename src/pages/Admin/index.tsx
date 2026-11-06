@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Component, ReactNode } from 'react';
+import { useState, useEffect, useRef, Component, ReactNode, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { logoutUser } from '@/lib/firebase';
@@ -13,100 +13,106 @@ import CommandPalette, { type CommandItem } from './components/CommandPalette';
 import DevModeBanner from './components/DevModeBanner';
 import AdminSpaFallbackBanner from '@/components/admin/AdminSpaFallbackBanner';
 import DashboardTab from './tabs/DashboardTab';
-import InventoryTab from './tabs/InventoryTab';
-import OrdersTab from './tabs/OrdersTab';
-import CustomersTab from './tabs/CustomersTab';
-import MarketingTab from './tabs/MarketingTab';
-import DatabaseTab from './tabs/DatabaseTab';
-import InvoicesTab from './tabs/InvoicesTab';
-import BannerTab from './tabs/BannerTab';
-import SiteSettingsTab from './tabs/SiteSettingsTab';
-import ToolsTab from './tabs/ToolsTab';
-import ThemesTab from './tabs/ThemesTab';
-import BackupTab from './tabs/BackupTab';
-import FirestoreBackupsTab from './tabs/FirestoreBackupsTab';
-import BackupAuditLogTab from './tabs/BackupAuditLogTab';
-import AdvertsTab from './tabs/AdvertsTab';
-import PoliciesTab from './tabs/PoliciesTab';
-import LandingPageTab from './tabs/LandingPageTab';
-import AdsDomainsTab from './tabs/AdsDomainsTab';
-import ComplianceTab from './tabs/ComplianceTab';
-import AuditLogTab from './tabs/AuditLogTab';
-import EmailMarketingTab from './tabs/EmailMarketingTab';
-import EmailBrandingTab from './tabs/EmailBrandingTab';
-import NewsletterTab from './tabs/NewsletterTab';
-import EmailPreviewTab from './tabs/EmailPreviewTab';
-import EmailQueueTab from './tabs/EmailQueueTab';
-import IpWhitelistTab from './tabs/IpWhitelistTab';
-import SEOTab from './tabs/SEOTab';
-import { FeaturedProductsTab } from './tabs/FeaturedProductsTab';
-import QCDashboardTab from './tabs/QCDashboardTab';
-import SitemapTab from './tabs/SitemapTab';
-import SitemapAuditTab from './tabs/SitemapAuditTab';
-import PromoCodesTab from './tabs/PromoCodesTab';
-import FreeGiftTab from './tabs/FreeGiftTab';
-import ReviewsTab from './tabs/ReviewsTab';
-import DiagnosticsTab from './tabs/DiagnosticsTab';
-import PrerenderStatusTab from './tabs/PrerenderStatusTab';
-import GSCMonitorTab from './tabs/GSCMonitorTab';
-import MarketingCoverageTab from './tabs/MarketingCoverageTab';
-import MerchantFeedTab from './tabs/MerchantFeedTab';
-import MerchantFeedEditorTab from './tabs/MerchantFeedEditorTab';
-import BingFeedTab from './tabs/BingFeedTab';
-import IndexNowTab from './tabs/IndexNowTab';
-import ReindexHookTab from './tabs/ReindexHookTab';
-import AuthEventsTab from './tabs/AuthEventsTab';
-import VisitorsTab from './tabs/VisitorsTab';
-import PrivacyRequestsTab from './tabs/PrivacyRequestsTab';
-import CartEventsTab from './tabs/CartEventsTab';
-import MailHealthTab from './tabs/MailHealthTab';
-import SecurityAuditTab from './tabs/SecurityAuditTab';
-import EdgeMonitorTab from './tabs/EdgeMonitorTab';
-import SecurityEventsTab from './tabs/SecurityEventsTab';
-import FenaTab from './tabs/FenaTab';
-import PaymentsTab from './tabs/PaymentsTab';
-import PaymentTriageTab from './tabs/PaymentTriageTab';
+const InventoryTab = lazy(() => import('./tabs/InventoryTab'));
+const OrdersTab = lazy(() => import('./tabs/OrdersTab'));
+const RevenueTab = lazy(() => import('./tabs/RevenueTab'));
+const CustomersTab = lazy(() => import('./tabs/CustomersTab'));
+const MarketingTab = lazy(() => import('./tabs/MarketingTab'));
+const DatabaseTab = lazy(() => import('./tabs/DatabaseTab'));
+const InvoicesTab = lazy(() => import('./tabs/InvoicesTab'));
+const OrderInvoicesTab = lazy(() => import('./tabs/OrderInvoicesTab'));
+const BannerTab = lazy(() => import('./tabs/BannerTab'));
+const SiteSettingsTab = lazy(() => import('./tabs/SiteSettingsTab'));
+const ToolsTab = lazy(() => import('./tabs/ToolsTab'));
+const ThemesTab = lazy(() => import('./tabs/ThemesTab'));
+const BackupTab = lazy(() => import('./tabs/BackupTab'));
+const FirestoreBackupsTab = lazy(() => import('./tabs/FirestoreBackupsTab'));
+const BackupAuditLogTab = lazy(() => import('./tabs/BackupAuditLogTab'));
+const AdvertsTab = lazy(() => import('./tabs/AdvertsTab'));
+const PoliciesTab = lazy(() => import('./tabs/PoliciesTab'));
+const LandingPageTab = lazy(() => import('./tabs/LandingPageTab'));
+const AdsDomainsTab = lazy(() => import('./tabs/AdsDomainsTab'));
+const ComplianceTab = lazy(() => import('./tabs/ComplianceTab'));
+const AuditLogTab = lazy(() => import('./tabs/AuditLogTab'));
+const EmailMarketingTab = lazy(() => import('./tabs/EmailMarketingTab'));
+const EmailBrandingTab = lazy(() => import('./tabs/EmailBrandingTab'));
+const NewsletterTab = lazy(() => import('./tabs/NewsletterTab'));
+const EmailPreviewTab = lazy(() => import('./tabs/EmailPreviewTab'));
+const EmailQueueTab = lazy(() => import('./tabs/EmailQueueTab'));
+const IpWhitelistTab = lazy(() => import('./tabs/IpWhitelistTab'));
+const SEOTab = lazy(() => import('./tabs/SEOTab'));
+const FeaturedProductsTab = lazy(() =>
+  import('./tabs/FeaturedProductsTab').then((m) => ({ default: m.FeaturedProductsTab })),
+);
+const QCDashboardTab = lazy(() => import('./tabs/QCDashboardTab'));
+const LabTestsTab = lazy(() => import('./tabs/LabTestsTab'));
+const SitemapTab = lazy(() => import('./tabs/SitemapTab'));
+const SitemapAuditTab = lazy(() => import('./tabs/SitemapAuditTab'));
+const PromoCodesTab = lazy(() => import('./tabs/PromoCodesTab'));
+const FreeGiftTab = lazy(() => import('./tabs/FreeGiftTab'));
+const ReviewsTab = lazy(() => import('./tabs/ReviewsTab'));
+const DiagnosticsTab = lazy(() => import('./tabs/DiagnosticsTab'));
+const PrerenderStatusTab = lazy(() => import('./tabs/PrerenderStatusTab'));
+const GSCMonitorTab = lazy(() => import('./tabs/GSCMonitorTab'));
+const MarketingCoverageTab = lazy(() => import('./tabs/MarketingCoverageTab'));
+const MerchantFeedTab = lazy(() => import('./tabs/MerchantFeedTab'));
+const MerchantFeedEditorTab = lazy(() => import('./tabs/MerchantFeedEditorTab'));
+const BingFeedTab = lazy(() => import('./tabs/BingFeedTab'));
+const IndexNowTab = lazy(() => import('./tabs/IndexNowTab'));
+const ReindexHookTab = lazy(() => import('./tabs/ReindexHookTab'));
+const AuthEventsTab = lazy(() => import('./tabs/AuthEventsTab'));
+const VisitorsTab = lazy(() => import('./tabs/VisitorsTab'));
+const PrivacyRequestsTab = lazy(() => import('./tabs/PrivacyRequestsTab'));
+const CartEventsTab = lazy(() => import('./tabs/CartEventsTab'));
+const MailHealthTab = lazy(() => import('./tabs/MailHealthTab'));
+const SecurityAuditTab = lazy(() => import('./tabs/SecurityAuditTab'));
+const EdgeMonitorTab = lazy(() => import('./tabs/EdgeMonitorTab'));
+const SecurityEventsTab = lazy(() => import('./tabs/SecurityEventsTab'));
+const FenaTab = lazy(() => import('./tabs/FenaTab'));
+const PaymentsTab = lazy(() => import('./tabs/PaymentsTab'));
+const BrokkrPayTab = lazy(() => import('./tabs/BrokkrPayTab'));
+const PaymentTriageTab = lazy(() => import('./tabs/PaymentTriageTab'));
 
-import AIAssistantTab from './tabs/AIAssistantTab';
-import AIGraphicsTab from './tabs/AIGraphicsTab';
-import ShopifyTab from './tabs/ShopifyTab';
-import SemrushTab from './tabs/SemrushTab';
-import SEOOpportunitiesTab from './tabs/SEOOpportunitiesTab';
-import BacklinkOutreachTab from './tabs/BacklinkOutreachTab';
-import BacklinkChangesTab from './tabs/BacklinkChangesTab';
-import GoogleAdsTab from './tabs/GoogleAdsTab';
-import CompoundQueriesTab from './tabs/CompoundQueriesTab';
-import CompoundNegativesAuditTab from './tabs/CompoundNegativesAuditTab';
-import InternalLinksTab from './tabs/InternalLinksTab';
-import WebVitalsTab from './tabs/WebVitalsTab';
-import CacheRecacheTab from './tabs/CacheRecacheTab';
-import UrlMonitorTab from './tabs/UrlMonitorTab';
-import RoyalMailTab from './tabs/RoyalMailTab';
-import WebhookTestTab from './tabs/WebhookTestTab';
-import WallidPreviewTab from './tabs/WallidPreviewTab';
-import WallidBadgesTab from './tabs/WallidBadgesTab';
-import WallidBanksTab from './tabs/WallidBanksTab';
-import WatchdogTab from './tabs/WatchdogTab';
-import HealthMonitorTab from './tabs/HealthMonitorTab';
-import ResearchIncidentsTab from './tabs/ResearchIncidentsTab';
-import LiveActivityTab from './tabs/LiveActivityTab';
-import ToastAuditTab from './tabs/ToastAuditTab';
-import BlankWatchdogTab from './tabs/BlankWatchdogTab';
-import InfraHealthTab from './tabs/InfraHealthTab';
-import PurgeIncidentsTab from './tabs/PurgeIncidentsTab';
-import SwTelemetryDebugTab from './tabs/SwTelemetryDebugTab';
-import MonitorLogTab from './tabs/MonitorLogTab';
-import StaleAssetsTab from './tabs/StaleAssetsTab';
-import SentryIssuesTab from './tabs/SentryIssuesTab';
-import PublishStatusTab from './tabs/PublishStatusTab';
-import AuditReportTab from './tabs/AuditReportTab';
-import EmergencyPurgeTab from './tabs/EmergencyPurgeTab';
-import CloudflareStatusTab from './tabs/CloudflareStatusTab';
-import TagGatewayTab from './tabs/TagGatewayTab';
-import CloudflareAnalyticsTab from './tabs/CloudflareAnalyticsTab';
-import CloudflareVsAnalyticsTab from './tabs/CloudflareVsAnalyticsTab';
+const AIAssistantTab = lazy(() => import('./tabs/AIAssistantTab'));
+const AIGraphicsTab = lazy(() => import('./tabs/AIGraphicsTab'));
+const ShopifyTab = lazy(() => import('./tabs/ShopifyTab'));
+const SemrushTab = lazy(() => import('./tabs/SemrushTab'));
+const SEOOpportunitiesTab = lazy(() => import('./tabs/SEOOpportunitiesTab'));
+const BacklinkOutreachTab = lazy(() => import('./tabs/BacklinkOutreachTab'));
+const BacklinkChangesTab = lazy(() => import('./tabs/BacklinkChangesTab'));
+const GoogleAdsTab = lazy(() => import('./tabs/GoogleAdsTab'));
+const CompoundQueriesTab = lazy(() => import('./tabs/CompoundQueriesTab'));
+const CompoundNegativesAuditTab = lazy(() => import('./tabs/CompoundNegativesAuditTab'));
+const InternalLinksTab = lazy(() => import('./tabs/InternalLinksTab'));
+const WebVitalsTab = lazy(() => import('./tabs/WebVitalsTab'));
+const CacheRecacheTab = lazy(() => import('./tabs/CacheRecacheTab'));
+const UrlMonitorTab = lazy(() => import('./tabs/UrlMonitorTab'));
+const RoyalMailTab = lazy(() => import('./tabs/RoyalMailTab'));
+const WebhookTestTab = lazy(() => import('./tabs/WebhookTestTab'));
+const WallidPreviewTab = lazy(() => import('./tabs/WallidPreviewTab'));
+const WallidBadgesTab = lazy(() => import('./tabs/WallidBadgesTab'));
+const WallidBanksTab = lazy(() => import('./tabs/WallidBanksTab'));
+const WatchdogTab = lazy(() => import('./tabs/WatchdogTab'));
+const HealthMonitorTab = lazy(() => import('./tabs/HealthMonitorTab'));
+const ResearchIncidentsTab = lazy(() => import('./tabs/ResearchIncidentsTab'));
+const LiveActivityTab = lazy(() => import('./tabs/LiveActivityTab'));
+const ToastAuditTab = lazy(() => import('./tabs/ToastAuditTab'));
+const BlankWatchdogTab = lazy(() => import('./tabs/BlankWatchdogTab'));
+const InfraHealthTab = lazy(() => import('./tabs/InfraHealthTab'));
+const PurgeIncidentsTab = lazy(() => import('./tabs/PurgeIncidentsTab'));
+const SwTelemetryDebugTab = lazy(() => import('./tabs/SwTelemetryDebugTab'));
+const MonitorLogTab = lazy(() => import('./tabs/MonitorLogTab'));
+const StaleAssetsTab = lazy(() => import('./tabs/StaleAssetsTab'));
+const SentryIssuesTab = lazy(() => import('./tabs/SentryIssuesTab'));
+const PublishStatusTab = lazy(() => import('./tabs/PublishStatusTab'));
+const AuditReportTab = lazy(() => import('./tabs/AuditReportTab'));
+const EmergencyPurgeTab = lazy(() => import('./tabs/EmergencyPurgeTab'));
+const CloudflareStatusTab = lazy(() => import('./tabs/CloudflareStatusTab'));
+const TagGatewayTab = lazy(() => import('./tabs/TagGatewayTab'));
+const CloudflareAnalyticsTab = lazy(() => import('./tabs/CloudflareAnalyticsTab'));
+const CloudflareVsAnalyticsTab = lazy(() => import('./tabs/CloudflareVsAnalyticsTab'));
 
-type Tab = 'dashboard' | 'ai' | 'aigraphics' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'firestorebackups' | 'backupauditlog' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'visitors' | 'liveactivity' | 'toastaudit' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailbranding' | 'emailpreview' | 'emailqueue' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'reviews' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'marketingcoverage' | 'urlmonitor' | 'merchantfeed' | 'merchantfeededitor' | 'bingfeed' | 'indexnow' | 'reindexhook' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'paymenttriage' | 'shopify' | 'semrush' | 'seoopportunities' | 'backlinkoutreach' | 'backlinkchanges' | 'googleads' | 'compoundqueries' | 'compoundnegativesaudit' | 'internallinks' | 'webvitals' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks' | 'watchdog' | 'blankwatchdog' | 'healthmonitor' | 'infrahealth' | 'researchincidents' | 'purgeincidents' | 'swtelemetrydebug' | 'monitorlog' | 'staleassets' | 'sentryissues' | 'publishstatus' | 'auditreport' | 'emergencypurge' | 'cloudflarestatus' | 'taggateway' | 'newsletter' | 'cloudflareanalytics' | 'cfvsanalytics' | 'adsdomains';
+type Tab = 'dashboard' | 'ai' | 'aigraphics' | 'inventory' | 'orders' | 'revenue' | 'customers' | 'marketing' | 'database' | 'invoices' | 'orderinvoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'firestorebackups' | 'backupauditlog' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'visitors' | 'liveactivity' | 'toastaudit' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailbranding' | 'emailpreview' | 'emailqueue' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'labtests' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'reviews' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'marketingcoverage' | 'urlmonitor' | 'merchantfeed' | 'merchantfeededitor' | 'bingfeed' | 'indexnow' | 'reindexhook' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'brokkrpay' | 'paymenttriage' | 'shopify' | 'semrush' | 'seoopportunities' | 'backlinkoutreach' | 'backlinkchanges' | 'googleads' | 'compoundqueries' | 'compoundnegativesaudit' | 'internallinks' | 'webvitals' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks' | 'watchdog' | 'blankwatchdog' | 'healthmonitor' | 'infrahealth' | 'researchincidents' | 'purgeincidents' | 'swtelemetrydebug' | 'monitorlog' | 'staleassets' | 'sentryissues' | 'publishstatus' | 'auditreport' | 'emergencypurge' | 'cloudflarestatus' | 'taggateway' | 'newsletter' | 'cloudflareanalytics' | 'cfvsanalytics' | 'adsdomains';
 
 
 
@@ -187,11 +193,14 @@ export default function AdminPage() {
   const navigate = useNavigate();
   // Admin gating lives in one shared hook (customers/{uid}.isAdmin).
   // redirectTo: null → keep the in-place "Access Denied" screen below.
-  const { isAdmin, loading: adminLoading, firestoreError } = useAdminGuard({
+  const { isAdmin: isFullAdmin, ordersOnly, loading: adminLoading, firestoreError } = useAdminGuard({
     redirectTo: null,
     onRedirect: (path) => navigate(path),
   });
   const authChecked = !adminLoading;
+  // Packing staff get into the panel but only see the Orders tab.
+  const isAdmin = isFullAdmin || ordersOnly;
+  const ORDERS_ONLY_TABS = ['orders'];
 
   const [ipChecked, setIpChecked] = useState(false);
   const [ipAllowed, setIpAllowed] = useState(true);
@@ -480,6 +489,7 @@ export default function AdminPage() {
 
   const renderTab = () => {
     const tab = (() => {
+      if (ordersOnly) return <OrdersTab />;
       switch (activeTab) {
 
         case 'dashboard': return <DashboardTab />;
@@ -487,8 +497,10 @@ export default function AdminPage() {
         case 'aigraphics': return <AIGraphicsTab />;
         case 'inventory': return <InventoryTab />;
         case 'orders': return <OrdersTab />;
+        case 'revenue': return <RevenueTab />;
         case 'customers': return <CustomersTab />;
         case 'invoices': return <InvoicesTab />;
+        case 'orderinvoices': return <OrderInvoicesTab />;
         case 'banner': return <BannerTab />;
         case 'settings': return <SiteSettingsTab />;
         case 'tools': return <ToolsTab />;
@@ -513,6 +525,7 @@ export default function AdminPage() {
         case 'mailhealth': return <MailHealthTab />;
         case 'fena': return <FenaTab />;
         case 'payments': return <PaymentsTab />;
+        case 'brokkrpay': return <BrokkrPayTab />;
         case 'paymenttriage': return <PaymentTriageTab />;
 
         case 'emailmarketing': return <EmailMarketingTab />;
@@ -526,6 +539,7 @@ export default function AdminPage() {
         case 'sitemap': return <SitemapTab />;
         case 'sitemapaudit': return <SitemapAuditTab />;
         case 'qc': return <QCDashboardTab />;
+        case 'labtests': return <LabTestsTab />;
         case 'promocodes': return <PromoCodesTab />;
         case 'freegift': return <FreeGiftTab />;
         case 'reviews': return <ReviewsTab />;
@@ -579,7 +593,20 @@ export default function AdminPage() {
         default: return <DashboardTab />;
       }
     })();
-    return <TabErrorBoundary key={activeTab} tabName={activeTab}>{tab}</TabErrorBoundary>;
+    return (
+      <TabErrorBoundary key={activeTab} tabName={activeTab}>
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center gap-2 py-16 text-slate-400">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>Loading tab…</span>
+            </div>
+          }
+        >
+          {tab}
+        </Suspense>
+      </TabErrorBoundary>
+    );
   };
 
   const sidebarWidth = sidebarCollapsed ? 68 : 256;
@@ -587,22 +614,22 @@ export default function AdminPage() {
   // Tab label lookup for header breadcrumb
   const TAB_LABELS: Record<string, string> = {
     dashboard: 'Dashboard', ai: 'AI Assistant', aigraphics: 'AI Graphics', inventory: 'Inventory', featured: 'Featured',
-    qc: 'QC Dashboard', orders: 'Orders', customers: 'Customers',
-    compliance: 'Compliance', auditlog: 'Audit Log', authevents: 'Auth Events', visitors: 'Visitors', liveactivity: 'Live Activity', toastaudit: 'Toast Audit', cartevents: 'Cart Events', mailhealth: 'Mail Health', invoices: 'Invoices', banner: 'Promo Banner',
+    qc: 'QC Dashboard', labtests: 'Lab Tests', orders: 'Orders', revenue: 'Revenue', customers: 'Customers',
+    compliance: 'Compliance', auditlog: 'Audit Log', authevents: 'Auth Events', visitors: 'Visitors', liveactivity: 'Live Activity', toastaudit: 'Toast Audit', cartevents: 'Cart Events', mailhealth: 'Mail Health', invoices: 'Invoices', orderinvoices: 'Invoices / Faktury', banner: 'Promo Banner',
     adverts: 'Adverts', landing: 'Landing Pages', policies: 'Policies',
     marketing: 'Marketing', emailmarketing: 'Email Campaigns', emailbranding: 'Email Branding', emailpreview: 'Email Preview', emailqueue: 'Email Queue & Delivery',
     seo: 'SEO Settings', sitemap: 'Sitemap Manager', settings: 'Site Settings',
     tools: 'Tools', themes: 'Themes', database: 'Database', backup: 'Backup', firestorebackups: 'Firestore Backups', backupauditlog: 'Backup Audit Log',
     ipwhitelist: 'IP Whitelist', promocodes: 'Promo Codes', freegift: 'Free Gift Promo', diagnostics: 'Diagnostics',
     prerenderstatus: 'Prerender Status', cacherecache: 'Cache & Recache', gscmonitor: 'GSC Monitor', marketingcoverage: 'Marketing Coverage', urlmonitor: 'URL Monitor', merchantfeed: 'Merchant Feed', merchantfeededitor: 'Merchant Feed Editor', bingfeed: 'Bing Shopping', indexnow: 'IndexNow', reindexhook: 'Fast Reindex (Compound)',
-    securityaudit: 'Security Audit', fena: 'Fena Payments', payments: 'Payment Gateways', shopify: 'Shopify', semrush: 'Semrush', seoopportunities: 'SEO Opportunities', backlinkoutreach: 'Backlink Outreach', backlinkchanges: 'Backlink Changes', googleads: 'Google Ads Campaigns', compoundqueries: '/compound Queries', compoundnegativesaudit: 'Compound Negatives Audit', internallinks: 'Internal Links', webvitals: 'Web Vitals',
+    securityaudit: 'Security Audit', fena: 'Fena Payments', payments: 'Payment Gateways', brokkrpay: 'BrokkrPay (Cards)', shopify: 'Shopify', semrush: 'Semrush', seoopportunities: 'SEO Opportunities', backlinkoutreach: 'Backlink Outreach', backlinkchanges: 'Backlink Changes', googleads: 'Google Ads Campaigns', compoundqueries: '/compound Queries', compoundnegativesaudit: 'Compound Negatives Audit', internallinks: 'Internal Links', webvitals: 'Web Vitals',
     royalmail: 'Royal Mail Labels', webhooktest: 'Webhook Test', wallidpreview: 'Wallid Preview', wallidbadges: 'Wallid Badges', wallidbanks: 'Wallid Banks', watchdog: 'Watchdog', blankwatchdog: 'Blank-Page Watchdog', healthmonitor: 'Health Monitor', infrahealth: 'Infrastructure Health', researchincidents: 'Research Incidents', purgeincidents: 'Purge Incidents', swtelemetrydebug: 'SW Telemetry Debug', monitorlog: 'Monitor Log (HEAD/GET)', staleassets: 'Stale Asset 404s', sentryissues: 'Sentry Issues', publishstatus: 'Publish Status', auditreport: 'Audit Report', emergencypurge: 'Emergency Purge', cloudflarestatus: 'Cloudflare Status', taggateway: 'Google Tag Gateway (Ads)', newsletter: 'Newsletter', cloudflareanalytics: 'CF Analytics (Human Traffic)', cfvsanalytics: 'CF vs GA4/Plausible',
   };
-  const activeLabel = TAB_LABELS[activeTab] ?? activeTab;
+  const activeLabel = ordersOnly ? 'Orders' : (TAB_LABELS[activeTab] ?? activeTab);
 
   // Command palette items: every tab + quick actions
   const paletteItems: CommandItem[] = [
-    ...Object.entries(TAB_LABELS).map(([id, label]) => ({
+    ...Object.entries(TAB_LABELS).filter(([id]) => !ordersOnly || ORDERS_ONLY_TABS.includes(id)).map(([id, label]) => ({
       id: `tab:${id}`,
       label,
       group: 'Navigate',
@@ -655,6 +682,7 @@ export default function AdminPage() {
         <AdminSidebar
           activeTab={activeTab}
           setActiveTab={(tab) => setActiveTab(tab as Tab)}
+          allowedTabs={ordersOnly ? ORDERS_ONLY_TABS : undefined}
           collapsed={sidebarCollapsed}
           setCollapsed={setSidebarCollapsed}
         />
@@ -688,6 +716,7 @@ export default function AdminPage() {
             <AdminSidebar
               activeTab={activeTab}
               setActiveTab={(tab) => setActiveTab(tab as Tab)}
+              allowedTabs={ordersOnly ? ORDERS_ONLY_TABS : undefined}
               collapsed={false}
               setCollapsed={() => {}}
               isMobileOpen={isMobileSidebarOpen}

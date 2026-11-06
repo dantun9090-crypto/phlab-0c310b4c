@@ -42,20 +42,11 @@ export function verifyBackupCaller(
   request: Request,
   env: BackupAuthEnv,
 ): VerifyResult {
-  const apikey = request.headers.get("apikey");
+  // The publishable/anon key is PUBLIC (shipped in the client bundle), so it
+  // is NOT accepted as a credential. Only the server-side cron secret works.
+  void env.SUPABASE_PUBLISHABLE_KEY;
   const secret = request.headers.get("x-cron-secret");
-  if (!apikey && !secret) return { ok: false, status: 401, reason: "missing" };
-
-  if (apikey) {
-    const expectedKeys = [
-      env.SUPABASE_PUBLISHABLE_KEY,
-      env.SUPABASE_ANON_KEY,
-      env.VITE_SUPABASE_PUBLISHABLE_KEY,
-    ].filter((v): v is string => typeof v === "string" && v.length > 0);
-    if (expectedKeys.some((k) => timingSafeStringEqual(apikey, k))) {
-      return { ok: true, method: "apikey" };
-    }
-  }
+  if (!secret) return { ok: false, status: 401, reason: "missing" };
   if (secret) {
     const expected = env.CLEANUP_SECRET;
     if (expected && timingSafeStringEqual(secret, expected)) {

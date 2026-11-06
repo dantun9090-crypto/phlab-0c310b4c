@@ -1,11 +1,13 @@
-import { ArrowRight, CheckCircle2, ShieldCheck, Zap, Mail, Microscope, CreditCard, Truck, Flame, Star, Dna, Activity, Brain, RefreshCw, Shield, Snowflake, FileCheck, FlaskConical, ChevronDown, Lock, Loader2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2, ShieldCheck, Zap, Mail, Microscope, CreditCard, Truck, Flame, Dna, Activity, Brain, RefreshCw, Shield, Snowflake, FileCheck, FlaskConical, ChevronDown, Lock, Loader2 } from 'lucide-react';
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 const NewsletterPopup = lazy(() => import('@/components/NewsletterPopup'));
 import SmartBanner from '@/components/SmartBanner';
 import { useSSRBanner } from '@/legacy/SSRDataContext';
 import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 import HeroMoleculeCanvas from '@/components/HeroMoleculeCanvas';
-import CoALookup from '@/components/CoALookup';
+// Below-fold: batch COA lookup sits near the footer — never on the first
+// screen, so it is code-split out of the entry bundle.
+const CoALookup = lazy(() => import('@/components/CoALookup'));
 import { useMagneticHover } from '@/hooks/useMagneticHover';
 
 import { Link } from 'react-router-dom';
@@ -20,13 +22,16 @@ const AdvertPopup = lazy(() => import('@/components/AdvertPopup'));
 import { getProductImage } from '@/lib/productImages';
 import type { Product } from '@/lib/firebase';
 import { filterProductsForHost } from '@/lib/domain-visibility';
+import { excludeVipProducts } from '@/lib/vip-visibility';
+
 // Firebase is dynamically imported below to keep it off the home-route critical chunk.
 const loadFirebase = () => import('@/lib/firebase');
 import { nameToSlug } from '@/lib/seedProducts';
 import { markPrerenderPending, markPrerenderReady, flipPrerenderReadyWhenRendered } from '@/lib/prerender-ready';
 import { sendPublicMail } from '@/lib/sendPublicMail';
 import { cfImgProps } from '@/lib/cf-image';
-import Testimonials from '@/components/Testimonials';
+// Below-fold: reviews section — code-split, mounted under Suspense.
+const Testimonials = lazy(() => import('@/components/Testimonials'));
 
 
 import { useSEO } from '@/hooks/useSEO';
@@ -102,36 +107,12 @@ const benefits = [
   },
 ];
 
-const testimonials = [
-  {
-    name: 'James R.',
-    role: 'Researcher · London',
-    content: 'Exceptional purity documentation. The CoA was detailed — full HPLC trace, molecular weight confirmation. Exactly what you expect from a professional supplier.',
-    rating: 5,
-    date: '12 April 2026',
-  },
-  {
-    name: 'Sarah T.',
-    role: 'GB · Verified Buyer',
-    content: 'Third order now. Packaging is consistently excellent — cold-pack, sealed vials, documentation in every box. Dispatch is fast. Highly recommend.',
-    rating: 5,
-    date: '2 April 2026',
-  },
-  {
-    name: 'Mark D.',
-    role: 'GB · Verified Buyer',
-    content: 'Genuinely impressed by the quality. Packaging was secure, CoA included, and delivery was next day. Best peptide supplier in the UK.',
-    rating: 5,
-    date: '8 March 2026',
-  },
-];
-
 const faqs = [
-  { q: 'Are these peptides legal to buy in the UK?', a: 'Yes. Research peptides are legal to purchase in the UK for laboratory and research purposes. All products are sold strictly for in-vitro research use only, not for human or veterinary consumption.' },
+  { q: 'Are these peptides legal to buy in the UK?', a: 'Supplying peptides for genuine laboratory research is not prohibited under UK medicines law, provided they are not presented or supplied as medicinal products. Our products are sold strictly for in-vitro research use only. Buyers are responsible for checking that their own use complies with UK law. For Research Use Only. Not for Human Consumption.' },
   { q: 'What testing do you carry out?', a: 'Every batch is tested using HPLC (High-Performance Liquid Chromatography) methodology. Certificates of Analysis are available for all products and provided with each order.' },
   { q: 'How quickly will my order arrive?', a: 'Standard UK delivery is 1–3 business days. Express next-day options are available at checkout. Orders placed before 2pm on weekdays are dispatched the same day.' },
   { q: 'How should peptides be stored?', a: 'Lyophilised (freeze-dried) peptides should be stored at -20°C for long-term stability. Reconstituted peptides should be kept at 2–8°C and used within 30 days. See our full Storage Guide for details.' },
-  { q: 'What payment methods do you accept?', a: 'We accept secure UK bank transfer (Open Banking) via our trusted payment partner. All transactions are secured with 256-bit SSL encryption.' },
+  { q: 'What payment methods do you accept?', a: 'We accept secure UK bank transfer (Open Banking) via our trusted payment partner, and card payment where shown at checkout. Manual bank transfer is also available. All transactions are secured with 256-bit SSL encryption.' },
 ];
 
 
@@ -256,7 +237,7 @@ export default function HomePage() {
     const loadProducts = () => {
       loadFirebase().then(({ getAllProducts }) => getAllProducts()).then((prods: Product[]) => {
         if (cancelled) return;
-        setProducts(filterProductsForHost(prods));
+        setProducts(excludeVipProducts(filterProductsForHost(prods)));
         // Wait for the first product tiles to render, then flip ready.
         flipPrerenderReadyWhenRendered('[data-product-card], [data-home-product]', Math.min(prods.length, 3));
       }).catch(() => {
@@ -591,11 +572,11 @@ export default function HomePage() {
           })()}
           {bannerHref ? (
             <a href={bannerHref} className="block">
-              <img {...cfImgProps(banner.imageUrl, { widths: [480, 640, 800, 1024, 1280, 1600, 1920], sizes: '(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1600px', quality: 78, fallbackWidth: 1280 })} alt={banner.altText || [banner.overlayHeading, banner.overlaySubheading].filter(Boolean).join(' — ') || 'PH Labs research peptides — homepage hero banner'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={desktopCap}
+              <img {...cfImgProps(banner.imageUrl, { widths: [480, 640, 800, 1024, 1280, 1600, 1920], sizes: '(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1600px', quality: 78, fallbackWidth: 1280 })} alt={banner.altText || [banner.overlayHeading, banner.overlaySubheading].filter(Boolean).join(' — ') || 'PH Labs research peptides — homepage hero banner'} className="w-full" fetchPriority="high" width={1600} height={desktopCap}
                 style={{ height: responsiveHeight, objectFit: banner.objectFit || 'cover', objectPosition: `${banner.objectPositionX ?? 50}% ${banner.objectPositionY ?? 50}%`, display: 'block' }} />
             </a>
           ) : (
-              <img {...cfImgProps(banner.imageUrl, { widths: [480, 640, 800, 1024, 1280, 1600, 1920], sizes: '(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1600px', quality: 78, fallbackWidth: 1280 })} alt={banner.altText || [banner.overlayHeading, banner.overlaySubheading].filter(Boolean).join(' — ') || 'PH Labs research peptides — homepage hero banner'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={desktopCap}
+              <img {...cfImgProps(banner.imageUrl, { widths: [480, 640, 800, 1024, 1280, 1600, 1920], sizes: '(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1600px', quality: 78, fallbackWidth: 1280 })} alt={banner.altText || [banner.overlayHeading, banner.overlaySubheading].filter(Boolean).join(' — ') || 'PH Labs research peptides — homepage hero banner'} className="w-full" fetchPriority="high" width={1600} height={desktopCap}
                 style={{ height: responsiveHeight, objectFit: banner.objectFit || 'cover', objectPosition: `${banner.objectPositionX ?? 50}% ${banner.objectPositionY ?? 50}%`, display: 'block' }} />
 
 
@@ -665,12 +646,17 @@ export default function HomePage() {
           Wrapper always reserves banner height to prevent CLS shift
           when async Firestore adverts arrive (banner is h-48/h-72 + py-6).
       ════════════════════════════════ */}
-      {(!advertsResolved || reserveHeroAdvert || heroAdverts.length > 0) && <div
+      {(reserveHeroAdvert || heroAdverts.length > 0) && <div
         className="container mx-auto px-6 py-6"
         // Reserve must cover the tallest rendered campaign block (mobile
         // block ~340px incl. padding) or the late Firestore render shifts
         // the hero down — measured as CLS 0.136 on mobile Lighthouse.
-        style={{ minHeight: (!advertsResolved || heroAdverts.length > 0) ? 'clamp(300px, 34vw, 380px)' : 0 }}
+        // CLS: reserve ONLY when a hero advert is EXPECTED (cached
+        // php_adverts_hero_count === '1' or adverts already present). The
+        // previous `!advertsResolved` reserve painted 300px on every cold
+        // visit and collapsed to 0 when Firestore returned no hero advert —
+        // a deterministic 0.1233 mobile CLS (hero pushed 224px).
+        style={{ minHeight: 'clamp(300px, 34vw, 380px)' }}
         data-advert-reserve="homepage_hero"
       >
         {heroAdverts.length > 0 && (
@@ -691,7 +677,7 @@ export default function HomePage() {
         className="relative overflow-hidden"
         style={{
           background: 'radial-gradient(ellipse 120% 80% at 60% 40%, #061428 0%, #030a14 60%)',
-          minHeight: '100svh',
+          minHeight: 'min(85svh, 780px)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
@@ -751,15 +737,15 @@ export default function HomePage() {
                   maxWidth: '100%',
                   overflowWrap: 'break-word',
                 }}>
-                  <span style={{ display: 'block' }}>Pro Peptide Research Lab </span>
-                  <span className="phl-gradient-text" style={{ display: 'block' }}>For In-Vitro Research</span>
+                  <span style={{ display: 'block', textWrap: 'balance' }}>Tested Research Peptides UK</span>
+                  <span className="phl-gradient-text" style={{ display: 'block' }}>Retatrutide · MOTS-C · GHK-Cu</span>
                   <span style={{ display: 'block', color: '#c9d8f0', fontWeight: 400, fontSize: '0.72em', overflowWrap: 'break-word' }}>HPLC-Verified ≥99% Purity · CoA Per Batch</span>
                 </h1>
               </div>
 
               {/* Sub-copy */}
               <p style={{ fontSize: '1.05rem', lineHeight: 1.75, color: '#9cb8d9', maxWidth: '480px' }}>
-                As a pro peptide research lab, PH Labs synthesises high-purity amino acids and analytical-grade laboratory reagents for qualified UK researchers — supplied for in-vitro scientific research purposes only. HPLC and mass-spectrometry verified, Certificate of Analysis with every batch. <strong style={{ color: '#f0a0a0' }}>Research Use Only — Not For Human Consumption.</strong>
+                PH Labs supplies tested research peptides and analytical-grade laboratory reagents to qualified UK researchers — including retatrutide, MOTS-C, GHK-Cu and bacteriostatic water, held in UK stock. Every batch is HPLC and mass-spectrometry verified with a Certificate of Analysis. <strong style={{ color: '#f0a0a0' }}>Research Use Only — Not For Human Consumption.</strong>
               </p>
 
 
@@ -800,7 +786,7 @@ export default function HomePage() {
             <div className="hidden lg:block animate-fade-in" style={{ animationDelay: '0.2s' }}>
               <div className="relative">
                 {/* Main card */}
-                <div className="rounded-2xl p-8 space-y-6" style={{
+                <div className="rounded-2xl p-8 xl:p-10 space-y-6 xl:space-y-7" style={{
                   background: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(255,255,255,0.07)',
                 }}>
@@ -829,7 +815,7 @@ export default function HomePage() {
                         const purityNum = parseFloat(purityRaw.replace(/[^0-9.]/g, '')) || 99;
                         return (
                           <div key={p.id} className="flex items-center gap-4">
-                            <span style={{ color: '#8db4d8', fontSize: '0.8rem', width: '90px', flexShrink: 0 }} className="truncate">{p.name}</span>
+                            <span title={p.name} style={{ color: '#8db4d8', fontSize: '0.8rem', width: '112px', flexShrink: 0 }} className="truncate">{p.name.replace(/\s+Research\s+Peptide$/i, '')}</span>
                             <div className="flex-1 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
                               <div className="h-full rounded-full" style={{ width: `${Math.min(purityNum, 100)}%`, background: color, opacity: 0.85 }} />
                             </div>
@@ -900,16 +886,20 @@ export default function HomePage() {
         </Suspense>
       )}
 
-      {/* Mid advert slot — reserves card banner height (h-64 + py-6) to prevent CLS. */}
-      <div
-        className="container mx-auto px-6 py-6"
-        style={{ minHeight: 'clamp(280px, 24vw, 320px)' }}
-        data-advert-reserve="homepage_mid"
-      >
-        <Suspense fallback={<div aria-hidden="true" style={{ minHeight: 256 }} />}>
-          <MarketingAdvertSlot adverts={adverts} placement="homepage_mid" className="" variant="card" />
-        </Suspense>
-      </div>
+      {/* Mid advert slot — rendered only when a mid advert actually exists.
+          It sits below the fold, so mounting late causes no visible shift;
+          the old always-on reserve left a ~280px empty gap with no advert. */}
+      {adverts.some((a: any) => a.placement === 'homepage_mid') && (
+        <div
+          className="container mx-auto px-6 py-6"
+          style={{ minHeight: 'clamp(280px, 24vw, 320px)' }}
+          data-advert-reserve="homepage_mid"
+        >
+          <Suspense fallback={<div aria-hidden="true" style={{ minHeight: 256 }} />}>
+            <MarketingAdvertSlot adverts={adverts} placement="homepage_mid" className="" variant="card" />
+          </Suspense>
+        </div>
+      )}
 
 
 
@@ -952,7 +942,7 @@ export default function HomePage() {
                   {/* Image area */}
                   <div className="relative overflow-hidden" style={{ aspectRatio: '4/3', background: '#040d1a' }}>
                     {p.image ? (
-                      <img {...cfImgProps(p.image, { widths: [300, 400, 500, 700], sizes: '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw', quality: 78, fallbackWidth: 400 })} alt={`${p.name} research peptide vial`} loading="lazy" fetchPriority="low" width="400" height="300" decoding="async" style={{ display: 'block', width: '100%', height: '100%', objectFit: 'contain' }} className="transition-transform duration-700 group-hover:scale-105" />
+                      <img {...cfImgProps(p.image, { widths: [300, 400, 500, 700], sizes: '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw', quality: 78, fallbackWidth: 400 })} alt={`${p.name} research peptide vial — PH Labs`} loading="lazy" fetchPriority="low" width="400" height="300" decoding="async" style={{ display: 'block', width: '100%', height: '100%', objectFit: 'contain' }} className="transition-transform duration-700 group-hover:scale-105" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <FlaskConical style={{ width: 48, height: 48, color: 'rgba(16,185,129,0.3)' }} />
@@ -1143,45 +1133,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ════════════════════════════════
-          TESTIMONIALS
-      ════════════════════════════════ */}
-      <section id="testimonials" className="py-20 cv-auto" style={{ background: 'linear-gradient(180deg, #040d1a 0%, #030a14 100%)' }}>
-        <div className="container mx-auto px-6">
-          <div className="will-fade max-w-2xl mb-14">
-            <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: '#10b981' }}>Researcher Feedback</p>
-            <h2 style={{ fontSize: 'clamp(1.7rem, 3vw, 2.4rem)', fontWeight: 800, color: '#f0f8ff', letterSpacing: '-0.025em', lineHeight: 1.15 }}>
-              Trusted by UK Researchers
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-5 will-fade">
-            {testimonials.map((t, i) => (
-              <div key={i} className="rounded-2xl p-6 flex flex-col gap-4" style={{
-                background: 'rgba(255,255,255,0.025)',
-                border: '1px solid rgba(255,255,255,0.06)',
-              }}>
-                <div className="flex gap-0.5">
-                  {Array.from({ length: t.rating }).map((_, s) => (
-                    <Star key={s} style={{ width: 13, height: 13, color: '#f59e0b', fill: '#f59e0b' }} />
-                  ))}
-                </div>
-                <p className="text-sm leading-relaxed flex-1" style={{ color: '#9cb8d9' }}>"{t.content}"</p>
-                <div className="flex items-center justify-between pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div>
-                    <div className="font-bold text-sm" style={{ color: '#c8dff5' }}>{t.name}</div>
-                    <div className="text-xs" style={{ color: '#3a5a82' }}>{t.role}</div>
-                  </div>
-                  <div className="text-xs" style={{ color: '#3a5a82' }}>{t.date}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Approved customer reviews (Admin → Reviews). Renders nothing when empty. */}
-      <Testimonials />
+      <Suspense fallback={null}>
+        <Testimonials />
+      </Suspense>
 
 
 
@@ -1228,12 +1183,12 @@ export default function HomePage() {
                       <CheckCircle2 style={{ width: 28, height: 28, color: '#10b981' }} />
                     </div>
                     <p className="font-bold text-base mb-1" style={{ color: '#e4f0ff' }}>
-                      {emailStatus === 'sent' ? 'Protocol Library sent!' : 'You\u2019ve already claimed this'}
+                      {emailStatus === 'sent' ? 'Protocol Library sent!' : 'You’ve already claimed this'}
                     </p>
                     <p className="text-sm mb-5" style={{ color: '#7a98b8' }}>
                       {emailStatus === 'sent'
-                        ? 'Check your inbox for the PDF download link.'
-                        : 'Your discount code is still valid \u2014 use it at checkout.'}
+                        ? 'Check your inbox and confirm your email to get the PDF download link.'
+                        : 'Your discount code is still valid — use it at checkout.'}
                     </p>
                     <div className="rounded-xl p-5" style={{ background: 'rgba(16,185,129,0.06)', border: '1px dashed rgba(16,185,129,0.35)' }}>
                       <p className="text-[9px] sm:text-[10px] text-emerald-300/90 font-medium tracking-widest uppercase shadow-none mb-2">Your 10% Discount Code</p>
@@ -1438,7 +1393,7 @@ export default function HomePage() {
       {/* ════════════════════════════════
           MOBILE STICKY BAR
       ════════════════════════════════ */}
-      <div data-mobile-sticky-bar className="fixed left-0 right-0 z-[97]" style={{
+      <div data-mobile-sticky-bar className="fixed left-0 right-0 z-[97] lg:hidden" style={{
         bottom: 'calc(env(safe-area-inset-bottom, 0px) + 42px)',
         background: 'rgba(3,10,20,0.97)',
         borderTop: '1px solid rgba(16,185,129,0.15)',
@@ -1465,7 +1420,9 @@ export default function HomePage() {
       </div>
 
       {/* CoA batch lookup — between products and SEO/footer */}
-      <CoALookup />
+      <Suspense fallback={<div aria-hidden="true" style={{ minHeight: 220 }} />}>
+        <CoALookup />
+      </Suspense>
 
       {/* SEO link-index — SSR-rendered hub linking to every product + article */}
       <HomeSeoIndex />
@@ -1478,4 +1435,3 @@ export default function HomePage() {
     </div>
   );
 }
-

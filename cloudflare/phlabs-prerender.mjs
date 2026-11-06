@@ -1,3 +1,4 @@
+import { resolveFinalRedirect } from "../src/lib/legacy-redirects.ts";
 // cloudflare/phlabs-prerender.mjs
 // Hash-at-cache-miss, serve-raw-on-HIT. ALL HTML routes use this path.
 // Bot/prerender branch: UA sniff -> Prerender.io -> hash-CSP -> cache separately.
@@ -124,7 +125,7 @@ const NON_HTML_EXT_RX =
   /\.(webmanifest|json|xml|txt|ico|map|css|js|mjs|png|jpe?g|gif|webp|avif|svg|woff2?|ttf|otf|pdf|mp4|webm|zip)$/i;
 // `/lovable/` carries the email queue-drain, preview and suppression routes —
 // they must reach origin untouched (never prerendered, never edge-cached).
-const NON_HTML_PREFIXES = ["/downloads/", "/.well-known/", "/api/", "/_api/", "/__/", "/lovable/"];
+const NON_HTML_PREFIXES = ["/downloads/", "/.well-known/", "/api/", "/_api/", "/__/", "/lovable/", "/_serverFn/", "/_server/"];
 
 // Vulnerability-scanner path prefixes — return 404 at the edge before any
 // origin/prerender hop. Not just to save renders: these attempts pollute
@@ -173,6 +174,67 @@ const SCANNER_PATH_PREFIXES = [
   "/jolokia",
   "/_ignition",
   "/telescope",
+  // 2026-08-03 render-history audit — residual probes still burning paid
+  // renders (all 404 at origin, ~500 renders/week combined):
+  "/env",          // bare /env (dotfile /.env was already covered)
+  "/wordpress",
+  "/wp",           // bare /wp; also covers /wp-* probes
+  "/dev",
+  "/test",
+  "/backup",
+  "/staging",
+  "/old",
+  "/server",
+  "/debug",
+  "/ecp",          // MS Exchange Control Panel probes
+  "/___proxy",     // cPanel ___proxy_subdomain_* probes
+  "/_profiler",    // Symfony profiler
+  "/phpinfo",
+  "/redmine",
+  "/license.txt",
+  "/sitemap.txt",
+  "//",            // double-slash prefix probes (//.bash_history, //redmine/*)
+
+  // 2026-08-03 error-monitor burst (25 events/5 min) — framework & server
+  // config probes: JS bundler configs, Laravel storage, nginx/apache vhosts,
+  // credential dumps. All 404 on this app; block at edge so they never reach
+  // the origin error monitor or prerender.io.
+  "/next.config",
+  "/nuxt.config",
+  "/vite.config",
+  "/webpack.config",
+  "/ecosystem.config",
+  "/pm2.config",
+  "/_next",        // Next.js asset probes (this app is Vite/TanStack)
+  "/app.js",
+  "/index.js",     // root-file probes; real entry is /assets/index-<hash>.js
+  "/storage/",     // Laravel storage/* (trailing slash: /storage-guide is a real page)
+  "/frontend/",
+  "/js/",
+  "/public/",
+  "/nginx/",
+  "/apache/",
+  "/ftp-",
+  "/secret.json",
+  "/api_keys",
+  "/keys.json",
+  "/tokens.json",
+  "/application.",
+  // 2026-08-07 error-monitor burst (25+ events / 5 min) — admin-console,
+  // GraphQL and build-directory probes from a vuln scanner. None of these
+  // exist on this app (real assets live under /assets/ and /_build/,
+  // real APIs under /api/), so block at the edge.
+  "/build/",
+  "/dist/",
+  "/v1/",
+  "/v2/",
+  "/console",
+  "/graphql",
+  "/dashboard",
+  "/signin",
+  "/profile",
+  "/settings",
+  "/workspace",
 ];
 
 // Scanner file extensions (.php, backups, archives, dumps). These never exist
@@ -182,7 +244,53 @@ const SCANNER_PATH_PREFIXES = [
 // .NET appsettings.*.json, Rails credentials.yml.enc, Spring *.yml,
 // *.log files and */secret_token.rb slipping through to Prerender.io —
 // every one of those burned a paid render.
-const SCANNER_EXT_RX = /\.(php\d?|phtml|asp|aspx|jsp|cgi|pl|sql|bak|old|swp|ini|zip|tar|tgz|gz|rar|7z|ya?ml|rb|py|sh|log|enc|pem|key|sqlite|orig|dist|lock)$/i;
+const SCANNER_EXT_RX = /\.(php\d?|phtml|asp|aspx|jsp|cgi|pl|sql|bak|old|swp|ini|zip|tar|tgz|gz|rar|7z|ya?ml|rb|py|sh|log|enc|pem|key|sqlite|orig|dist|lock|conf|properties)$/i;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PRERENDER ROUTE ALLOWLIST (2026-08-07)
+// ─────────────────────────────────────────────────────────────────────────────
+// Only KNOWN public, indexable routes are proxied to Prerender.io. Any
+// other path from a crawler UA — junk scanner probes (/console, /graphql),
+// typo'd URLs, stale hashed chunk names — goes ORIGIN-DIRECT: no paid
+// render, no headless-Chrome boot of the SPA (which also executed the
+// client-side page_not_found beacon and polluted the error monitor), and
+// no cached rubbish snapshots served to Google.
+// Keep in sync with src/routes/ (public pages only — personalised pages
+// like /checkout, /account, /order/* stay excluded on purpose).
+// ═══════════════════════════════════════════════════════════════════════════════
+const PRERENDER_ROUTE_EXACT = new Set([
+  "/",
+  "/about",
+  "/compound",
+  "/contact",
+  "/cookies",
+  "/downloads",
+  "/install",
+  "/lab-reports",
+  "/privacy-policy",
+  "/privacy-requests",
+  "/products",
+  "/quality-control",
+  "/refund-policy",
+  "/request-catalog",
+  "/research",
+  "/resources",
+  "/shipping-policy",
+  "/storage-guide",
+  "/terms-and-conditions",
+  "/uk-research-store",
+]);
+const PRERENDER_ROUTE_PREFIXES = [
+  "/products/",   // /products/:slug + /products/category/:slug
+  "/resources/",  // /resources/:slug + /resources/peptide-categories-uk-research
+  "/research/",   // /research/:article guides
+  "/compare/",    // /compare/:slug
+  "/landing/",    // /landing/:slug — AdsBot must render ad landing pages
+];
+function isPrerenderableRoute(path) {
+  if (PRERENDER_ROUTE_EXACT.has(path)) return true;
+  return PRERENDER_ROUTE_PREFIXES.some((p) => path.startsWith(p));
+}
 
 function isMonitoringUA(ua) {
   return MONITORING_UA_RX.test(ua || "");
@@ -222,7 +330,9 @@ function isCrawler(request) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // CSP DIRECTIVES — Mirrors production src/server.ts strict CSP.
 // ═══════════════════════════════════════════════════════════════════════════════
-const CSP_BASE = `default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://tagmanager.google.com; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://tagmanager.google.com; style-src-attr 'unsafe-inline'; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://www.google-analytics.com https://www.googletagmanager.com https://ssl.google-analytics.com https://www.google.com https://www.google.co.uk https://www.google.se https://www.gstatic.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://stats.g.doubleclick.net https://*.google.com https://*.google.se https://bat.bing.net https://bat.bing.com https://*.bing.com https://s.clarity.ms https://*.clarity.ms; media-src 'self' https: data:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseappcheck.googleapis.com https://content-firebaseappcheck.googleapis.com https://firebaseinstallations.googleapis.com https://fcmregistrations.googleapis.com https://firebaseremoteconfig.googleapis.com https://firebasestorage.googleapis.com https://*.firebaseapp.com https://*.googleapis.com https://*.supabase.co https://www.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com https://region1.google-analytics.com https://region1.analytics.google.com https://analytics.google.com https://*.analytics.google.com https://stats.g.doubleclick.net https://www.merchant-center-analytics.goog https://service.prerender.io https://api.prerender.io https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net https://royal-mail-order.dantun9090.workers.dev https://www.googleadservices.com https://googleads.g.doubleclick.net https://apis.google.com https://bat.bing.net https://bat.bing.com https://*.bing.com https://*.taboola.com https://s.clarity.ms https://*.clarity.ms https://*.ingest.sentry.io https://*.ingest.de.sentry.io https://o4511662760525824.ingest.de.sentry.io https://*.wallid.io https://*.wallid.com; frame-src 'self' blob: https://firebasestorage.googleapis.com https://*.firebaseapp.com https://www.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com https://www.recaptcha.net https://*.wallid.io https://*.wallid.com https://*.stripe.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; report-uri /api/public/csp-report; report-to csp-endpoint`;
+const CSP_BASE =
+  `default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://tagmanager.google.com; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://tagmanager.google.com; style-src-attr 'unsafe-inline'; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://www.google-analytics.com https://www.googletagmanager.com https://ssl.google-analytics.com https://www.google.com https://www.google.co.uk https://www.google.se https://www.google.pl https://www.google.de https://www.gstatic.com https://www.googleadservices.com https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://stats.g.doubleclick.net https://*.google.com https://*.google.se https://bat.bing.net https://bat.bing.com https://*.bing.com https://s.clarity.ms https://*.clarity.ms; media-src 'self' https: data:; `
+  + `connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseappcheck.googleapis.com https://content-firebaseappcheck.googleapis.com https://firebaseinstallations.googleapis.com https://fcmregistrations.googleapis.com https://firebaseremoteconfig.googleapis.com https://firebasestorage.googleapis.com https://*.firebaseapp.com https://*.googleapis.com https://*.supabase.co https://www.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com https://region1.google-analytics.com https://region1.analytics.google.com https://analytics.google.com https://*.analytics.google.com https://stats.g.doubleclick.net https://www.merchant-center-analytics.goog https://service.prerender.io https://api.prerender.io https://www.google.com https://ad.doubleclick.net https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net https://royal-mail-order.dantun9090.workers.dev https://www.googleadservices.com https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://apis.google.com https://bat.bing.net https://bat.bing.com https://*.bing.com https://*.taboola.com https://s.clarity.ms https://*.clarity.ms https://*.ingest.sentry.io https://*.ingest.de.sentry.io https://o4511662760525824.ingest.de.sentry.io https://*.wallid.io https://*.wallid.com; frame-src 'self' blob: https://firebasestorage.googleapis.com https://*.firebaseapp.com https://www.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com https://www.recaptcha.net https://*.wallid.io https://*.wallid.com https://*.stripe.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; report-uri /api/public/csp-report; report-to csp-endpoint`;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // HELPERS
@@ -602,6 +712,22 @@ export default {
     const startTime = Date.now();
     const ua = request.headers.get("User-Agent") || "";
 
+    // ── Junk URL guard (2026-10-20) ──────────────────────────────────────
+    // Spam backlinks like /products/[https://competitor.example/... were
+    // burning ~70% of Prerender.io renders (307 → 404 at 5-7s each).
+    // Answer a fast, cacheable 404 at the edge — never prerender/origin.
+    if (/^\/products\/(?:\[|%5B|.*(?:https?:|https?%3A|www\.))/i.test(path)) {
+      return new Response("Not Found", {
+        status: 404,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "public, max-age=86400",
+          "X-Robots-Tag": "noindex",
+          "Server-Timing": `junk-404;dur=${Date.now() - startTime}`,
+        },
+      });
+    }
+
     // ── Trailing-slash canonicalization (SEO) ────────────────────────────
     // /x and /x/ both served the same document — duplicate content. 301 to
     // the canonical non-slash form (keep "/" itself and file-like paths).
@@ -610,7 +736,8 @@ export default {
       path.endsWith("/") &&
       !/\.[a-z0-9]+$/i.test(path.slice(0, -1))
     ) {
-      const target = url.origin + path.slice(0, -1) + url.search;
+      const stripped = path.slice(0, -1);
+      const target = url.origin + (resolveFinalRedirect(stripped) || stripped) + url.search;
       return new Response(null, {
         status: 301,
         headers: {
@@ -619,6 +746,24 @@ export default {
           "Server-Timing": `slash-redirect;dur=${Date.now() - startTime}`,
         },
       });
+    }
+
+    // ── Legacy / consolidated URL redirects (single hop, 2026-09-26) ────
+    // The origin issues these 301s too, but the edge fetches origin and
+    // Prerender.io with redirect-follow, which turned them into 200s on the
+    // OLD URL. Answer them here so browsers and bots get one clean 301.
+    if (request.method === "GET" || request.method === "HEAD") {
+      const legacyDest = resolveFinalRedirect(path);
+      if (legacyDest && legacyDest !== path) {
+        return new Response(null, {
+          status: 301,
+          headers: {
+            Location: url.origin + legacyDest + url.search,
+            "Cache-Control": "public, max-age=3600",
+            "Server-Timing": `legacy-redirect;dur=${Date.now() - startTime}`,
+          },
+        });
+      }
     }
 
     // ── PRERENDER QUOTA GUARDS (2026-07-18) ─────────────────────────────
@@ -664,9 +809,11 @@ export default {
     const nonHtml = isNonHtmlPath(path);
 
     // Only allowlisted crawlers reach the prerender branch, and only for
-    // HTML paths, and only when they aren't one of our probes.
+    // HTML paths that are KNOWN public routes, and only when they aren't
+    // one of our probes. Unknown routes go origin-direct — Prerender.io
+    // never renders rubbish (paid render + page_not_found beacon noise).
     const isBot =
-      !monitoring && !probeParam && !nonHtml && isCrawler(request);
+      !monitoring && !probeParam && !nonHtml && isPrerenderableRoute(path) && isCrawler(request);
 
 
     // ── 0. Legacy /cache-reset URL — the in-page popup now clears caches
@@ -676,7 +823,7 @@ export default {
     //    marker so the follow-up request skips any lingering edge cache.
     if (path === "/cache-reset") {
       const rawNext = url.searchParams.get("next") || "/";
-      const safeNext = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
+      const safeNext = /^\/(?![\/\\])/.test(rawNext) && !/[\\\x00-\x1f]/.test(rawNext) ? rawNext : "/";
       const sep = safeNext.includes("?") ? "&" : "?";
       return new Response(null, {
         status: 302,
@@ -933,8 +1080,12 @@ export default {
     //
     // Non-eligible browser paths (admin, auth, cart, checkout, /api/…) fall
     // through to the origin+per-request-nonce pass-through path below.
+    // 2026-08-07: also restricted to KNOWN public routes — unknown paths
+    // (scanner junk like /console, /graphql, stale chunk names) previously
+    // burned a PAID prerender render on every MISS and then cached the
+    // rendered NotFound rubbish for 1h, serving it to real visitors.
     const cache = caches.default;
-    let wEligible = warmCacheEligible(path);
+    let wEligible = warmCacheEligible(path) && isPrerenderableRoute(path);
     const swrRefill = request.headers.get("x-phl-swr-refill") === "1";
     // Build-id probes must bypass the edge HTML cache — otherwise the probe
     // is served the very entry it is meant to validate and never sees the

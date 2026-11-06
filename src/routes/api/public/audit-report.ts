@@ -1,3 +1,4 @@
+import { requireAdminRequest } from '@/lib/server/admin-request-auth';
 import { createFileRoute } from '@tanstack/react-router';
 import { enforceRateLimit } from '@/lib/rate-limit';
 import { getDocAdmin } from '@/lib/server/firestore-admin';
@@ -488,6 +489,8 @@ export const Route = createFileRoute('/api/public/audit-report')({
           retryAfterSec: 60,
         });
         if (limited) return limited;
+        const denied = await requireAdminRequest(request);
+        if (denied) return denied;
 
         const url = new URL(request.url);
         const force = url.searchParams.get('force') === '1';

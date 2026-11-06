@@ -13,8 +13,11 @@ import {
 } from '@/lib/firebase';
 import type { Coupon } from '@/lib/firebase';
 import { validateCartPrices } from '@/lib/cart-validation.functions';
+import { computeBundleDiscount } from '@/lib/bundle-discount';
 import { parseCartTransferParam } from '@/lib/legacy-host';
 import { createOrder } from '@/lib/create-order.functions';
+import { useCheckoutPaused } from '@/lib/checkout-pause';
+import { getStoredAdClickIds } from '@/lib/gclid-capture';
 import { createGatewayPaymentLink, getCheckoutPaymentOptions } from '@/lib/payment-gateways.functions';
 import type { CheckoutPaymentOptions } from '@/lib/payments/types';
 import { migrateStoredCart } from '@/lib/cart-migration';
@@ -23,13 +26,19 @@ import { sendPublicMail } from '@/lib/sendPublicMail';
 import type { CartItem } from '@/components/Layout';
 import { useFreeGiftConfig, freeGiftApplies, eligibleGifts } from '@/lib/free-gift-config';
 import FreeGiftPicker from '@/components/checkout/FreeGiftPicker';
-import { trackAddPaymentInfo, trackBeginCheckout, trackViewCart, type GaItem } from '@/lib/analytics';
+import { trackAddPaymentInfo, trackBeginCheckout, trackViewCart, renderGoogleCustomerReviewsOptIn, type GaItem } from '@/lib/analytics';
 import { merchantItemId } from '@/lib/merchant-item-id';
 import { logCheckoutEvent } from '@/lib/checkoutTelemetry';
 import { callPreflightWithRetry } from '@/lib/checkoutPreflightRetry';
 import { toast, Toaster as SonnerToaster } from 'sonner';
 
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
+import { usePeptidePayEnabled } from '@/lib/peptidepay-toggle';
+import { useBrokkrPayConfig } from '@/lib/brokkrpay-fx';
+import { useNowPaymentsEnabled } from '@/lib/nowpayments-toggle';
+import { useTideEnabled } from '@/lib/tide-toggle';
+import TidePayPanel from '@/components/TidePayPanel';
+
 import NoCacheHead from '@/components/NoCacheHead';
 import PostcodeLookup from '@/components/checkout/PostcodeLookup';
 
@@ -40,11 +49,15 @@ interface CheckoutForm {
   lastName: string;
   email: string;
   phone: string;
+  /** House number or property name — captured separately for Royal Mail labels. */
+  houseNumber: string;
   address: string;
+  /** Shopper confirmed the property genuinely has no number (named property). */
+  addressNoHouseNumber: boolean;
   city: string;
   postcode: string;
   country: string;
-  paymentMethod: 'bank_transfer' | 'pay_by_bank' | 'wallid';
+  paymentMethod: '' | 'bank_transfer' | 'pay_by_bank' | 'wallid' | 'peptidepay' | 'brokkrpay' | 'nowpayments' | 'tide';
   acceptedTerms: boolean;
   ageVerified: boolean;
   createAccount: boolean;
@@ -55,6 +68,7 @@ interface CheckoutForm {
 
 import { checkNextDayEligibility, SHIPPING_CONFIG, formatLondonDate } from '@/lib/shipping/next-day';
 import { formatShippingAddressInline, formatShippingAddressLines, shortPostcodeLabel } from '@/lib/format-address';
+import { joinAddressLine, validateUkAddressLine, hasHouseNumber, HAS_HOUSE_NUMBER_OPTION_LABEL, HAS_HOUSE_NUMBER_OPTION_HINT, NO_HOUSE_NUMBER_OPTION_LABEL, NO_HOUSE_NUMBER_OPTION_HINT } from '@/lib/uk-address';
 import { suggestEmailTypo } from '@/lib/email-typo';
 
 
@@ -96,6 +110,7 @@ const iconInputStyle = (hasError?: boolean): React.CSSProperties => ({
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
+  const checkoutPaused = useCheckoutPaused();
   const [cart, setCart] = useState<CartItem[]>([]);
   const freeGiftCfg = useFreeGiftConfig();
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
@@ -113,11 +128,13 @@ export default function CheckoutPage() {
     lastName: '',
     email: '',
     phone: '',
+    houseNumber: '',
     address: '',
+    addressNoHouseNumber: false,
     city: '',
     postcode: '',
     country: 'United Kingdom',
-    paymentMethod: 'wallid',
+    paymentMethod: '',
     acceptedTerms: false,
     ageVerified: false,
     createAccount: false,
@@ -126,12 +143,18 @@ export default function CheckoutPage() {
     customerNote: '',
   });
 
+  // Canonical first address line sent to the order API / label / invoice.
+  const addressLine1 = joinAddressLine(form.houseNumber, form.address);
+
+
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [completedSteps, setCompletedSteps] = useState<Set<Step>>(new Set());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isPlacing, setIsPlacing] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [bankTransferRef, setBankTransferRef] = useState('');
+  // Reference reserved up-front so the Tide QR panel can show it before the
+  // order exists; it is sent to createOrder so the stored order matches.
   const [confirmedTotal, setConfirmedTotal] = useState('');
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
@@ -148,6 +171,12 @@ export default function CheckoutPage() {
   const [fenaOrderId, setFenaOrderId] = useState<string>('');
   const [paymentOptions, setPaymentOptions] = useState<CheckoutPaymentOptions | null>(null);
   const [wallidEnabled, setWallidEnabled] = useState<boolean>(false);
+  const [manualTransferEnabled, setManualTransferEnabled] = useState<boolean>(true);
+  const { enabled: peptidepayEnabled } = usePeptidePayEnabled();
+  const { enabled: brokkrpayEnabled } = useBrokkrPayConfig();
+  const { enabled: nowpaymentsEnabled } = useNowPaymentsEnabled();
+  const { enabled: tideEnabled } = useTideEnabled();
+
   const [, setSummaryExpanded] = useState(false);
   const [paymentRecoveryVisible, setPaymentRecoveryVisible] = useState(false);
   const [pendingPaymentUrl, setPendingPaymentUrl] = useState<string | null>(null);
@@ -587,15 +616,26 @@ export default function CheckoutPage() {
       if (u && !u.isAnonymous) {
         getDoc(doc(db, 'customers', u.uid)).then(snap => {
           const d = snap.exists() ? snap.data() : {};
+          const savedAddress = d.address || '';
           setForm(prev => ({
             ...prev,
             firstName: d.firstName || prev.firstName,
             lastName: d.lastName || prev.lastName,
             email: u.email || prev.email,
             phone: d.phone || prev.phone,
-            address: d.address || prev.address,
+            address: savedAddress || prev.address,
             city: d.city || prev.city,
             postcode: d.postcode || prev.postcode,
+            // Restore the "named property" confirmation so returning shoppers
+            // with e.g. "Rose Cottage" are not blocked on step 2. If the flag
+            // was never stored, infer it from the saved (previously shipped)
+            // address line.
+            addressNoHouseNumber:
+              typeof d.addressNoHouseNumber === 'boolean'
+                ? d.addressNoHouseNumber
+                : savedAddress
+                  ? !hasHouseNumber(savedAddress)
+                  : prev.addressNoHouseNumber,
           }));
         }).catch(() => {
           setForm(prev => ({ ...prev, email: u.email || prev.email }));
@@ -632,44 +672,41 @@ export default function CheckoutPage() {
     return () => { cancelled = true; };
   }, []);
 
-  // Wallid Pay-by-Bank kill switch — admin toggle from Payment Gateways panel.
+  // Payment kill switches — admin toggles from the Payment Gateways panel.
   useEffect(() => {
     let cancelled = false;
     fetch('/api/config/payments', { cache: 'no-store' })
-      .then((r) => r.ok ? r.json() : { wallid_enabled: false })
-      .then((cfg: { wallid_enabled?: boolean }) => {
+      .then((r) => r.ok ? r.json() : { wallid_enabled: false, manual_transfer_enabled: true })
+      .then((cfg: { wallid_enabled?: boolean; manual_transfer_enabled?: boolean }) => {
         if (cancelled) return;
         setWallidEnabled(Boolean(cfg?.wallid_enabled));
+        setManualTransferEnabled(cfg?.manual_transfer_enabled !== false);
       })
       .catch(() => {
         if (cancelled) return;
         setWallidEnabled(false);
+        setManualTransferEnabled(true);
       });
     return () => { cancelled = true; };
   }, []);
 
-  // Default payment method: Wallid first, then dynamic Pay by Bank, then manual fallback.
-  useEffect(() => {
-    if (wallidEnabled) {
-      setForm((prev) => ({ ...prev, paymentMethod: 'wallid' }));
-      return;
-    }
-    if (paymentOptions && (paymentOptions.primary || paymentOptions.backups.length > 0)) {
-      setForm((prev) => ({ ...prev, paymentMethod: 'pay_by_bank' }));
-      return;
-    }
-    setForm((prev) => ({ ...prev, paymentMethod: 'bank_transfer' }));
-  }, [paymentOptions, wallidEnabled]);
+  // No auto-selected payment method: both options stay collapsed by default
+  // so the user makes an explicit choice. Validation enforces a selection
+  // before the order can be placed.
 
   // Calculations
   const subtotal = cart.reduce((s, i) => s + i.priceNum * i.quantity, 0);
-  const discount = appliedCoupon ? (
+  const couponDiscount = appliedCoupon ? (
     appliedCoupon.type === 'percentage'
       ? +(subtotal * appliedCoupon.value / 100).toFixed(2)
       : appliedCoupon.type === 'fixed'
         ? Math.min(appliedCoupon.value, subtotal)
         : 0
   ) : 0;
+  // Preview only — the authoritative bundle discount is recomputed in
+  // create-order.server.ts from Firestore prices via the SAME helper.
+  const bundle = computeBundleDiscount(subtotal, cart, couponDiscount);
+  const discount = +Math.min(subtotal, couponDiscount + bundle.amount).toFixed(2);
   // EU international shipping (Germany, Poland) — matches the "Delivery EU"
   // policy in Google Merchant Center: £20 flat, free over £200.
   const isEuInternational = form.country === 'Germany' || form.country === 'Poland';
@@ -841,7 +878,18 @@ export default function CheckoutPage() {
       }
     }
     if (step === 2) {
-      if (!form.address.trim()) e.address = 'Required';
+      if (!addressLine1.trim()) e.address = 'Required';
+      else if (form.country === 'United Kingdom') {
+        // A zero-like placeholder ("0") means the shopper needs the
+        // "No house number" option, not a fake number on the label.
+        if (!form.addressNoHouseNumber && /^0+[a-z]?$/i.test(form.houseNumber.trim())) {
+          e.address = '"0" is not a house number — pick "No house number" above and enter the property name';
+        } else {
+          // Royal Mail labels need a house number (or a confirmed named property).
+          const addrError = validateUkAddressLine(addressLine1, form.addressNoHouseNumber);
+          if (addrError) e.address = addrError;
+        }
+      }
       else if (form.country === 'Germany') {
         // Mirror the server-side `superRefine` rule so Step 2 blocks the
         // shopper before we ever call the order API. German addresses need
@@ -875,6 +923,7 @@ export default function CheckoutPage() {
       if (!form.shippingMethod) e.shippingMethod = 'Please choose a shipping method';
     }
     if (step === 3) {
+      if (!form.paymentMethod) e.paymentMethod = 'Please choose a payment method';
       if (!form.ageVerified) e.age = 'You must confirm you are 18 or older to place this order';
       if (!form.acceptedTerms) e.terms = 'You must confirm Research Use Only and accept the Terms & Conditions';
     }
@@ -995,13 +1044,14 @@ export default function CheckoutPage() {
         postcode: 'Please enter a valid postcode for your country.',
         country: 'Please choose your country.',
         shippingMethod: 'Please choose a shipping method.',
+        paymentMethod: 'Please choose a payment method.',
       };
       setLoginError(friendly[firstKey] || 'Please complete the highlighted fields before paying.');
       // Jump back to the step containing the first error and scroll it into view.
       const stepForKey: Record<string, Step> = {
         firstName: 1, lastName: 1, email: 1, phone: 1, password: 1,
         address: 2, city: 2, postcode: 2, country: 2, shippingMethod: 2,
-        age: 3, terms: 3,
+        paymentMethod: 3, age: 3, terms: 3,
       };
       const targetStep = stepForKey[firstKey] ?? currentStep;
       setCurrentStep(targetStep);
@@ -1038,7 +1088,7 @@ export default function CheckoutPage() {
       trackAddPaymentInfo(
         cartToGaItems(),
         Number(total) || 0,
-        form.paymentMethod === 'wallid' ? 'Wallid Pay by Bank' : form.paymentMethod === 'pay_by_bank' ? 'Open Banking' : 'Bank Transfer',
+        form.paymentMethod === 'wallid' ? 'Wallid Pay by Bank' : form.paymentMethod === 'pay_by_bank' ? 'Open Banking' : form.paymentMethod === 'peptidepay' ? 'Card / Apple Pay / Google Pay' : form.paymentMethod === 'nowpayments' ? 'Crypto (NOWPayments)' : form.paymentMethod === 'tide' ? 'Tide (QR / Open Banking)' : 'Bank Transfer',
       );
     } catch { /* analytics never blocks payment */ }
 
@@ -1122,13 +1172,14 @@ export default function CheckoutPage() {
               lastName: form.lastName,
               email: form.email,
               phone: form.phone,
-              address: form.address,
+              address: addressLine1,
               city: form.city,
               postcode: form.postcode,
               country: form.country,
+              addressNoHouseNumber: form.addressNoHouseNumber,
             },
             shippingMethod: form.shippingMethod,
-            paymentMethod: form.paymentMethod,
+            paymentMethod: form.paymentMethod as Exclude<CheckoutForm['paymentMethod'], ''>,
             ageVerified: true,
             termsAccepted: true,
             couponCode: appliedCoupon?.code ?? null,
@@ -1139,6 +1190,10 @@ export default function CheckoutPage() {
               return base ? `${giftLine}\n${base}` : giftLine;
             })(),
             idToken,
+            // Ad click IDs captured from the landing URL (work even when the
+            // visitor declined cookies) — the server stores them on the order
+            // for the Google Ads offline conversion import.
+            adClickIds: getStoredAdClickIds(),
           },
         });
         if (paymentAttemptRef.current !== paymentAttemptId) return;
@@ -1234,7 +1289,7 @@ export default function CheckoutPage() {
           try { parsed = new URL(data.payment_link); } catch { throw new Error('Invalid payment redirect URL.'); }
           if (parsed.protocol !== 'https:') throw new Error('Unexpected payment redirect.');
           try {
-            localStorage.setItem('php_pending_order', orderId);
+            localStorage.setItem('php_pending_order', orderId); localStorage.setItem('php_pending_order_at', String(Date.now()));
             if (paymentToken) localStorage.setItem(`php_pt_${orderId}`, paymentToken);
           } catch { /* ignore */ }
 
@@ -1273,6 +1328,225 @@ export default function CheckoutPage() {
           return;
         }
       }
+
+      // PeptidePay (card / Apple Pay / Google Pay / crypto — hosted checkout).
+      if (form.paymentMethod === 'peptidepay') {
+        setFenaOrderId(orderId);
+        setFenaStep('creating-link');
+        try {
+          const ppIdToken = auth.currentUser
+            ? await auth.currentUser.getIdToken().catch(() => null)
+            : null;
+          const paymentToken = serverResult.paymentToken ?? null;
+          if (!ppIdToken && !paymentToken) {
+            throw new Error('Could not secure your payment session. Please refresh and try again.');
+          }
+          const res = await fetch('/api/payments/peptidepay-create', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            signal: paymentAbortRef.current?.signal,
+            body: JSON.stringify({
+              idToken: ppIdToken,
+              orderId,
+              paymentToken,
+              amount: Number(totalAmount),
+              currency: 'GBP',
+              customerEmail: form.email,
+            }),
+          });
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
+          const data = await res.json().catch(() => ({} as any));
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
+          if (!res.ok || !data.payment_link) {
+            throw new Error(data?.error || 'Could not start card payment.');
+          }
+          let parsed: URL;
+          try { parsed = new URL(data.payment_link); } catch { throw new Error('Invalid payment redirect URL.'); }
+          if (parsed.protocol !== 'https:') throw new Error('Unexpected payment redirect.');
+          try {
+            localStorage.setItem('php_pending_order', orderId);
+            localStorage.setItem('php_pending_order_at', String(Date.now()));
+            if (paymentToken) localStorage.setItem(`php_pt_${orderId}`, paymentToken);
+          } catch { /* ignore */ }
+
+          setFenaStep('redirecting');
+          logCheckoutEvent({
+            stage: 'redirect_target',
+            cartId: orderTelemetryCartId,
+            url: parsed.toString(),
+            timestamp: Date.now(),
+          });
+          const paymentUrl = parsed.toString();
+          setPendingPaymentUrl(paymentUrl);
+          setPaymentRecoveryVisible(true);
+          window.location.assign(paymentUrl);
+          return;
+        } catch (err: any) {
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
+          setFenaStep('failed');
+          logCheckoutEvent({
+            stage: 'gateway_error',
+            cartId: orderTelemetryCartId,
+            gateway: 'peptidepay',
+            errorCode: String(err?.code ?? err?.name ?? 'peptidepay_error'),
+            errorMessage: String(err?.message ?? 'unknown').slice(0, 300),
+            timestamp: Date.now(),
+          });
+          const failMsg = err?.message || 'Card payment could not be started — please try again.';
+          setLoginError(failMsg);
+          console.error('[PAYMENT] gateway_fail method=peptidepay', err);
+          try { toast.error(failMsg); } catch { /* toast optional */ }
+          setIsPlacing(false);
+          return;
+        }
+      }
+
+      // BrokkrPay (hosted card checkout — charged in whole US dollars).
+      if (form.paymentMethod === 'brokkrpay') {
+        setFenaOrderId(orderId);
+        setFenaStep('creating-link');
+        try {
+          const bpIdToken = auth.currentUser
+            ? await auth.currentUser.getIdToken().catch(() => null)
+            : null;
+          const paymentToken = serverResult.paymentToken ?? null;
+          if (!bpIdToken && !paymentToken) {
+            throw new Error('Could not secure your payment session. Please refresh and try again.');
+          }
+          const res = await fetch('/api/payments/brokkrpay-create', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            signal: paymentAbortRef.current?.signal,
+            body: JSON.stringify({
+              idToken: bpIdToken,
+              orderId,
+              paymentToken,
+              amount: Number(totalAmount),
+              currency: 'GBP',
+              customerEmail: form.email,
+            }),
+          });
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
+          const data = await res.json().catch(() => ({} as any));
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
+          if (!res.ok || !data.payment_link) {
+            throw new Error(data?.error || 'Could not start card payment.');
+          }
+          let parsed: URL;
+          try { parsed = new URL(data.payment_link); } catch { throw new Error('Invalid payment redirect URL.'); }
+          if (parsed.protocol !== 'https:') throw new Error('Unexpected payment redirect.');
+          try {
+            localStorage.setItem('php_pending_order', orderId);
+            localStorage.setItem('php_pending_order_at', String(Date.now()));
+            if (paymentToken) localStorage.setItem(`php_pt_${orderId}`, paymentToken);
+          } catch { /* ignore */ }
+
+          setFenaStep('redirecting');
+          logCheckoutEvent({
+            stage: 'redirect_target',
+            cartId: orderTelemetryCartId,
+            url: parsed.toString(),
+            timestamp: Date.now(),
+          });
+          const paymentUrl = parsed.toString();
+          setPendingPaymentUrl(paymentUrl);
+          setPaymentRecoveryVisible(true);
+          window.location.assign(paymentUrl);
+          return;
+        } catch (err: any) {
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
+          setFenaStep('failed');
+          logCheckoutEvent({
+            stage: 'gateway_error',
+            cartId: orderTelemetryCartId,
+            gateway: 'brokkrpay',
+            errorCode: String(err?.code ?? err?.name ?? 'brokkrpay_error'),
+            errorMessage: String(err?.message ?? 'unknown').slice(0, 300),
+            timestamp: Date.now(),
+          });
+          const failMsg = err?.message || 'Card payment could not be started — please try again.';
+          setLoginError(failMsg);
+          console.error('[PAYMENT] gateway_fail method=brokkrpay', err);
+          try { toast.error(failMsg); } catch { /* toast optional */ }
+          setIsPlacing(false);
+          return;
+        }
+      }
+
+
+
+      // NOWPayments (hosted crypto invoice — BTC / ETH / USDT / 300+ assets).
+      if (form.paymentMethod === 'nowpayments') {
+        setFenaOrderId(orderId);
+        setFenaStep('creating-link');
+        try {
+          const npIdToken = auth.currentUser
+            ? await auth.currentUser.getIdToken().catch(() => null)
+            : null;
+          const paymentToken = serverResult.paymentToken ?? null;
+          if (!npIdToken && !paymentToken) {
+            throw new Error('Could not secure your payment session. Please refresh and try again.');
+          }
+          const res = await fetch('/api/payments/nowpayments-create', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            signal: paymentAbortRef.current?.signal,
+            body: JSON.stringify({
+              idToken: npIdToken,
+              orderId,
+              paymentToken,
+              amount: Number(totalAmount),
+              currency: 'GBP',
+              customerEmail: form.email,
+            }),
+          });
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
+          const data = await res.json().catch(() => ({} as any));
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
+          if (!res.ok || !data.payment_link) {
+            throw new Error(data?.error || 'Could not start crypto payment.');
+          }
+          let parsed: URL;
+          try { parsed = new URL(data.payment_link); } catch { throw new Error('Invalid payment redirect URL.'); }
+          if (parsed.protocol !== 'https:') throw new Error('Unexpected payment redirect.');
+          try {
+            localStorage.setItem('php_pending_order', orderId);
+            localStorage.setItem('php_pending_order_at', String(Date.now()));
+            if (paymentToken) localStorage.setItem(`php_pt_${orderId}`, paymentToken);
+          } catch { /* ignore */ }
+
+          setFenaStep('redirecting');
+          logCheckoutEvent({
+            stage: 'redirect_target',
+            cartId: orderTelemetryCartId,
+            url: parsed.toString(),
+            timestamp: Date.now(),
+          });
+          const paymentUrl = parsed.toString();
+          setPendingPaymentUrl(paymentUrl);
+          setPaymentRecoveryVisible(true);
+          window.location.assign(paymentUrl);
+          return;
+        } catch (err: any) {
+          if (paymentAttemptRef.current !== paymentAttemptId) return;
+          setFenaStep('failed');
+          logCheckoutEvent({
+            stage: 'gateway_error',
+            cartId: orderTelemetryCartId,
+            gateway: 'nowpayments',
+            errorCode: String(err?.code ?? err?.name ?? 'nowpayments_error'),
+            errorMessage: String(err?.message ?? 'unknown').slice(0, 300),
+            timestamp: Date.now(),
+          });
+          const failMsg = err?.message || 'Crypto payment could not be started — please try again.';
+          setLoginError(failMsg);
+          console.error('[PAYMENT] gateway_fail method=nowpayments', err);
+          try { toast.error(failMsg); } catch { /* toast optional */ }
+          setIsPlacing(false);
+          return;
+        }
+      }
+
 
       // Pay by Bank (Open Banking, handled by our in-app server
       // function — same origin, no external Worker, no CORS).
@@ -1314,7 +1588,7 @@ export default function CheckoutPage() {
           // Persist orderId so the success page can clear the cart only
           // after the bank confirms payment. If the user cancels/aborts
           // the redirect, the cart stays intact and they can retry.
-          try { localStorage.setItem('php_pending_order', orderId); } catch { /* ignore */ }
+          try { localStorage.setItem('php_pending_order', orderId); localStorage.setItem('php_pending_order_at', String(Date.now())); } catch { /* ignore */ }
           const paymentUrl = parsed.toString();
           setPendingPaymentUrl(paymentUrl);
           setPaymentRecoveryVisible(true);
@@ -1337,6 +1611,10 @@ export default function CheckoutPage() {
         }
       }
 
+      // Tide is paid on Tide's hosted page (QR / Open Banking), so we must not
+      // email our own manual bank details for it. The server already sends the
+      // "Order received" email; the Tide panel is shown on the success screen.
+      if (form.paymentMethod !== 'tide') {
       try {
         await sendPublicMail({
           template: 'order-confirmation',
@@ -1353,7 +1631,7 @@ export default function CheckoutPage() {
           shipping: serverResult.shippingCost,
           discount: serverResult.discount,
           total: totalAmount,
-          address: form.address,
+          address: addressLine1,
           city: form.city,
           postcode: form.postcode,
           country: form.country,
@@ -1366,6 +1644,25 @@ export default function CheckoutPage() {
           bankInstructions: siteSettings.bankTransferInstructions,
         });
       } catch { /* non-blocking */ }
+      }
+
+      // Manual bank transfer: do NOT count the conversion at order PLACEMENT.
+      // Roughly 13 of 68 bank-transfer orders per 30 days are never paid, so
+      // firing here inflated Google Ads by unpaid orders (~£874/30d). Instead
+      // we park the order id: `recoverPendingPurchase()` (runs on every app
+      // boot from Layout) fires the purchase once the order status turns paid,
+      // and the offline gclid CSV import covers buyers who never return.
+      try {
+        localStorage.setItem('php_pending_order', orderId);
+        localStorage.setItem('php_pending_order_at', String(Date.now()));
+      } catch { /* ignore */ }
+      try {
+        renderGoogleCustomerReviewsOptIn({
+          orderId,
+          email: form.email,
+          deliveryCountry: form.country === 'Germany' ? 'DE' : form.country === 'Poland' ? 'PL' : form.country === 'Ireland' ? 'IE' : 'GB',
+        });
+      } catch { /* analytics never blocks checkout */ }
 
       localStorage.removeItem('php_cart');
       setCart([]);
@@ -1399,7 +1696,16 @@ export default function CheckoutPage() {
           <h1 className="text-2xl font-bold text-white mb-2">Order Confirmed</h1>
           <p className="text-emerald-400 font-medium mb-6">Order reserved — payment pending</p>
 
-          {bankTransferRef && (
+          {form.paymentMethod === 'tide' && (
+            <div className="mb-6">
+              <p className="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Pay with Tide
+              </p>
+              <TidePayPanel reference={bankTransferRef} amountGbp={confirmedTotal || total} />
+            </div>
+          )}
+
+          {bankTransferRef && form.paymentMethod !== 'tide' && (
             <div className="bg-[#0b1a30] border border-white/10 rounded-2xl p-5 sm:p-6 mb-6 text-left">
               <p className="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5" /> Bank Transfer Details
@@ -1461,7 +1767,7 @@ export default function CheckoutPage() {
             <div className="flex justify-between border-t border-white/10 pt-2 mt-2"><span className="text-gray-400">Amount due</span><span className="text-amber-400 font-bold">£{confirmedTotal || total}</span></div>
           </div>
 
-          {form.address && (
+          {addressLine1 && (
             <div className="bg-[#0b1a30] border border-white/10 rounded-xl p-4 mb-6 text-left text-sm">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[10px] uppercase tracking-wider text-emerald-400/80 font-semibold">Delivery Address</p>
@@ -1475,7 +1781,7 @@ export default function CheckoutPage() {
                 {formatShippingAddressLines({
                   firstName: form.firstName,
                   lastName: form.lastName,
-                  address: form.address,
+                  address: addressLine1,
                   city: form.city,
                   postcode: form.postcode,
                   country: form.country,
@@ -1503,9 +1809,23 @@ export default function CheckoutPage() {
 
   // ── Step summary labels ──
   const step1Summary = form.firstName ? `${form.firstName} ${form.lastName} · ${form.email}` : null;
-  const step2Summary = form.address
-    ? formatShippingAddressInline({ address: form.address, city: form.city, postcode: form.postcode, country: form.country })
+  const step2Summary = addressLine1
+    ? formatShippingAddressInline({ address: addressLine1, city: form.city, postcode: form.postcode, country: form.country })
     : null;
+
+  if (checkoutPaused) {
+    return (
+      <section id="checkout" data-checkout-scope className="min-h-screen bg-[#060f1e] flex items-center justify-center px-4 py-16">
+        <NoCacheHead title="Checkout — PH Labs" />
+        <div className="w-full max-w-lg text-center bg-slate-900 border border-slate-700 rounded-lg p-8">
+          <h1 className="text-2xl font-bold text-white">Checkout temporarily unavailable</h1>
+          <p className="text-slate-300 mt-3">
+            We're not taking new orders at the moment. Your basket is saved — please check back soon.
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <>
@@ -1768,11 +2088,20 @@ export default function CheckoutPage() {
                 {currentStep === 1 && (
                   <div className="px-5 pb-5 space-y-4">
                     {!firebaseUser && (
-                      <p className="text-xs text-gray-400">
-                        Already have an account?{' '}
-                        <Link to="/login" className="text-emerald-400 hover:text-emerald-300 underline">Sign in</Link>
-                        {' '}for faster checkout.
-                      </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="rounded-lg border-2 border-emerald-500 bg-emerald-500/10 px-2 py-2.5 text-center">
+                          <p className="text-sm font-semibold text-white">Guest</p>
+                          <p className="text-[11px] text-emerald-300">No account needed</p>
+                        </div>
+                        <Link to="/login" className="rounded-lg border-2 border-slate-700 px-2 py-2.5 text-center hover:border-emerald-500">
+                          <p className="text-sm font-semibold text-white">Sign in</p>
+                          <p className="text-[11px] text-gray-400">Faster checkout</p>
+                        </Link>
+                        <Link to="/register" className="rounded-lg border-2 border-slate-700 px-2 py-2.5 text-center hover:border-emerald-500">
+                          <p className="text-sm font-semibold text-white">Register</p>
+                          <p className="text-[11px] text-gray-400">Create account</p>
+                        </Link>
+                      </div>
                     )}
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1868,59 +2197,135 @@ export default function CheckoutPage() {
 
                 {currentStep === 2 && (
                   <div className="px-5 pb-5 space-y-4">
+                    {/* Field order: postcode → house number → street → city.
+                        Matches how UK shoppers (and Royal Mail labels) read an
+                        address, and lets the postcode lookup fill the rest. */}
                     <div>
-                      <label htmlFor="address" className="block text-xs font-medium text-gray-300 mb-1">Street Address <span className="text-red-400">*</span></label>
-                      <div className="relative">
-                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                        <input id="address" type="text" autoComplete="street-address" value={form.address} onChange={e => setField('address', e.target.value)} placeholder="42 Baker Street, Flat 3" style={iconInputStyle(!!errors.address)} />
-                      </div>
-                      {errors.address && <p className="text-red-400 text-xs mt-1">{errors.address}</p>}
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label htmlFor="city" className="block text-xs font-medium text-gray-300 mb-1">City / Town <span className="text-red-400">*</span></label>
-                        <input id="city" type="text" autoComplete="address-level2" value={form.city} onChange={e => setField('city', e.target.value)} placeholder={form.country === 'Germany' ? 'Berlin' : form.country === 'Poland' ? 'Warszawa' : 'London'} style={inputStyle(!!errors.city)} />
-                        {errors.city && <p className="text-red-400 text-xs mt-1">{errors.city}</p>}
-                      </div>
-                      <div>
-                        <label htmlFor="postcode" className="block text-xs font-medium text-gray-300 mb-1">
-                          {form.country === 'Germany' ? 'PLZ (Postleitzahl)' : form.country === 'Poland' ? 'Kod pocztowy' : form.country === 'Ireland' ? 'Eircode' : 'Postcode'} <span className="text-red-400">*</span>
-                        </label>
-                        <input
-                          id="postcode"
-                          type="text"
-                          autoComplete="postal-code"
-                          value={form.postcode}
-                          onChange={e => {
-                            const raw = e.target.value;
-                            if (form.country === 'Germany') {
-                              setField('postcode', raw.replace(/\D/g, '').slice(0, 5));
-                            } else if (form.country === 'Poland') {
-                              // NN-NNN format — keep digits + optional single dash.
-                              const digits = raw.replace(/\D/g, '').slice(0, 5);
-                              setField('postcode', digits.length > 2 ? `${digits.slice(0, 2)}-${digits.slice(2)}` : digits);
-                            } else {
-                              setField('postcode', raw.toUpperCase());
-                            }
-                          }}
-                          placeholder={form.country === 'Germany' ? '10115' : form.country === 'Poland' ? '00-001' : form.country === 'Ireland' ? 'D02 XY45' : 'SW1A 1AA'}
-                          inputMode={form.country === 'Germany' || form.country === 'Poland' ? 'numeric' : 'text'}
-                          style={inputStyle(!!errors.postcode)}
-                        />
-                        {errors.postcode && <p className="text-red-400 text-xs mt-1">{errors.postcode}</p>}
-                      </div>
+                      <label htmlFor="postcode" className="block text-xs font-medium text-gray-300 mb-1">
+                        {form.country === 'Germany' ? 'PLZ (Postleitzahl)' : form.country === 'Poland' ? 'Kod pocztowy' : form.country === 'Ireland' ? 'Eircode' : 'Postcode'} <span className="text-red-400">*</span>
+                      </label>
+                      <input
+                        id="postcode"
+                        type="text"
+                        autoComplete="postal-code"
+                        value={form.postcode}
+                        onChange={e => {
+                          const raw = e.target.value;
+                          if (form.country === 'Germany') {
+                            setField('postcode', raw.replace(/\D/g, '').slice(0, 5));
+                          } else if (form.country === 'Poland') {
+                            // NN-NNN format — keep digits + optional single dash.
+                            const digits = raw.replace(/\D/g, '').slice(0, 5);
+                            setField('postcode', digits.length > 2 ? `${digits.slice(0, 2)}-${digits.slice(2)}` : digits);
+                          } else {
+                            setField('postcode', raw.toUpperCase());
+                          }
+                        }}
+                        placeholder={form.country === 'Germany' ? '10115' : form.country === 'Poland' ? '00-001' : form.country === 'Ireland' ? 'D02 XY45' : 'SW1A 1AA'}
+                        inputMode={form.country === 'Germany' || form.country === 'Poland' ? 'numeric' : 'text'}
+                        style={inputStyle(!!errors.postcode)}
+                      />
+                      {errors.postcode && <p className="text-red-400 text-xs mt-1">{errors.postcode}</p>}
                     </div>
 
                     {form.country === 'United Kingdom' && (
                       <PostcodeLookup
                         postcode={form.postcode}
+                        house={form.houseNumber}
+                        onHouseChange={value => setField('houseNumber', value)}
+                        hideHouseInput
                         onApply={patch => {
-                          if (patch.address) setField('address', patch.address);
+                          if (patch.address) {
+                            // A full PAF address already contains the number.
+                            setForm(prev => ({ ...prev, address: patch.address!, houseNumber: '' }));
+                            setErrors(prev => ({ ...prev, address: '' }));
+                          }
                           if (patch.city) setField('city', patch.city);
                         }}
                       />
                     )}
+
+                    {form.country === 'United Kingdom' && (
+                      <div>
+                        <p className="text-xs font-medium text-gray-300 mb-2">Does your home have a house number?</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {([
+                            { value: false, label: HAS_HOUSE_NUMBER_OPTION_LABEL, hint: HAS_HOUSE_NUMBER_OPTION_HINT },
+                            { value: true, label: NO_HOUSE_NUMBER_OPTION_LABEL, hint: NO_HOUSE_NUMBER_OPTION_HINT },
+                          ] as const).map(opt => {
+                            const isSelected = form.addressNoHouseNumber === opt.value;
+                            return (
+                              <button
+                                key={String(opt.value)}
+                                type="button"
+                                onClick={() => {
+                                  setForm(prev => ({
+                                    ...prev,
+                                    addressNoHouseNumber: opt.value,
+                                    // Selecting "no number" clears any placeholder like 0.
+                                    houseNumber: opt.value ? '' : prev.houseNumber,
+                                  }));
+                                  setErrors(prev => ({ ...prev, address: '' }));
+                                }}
+                                aria-pressed={isSelected}
+                                className={`px-3 py-2.5 rounded-xl border text-left transition-all duration-200 ${isSelected ? 'border-emerald-500/60 bg-emerald-500/10' : 'border-white/10 bg-white/[0.02] hover:border-white/25 hover:bg-white/[0.04]'}`}
+                              >
+                                <p className={`text-xs font-semibold ${isSelected ? 'text-white' : 'text-gray-300'}`}>{opt.label}</p>
+                                <p className="text-[11px] text-gray-400 mt-0.5">{opt.hint}</p>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className={`grid grid-cols-1 gap-3 ${form.addressNoHouseNumber && form.country === 'United Kingdom' ? '' : 'sm:grid-cols-[minmax(0,9rem)_1fr]'}`}>
+                      {!(form.addressNoHouseNumber && form.country === 'United Kingdom') && (
+                      <div>
+                        <label htmlFor="houseNumber" className="block text-xs font-medium text-gray-300 mb-1">
+                          House no. / name {form.country === 'United Kingdom' && !form.addressNoHouseNumber && <span className="text-red-400">*</span>}
+                        </label>
+                        <input
+                          id="houseNumber"
+                          type="text"
+                          autoComplete="address-line2"
+                          value={form.houseNumber}
+                          onChange={e => {
+                            const value = e.target.value.slice(0, 40);
+                            setField('houseNumber', value);
+                            setErrors(prev => ({
+                              ...prev,
+                              address: /^0+[a-z]?$/i.test(value.trim())
+                                ? '"0" is not a house number — pick "No house number" above and enter the property name'
+                                : '',
+                            }));
+                          }}
+                          placeholder="42"
+                          style={inputStyle(!!errors.address && !form.address.trim())}
+                        />
+                      </div>
+                      )}
+                      <div>
+                        <label htmlFor="address" className="block text-xs font-medium text-gray-300 mb-1">Street Address <span className="text-red-400">*</span></label>
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                          <input id="address" type="text" autoComplete="street-address" value={form.address} onChange={e => setField('address', e.target.value)} placeholder="Baker Street, Flat 3" style={iconInputStyle(!!errors.address)} />
+                        </div>
+                      </div>
+                    </div>
+                    {errors.address && <p className="text-red-400 text-xs -mt-2">{errors.address}</p>}
+
+                    {form.country === 'United Kingdom' && form.addressNoHouseNumber && (
+                      <p className="text-xs text-gray-400 -mt-1">
+                        No house number — make sure the street field contains the full property name (e.g. <span className="text-gray-300">Rose Cottage, High Street</span>) so Royal Mail can find it.
+                      </p>
+                    )}
+
+                    <div>
+                      <label htmlFor="city" className="block text-xs font-medium text-gray-300 mb-1">City / Town <span className="text-red-400">*</span></label>
+                      <input id="city" type="text" autoComplete="address-level2" value={form.city} onChange={e => setField('city', e.target.value)} placeholder={form.country === 'Germany' ? 'Berlin' : form.country === 'Poland' ? 'Warszawa' : 'London'} style={inputStyle(!!errors.city)} />
+                      {errors.city && <p className="text-red-400 text-xs mt-1">{errors.city}</p>}
+                    </div>
 
 
                     <div>
@@ -2036,12 +2441,25 @@ export default function CheckoutPage() {
                     <PaymentMethodOptions
                       options={paymentOptions}
                       wallidEnabled={wallidEnabled}
+                      peptidepayEnabled={peptidepayEnabled}
+                      brokkrpayEnabled={brokkrpayEnabled}
+                      nowpaymentsEnabled={nowpaymentsEnabled}
+                      tideEnabled={tideEnabled}
+                      manualEnabled={manualTransferEnabled}
+
+
+
+
                       value={form.paymentMethod}
                       onChange={(v) => setField('paymentMethod', v)}
                     />
 
-                    {/* Selected-method info is now rendered inside PaymentMethodOptions cards to remove duplication. */}
-
+                    {errors.paymentMethod && (
+                      <p className="text-red-400 text-sm flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                        {errors.paymentMethod}
+                      </p>
+                    )}
 
                     {/* Discount code */}
                     <div>
@@ -2110,10 +2528,16 @@ export default function CheckoutPage() {
                           onSelect={setSelectedGiftId}
                         />
                       )}
-                      {discount > 0 && (
+                      {couponDiscount > 0 && (
                         <div className="flex justify-between text-emerald-400">
                           <span>Discount ({appliedCoupon?.code})</span>
-                          <span>−£{discount.toFixed(2)}</span>
+                          <span>−£{couponDiscount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {bundle.amount > 0 && (
+                        <div className="flex justify-between text-emerald-400">
+                          <span>Bundle saving ({bundle.percent}%)</span>
+                          <span>−£{bundle.amount.toFixed(2)}</span>
                         </div>
                       )}
                       {couponFreeShipping && baseShipping > 0 && (
@@ -2342,7 +2766,7 @@ export default function CheckoutPage() {
                         <div key={key} className="flex gap-3">
                           <div className="w-14 h-14 rounded-lg overflow-hidden flex items-center justify-center bg-[#030a14] shrink-0 border border-white/5">
                             {item.image ? (
-                              <img src={item.image} alt={item.name} loading="lazy" width="56" height="56" className="w-full h-full object-contain" />
+                              <img src={item.image} alt={item.name} loading="lazy" width={56} height={56} className="w-full h-full object-contain" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center bg-gray-900">
                                 <Package className="w-5 h-5 text-gray-600" />
@@ -2411,9 +2835,14 @@ export default function CheckoutPage() {
                     <div className="flex justify-between text-gray-400">
                       <span>Subtotal</span><span className="text-white">£{subtotal.toFixed(2)}</span>
                     </div>
-                    {discount > 0 && (
+                    {couponDiscount > 0 && (
                       <div className="flex justify-between text-emerald-400">
-                        <span>Discount</span><span>−£{discount.toFixed(2)}</span>
+                        <span>Discount</span><span>−£{couponDiscount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {bundle.amount > 0 && (
+                      <div className="flex justify-between text-emerald-400">
+                        <span>Bundle saving ({bundle.percent}%)</span><span>−£{bundle.amount.toFixed(2)}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-gray-400">
@@ -2443,18 +2872,35 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Free shipping progress */}
-                {!isFreeShipping && (
+                {/* Bundle saving progress (replaces the free-shipping bar;
+                    the £50 free-delivery threshold itself is unchanged).
+                    Values shown are the basket AFTER discounts. */}
+                {cart.length > 0 && (bundle.nextTierPercent !== null || bundle.percent > 0) && (
                   <div className="bg-[#0b1a30] border border-white/[0.07] rounded-xl p-4">
-                    <p className="text-xs text-gray-400 mb-2">
-                      Add <strong className="text-white">£{(FREE_SHIPPING_THRESHOLD - subtotal).toFixed(2)}</strong> more for free shipping
-                    </p>
+                    {bundle.percent > 0 && (
+                      <p className="text-xs text-emerald-400 mb-1.5 font-semibold">
+                        Bundle saving applied: −{bundle.percent}% (−£{bundle.amount.toFixed(2)})
+                      </p>
+                    )}
+                    {bundle.suppressedByCoupon && (
+                      <p className="text-[11px] text-gray-400 mb-1.5">
+                        Bundle savings cannot be combined with a discount code — your code has been applied instead.
+                      </p>
+                    )}
+                    {bundle.nextTierPercent !== null && bundle.unitsToNextTier !== null && bundle.unitsToNextTier > 0 && (
+                      <p className="text-xs text-gray-400 mb-2">
+                        Add <strong className="text-white">{bundle.unitsToNextTier} more product{bundle.unitsToNextTier === 1 ? '' : 's'}</strong> and save {bundle.nextTierPercent}%
+                      </p>
+                    )}
                     <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-emerald-500 rounded-full transition-all duration-300"
-                        style={{ width: `${Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100)}%` }}
+                        style={{ width: `${Math.min(100, (bundle.units / 3) * 100)}%` }}
                       />
                     </div>
+                    <p className="text-[11px] text-gray-500 mt-2">
+                      Basket after discounts: £{Math.max(0, subtotal - discount).toFixed(2)}
+                    </p>
                   </div>
                 )}
               </div>

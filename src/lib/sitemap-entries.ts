@@ -37,9 +37,11 @@ function buildStaticEntries(): SitemapEntry[] {
 
     { path: "/resources/peptide-categories-uk-research", changefreq: "monthly", priority: "0.6" },
     { path: "/compound", changefreq: "weekly", priority: "0.7" },
-    { path: "/landing/phlabs", changefreq: "weekly", priority: "0.7" },
     { path: "/uk-research-store", changefreq: "weekly", priority: "0.8" },
     { path: "/lab-reports", changefreq: "monthly", priority: "0.6" },
+    // Public batch-verification page (lab test lookup). New URL — no existing
+    // product/canonical/feed link is changed by this entry.
+    { path: "/verify", changefreq: "daily", priority: "0.7" },
     { path: "/storage-guide", changefreq: "monthly", priority: "0.6" },
     { path: "/downloads", changefreq: "monthly", priority: "0.5" },
   ];
@@ -67,6 +69,7 @@ export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
   }));
 
   let productEntries: SitemapEntry[] = [];
+  let categoryEntries: SitemapEntry[] = [];
   try {
     const products = await fetchAllProducts();
     productEntries = products.map((p) => {
@@ -80,19 +83,44 @@ export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
         imageLoc: p.imageUrl && /^https?:\/\//.test(p.imageUrl) ? p.imageUrl : undefined,
       };
     });
+    // Category hub pages (/products/category/<slug>) — same derivation the
+    // footer uses, so sitemap and on-site internal links advertise the same
+    // canonical category URLs. Only categories with at least one active
+    // product are listed (empty hubs self-serve noindex and must stay out
+    // of the sitemap).
+    const catSlugs = new Set<string>();
+    for (const p of products) {
+      if (p.isActive === false || !p.category) continue;
+      catSlugs.add(p.category.toLowerCase().replace(/\s+/g, "-"));
+    }
+    categoryEntries = Array.from(catSlugs).map((slug) => ({
+      path: `/products/category/${slug}`,
+      changefreq: "weekly" as const,
+      priority: "0.7",
+    }));
   } catch {
     productEntries = [];
+    categoryEntries = [];
   }
 
   // Hard exclusion — these paths were decommissioned (410 Gone) and must
   // never appear in any sitemap, even if a future code change accidentally
   // reintroduces them via a static/product/article list.
-  const SITEMAP_EXCLUDE = new Set<string>(["/peptide-calculator", "/calculator"]);
+  const SITEMAP_EXCLUDE = new Set<string>([
+    "/peptide-calculator",
+    "/calculator",
+    // noindex pages (2026-09-26)
+    "/install",
+    "/landing/phlabs",
+    // 301 → /resources/ipamorelin-ghrp-research
+    "/products/ipamorelin",
+  ]);
 
   const seen = new Set<string>();
   return [
     ...staticEntries,
     ...productEntries,
+    ...categoryEntries,
     ...articleEntries,
     ...programmaticEntries,
   ].filter((e) => {

@@ -1,3 +1,4 @@
+import { requireAdminRequest } from '@/lib/server/admin-request-auth';
 import { createFileRoute } from '@tanstack/react-router';
 import { enforceRateLimit } from '@/lib/rate-limit';
 import { listDocsAdmin } from '@/lib/server/firestore-admin';
@@ -25,6 +26,8 @@ export const Route = createFileRoute('/api/public/post-publish-status')({
           retryAfterSec: 60,
         });
         if (limited) return limited;
+        const denied = await requireAdminRequest(request);
+        if (denied) return denied;
 
         let rows: Array<Record<string, unknown> & { id: string }> = [];
         let readError: string | null = null;

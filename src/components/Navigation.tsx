@@ -1,10 +1,13 @@
 import {
   FlaskConical, FileCheck, Microscope, Mail, Home, Crown,
-  ChevronDown, X, Shield,
+  ChevronDown, X, Shield, ShieldCheck,
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import type { Product } from '@/lib/firebase';
+import { isVipProduct } from '@/lib/vip-visibility';
+import { useVerifyBatchEnabled } from '@/lib/verify-feature';
+
 import InstallAppButton from '@/components/InstallAppButton';
 import TransactionalLink from '@/components/TransactionalLink';
 import LegacyHostNotice from '@/components/LegacyHostNotice';
@@ -39,6 +42,7 @@ const BASE_NAV: Omit<NavLink, 'dropdown'>[] = [
   { name: 'Home',        href: '/',           icon: Home },
   { name: 'Peptides',    href: '/products',   icon: FlaskConical },
   { name: 'Lab Reports', href: '/lab-reports', icon: FileCheck },
+  { name: 'Verify Batch', href: '/verify', icon: ShieldCheck },
   { name: 'Research',    href: '/research',   icon: Microscope },
   { name: 'Contact',     href: '/contact',    icon: Mail, highlight: true },
 ];
@@ -46,6 +50,7 @@ const BASE_NAV: Omit<NavLink, 'dropdown'>[] = [
 function useNavLinks(): NavLink[] {
   const [categories, setCategories] = useState<DropdownItem[]>([]);
   const location = useLocation();
+  const verifyEnabled = useVerifyBatchEnabled();
 
   useEffect(() => {
     let cancelled = false;
@@ -59,7 +64,7 @@ function useNavLinks(): NavLink[] {
         .then(({ getAllProducts }) => getAllProducts())
         .then((prods: Product[]) => {
           if (cancelled) return;
-          const active = prods.filter(p => p.isActive !== false && p.stock > 0 && p.category);
+          const active = prods.filter(p => !isVipProduct(p) && p.isActive !== false && p.stock > 0 && p.category);
           const seen = new Set<string>();
           const cats: DropdownItem[] = [{ name: 'All Products', href: '/products' }];
           active.forEach(p => {
@@ -88,6 +93,8 @@ function useNavLinks(): NavLink[] {
   const isContactPage = ['/contact', '/shipping-policy', '/privacy-policy'].includes(location.pathname);
   return BASE_NAV
     .filter(link => !(isContactPage && (link.name === 'Peptides' || link.name === 'Lab Reports')))
+    // Batch verification can be switched off in Admin → Lab Tests.
+    .filter(link => link.href !== '/verify' || verifyEnabled)
     .map(link =>
       link.name === 'Peptides' ? { ...link, dropdown: categories } : link
     );

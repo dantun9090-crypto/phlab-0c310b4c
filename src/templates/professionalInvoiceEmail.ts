@@ -319,7 +319,7 @@ export function buildProfessionalInvoiceEmail(rawOpts: InvoiceEmailOptions): str
         <tr>
           <td style="padding:20px 40px;background:#04101f;border:1px solid ${BORDER};border-top:1px solid rgba(59,130,246,0.1);">
             <p style="color:${DIMMED};font-size:11px;margin:0 0 6px 0;line-height:1.6;text-align:center;">
-              All products are sold strictly for <strong>research and laboratory use only</strong>. Not for human consumption.
+              <strong>For Research Use Only. Not for Human Consumption.</strong>
             </p>
             <p style="color:#1a3a5c;font-size:10px;margin:0;text-align:center;">
               PH Labs UK &bull; info@phlabs.co.uk &bull;

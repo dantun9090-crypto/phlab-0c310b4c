@@ -13,14 +13,21 @@
  */
 export function mapWallidStatusToInternal(wallidStatus: string): string {
   const map: Record<string, string> = {
+    success: "paid",
+    paid: "paid",
     completed: "paid",
-    pending: "pending",
-    failed: "failed",
-    cancelled: "cancelled",
-    refunded: "refunded",
     settled: "paid",
+    new: "pending",
+    pending: "pending",
+    processing: "pending",
+    failed: "failed",
+    declined: "failed",
+    expired: "failed",
+    cancelled: "cancelled",
+    canceled: "cancelled",
+    refunded: "refunded",
   };
-  return map[String(wallidStatus || "").toLowerCase()] || "unknown";
+  return map[String(wallidStatus || "").trim().toLowerCase()] || "unknown";
 }
 
 /**

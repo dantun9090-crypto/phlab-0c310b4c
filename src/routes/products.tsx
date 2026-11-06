@@ -3,9 +3,10 @@ import LegacyApp from "@/legacy/LegacyApp";
 import { fetchAllProductsFn, type SeoProduct } from "@/lib/products-rest.functions";
 import { SITE_URL } from "@/lib/seo-meta";
 
-const TITLE = "Research Peptides UK | Full Catalogue | PH Labs";
+const TITLE = "Buy Research Peptides UK | Catalogue | PH Labs";
 const DESCRIPTION =
-  "Browse HPLC-verified research peptides from PH Labs. Lab-tested purity, transparent COAs, fast UK dispatch.";
+  "Research peptides for sale UK — full PH Labs catalogue with HPLC-verified purity, batch COAs and fast UK dispatch. For research use only. Not for human consumption.";
+
 const URL = `${SITE_URL}/products`;
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
 
@@ -52,7 +53,17 @@ export const Route = createFileRoute("/products")({
       // Safe to set canonical here: /products/$slug now uses the escaped
       // filename products_.$slug.tsx, so it's a sibling — not a child — and
       // TanStack does not concat this <link> into the product detail page.
-      links: [{ rel: "canonical", href: URL }],
+      links: [
+        { rel: "canonical", href: URL },
+        // The /products hero is text-only (no hero image), so the LCP
+        // candidate is the first product card image. No fixed URL exists to
+        // preload here (grid order is decided client-side), so instead warm
+        // the image + data origins; ProductCard raises fetchPriority on the
+        // first card. Grid itself stays eager for the prerender snapshot.
+        { rel: "preconnect", href: "https://firebasestorage.googleapis.com", crossOrigin: "" },
+        { rel: "preconnect", href: "https://firestore.googleapis.com", crossOrigin: "" },
+        { rel: "dns-prefetch", href: "https://firebasestorage.googleapis.com" },
+      ],
       scripts: [
         {
           type: "application/ld+json",

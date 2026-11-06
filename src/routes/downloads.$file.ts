@@ -26,6 +26,7 @@ function downloadHeaders(contentLength?: string | null): Headers {
     pragma: "no-cache",
     expires: "0",
     "x-content-type-options": "nosniff",
+    "x-robots-tag": "noindex",
   });
   if (contentLength) headers.set("content-length", contentLength);
   return headers;

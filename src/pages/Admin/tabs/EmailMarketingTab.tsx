@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { csvSafeCell } from '@/lib/csv-safe';
 import {
   Mail, Send, Users, FileText, Eye, EyeOff,
   CheckCircle2, AlertCircle, Loader2, ChevronDown,
@@ -317,8 +318,9 @@ export default function EmailMarketingTab() {
   };
 
   const exportSubscribers = () => {
-    const csv = 'Email,Source,Date,Status,Discount Code\n' + subscribers.map(s => 
-      `${s.email},${s.source || 'unknown'},${s.subscribedAt || ''},${s.status || 'pending'},${s.discountCode || 'N/A'}`
+    const csv = 'Email,Source,Date,Status,Discount Code\n' + subscribers.map(s =>
+      [s.email, s.source || 'unknown', s.subscribedAt || '', s.status || 'pending', s.discountCode || 'N/A']
+        .map(csvSafeCell).join(',')
     ).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -521,7 +523,7 @@ export default function EmailMarketingTab() {
 
       setMsg({
         type: 'success',
-        text: `Campaign queued for ${result.enqueued} recipient${result.enqueued === 1 ? '' : 's'}${result.failed ? ` (${result.failed} failed)` : ''}. ${missingFirstName} got the "there" fallback (no first name).`,
+        text: `Campaign queued for ${result.enqueued} recipient${result.enqueued === 1 ? '' : 's'}${result.failed ? ` (${result.failed} failed)` : ''}. ${result.sentNow ?? 0} sending now${result.waiting > 0 ? `, ${result.waiting} waiting — sent automatically at max ${result.hourlyCap ?? 90}/hour (about ${Math.ceil(result.waiting / (result.hourlyCap ?? 90))}h)` : ''}. ${missingFirstName} got the "there" fallback (no first name).`,
       });
       setTimeout(() => setMsg(null), 10000);
       loadHistory();

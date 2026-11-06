@@ -17,6 +17,7 @@ import { getWallidStatus, WallidError } from "@/lib/wallid.server";
 import { timingSafeEqualStr } from "@/lib/timing-safe-equal";
 import { checkRateLimit, getClientIp, rateLimitedResponse } from "@/lib/rate-limit";
 import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
+import { allowFromFor } from "@/lib/payment-transitions";
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -53,7 +54,7 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
           ? authHeader.slice(7).trim()
           : "";
         const provided = bearer || request.headers.get("x-cron-secret") || "";
-        const expected = process.env.CLEANUP_SECRET || "";
+        const expected = process.env.CLEANUP_SECRET_V2 || "";
         if (!expected || !provided || !timingSafeEqualStr(provided, expected)) {
           return json({ error: "Unauthorized" }, 401);
         }
@@ -61,13 +62,19 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
 
+        // FAILED / EXPIRED sessions are re-polled too: a customer who paid
+        // from the "Pay again" link often does so on a session Wallid had
+        // already marked failed, and that success would otherwise never be
+        // picked up (no webhook ⇒ no paid status ⇒ no confirmation email).
+        // Rows already SUCCESS here are excluded, so settled orders are not
+        // re-polled.
         const { data: rows, error } = await supabaseAdmin
           .from("wallid_payments")
           .select("order_id, api_payment_id, status, created_at")
-          .in("status", ["NEW", "PENDING", "PROCESSING"])
+          .in("status", ["NEW", "PENDING", "PROCESSING", "FAILED", "EXPIRED", "DECLINED", "CANCELLED"])
           .gte("created_at", cutoff)
           .order("created_at", { ascending: false })
-          .limit(100);
+          .limit(300);
 
         if (error) {
           console.error("[Wallid reconcile] DB lookup failed:", error.message);
@@ -75,6 +82,14 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
         }
         if (!rows || rows.length === 0) {
           return json({ checked: 0, updated: 0 });
+        }
+        // Page cap hit → older non-terminal rows inside the 48h window are
+        // NOT being polled this run. Surface it loudly; the admin fallback is
+        // the manual review list in the Payment triage tab.
+        if (rows.length >= 300) {
+          console.warn(
+            "[Wallid reconcile] PAGE_CAP_REACHED rows=300 — older pending rows in the 48h window were skipped this run",
+          );
         }
 
         let updated = 0;
@@ -124,7 +139,7 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
               "orders",
               row.order_id,
               {
-                allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
+                allowFrom: allowFromFor(firestoreStatus),
                 updates: {
                   status: firestoreStatus,
                   paymentProvider: "wallid",
@@ -147,6 +162,28 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
             const priorStatus = String(prior.status ?? "").toLowerCase();
             updated += 1;
             results.push({ orderId: row.order_id, from: priorStatus, to: firestoreStatus });
+
+            // Instant admin ping — so a paid order is never a surprise even
+            // when Wallid's webhook never lands. Fire-and-forget.
+            try {
+              const { sendTelegramAlert } = await import("@/lib/server/telegram-alert");
+              const amountPence = Number(
+                (prior.totalAmount as number) ?? (prior.total as number) ?? 0,
+              );
+              const amountText = amountPence
+                ? `£${(amountPence > 1000 ? amountPence / 100 : amountPence).toFixed(2)}`
+                : "";
+              const icon = firestoreStatus === "paid" ? "✅" : "⚠️";
+              const label =
+                firestoreStatus === "paid"
+                  ? "PŁATNOŚĆ ZAKSIĘGOWANA (bez webhooka)"
+                  : `Płatność ${firestoreStatus === "failed" ? "nieudana" : "wygasła"}`;
+              await sendTelegramAlert(
+                `${icon} <b>${label}</b>\nZamówienie: <code>${row.order_id}</code>${
+                  amountText ? `\nKwota: ${amountText}` : ""
+                }\nWallid: ${remoteStatus}\nByło: ${priorStatus || "—"} → ${firestoreStatus}`,
+              );
+            } catch { /* non-blocking */ }
 
             // Visibility for webhook-delivery failures. If we transitioned
             // an order but no REAL (non-LOG) Wallid webhook event ever

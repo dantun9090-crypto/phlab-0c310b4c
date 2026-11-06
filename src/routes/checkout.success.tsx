@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader, CheckCircle2, AlertCircle, XCircle, RefreshCw, LifeBuoy } from "lucide-react";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import { trackPurchase, type GaItem } from "@/lib/analytics";
+import { trackPurchase, hasMarketingConsent, type GaItem } from "@/lib/analytics";
 import { trackBingPurchase } from "@/lib/bing-uet";
 
 /**
@@ -14,12 +14,20 @@ import { trackBingPurchase } from "@/lib/bing-uet";
  * duplicate events on refresh or when both the snapshot and the polling
  * path resolve simultaneously.
  */
-async function fireGaPurchaseOnce(orderId: string, snapData?: Record<string, unknown>) {
+async function fireGaPurchaseOnce(
+  orderId: string,
+  snapData?: Record<string, unknown>,
+  apiTracking?: Record<string, unknown>,
+) {
   if (!orderId || typeof window === "undefined") return;
   const key = `php_ga_purchase_${orderId}`;
   try { if (localStorage.getItem(key) === "1") return; } catch { /* ignore */ }
   try {
-    let data = snapData;
+    // Priority: owner-verified payload from /api/payments/status (works for
+    // GUESTS — Firestore RLS denies them the order doc, which used to make
+    // the purchase event silently never fire), then the onSnapshot data,
+    // then a direct Firestore read (authed users only).
+    let data = apiTracking ?? snapData;
     if (!data) {
       const snap = await getDoc(doc(db, "orders", orderId));
       if (!snap.exists()) return;
@@ -41,21 +49,51 @@ async function fireGaPurchaseOnce(orderId: string, snapData?: Record<string, unk
       currency: "GBP",
     }));
     const ship = (data.shippingAddress ?? data.shipping_address ?? {}) as Record<string, unknown>;
+    const customerObj = (data.customer ?? {}) as Record<string, unknown>;
     const userData = {
-      email: String(data.email ?? data.customerEmail ?? ship.email ?? "") || undefined,
+      email: String(data.email ?? data.customerEmail ?? customerObj.email ?? ship.email ?? "") || undefined,
       phone: String(data.phone ?? ship.phone ?? "") || undefined,
       firstName: String(ship.firstName ?? ship.first_name ?? "") || undefined,
       lastName: String(ship.lastName ?? ship.last_name ?? "") || undefined,
       country: String(ship.country ?? ship.countryCode ?? "GB") || undefined,
       postalCode: String(ship.postalCode ?? ship.postcode ?? ship.zip ?? "") || undefined,
     };
-    trackPurchase(orderId, Number.isFinite(value) ? value : 0, items, {
+    const fired = await trackPurchase(orderId, Number.isFinite(value) ? value : 0, items, {
       tax: Number.isFinite(tax) ? tax : 0,
       shipping: Number.isFinite(shipping) ? shipping : 0,
       userData,
     });
     trackBingPurchase(orderId);
+    // Only latch the idempotency flag / ack the server when the event really
+    // reached the tag. Marking a dropped event as fired used to disable BOTH
+    // the client retry and the Measurement Protocol backfill for that order.
+    if (!fired) return;
     try { localStorage.setItem(key, "1"); } catch { /* ignore */ }
+    // Ack to the server so the Measurement Protocol backfill (reconcile
+    // cron, +2h) skips this order. Covers the onSnapshot path where the
+    // status endpoint never delivered a tracking payload. Fire-and-forget.
+    try {
+      const idToken = auth.currentUser
+        ? await auth.currentUser.getIdToken().catch(() => null)
+        : null;
+      let paymentToken: string | null = null;
+      try { paymentToken = localStorage.getItem(`php_pt_${orderId}`); } catch { /* ignore */ }
+      if (idToken || paymentToken) {
+        // adsFired tells the server whether the Google Ads conversion could
+        // really leave the browser (marketing consent granted). Without
+        // consent the gtag event is only queued locally and never reaches
+        // Google, so the order must stay eligible for the offline gclid
+        // CSV import — the server then withholds the dedup marker.
+        const adsFired = hasMarketingConsent();
+        void fetch(`/api/payments/status`, {
+          method: "POST",
+          headers: { "content-type": "application/json", accept: "application/json" },
+          body: JSON.stringify({ orderId, idToken, paymentToken, purchaseFired: true, adsFired }),
+          cache: "no-store",
+        });
+      }
+    } catch { /* ignore */ }
+
   } catch { /* ignore — analytics must never break the success page */ }
 }
 
@@ -83,18 +121,28 @@ export const Route = createFileRoute("/checkout/success")({
       { property: "og:description", content: "Your research peptide order with PH Labs UK has been received and is being processed." },
       { property: "og:url", content: "https://phlabs.co.uk/checkout/success" },
       { name: "robots", content: "noindex, nofollow, noarchive" },
-      // Dead-JS fallback: if the app bundle fails to load (bank in-app
-      // browsers cache stale HTML aggressively, so chunk/CSS 404s happen
-      // right after a deploy), this reloads the page until it can boot.
-      // Removed on mount once React is alive (see useEffect below).
-      { "http-equiv": "refresh", content: "10" },
+      // NOTE: the old `<meta http-equiv="refresh" content="10">` dead-JS
+      // fallback was removed — on slow mobile connections React needed
+      // longer than 10s to hydrate, so the page reloaded mid-hydration in
+      // an endless loop (React #418 + MOUNT_TIMEOUT_UNMOUNTED on
+      // /checkout/success). The guarded script below replaces it: it waits
+      // 25s and reloads at most twice, and React cancels it on mount.
+    ],
+    scripts: [
+      {
+        children:
+          "(function(){try{var K='php_boot_reload_success';var n=0;try{n=parseInt(sessionStorage.getItem(K)||'0',10)||0;}catch(e){}" +
+          "if(n>=2)return;var t=setTimeout(function(){try{sessionStorage.setItem(K,String(n+1));}catch(e){}location.reload();},25000);" +
+          "window.__phlCancelBootReload=function(){try{clearTimeout(t);sessionStorage.removeItem(K);}catch(e){}};}catch(e){}})();",
+      },
     ],
     links: [{ rel: "canonical", href: "https://phlabs.co.uk/checkout/success" }],
   }),
+
   component: CheckoutSuccessPage,
 });
 
-type Phase = "checking" | "paid" | "pending" | "cancelled" | "error";
+type Phase = "checking" | "paid" | "pending" | "cancelled" | "notpaid" | "error";
 
 // Escalation tiers shown while the order stays non-terminal:
 //   pending  → standard "we're confirming" copy (after 8s soft deadline)
@@ -156,6 +204,12 @@ function CheckoutSuccessPage() {
     const hardDeadline = Date.now() + 90_000;
     let attempt = 0;
     let consecutiveErrors = 0;
+    // Card provider reports PENDING both for "left without paying" and for
+    // the short window before a real charge is registered. Only show
+    // "not completed" after a grace period + repeated PENDING answers, and
+    // keep polling so a late confirmation still flips the page to "paid".
+    const notPaidGraceUntil = Date.now() + 30_000;
+    let consecutiveNotCompleted = 0;
 
     // Real-time Firestore listener (Item 1): for authed users only, since
     // orders RLS requires `resource.data.userId == request.auth.uid`. If
@@ -171,7 +225,16 @@ function CheckoutSuccessPage() {
           (snap) => {
             if (stopRef.current || !snap.exists()) return;
             const s = String((snap.data() as { status?: unknown }).status ?? "").toLowerCase();
-            if (s === "paid" || s === "processing" || s === "shipped" || s === "delivered") {
+            const d = snap.data() as Record<string, unknown>;
+            // "processing" is an admin fulfilment state, NOT payment
+            // evidence — only treat it as paid when the doc carries
+            // payment evidence (paidAt set by a real settle path).
+            const paidEvidence =
+              typeof d.paidAt !== "undefined" && d.paidAt !== null;
+            if (
+              s === "paid" || s === "shipped" || s === "delivered" ||
+              (s === "processing" && paidEvidence)
+            ) {
               setPhaseSafe("paid");
               void fireGaPurchaseOnce(oid, snap.data() as Record<string, unknown>);
               try {
@@ -258,7 +321,11 @@ function CheckoutSuccessPage() {
           const status = String((data as { status?: unknown }).status || "").toUpperCase();
           if (status === "SUCCESS" || status === "PAID" || status === "COMPLETED") {
             setPhaseSafe("paid");
-            void fireGaPurchaseOnce(oid);
+            void fireGaPurchaseOnce(
+              oid,
+              undefined,
+              (data as { tracking?: Record<string, unknown> }).tracking,
+            );
             try {
               localStorage.removeItem("php_cart");
               localStorage.removeItem("php_pending_order");
@@ -270,6 +337,15 @@ function CheckoutSuccessPage() {
           if (status === "CANCELLED" || status === "CANCELED") {
             setPhaseSafe("cancelled");
             return; // terminal — stop polling
+          }
+          if (status === "NOT_COMPLETED") {
+            consecutiveNotCompleted += 1;
+            if (Date.now() > notPaidGraceUntil && consecutiveNotCompleted >= 3) {
+              setPhaseSafe("notpaid");
+            }
+            // Non-terminal: keep polling until hard deadline.
+          } else {
+            consecutiveNotCompleted = 0;
           }
           if (status === "FAILED" || status === "DECLINED" || status === "EXPIRED") {
             setPhaseSafe("error");
@@ -341,9 +417,15 @@ function CheckoutSuccessPage() {
         captureAmount(data);
         if (status === "SUCCESS" || status === "PAID" || status === "COMPLETED") {
           setPhaseSafe("paid");
-          void fireGaPurchaseOnce(orderId);
+          void fireGaPurchaseOnce(
+            orderId,
+            undefined,
+            (data as { tracking?: Record<string, unknown> }).tracking,
+          );
         } else if (status === "CANCELLED" || status === "CANCELED") {
           setPhaseSafe("cancelled");
+        } else if (status === "NOT_COMPLETED") {
+          setPhaseSafe("notpaid");
         } else if (status === "FAILED" || status === "DECLINED" || status === "EXPIRED") {
           setPhaseSafe("error");
           setError("Your bank did not complete the payment. No money was taken.");
@@ -355,15 +437,20 @@ function CheckoutSuccessPage() {
     }
   }
 
-  // React is alive — cancel the dead-JS meta-refresh fallback.
+  // React is alive — cancel the dead-JS boot-reload fallback (and any
+  // legacy meta refresh still present in cached HTML).
   useEffect(() => {
+    try {
+      (window as unknown as { __phlCancelBootReload?: () => void }).__phlCancelBootReload?.();
+    } catch { /* ignore */ }
     document.querySelectorAll('meta[http-equiv="refresh"]').forEach((m) => m.remove());
   }, []);
+
 
   // Inline critical styles mirror the Tailwind classes so the page stays
   // centered/readable even when the CSS bundle 404s (stale-asset webview).
   return (
-    <div
+    <main
       className="min-h-screen flex items-center justify-center px-4 py-12 bg-slate-950"
       style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "3rem 1rem", background: "#020617", fontFamily: "system-ui, -apple-system, sans-serif" }}
     >
@@ -409,12 +496,12 @@ function CheckoutSuccessPage() {
             <h1 className="mt-4 text-xl font-bold text-white">
               {escalation === "alert"
                 ? "Still no confirmation from your bank"
-                : "Payment received — confirming with your bank"}
+                : "Confirming your payment with your bank…"}
             </h1>
 
             {escalation === "none" && (
               <p className="mt-2 text-sm text-slate-300">
-                Your bank hasn't sent the final confirmation yet. You can safely close this page — we'll email you as soon as it lands. Order <span className="font-mono text-emerald-400">{orderId}</span>.
+                We haven't received the final confirmation yet — no money is confirmed as taken. You can safely close this page; we'll email you as soon as it lands. Order <span className="font-mono text-emerald-400">{orderId}</span>.
               </p>
             )}
 
@@ -512,6 +599,22 @@ function CheckoutSuccessPage() {
             <a href="/" className="mt-3 inline-block text-xs text-slate-400 underline hover:text-slate-200">Back to shop</a>
           </>
         )}
+        {phase === "notpaid" && (
+          <>
+            <AlertCircle className="w-10 h-10 mx-auto text-amber-400" />
+            <h1 className="mt-4 text-xl font-bold text-white">Payment not completed</h1>
+            <p className="mt-2 text-sm text-slate-300">
+              Your card payment was not completed. No money was charged.
+            </p>
+            {orderId && (
+              <p className="mt-2 text-[11px] text-slate-500">
+                Reference for support: <span className="font-mono text-slate-400">{orderId}</span>
+              </p>
+            )}
+            <a href="/checkout" className="mt-6 inline-block rounded-lg bg-emerald-500 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-400">Try again</a>
+            <a href="/" className="mt-3 inline-block text-xs text-slate-400 underline hover:text-slate-200">Back to shop</a>
+          </>
+        )}
         {phase === "error" && (
           <>
             <XCircle className="w-10 h-10 mx-auto text-rose-500" />
@@ -530,6 +633,6 @@ function CheckoutSuccessPage() {
           </>
         )}
       </div>
-    </div>
+    </main>
   );
 }

@@ -3,9 +3,24 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { notifySsrError } from "./lib/ssr-alert";
-import { isGoneLegacyPath, resolveLegacyRedirect } from "./lib/legacy-redirects";
+import { isGoneLegacyPath, resolveFinalRedirect } from "./lib/legacy-redirects";
 
-import { extractClientIp, log, truncate } from "./lib/worker-log";
+// Firestore quota alert writer used by src/lib/firestore-rest.ts (kept here so
+// that shared module never imports ./server/*).
+(globalThis as { __phlQuotaAlert?: (status: number, now: number) => Promise<void> }).__phlQuotaAlert =
+  async (status, now) => {
+    const { addDocAdmin } = await import("./lib/server/firestore-admin");
+    await addDocAdmin("admin_alerts", {
+      severity: "critical",
+      message: `Firestore read limit hit (HTTP ${status}) — product pages served from cache.`,
+      source: "firestore-quota",
+      acknowledged: false,
+      timestamp: now,
+      createdAt: new Date(now).toISOString(),
+    });
+  };
+
+import { extractClientIp, log, maskIpForLog, redactQueryForLog, truncate } from "./lib/worker-log";
 
 
 type ServerEntry = {
@@ -134,9 +149,9 @@ function buildStrictCsp(nonce: string): string {
     "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://tagmanager.google.com",
     "style-src-attr 'unsafe-inline'",
     "font-src 'self' data: https://fonts.gstatic.com",
-    "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://www.google-analytics.com https://www.googletagmanager.com https://ssl.google-analytics.com https://www.google.com https://www.google.co.uk https://www.google.se https://www.gstatic.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://stats.g.doubleclick.net https://*.google.com https://*.google.se https://bat.bing.net https://bat.bing.com https://*.bing.com https://s.clarity.ms https://*.clarity.ms https://peptidesupermarket.co.uk",
+    "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://www.google-analytics.com https://www.googletagmanager.com https://ssl.google-analytics.com https://www.google.com https://www.google.co.uk https://www.google.se https://www.google.pl https://www.google.de https://www.gstatic.com https://www.googleadservices.com https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://stats.g.doubleclick.net https://*.google.com https://*.google.se https://bat.bing.net https://bat.bing.com https://*.bing.com https://s.clarity.ms https://*.clarity.ms https://peptidesupermarket.co.uk",
     "media-src 'self' https: data:",
-    "connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseappcheck.googleapis.com https://content-firebaseappcheck.googleapis.com https://firebaseinstallations.googleapis.com https://fcmregistrations.googleapis.com https://firebaseremoteconfig.googleapis.com https://firebasestorage.googleapis.com https://*.firebaseapp.com https://*.googleapis.com https://*.supabase.co https://www.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com https://region1.google-analytics.com https://region1.analytics.google.com https://analytics.google.com https://*.analytics.google.com https://stats.g.doubleclick.net https://www.merchant-center-analytics.goog https://service.prerender.io https://api.prerender.io https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net https://royal-mail-order.dantun9090.workers.dev https://www.googleadservices.com https://googleads.g.doubleclick.net https://apis.google.com https://bat.bing.net https://bat.bing.com https://*.bing.com https://*.taboola.com https://s.clarity.ms https://*.clarity.ms https://*.ingest.sentry.io https://*.ingest.de.sentry.io https://o4511662760525824.ingest.de.sentry.io https://*.wallid.io https://*.wallid.com",
+    "connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseappcheck.googleapis.com https://content-firebaseappcheck.googleapis.com https://firebaseinstallations.googleapis.com https://fcmregistrations.googleapis.com https://firebaseremoteconfig.googleapis.com https://firebasestorage.googleapis.com https://*.firebaseapp.com https://*.googleapis.com https://*.supabase.co https://www.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com https://region1.google-analytics.com https://region1.analytics.google.com https://analytics.google.com https://*.analytics.google.com https://stats.g.doubleclick.net https://www.merchant-center-analytics.goog https://service.prerender.io https://api.prerender.io https://www.google.com https://ad.doubleclick.net https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net https://royal-mail-order.dantun9090.workers.dev https://www.googleadservices.com https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://apis.google.com https://bat.bing.net https://bat.bing.com https://*.bing.com https://*.taboola.com https://s.clarity.ms https://*.clarity.ms https://*.ingest.sentry.io https://*.ingest.de.sentry.io https://o4511662760525824.ingest.de.sentry.io https://*.wallid.io https://*.wallid.com",
     "frame-src 'self' blob: https://firebasestorage.googleapis.com https://*.firebaseapp.com https://www.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com https://www.recaptcha.net https://*.wallid.io https://*.wallid.com https://*.stripe.com",
     "worker-src 'self' blob:",
     "object-src 'none'",
@@ -157,7 +172,7 @@ function buildStrictCsp(nonce: string): string {
 const CSP_TEMPLATE_PREVIEW = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:",
-  "script-src-elem 'self' 'unsafe-inline' https: data:",
+  "script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' https: data:",
   "style-src 'self' 'unsafe-inline' https:",
   "style-src-elem 'self' 'unsafe-inline' https:",
   "style-src-attr 'unsafe-inline'",
@@ -1048,6 +1063,19 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
         element(el) { el.setAttribute("nonce", nonceAttrValue); },
       }).on("style", {
         element(el) { el.setAttribute("nonce", nonceAttrValue); },
+      }).on("body", {
+        // The hosting layer injects its visit-analytics script
+        // (/__l5e/events.*.js) AFTER this rewriter runs, so it carries no
+        // nonce and the strict CSP blocks it — analytics read 0 visits.
+        // This nonce'd loader re-creates that tag at runtime; under
+        // 'strict-dynamic' a script inserted by a trusted script is allowed.
+        // Same-origin path only, no new hosts, CSP unchanged.
+        element(el) {
+          el.append(
+            `<script nonce="${nonceAttrValue}" data-phl-l5e>(function(){function f(){try{var s=document.querySelectorAll('script[src^="/__l5e/"]:not([data-phl-l5e-ok])');for(var i=0;i<s.length;i++){var o=s[i];if(o.nonce)continue;var n=document.createElement('script');for(var j=0;j<o.attributes.length;j++){var a=o.attributes[j];n.setAttribute(a.name,a.value)}n.setAttribute('data-phl-l5e-ok','1');n.defer=true;o.parentNode.replaceChild(n,o)}}catch(e){}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',f);else f()})()</script>`,
+            { html: true },
+          );
+        },
       });
     }
     rewritten = r.transform(htmlResponse);
@@ -1173,7 +1201,9 @@ async function handleImageProxy(request: Request, url: URL): Promise<Response> {
     return imageProxyError("Image unavailable", 502);
   }
   if (!upstream.ok && upstream.status !== 206) {
-    return imageProxyError("Image unavailable", upstream.status === 404 ? 404 : 502);
+    // Upstream client errors (404, 402 billing/quota, 403) are "image missing",
+    // not a gateway fault — return 404 so the <img> onError fallback handles it.
+    return imageProxyError("Image unavailable", upstream.status >= 400 && upstream.status < 500 ? 404 : 502);
   }
   const contentType = (upstream.headers.get("content-type") || "").toLowerCase();
   if (!contentType.startsWith("image/")) return imageProxyError("Not an image", 415);
@@ -1334,8 +1364,30 @@ async function normalizeCatastrophicSsrResponse(
   }
 
   const captured = consumeLastCapturedError();
-  const err = captured ?? new Error(`h3 swallowed SSR error: ${body}`);
+  const err: Error =
+    captured instanceof Error ? captured : new Error(`h3 swallowed SSR error: ${body}`);
+
   console.error(err);
+  // The h3-swallowed case loses the original throw, so log enough request
+  // context to identify WHICH route/URL is failing in Server Logs.
+  if (request) {
+    try {
+      const u = new URL(request.url);
+      log.error({
+        event: "worker.ssr.catastrophic",
+        captured: Boolean(captured),
+        method: request.method,
+        path: u.pathname,
+        query: redactQueryForLog(u.search),
+        ua: (request.headers.get("user-agent") ?? "").slice(0, 160),
+        referer: (request.headers.get("referer") ?? "").slice(0, 200),
+        message: err.message.slice(0, 300),
+      });
+    } catch {
+      /* logging must never throw */
+    }
+  }
+
   if (request) {
     notifySsrError({
       error: err,
@@ -1367,13 +1419,16 @@ export default {
     const baseFields = {
       method: request.method,
       path: url.pathname,
-      query: url.search || undefined,
-      ip,
+      query: redactQueryForLog(url.search),
+      // Visitor IPs are personal data — never written to the log stream in
+      // full. Keep a coarse prefix for abuse correlation only.
+      ip: maskIpForLog(ip),
       country,
       ua,
       referer,
       cfRay: ray,
     };
+
 
     try {
       // 0. Browser cache reset. Keep this before SSR so `/?sw=off` never loads
@@ -1547,7 +1602,7 @@ export default {
           const bucket = adminUnlockAttempts.get(ip);
           if (bucket && now - bucket.start < WINDOW_MS) {
             if (bucket.count >= MAX_ATTEMPTS) {
-              log.warn({ event: "admin_unlock.rate_limited", ...baseFields, ip });
+              log.warn({ event: "admin_unlock.rate_limited", ...baseFields });
               return new Response("Too many attempts. Try again later.", {
                 status: 429,
                 headers: { ...STRICT_NO_STORE_HEADERS, "retry-after": String(Math.ceil((WINDOW_MS - (now - bucket.start)) / 1000)) },
@@ -1625,6 +1680,14 @@ export default {
         dest.hostname = CANONICAL_HOST;
         dest.protocol = "https:";
         dest.port = "";
+        // Single hop: apply trailing-slash + legacy path rules in the same 301.
+        {
+          let pth = dest.pathname;
+          if (pth.length > 1 && pth.endsWith("/") && !pth.startsWith("/api/") && !/\.[a-z0-9]+$/i.test(pth)) {
+            pth = pth.replace(/\/+$/, "") || "/";
+          }
+          dest.pathname = resolveFinalRedirect(pth) ?? pth;
+        }
         log.info({ event: "worker.redirect", status: 301, reason: "canonical-host", to: dest.toString(), ...baseFields });
         return applyStrictNoStoreHeaders(Response.redirect(dest.toString(), 301), url.pathname);
       }
@@ -1688,7 +1751,10 @@ export default {
         !/\.[a-z0-9]+$/i.test(url.pathname)
       ) {
         const dest = new URL(url.toString());
-        dest.pathname = url.pathname.replace(/\/+$/, "");
+        const stripped = url.pathname.replace(/\/+$/, "");
+        // Single hop: if the stripped path is itself a legacy URL, go
+        // straight to its final destination.
+        dest.pathname = resolveFinalRedirect(stripped) ?? stripped;
         log.info({ event: "worker.redirect", status: 301, reason: "trailing-slash", to: dest.pathname, ...baseFields });
         return applyStrictNoStoreHeaders(Response.redirect(dest.toString(), 301), url.pathname);
       }
@@ -1696,7 +1762,7 @@ export default {
 
 
       // 2. 301 redirect legacy (Wegic) URLs before SSR runs.
-      const legacy = resolveLegacyRedirect(url.pathname);
+      const legacy = resolveFinalRedirect(url.pathname);
       if (legacy && legacy !== url.pathname) {
         const dest = new URL(legacy, url);
         dest.search = url.search;

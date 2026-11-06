@@ -1,3 +1,4 @@
+import { requireAdminRequest } from '@/lib/server/admin-request-auth';
 import { createFileRoute } from '@tanstack/react-router';
 import { enforceRateLimit } from '@/lib/rate-limit';
 import { getDocAdmin, listDocsAdmin } from '@/lib/server/firestore-admin';
@@ -51,6 +52,8 @@ export const Route = createFileRoute('/api/public/publish-status')({
           retryAfterSec: 60,
         });
         if (limited) return limited;
+        const denied = await requireAdminRequest(request);
+        if (denied) return denied;
 
         const currentBuildId = typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'unknown';
 

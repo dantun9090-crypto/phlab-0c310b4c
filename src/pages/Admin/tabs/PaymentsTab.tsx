@@ -13,9 +13,18 @@ import {
 } from '@/lib/payment-gateways.functions';
 import type { PaymentGatewayConfig } from '@/lib/payments/types';
 import WallidKillSwitchCard from '../components/WallidKillSwitchCard';
+import ManualTransferKillSwitchCard from '../components/ManualTransferKillSwitchCard';
 import WallidTestPaymentCard from '../components/WallidTestPaymentCard';
 import WallidSyncCard from '../components/WallidSyncCard';
 import WallidReconcileCard from '../components/WallidReconcileCard';
+import PeptidePayToggleCard from '../components/PeptidePayToggleCard';
+import PeptidePayTestPaymentCard from '../components/PeptidePayTestPaymentCard';
+import NowPaymentsToggleCard from '../components/NowPaymentsToggleCard';
+import NowPaymentsTestPaymentCard from '../components/NowPaymentsTestPaymentCard';
+import TideToggleCard from '../components/TideToggleCard';
+import CheckoutPauseCard from '../components/CheckoutPauseCard';
+
+
 
 import { getAdminIdToken } from '@/lib/auth-ready';
 type TestResult = { ok: boolean; durationMs: number; message: string; at: number };
@@ -128,9 +137,22 @@ export default function PaymentsTab() {
       </div>
 
       <WallidKillSwitchCard />
+      <ManualTransferKillSwitchCard />
       <WallidTestPaymentCard />
       <WallidSyncCard />
       <WallidReconcileCard />
+      <PeptidePayToggleCard />
+      <PeptidePayTestPaymentCard />
+      <NowPaymentsToggleCard />
+      <NowPaymentsTestPaymentCard />
+
+      <CheckoutPauseCard />
+      {/* Tide alternative payment — hosted payment link (QR / Open Banking) */}
+      <TideToggleCard />
+
+
+
+
 
       {err && (
         <div className="rounded-lg border-2 border-red-700 bg-red-950/40 p-3 text-red-200 text-sm flex items-start gap-2">

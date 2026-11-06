@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import {
-  Users, Search, DollarSign, ShoppingBag, UserX, RefreshCw, Shield, ChevronDown, Crown
+  Users, Search, DollarSign, ShoppingBag, UserX, RefreshCw, Shield, ChevronDown, Crown, Trash2, AlertTriangle, X, KeyRound, MailCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { db, collection, getDocs, updateDoc, doc } from '@/lib/firebase';
+import { db, collection, getDocs, updateDoc, doc, auth } from '@/lib/firebase';
 import { getAllOrders } from '@/lib/firebase';
 import { logAdminAction } from '@/lib/admin-audit';
 import { toDateSafe, toMillisSafe } from '@/lib/to-date';
+
 
 interface CustomerProfile {
   uid: string;
@@ -37,12 +38,55 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 export default function CustomersTab() {
+  /** Admin confirms a customer's email when their emailed link expired. */
+  const handleMarkVerified = async (c: CustomerProfile) => {
+    if (!window.confirm(`Confirm email for ${c.email}? Only do this if you trust this is their address.`)) return;
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Not signed in');
+      const idToken = await user.getIdToken();
+      const res = await fetch('/api/admin/customer-verify-email', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ idToken, uid: c.uid }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || `Failed (${res.status})`);
+      window.alert(`Email confirmed for ${c.email}. Ask them to sign out and sign in again.`);
+    } catch (err: any) {
+      const code = err?.message || 'unknown_error';
+      const friendly: Record<string, string> = {
+        forbidden: 'Your account is not an admin.',
+        unauthorized: 'Session expired — sign in again.',
+        not_found: 'Customer record no longer exists.',
+        auth_user_not_found: 'No sign-in account exists for this customer.',
+      };
+      window.alert(friendly[code] || 'Could not confirm email — try again.');
+    }
+  };
+
   const [customers, setCustomers] = useState<CustomerProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [saving, setSaving] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<CustomerProfile | null>(null);
+  const [removeMode, setRemoveMode] = useState<'full' | 'anonymise'>('full');
+  const [removeConfirm, setRemoveConfirm] = useState('');
+  const [removeReason, setRemoveReason] = useState('');
+  const [removeBusy, setRemoveBusy] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
+  const [removeResult, setRemoveResult] = useState<string | null>(null);
+  // Password assistance (reset link / set temporary password)
+  const [pwTarget, setPwTarget] = useState<CustomerProfile | null>(null);
+  const [pwMode, setPwMode] = useState<'reset-link' | 'set'>('reset-link');
+  const [pwValue, setPwValue] = useState('');
+  const [pwReason, setPwReason] = useState('');
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwError, setPwError] = useState<string | null>(null);
+  const [pwResult, setPwResult] = useState<string | null>(null);
+
 
   const fetchData = async () => {
     setLoading(true);
@@ -146,7 +190,137 @@ export default function CustomersTab() {
     }
   };
 
+  const openPassword = (c: CustomerProfile) => {
+    setPwTarget(c);
+    setPwMode('reset-link');
+    setPwValue('');
+    setPwReason('');
+    setPwError(null);
+    setPwResult(null);
+  };
+
+  /**
+   * Admin-assisted password recovery. "reset-link" emails the customer a
+   * Firebase reset link; "set" writes a password directly (blank = server
+   * generates an easy one) and revokes the customer's existing sessions.
+   */
+  const handlePassword = async () => {
+    const target = pwTarget;
+    if (!target) return;
+    setPwBusy(true);
+    setPwError(null);
+    setPwResult(null);
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Not signed in');
+      const idToken = await user.getIdToken();
+      const res = await fetch('/api/admin/customer-password', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          idToken,
+          uid: target.uid,
+          mode: pwMode,
+          password: pwMode === 'set' && pwValue.trim() ? pwValue.trim() : undefined,
+          reason: pwReason || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || `Failed (${res.status})`);
+
+      setPwResult(
+        pwMode === 'reset-link'
+          ? `Reset email sent to ${target.email}. The link expires after 1 hour.`
+          : `New password: ${data.password}\nAll their existing sessions were signed out. Share this once and ask them to change it in Account → Security.`,
+      );
+      if (pwMode === 'set') setPwValue('');
+    } catch (err: any) {
+      const code = err?.message || 'unknown_error';
+      const friendly: Record<string, string> = {
+        forbidden: 'Your account is not an admin.',
+        unauthorized: 'Session expired — sign in again.',
+        not_found: 'Customer record no longer exists.',
+        no_email: 'This customer has no email address on file.',
+        auth_user_not_found: 'No sign-in account exists for this customer.',
+        weak_password: 'Password too weak — use at least 6 characters.',
+        cannot_set_admin_password: 'Cannot set another admin’s password — send a reset link instead.',
+        reset_link_failed: 'Firebase refused to send the reset email — try again.',
+        password_update_failed: 'Password update failed — try again.',
+      };
+      setPwError(friendly[code] || code);
+    } finally {
+      setPwBusy(false);
+    }
+  };
+
+  const openRemove = (c: CustomerProfile) => {
+    setRemoveTarget(c);
+    setRemoveMode('full');
+    setRemoveConfirm('');
+    setRemoveReason('');
+    setRemoveError(null);
+    setRemoveResult(null);
+  };
+
+  /**
+   * Permanent removal. The server route deletes the Firebase Auth account,
+   * the customer document and newsletter subscriptions, and redacts personal
+   * data on past orders (order rows are kept for 6 years for HMRC).
+   */
+  const handleRemove = async () => {
+    const target = removeTarget;
+    if (!target) return;
+    setRemoveBusy(true);
+    setRemoveError(null);
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Not signed in');
+      const idToken = await user.getIdToken();
+      const res = await fetch('/api/admin/customer-delete', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          idToken,
+          uid: target.uid,
+          mode: removeMode,
+          reason: removeReason || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || `Failed (${res.status})`);
+
+      const s = data.summary || {};
+      setRemoveResult(
+        removeMode === 'full'
+          ? `Account removed. Auth: ${s.authDeleted ? 'deleted' : s.authMissing ? 'already gone' : 'unchanged'} · Orders redacted: ${s.orders ?? 0} · Newsletter entries removed: ${s.emailSubscribers ?? 0}`
+          : `Personal data erased. Orders redacted: ${s.orders ?? 0} · Newsletter entries removed: ${s.emailSubscribers ?? 0}`,
+      );
+
+      if (removeMode === 'full') {
+        setCustomers(prev => prev.filter(c => c.uid !== target.uid));
+      } else {
+        setCustomers(prev =>
+          prev.map(c => (c.uid === target.uid ? { ...c, email: '[REMOVED]', firstName: '', lastName: '', isActive: false } : c)),
+        );
+      }
+    } catch (err: any) {
+      const code = err?.message || 'unknown_error';
+      const friendly: Record<string, string> = {
+        forbidden: 'Your account is not an admin.',
+        unauthorized: 'Session expired — sign in again.',
+        cannot_remove_self: 'You cannot remove your own account.',
+        cannot_remove_admin: 'Demote this admin to customer before removing.',
+        not_found: 'Customer record no longer exists.',
+        deletion_failed: 'Removal failed part-way — check the audit log and retry.',
+      };
+      setRemoveError(friendly[code] || code);
+    } finally {
+      setRemoveBusy(false);
+    }
+  };
+
   const filtered = customers.filter(c => {
+
     const matchSearch =
       (c.email || '').toLowerCase().includes(search.toLowerCase()) ||
       (`${c.firstName || ''} ${c.lastName || ''}`).toLowerCase().includes(search.toLowerCase());
@@ -357,6 +531,34 @@ export default function CustomersTab() {
                               <UserX className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
                             </button>
                           )}
+                          <button
+                            onClick={() => openPassword(c)}
+                            disabled={saving === c.uid}
+                            title="Password help (reset link or temporary password)"
+                            aria-label="Password help"
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded transition-colors disabled:opacity-50"
+                          >
+                            <KeyRound className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleMarkVerified(c)}
+                            disabled={saving === c.uid}
+                            title="Confirm email (use when their confirmation link expired)"
+                            aria-label="Confirm customer email"
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded transition-colors disabled:opacity-50"
+                          >
+                            <MailCheck className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
+                          </button>
+                          <button
+                            onClick={() => openRemove(c)}
+                            disabled={saving === c.uid}
+                            title="Remove customer permanently"
+                            aria-label="Remove customer permanently"
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center bg-red-600/15 hover:bg-red-600/30 text-red-300 border border-red-500/30 rounded transition-colors disabled:opacity-50"
+                          >
+                            <Trash2 className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
+                          </button>
+
                         </div>
                       </td>
                     </motion.tr>
@@ -367,6 +569,226 @@ export default function CustomersTab() {
           </div>
         </div>
       )}
+
+      {/* Password help modal */}
+      {pwTarget && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70">
+          <div className="w-full max-w-lg bg-[#0b1a30] border border-blue-500/30 rounded-2xl p-5 sm:p-6 max-h-[90dvh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex items-center gap-2">
+                <KeyRound className="w-5 h-5 text-blue-400" />
+                <h3 className="text-white font-bold text-lg">Password help</h3>
+              </div>
+              <button
+                onClick={() => setPwTarget(null)}
+                aria-label="Close"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#9cb8d9] hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-[#9cb8d9] text-sm mb-4">
+              {pwTarget.email || 'no email on file'}
+            </p>
+
+            <div className="space-y-2 mb-4">
+              <label className="flex items-start gap-2 text-sm text-[#cfe0f5]">
+                <input
+                  type="radio"
+                  name="pw-mode"
+                  checked={pwMode === 'reset-link'}
+                  onChange={() => setPwMode('reset-link')}
+                  className="mt-1"
+                />
+                <span>
+                  <strong className="text-white">Send reset link</strong> — the customer gets an
+                  email and chooses their own new password. Recommended.
+                </span>
+              </label>
+              <label className="flex items-start gap-2 text-sm text-[#cfe0f5]">
+                <input
+                  type="radio"
+                  name="pw-mode"
+                  checked={pwMode === 'set'}
+                  onChange={() => setPwMode('set')}
+                  className="mt-1"
+                />
+                <span>
+                  <strong className="text-white">Set a temporary password</strong> — use when the
+                  customer cannot receive email. Signs them out everywhere.
+                </span>
+              </label>
+            </div>
+
+            {pwMode === 'set' && (
+              <div className="mb-4">
+                <label htmlFor="pw-value" className="block text-xs text-[#9cb8d9] mb-1">
+                  New password (leave blank to generate an easy one)
+                </label>
+                <input
+                  id="pw-value"
+                  type="text"
+                  value={pwValue}
+                  onChange={e => setPwValue(e.target.value)}
+                  placeholder="e.g. Lab-4821-Peptide"
+                  className="w-full px-3 py-2 bg-slate-800 border-2 border-slate-600 rounded-lg text-white text-sm min-h-[48px] focus:outline-none focus:border-blue-500"
+                />
+              </div>
+            )}
+
+            <div className="mb-4">
+              <label htmlFor="pw-reason" className="block text-xs text-[#9cb8d9] mb-1">
+                Reason (stored in the audit log)
+              </label>
+              <input
+                id="pw-reason"
+                type="text"
+                value={pwReason}
+                onChange={e => setPwReason(e.target.value)}
+                placeholder="Customer phoned — forgot password"
+                className="w-full px-3 py-2 bg-slate-800 border-2 border-slate-600 rounded-lg text-white text-sm min-h-[48px] focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            {pwError && (
+              <p className="text-red-300 text-sm mb-3">{pwError}</p>
+            )}
+            {pwResult && (
+              <p className="text-emerald-300 text-sm mb-3 whitespace-pre-line break-words">{pwResult}</p>
+            )}
+
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setPwTarget(null)}
+                className="px-4 min-h-[44px] rounded-lg bg-[#0f2640] text-[#cfe0f5] text-sm"
+              >
+                Close
+              </button>
+              <button
+                onClick={handlePassword}
+                disabled={pwBusy}
+                className="px-4 min-h-[44px] rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold disabled:opacity-50"
+              >
+                {pwBusy ? 'Working…' : pwMode === 'reset-link' ? 'Send reset email' : 'Set password'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Permanent removal modal */}
+      {removeTarget && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70">
+          <div className="w-full max-w-lg bg-[#0b1a30] border border-red-500/30 rounded-2xl p-5 sm:p-6 max-h-[90dvh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-400" />
+                <h3 className="text-white font-bold text-lg">Remove customer</h3>
+              </div>
+              <button
+                onClick={() => setRemoveTarget(null)}
+                aria-label="Close"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#9cb8d9] hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-[#9cb8d9] text-sm mb-4">
+              <span className="text-white font-semibold">{removeTarget.email || removeTarget.uid}</span>
+              {' — '}{removeTarget.orderCount} order(s), £{removeTarget.totalSpend.toFixed(2)} lifetime value.
+            </p>
+
+            {removeResult ? (
+              <>
+                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4 text-emerald-300 text-sm mb-4">
+                  {removeResult}
+                </div>
+                <button
+                  onClick={() => setRemoveTarget(null)}
+                  className="w-full min-h-[48px] bg-[#0f2640] hover:bg-[#1a3a5c] text-white rounded-lg font-semibold"
+                >
+                  Close
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="space-y-2 mb-4">
+                  {([
+                    ['full', 'Delete in full', 'Deletes the login account, the customer record and newsletter entries. Personal data on past orders is redacted (order rows kept 6 years for HMRC).'],
+                    ['anonymise', 'Erase personal data only', 'Keeps the customer row but wipes name, email, phone and addresses, and deactivates the account.'],
+                  ] as const).map(([value, label, hint]) => (
+                    <label
+                      key={value}
+                      className={`block cursor-pointer rounded-lg border-2 p-3 ${removeMode === value ? 'border-red-500/60 bg-red-500/10' : 'border-[#475569] bg-[#1e293b]'}`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="remove-mode"
+                          value={value}
+                          checked={removeMode === value}
+                          onChange={() => setRemoveMode(value)}
+                          className="accent-red-500"
+                        />
+                        <span className="text-white text-sm font-semibold">{label}</span>
+                      </span>
+                      <span className="block text-[#9cb8d9] text-xs mt-1">{hint}</span>
+                    </label>
+                  ))}
+                </div>
+
+                <label className="block text-[#9cb8d9] text-xs mb-1" htmlFor="remove-reason">
+                  Reason (stored in the audit log)
+                </label>
+                <input
+                  id="remove-reason"
+                  value={removeReason}
+                  onChange={e => setRemoveReason(e.target.value)}
+                  placeholder="e.g. GDPR erasure request"
+                  className="w-full mb-4 px-3 py-2 bg-[#1e293b] border-2 border-[#475569] rounded-lg text-white text-sm min-h-[48px] focus:outline-none focus:border-[#3b82f6]"
+                />
+
+                <label className="block text-[#9cb8d9] text-xs mb-1" htmlFor="remove-confirm">
+                  Type <span className="text-red-300 font-mono">DELETE</span> to confirm
+                </label>
+                <input
+                  id="remove-confirm"
+                  value={removeConfirm}
+                  onChange={e => setRemoveConfirm(e.target.value)}
+                  autoComplete="off"
+                  className="w-full mb-4 px-3 py-2 bg-[#1e293b] border-2 border-[#475569] rounded-lg text-white text-sm min-h-[48px] focus:outline-none focus:border-red-500"
+                />
+
+                {removeError && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-red-300 text-sm mb-4">
+                    {removeError}
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <button
+                    onClick={() => setRemoveTarget(null)}
+                    disabled={removeBusy}
+                    className="flex-1 min-h-[48px] bg-[#0f2640] hover:bg-[#1a3a5c] text-white rounded-lg font-semibold disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleRemove}
+                    disabled={removeBusy || removeConfirm.trim().toUpperCase() !== 'DELETE'}
+                    className="flex-1 min-h-[48px] bg-red-600 hover:bg-red-500 text-white rounded-lg font-semibold disabled:opacity-40"
+                  >
+                    {removeBusy ? 'Removing…' : removeMode === 'full' ? 'Delete in full' : 'Erase personal data'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
+
   );
 }

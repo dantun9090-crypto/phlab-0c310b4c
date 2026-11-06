@@ -41,7 +41,17 @@ export interface BackupAlertPayload {
   extra?: Record<string, unknown>;
 }
 
+function escapeAlertHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function color(p: BackupAlertPayload): string {
+
   if (p.severity === "critical") return "danger";
   if (p.severity === "warn") return "warning";
   return "#3b82f6";
@@ -126,6 +136,15 @@ export async function sendBackupAlert(
     process.env.DISCORD_SECURITY_WEBHOOK?.trim() ||
     process.env.DISCORD_PAYMENTS_WEBHOOK?.trim();
 
+  // Preferred: linked Slack connection via the connector gateway.
+  try {
+    const { postSlackGatewayAlert } = await import("@/lib/server/slack-gateway-alert");
+    const sent = await postSlackGatewayAlert(buildSlackPayload(p), "backup-alerts");
+    if (sent) return "slack";
+  } catch {
+    // fall through to webhook / discord / email
+  }
+
   if (slackUrl) {
     const ok = await postJson(slackUrl, buildSlackPayload(p), "Slack");
     if (ok) return "slack";
@@ -154,7 +173,10 @@ export async function sendBackupAlert(
     if (p.reason) lines.push(`Reason: ${p.reason}`);
     lines.push("", `Admin: ${ADMIN_LINK}`);
     const text = lines.join("\n");
-    const html = `<p>${text.replace(/\n/g, "<br/>")}</p>`;
+    // Alert fields carry attacker-controlled data (User-Agent, reason) —
+    // escape before embedding in the HTML body.
+    const html = `<p>${escapeAlertHtml(text).replace(/\n/g, "<br/>")}</p>`;
+
 
     await enqueueMailOnce(`backup-alert:${p.type}:${p.ip ?? "noip"}:${bucket}`, {
       to: ADMIN_ALERT_EMAIL,

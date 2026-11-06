@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FileCheck, Search, ExternalLink, AlertCircle } from 'lucide-react';
 import type { Product } from '@/lib/firebase';
+import { excludeVipProducts } from '@/lib/vip-visibility';
+
 import PuritySignature from './PuritySignature';
 
 /**
@@ -38,7 +40,7 @@ export default function CoALookup() {
     const load = () => {
       import('@/lib/firebase')
         .then(({ getAllProducts }) => getAllProducts())
-        .then(list => { if (!cancelled) setProducts(list); })
+        .then(list => { if (!cancelled) setProducts(excludeVipProducts(list)); })
         .catch(() => { if (!cancelled) setProducts([]); });
     };
     const ric = (window as unknown as {

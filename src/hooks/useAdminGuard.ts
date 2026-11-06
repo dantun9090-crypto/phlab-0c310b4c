@@ -28,6 +28,8 @@ export interface AdminGuardState {
   loading: boolean;
   /** Firestore was unreachable (permission-denied / offline) — not a denial. */
   firestoreError: boolean;
+  /** True for packing staff (`staffRole === 'orders'`): Orders tab only. */
+  ordersOnly: boolean;
   /** Resolved Firebase uid, or null when signed out. */
   uid: string | null;
 }
@@ -39,6 +41,7 @@ export function useAdminGuard(options: AdminGuardOptions = {}): AdminGuardState 
     isAdmin: false,
     loading: true,
     firestoreError: false,
+    ordersOnly: false,
     uid: null,
   });
 
@@ -59,7 +62,7 @@ export function useAdminGuard(options: AdminGuardOptions = {}): AdminGuardState 
         if (!alive) return;
 
         if (!user) {
-          setState({ isAdmin: false, loading: false, firestoreError: false, uid: null });
+          setState({ isAdmin: false, loading: false, firestoreError: false, ordersOnly: false, uid: null });
           go(loginPath);
           return;
         }
@@ -68,9 +71,10 @@ export function useAdminGuard(options: AdminGuardOptions = {}): AdminGuardState 
           const snap = await getDoc(doc(db, 'customers', user.uid));
           const data = snap.exists() ? snap.data() : null;
           const admin = data?.isAdmin === true || data?.role === 'admin';
+          const ordersOnly = !admin && data?.staffRole === 'orders';
           if (!alive) return;
-          setState({ isAdmin: admin, loading: false, firestoreError: false, uid: user.uid });
-          if (!admin && redirectTo) go(redirectTo);
+          setState({ isAdmin: admin, loading: false, firestoreError: false, ordersOnly, uid: user.uid });
+          if (!admin && !ordersOnly && redirectTo) go(redirectTo);
         } catch (err) {
           const code = (err as { code?: string })?.code || '';
           const unreachable =
@@ -80,6 +84,7 @@ export function useAdminGuard(options: AdminGuardOptions = {}): AdminGuardState 
             isAdmin: false,
             loading: false,
             firestoreError: unreachable,
+            ordersOnly: false,
             uid: user.uid,
           });
           if (!unreachable && redirectTo) go(redirectTo);

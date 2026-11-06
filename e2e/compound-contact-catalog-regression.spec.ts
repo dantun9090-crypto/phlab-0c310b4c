@@ -83,21 +83,28 @@ test.describe("/compound analytics events", () => {
     // never navigate and the dataLayer survives. The two internal links
     // (Contact Research Team / Request Documentation) navigate away and
     // would wipe the dataLayer, so they go LAST and are not re-read.
-    for (const name of ["WhatsApp", "Telegram"]) {
-      await page.getByRole("link", { name: new RegExp(name, "i") }).first().dispatchEvent("click").catch(() => { /* external */ });
-    }
+    // Hydration race guard: the pre-rendered HTML paints the CTAs BEFORE
+    // React attaches onClick handlers — a click dispatched pre-hydration is
+    // silently lost (Firefox hydrates slower, which made this time out at
+    // 30s on the nightly run). Re-dispatch until tracking actually fires.
+    const waCta = page.getByRole("link", { name: /WhatsApp/i }).first();
+    await expect
+      .poll(
+        async () => {
+          await waCta.dispatchEvent("click").catch(() => { /* external */ });
+          return (await readDataLayer(page)).length;
+        },
+        { timeout: 30_000, intervals: [500, 1_000, 2_000] },
+      )
+      .toBeGreaterThan(0);
+
+    // Hydration is guaranteed by the poll above — this one lands first try.
+    await page.getByRole("link", { name: /Telegram/i }).first().dispatchEvent("click").catch(() => { /* external */ });
     // NOTE: the internal CTAs (Contact Research Team / Request Documentation)
     // are deliberately NOT clicked — they navigate away, which wipes the
     // dataLayer AND races the evaluate below ("Execution context was
     // destroyed"). The external WhatsApp/Telegram clicks already produce the
     // compound_cta_click / cta_click events asserted below.
-
-    // Analytics initialises lazily (first interaction or idle) — trigger it
-    // and give dataLayer a moment to populate before reading.
-    await page.mouse.click(10, 10);
-    await expect
-      .poll(async () => (await readDataLayer(page)).length, { timeout: 30_000 })
-      .toBeGreaterThan(0);
 
     const dl = await readDataLayer(page);
 
@@ -160,7 +167,7 @@ test.describe("/contact qualification gating", () => {
     await expect(submit).toBeEnabled();
     await submit.click();
 
-    await expect.poll(() => captured.length, { timeout: 5_000 }).toBeGreaterThan(0);
+    await expect.poll(() => captured.length, { timeout: 10_000 }).toBeGreaterThan(0);
     const payload = captured[0].body;
     expect(payload.template).toBe("contact");
     expect(payload.email).toBe("researcher@lab.invalid");

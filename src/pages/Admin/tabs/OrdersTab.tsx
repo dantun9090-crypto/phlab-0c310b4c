@@ -4,23 +4,47 @@ import {
   ShoppingCart, Search, Clock, Package, Truck, CheckCircle, XCircle,
   Eye, Printer, RefreshCw, ChevronDown, X, Send, Hash, Copy,
   Banknote, CheckCheck, AlertCircle, Loader2, CreditCard, ExternalLink,
-  Trash2, ChevronRight, RotateCcw, ArrowRight
+  Trash2, ChevronRight, RotateCcw, ArrowRight, BarChart3
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getAllOrders, updateOrderStatus, Order, db, doc, updateDoc, addDoc, collection, query, where, getDocs, Timestamp, deleteDoc, sendOrderStatusEmail } from '@/lib/firebase';
+import CustomerOrdersSummary, { orderEmail } from '@/components/admin/CustomerOrdersSummary';
+import { getAllOrders, updateOrderStatus, Order, db, doc, updateDoc, addDoc, collection, query, where, getDocs, getDoc, setDoc, Timestamp, deleteDoc, sendOrderStatusEmail } from '@/lib/firebase';
 import { auth } from '@/lib/firebase';
 import { logAdminAction } from '@/lib/admin-audit';
 import PaymentTimeline from '@/components/admin/PaymentTimeline';
 import WebhookRetryCard from '@/components/admin/WebhookRetryCard';
 import { isFenaAutoPaid } from '@/lib/fena-filter';
 import { createRoyalMailOrder, syncRoyalMailTracking } from '@/lib/royal-mail.functions';
+import { registerTracker, bulkRegisterTrackers, bulkCheckDeliveries } from '@/lib/aftership.functions';
+
 
 
 import { buildDispatchEmail } from '@/templates/dispatchEmail';
 import { orderReceivedEmail } from '@/templates/orderReceivedEmail';
+import { paymentConfirmedEmail } from '@/templates/paymentConfirmedEmail';
 
 import { getAdminIdToken } from '@/lib/auth-ready';
 import { toDateSafe, toMillisSafe } from '@/lib/to-date';
+import { hasHouseNumber } from '@/lib/uk-address';
+import { canRetryPayment } from '@/lib/order-payment-retry';
+
+// ── "Check address" badge — order has no deliverable house number ──
+function CheckAddressBadge({ order, addressLine }: { order: any; addressLine: string }) {
+  const c = order?.customer;
+  const country = String(c?.country || order?.shippingCountry || 'United Kingdom');
+  if (country && country !== 'United Kingdom') return null;
+  if (c?.addressNoHouseNumber || order?.addressNoHouseNumber) return null;
+  const line = String(c?.address || addressLine || '');
+  if (!line.trim() || hasHouseNumber(line)) return null;
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-500/15 border border-orange-500/40 rounded text-xs text-orange-300 font-semibold"
+      title="No house number in the delivery address — confirm with the customer before printing a Royal Mail label."
+    >
+      ⚠ Check address
+    </span>
+  );
+}
 // ── Payment status config for bank transfer orders ──
 const PAYMENT_STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
   pending_bank_transfer: { label: 'Awaiting Payment', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', icon: Clock },
@@ -226,6 +250,9 @@ export default function OrdersTab() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('new');
   const [selected, setSelected] = useState<Order | null>(null);
+  // Per-row "customer history" toggle — one click shows paid/failed stats
+  // for that customer inline under the order row.
+  const [historyOrderId, setHistoryOrderId] = useState<string | null>(null);
   // Orders the admin has already opened — persisted so "New Orders" only
   // shows genuinely unhandled orders across sessions.
   const SEEN_KEY = 'php_admin_seen_orders';
@@ -297,9 +324,25 @@ export default function OrdersTab() {
   const [rmSyncMsg, setRmSyncMsg] = useState('');
 
   // Bulk Royal Mail tracking sync
+  const [afterShipRunning, setAfterShipRunning] = useState(false);
+  const [afterShipMsg, setAfterShipMsg] = useState('');
+  const [deliveryCheckRunning, setDeliveryCheckRunning] = useState(false);
+  const [deliveryCheckMsg, setDeliveryCheckMsg] = useState('');
   const [bulkSyncRunning, setBulkSyncRunning] = useState(false);
+
   const [bulkSyncProgress, setBulkSyncProgress] = useState({ done: 0, total: 0 });
   const [bulkSyncLog, setBulkSyncLog] = useState<{ id: string; status: 'synced' | 'waiting' | 'error'; message: string }[]>([]);
+
+  // Bulk Royal Mail order creation — PROCESSING orders only.
+  const [bulkRmRunning, setBulkRmRunning] = useState(false);
+  const [bulkRmProgress, setBulkRmProgress] = useState({ done: 0, total: 0 });
+  const [bulkRmLog, setBulkRmLog] = useState<{ id: string; status: 'created' | 'skipped' | 'error'; message: string }[]>([]);
+
+  // Bulk "Payment Not Completed" pay-again emails — UNPAID orders only.
+  const [bulkPayRunning, setBulkPayRunning] = useState(false);
+  const [bulkPayProgress, setBulkPayProgress] = useState({ done: 0, total: 0 });
+  const [bulkPayLog, setBulkPayLog] = useState<{ id: string; status: 'sent' | 'skipped' | 'error'; message: string }[]>([]);
+
 
   // Dispatch email audit (all shipped orders)
   type MailAuditStatus = 'ok' | 'missing' | 'wrong_tracking' | 'send_error' | 'no_email' | 'no_tracking' | 'error';
@@ -459,7 +502,10 @@ export default function OrdersTab() {
       // Send order status email notification to customer
       const order = orders.find(o => o.id === orderId);
       const customerEmail = order?.userEmail || (order as any)?.customer?.email;
-      if (customerEmail && ['processing', 'shipped', 'delivered', 'canceled', 'paid', 'refunded'].includes(status)) {
+      // 'paid' is intentionally excluded: the dedicated "Payment received"
+      // email below (shared with the automatic Wallid paths) covers it, and
+      // sending both would look like a duplicate/double charge to the buyer.
+      if (customerEmail && ['processing', 'shipped', 'delivered', 'canceled', 'refunded'].includes(status)) {
         const firstName = (order as any)?.shippingFirstName || (order as any)?.customer?.firstName || 'Customer';
         const orderItems = (order?.items || []).map((it: any) => ({
           name: it.name || '',
@@ -472,6 +518,48 @@ export default function OrdersTab() {
           undefined, undefined, undefined, undefined,
           orderItems, order?.totalAmount
         ).catch(console.error);
+      }
+
+      // Manual "paid" in the panel must reach the customer with the same
+      // "Payment received" email the automatic Wallid paths send. Uses the
+      // deterministic mail doc id `payment-confirmed:<orderId>`, so a webhook
+      // or reconcile run that already sent it cannot be duplicated here.
+      if (customerEmail && status === 'paid') {
+        void (async () => {
+          try {
+            const mailId = `payment-confirmed:${orderId}`.replace(/[^A-Za-z0-9_:-]/g, '_');
+            const mailRef = doc(db, 'mail', mailId);
+            const existing = await getDoc(mailRef);
+            if (existing.exists()) return;
+            const firstName =
+              String(
+                (order as any)?.shippingFirstName ||
+                  (order as any)?.customer?.firstName ||
+                  '',
+              ).split(' ')[0] || 'there';
+            const mail = paymentConfirmedEmail({
+              firstName,
+              orderNumber: String((order as any)?.orderNumber || orderId),
+              amount: Number(order?.totalAmount || 0),
+              paymentMethod: 'Open Banking (bank transfer)',
+              paidAt: new Date(),
+            });
+            await setDoc(mailRef, {
+              to: customerEmail,
+              replyTo: 'info@phlabs.co.uk',
+              message: mail,
+              source: 'admin:manual-paid',
+              createdAt: Timestamp.now(),
+            });
+            await logAdminAction({
+              action: 'order.payment_confirmed_email',
+              target: `orders/${orderId}`,
+              meta: { to: customerEmail, trigger: 'manual-paid' },
+            });
+          } catch (mailErr) {
+            console.error('[OrdersTab] payment-confirmed email failed', mailErr);
+          }
+        })();
       }
     } catch (e) {
       console.error(e);
@@ -735,7 +823,92 @@ export default function OrdersTab() {
     }
   };
 
+  // Bulk-register every shipped parcel with AfterShip live tracking.
+  const handleBulkRegisterLiveTracking = async () => {
+    if (afterShipRunning) return;
+    setAfterShipRunning(true);
+    setAfterShipMsg('');
+    try {
+      const idToken = await getAdminIdToken();
+      if (!idToken) {
+        setAfterShipMsg('Admin session expired — sign in again.');
+        return;
+      }
+      const res = await bulkRegisterTrackers({ data: { idToken } });
+      if (!res.ok) {
+        setAfterShipMsg(`Failed: ${(res as any).error || 'unknown error'}`);
+        return;
+      }
+      const r = res as { registered: string[]; skipped: number; errors: string[] };
+      setAfterShipMsg(
+        `Registered ${r.registered.length}, skipped ${r.skipped}${r.errors.length ? `, errors: ${r.errors.slice(0, 3).join('; ')}` : ''}`
+      );
+    } catch (e: any) {
+      setAfterShipMsg(e?.message || 'Failed to register live tracking.');
+    } finally {
+      setAfterShipRunning(false);
+    }
+  };
+
+  /**
+   * Bulk delivery check — asks AfterShip for the live status of every shipped
+   * parcel and flips the delivered ones to `delivered` (with customer email).
+   */
+  const handleBulkCheckDeliveries = async () => {
+    if (deliveryCheckRunning) return;
+    setDeliveryCheckRunning(true);
+    setDeliveryCheckMsg('');
+    try {
+      const idToken = await getAdminIdToken();
+      if (!idToken) {
+        setDeliveryCheckMsg('Admin session expired — sign in again.');
+        return;
+      }
+      const res = await bulkCheckDeliveries({ data: { idToken } });
+      if (!res.ok) {
+        setDeliveryCheckMsg(`Failed: ${(res as any).error || 'unknown error'}`);
+        return;
+      }
+      const r = res as { checked: number; delivered: string[]; inTransit: string[]; errors: string[] };
+      setDeliveryCheckMsg(
+        `Checked ${r.checked} · delivered ${r.delivered.length}${r.delivered.length ? ` (${r.delivered.map(id => id.slice(-8).toUpperCase()).slice(0, 5).join(', ')})` : ''} · still in transit ${r.inTransit.length}${r.errors.length ? ` · errors: ${r.errors.slice(0, 3).join('; ')}` : ''}`
+      );
+    } catch (e: any) {
+      setDeliveryCheckMsg(e?.message || 'Delivery check failed.');
+    } finally {
+      setDeliveryCheckRunning(false);
+    }
+  };
+
+
+
+
+  // Register the parcel with AfterShip so we get live courier checkpoints and
+  // an instant "delivered" webhook. Best-effort — never blocks dispatch.
+  const registerLiveTracking = async (orderId: string, tracking: string, courier: string) => {
+    try {
+      const idToken = await getAdminIdToken();
+      if (!idToken) return;
+      await registerTracker({
+        data: {
+          idToken,
+          orderId,
+          trackingNumber: tracking,
+          slug: /evri|hermes/i.test(courier)
+            ? 'evri'
+            : /dpd/i.test(courier)
+              ? 'dpd-uk'
+              : 'royal-mail',
+          ...(selected?.userEmail ? { email: selected.userEmail } : {}),
+        },
+      });
+    } catch (err) {
+      console.warn('[aftership] register failed', err);
+    }
+  };
+
   // Save tracking number + courier to order
+
   const handleSaveTracking = async () => {
     if (!selected || !trackingInput.trim()) {
       setTrackingError('Please enter a tracking number first.');
@@ -754,7 +927,10 @@ export default function OrdersTab() {
         ...(courier ? { courier } : {}),
       });
 
+      await registerLiveTracking(selected.id, tracking, courier);
+
       // Update local state
+
       setOrders(prev => prev.map(o =>
         o.id === selected.id ? { ...o, trackingNumber: tracking, ...(courier ? { courier } : {}) } : o
       ));
@@ -824,7 +1000,11 @@ export default function OrdersTab() {
          });
        }
 
-      // 3. Update local state
+      // 3. Register live tracking (AfterShip) — instant delivered webhook
+      await registerLiveTracking(selected.id, tracking, courier);
+
+      // 4. Update local state
+
       setOrders(prev => prev.map(o =>
         o.id === selected.id ? { ...o, trackingNumber: tracking, status: 'shipped', ...(courier ? { courier } : {}) } : o
       ));
@@ -909,10 +1089,15 @@ export default function OrdersTab() {
       setRmResult({ orderIdentifier, orderReference, trackingNumber });
       if (trackingNumber) setTrackingInput(trackingNumber);
       setCourierInput('Royal Mail');
-      setOrders(prev => prev.map(o => o.id === selected.id
-        ? { ...o, ...(trackingNumber ? { trackingNumber } : {}), courier: 'Royal Mail' } as Order
-        : o));
-      setSelected(prev => prev ? { ...prev, ...(trackingNumber ? { trackingNumber } : {}), courier: 'Royal Mail' } as Order : prev);
+      const localRmPatch = {
+        royalMailOrderId: orderIdentifier,
+        royalMailService: serviceCodeUsed,
+        royalMailTracking: trackingNumber,
+        courier: 'Royal Mail',
+        ...(trackingNumber ? { trackingNumber } : {}),
+      };
+      setOrders(prev => prev.map(o => o.id === selected.id ? { ...o, ...localRmPatch } as Order : o));
+      setSelected(prev => prev ? { ...prev, ...localRmPatch } as Order : prev);
     } catch (e: any) {
       console.error('[royal-mail] create order failed', e);
       setRmError(e?.message || 'Failed to create Royal Mail order.');
@@ -920,6 +1105,195 @@ export default function OrdersTab() {
       setRmLoading(false);
     }
   };
+
+  /**
+   * Orders eligible for the bulk "Payment Not Completed" email: still unpaid,
+   * have a customer email, and no pay-again link sent yet (so a second run can
+   * never spam the same buyer twice).
+   *
+   * `cancelled` is deliberately NOT a blanket candidate: it is also the status
+   * used for admin-cancelled orders, which must never be asked to pay again.
+   * A cancelled order only qualifies when it was a Pay-by-Bank / Fena / Wallid
+   * payment the customer abandoned at the bank — exactly what canRetryPayment()
+   * checks (same rule the customer-facing "Pay Again" CTA uses).
+   */
+  const UNPAID_FOR_PAYLINK = ['pending', 'pending_payment', 'awaiting_payment', 'processing_payment', 'failed'];
+  const bulkPayCandidates = orders.filter(o => {
+    const status = String(o.status || '').toLowerCase();
+    const eligible =
+      UNPAID_FOR_PAYLINK.includes(status) ||
+      (status === 'cancelled' &&
+        canRetryPayment({
+          status,
+          paymentMethod: (o as any).paymentMethod,
+          paymentProvider: (o as any).paymentProvider,
+        }));
+    if (!eligible) return false;
+    if (String((o as any).paymentRetryLinkSentAt || (o as any).paymentRetryEmailAt || '').trim()) return false;
+    const email = String((o as any).userEmail || (o as any).customerEmail || (o as any).customer?.email || '').trim();
+    return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
+  });
+
+  /**
+   * Sends the one-click "Pay Again" email (with bank-transfer fallback) to every
+   * unpaid order that hasn't had one yet. Sequential + local state patch so a
+   * repeated click cannot double-email the same customer.
+   */
+  const handleBulkSendPaymentLinks = async () => {
+    if (bulkPayRunning) return;
+    const candidates = bulkPayCandidates;
+    setBulkPayLog([]);
+    setBulkPayProgress({ done: 0, total: candidates.length });
+    if (candidates.length === 0) return;
+    if (!window.confirm(
+      `Email a "Pay Again" link to ${candidates.length} unpaid customer${candidates.length === 1 ? '' : 's'}?\n\nEach email includes bank-transfer details and tells the customer to ignore it if they have already paid.`
+    )) return;
+
+    setBulkPayRunning(true);
+    try {
+      const idToken = await getAdminIdToken();
+      if (!idToken) {
+        setBulkPayLog([{ id: '—', status: 'error', message: 'You must be signed in as an admin.' }]);
+        return;
+      }
+      for (const o of candidates) {
+        try {
+          const res = await fetch('/api/admin/send-payment-link', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ idToken, orderId: o.id }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data?.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+          const patch = { paymentRetryLinkSentAt: new Date().toISOString() };
+          setOrders(prev => prev.map(x => x.id === o.id ? { ...x, ...patch } as Order : x));
+          setSelected(prev => prev && prev.id === o.id ? { ...prev, ...patch } as Order : prev);
+          await logAdminAction({ action: 'order.payment_link_sent', target: `orders/${o.id}`, meta: { bulk: true } });
+          setBulkPayLog(prev => [...prev, { id: o.id, status: 'sent', message: `Pay-again link emailed to ${data.to}` }]);
+        } catch (e: any) {
+          setBulkPayLog(prev => [...prev, { id: o.id, status: 'error', message: e?.message || 'Send failed.' }]);
+        } finally {
+          setBulkPayProgress(prev => ({ ...prev, done: prev.done + 1 }));
+        }
+      }
+    } finally {
+      setBulkPayRunning(false);
+    }
+  };
+
+  /** Orders eligible for bulk Click & Drop creation: PROCESSING only, no label yet. */
+  const bulkRmCandidates = orders.filter(o =>
+    String(o.status || '').toLowerCase() === 'processing' &&
+    !String((o as any).royalMailOrderId || '').trim()
+  );
+
+  /**
+   * Bulk-creates Click & Drop orders for every PROCESSING order that has no
+   * Royal Mail order yet. Deliberately restricted to `processing` so pending,
+   * shipped, delivered or cancelled orders can never be charged for a label.
+   */
+  const handleBulkCreateRoyalMailOrders = async () => {
+    if (bulkRmRunning) return;
+    const candidates = bulkRmCandidates;
+    setBulkRmLog([]);
+    setBulkRmProgress({ done: 0, total: candidates.length });
+    if (candidates.length === 0) return;
+    if (!window.confirm(
+      `Create ${candidates.length} Royal Mail order${candidates.length === 1 ? '' : 's'} for orders in Processing?\n\nClick & Drop orders may be chargeable once postage is applied.`
+    )) return;
+
+    setBulkRmRunning(true);
+    try {
+      const idToken = await getAdminIdToken();
+      if (!idToken) {
+        setBulkRmLog([{ id: '—', status: 'error', message: 'You must be signed in as an admin.' }]);
+        return;
+      }
+
+      for (const o of candidates) {
+        try {
+          const c: any = (o as any).customer || {};
+          const firstName = c.firstName || (o as any).shippingFirstName || '';
+          const lastName = c.lastName || (o as any).shippingLastName || '';
+          const addressLine1 = c.address || (o as any).addressLine1 || '';
+          const addressLine2 = (o as any).addressLine2 || '';
+          const city = c.city || (o as any).city || '';
+          const postcode = String(c.postcode || (o as any).postcode || '').toUpperCase();
+          const email = c.email || o.userEmail || '';
+          if (!firstName || !lastName || !addressLine1 || !postcode || !email) {
+            setBulkRmLog(prev => [...prev, { id: o.id, status: 'skipped', message: 'Missing name, address or email.' }]);
+            continue;
+          }
+
+          const result = await createRoyalMailOrder({
+            data: {
+              idToken,
+              orderId: o.id,
+              firstName, lastName, addressLine1, addressLine2,
+              city, postcode, email,
+              phone: (c.phone || (o as any).phone || '') as string,
+              countryCode: 'GB',
+              ...(rmService ? { serviceCode: rmService } : {}),
+              weightGrams: Number(rmWeight) || 100,
+              subtotal: Number((o as any).subtotal ?? o.totalAmount ?? 0),
+              shippingCostCharged: Number((o as any).shippingCost ?? 0),
+              total: Number((o as any).total ?? o.totalAmount ?? 0),
+            },
+          });
+          if (!result.ok) {
+            const detail = result.details ? ` — ${result.details}` : '';
+            throw new Error(`${result.error ?? 'Failed to create Royal Mail order.'}${detail}`);
+          }
+          const orderIdentifier = String(result.orderId || '').trim();
+          if (!orderIdentifier) throw new Error('Worker did not return an orderId');
+          const trackingNumber = result.trackingNumber ? String(result.trackingNumber).trim() : null;
+          const serviceCodeUsed = result.serviceCodeUsed ?? '';
+
+          const updatePayload: Record<string, unknown> = {
+            royalMailOrderId: orderIdentifier,
+            royalMailService: serviceCodeUsed,
+            royalMailTracking: trackingNumber,
+            royalMailCreatedAt: Timestamp.now(),
+            courier: 'Royal Mail',
+          };
+          if (trackingNumber) updatePayload.trackingNumber = trackingNumber;
+          await updateDoc(doc(db, 'orders', o.id), updatePayload);
+          await logAdminAction({
+            action: 'order.royal_mail_create',
+            target: `orders/${o.id}`,
+            meta: { service: serviceCodeUsed, royalMailOrderId: orderIdentifier, weightGrams: Number(rmWeight) || 100, bulk: true },
+          });
+
+          // Merge the Royal Mail identifiers into local state too, otherwise the
+          // order stays in `bulkRmCandidates` and a second run would create a
+          // duplicate (chargeable) Click & Drop order for the same parcel.
+          const localRmPatch = {
+            royalMailOrderId: orderIdentifier,
+            royalMailService: serviceCodeUsed,
+            royalMailTracking: trackingNumber,
+            courier: 'Royal Mail',
+            ...(trackingNumber ? { trackingNumber } : {}),
+          };
+          setOrders(prev => prev.map(x => x.id === o.id ? { ...x, ...localRmPatch } as Order : x));
+          setSelected(prev => prev && prev.id === o.id ? { ...prev, ...localRmPatch } as Order : prev);
+          setBulkRmLog(prev => [...prev, {
+            id: o.id,
+            status: 'created',
+            message: `Click & Drop ${orderIdentifier}${trackingNumber ? ` · ${trackingNumber}` : ' · tracking pending'}`,
+          }]);
+        } catch (e: any) {
+          console.error('[royal-mail] bulk create failed for', o.id, e);
+          setBulkRmLog(prev => [...prev, { id: o.id, status: 'error', message: e?.message || 'Create failed.' }]);
+        } finally {
+          setBulkRmProgress(prev => ({ ...prev, done: prev.done + 1 }));
+        }
+      }
+    } finally {
+      setBulkRmRunning(false);
+    }
+  };
+
+
 
   /**
    * Pulls the tracking number for an EXISTING Click & Drop order and writes it
@@ -1229,6 +1603,26 @@ export default function OrdersTab() {
     return Number.isFinite(t) ? t : 0;
   };
 
+  /**
+   * "Failed payment" category.
+   * Covers explicit provider failures (failed / expired / cancelled payment)
+   * AND the common real-world case where the payment never completed but the
+   * order was left sitting in "pending" — anything unpaid and older than 24h
+   * is treated as a failed payment so it stops hiding in Pending.
+   */
+  const FAILED_PAYMENT_STATUSES = ['failed', 'expired', 'payment_failed', 'failed_payment', 'declined'];
+  const STALE_UNPAID_MS = 24 * 60 * 60 * 1000;
+  const isFailedPaymentOrder = (o: Order) => {
+    const s = String(o.status || '').toLowerCase();
+    const ps = String((o as any).paymentStatus || '').toLowerCase();
+    if (FAILED_PAYMENT_STATUSES.includes(s) || FAILED_PAYMENT_STATUSES.includes(ps)) return true;
+    if (ps === 'paid' || s === 'paid') return false;
+    if (!UNPAID_STATUSES.includes(s)) return false;
+    const ts = orderTimeMs(o);
+    return ts > 0 && Date.now() - ts > STALE_UNPAID_MS;
+  };
+
+
   const filtered = orders.filter(o => {
 
     const c = (o as any).customer;
@@ -1241,11 +1635,15 @@ export default function OrdersTab() {
       (o as any).apiPaymentId,
       (o as any).wallidApiPaymentId,
       (o as any).wallidPaymentRef,
+      // Wallid's internal payment id — this is what most banks print on the
+      // customer's statement instead of our PHP-xxxx order number.
+      (o as any).wallidBankRef,
       (o as any).bankTransferRef,
       (o as any).bankTransferReference,
       (o as any).truelayerPaymentId,
       (o as any).fenaPaymentId,
     ].filter(Boolean).join(' ');
+
     const s = search.toLowerCase();
     // Bank statements show the Wallid id without dashes (e.g. "9b37b618d5"),
     // so compare an alphanumeric-only version too.
@@ -1264,7 +1662,10 @@ export default function OrdersTab() {
     const matchStatus = statusFilter === 'all' || o.status === statusFilter ||
       (statusFilter === 'new' && isNewOrder(o)) ||
       (statusFilter === 'unpaid' && isUnpaidOrder(o)) ||
+      (statusFilter === 'failed_payment' && isFailedPaymentOrder(o)) ||
       (statusFilter === 'pending' && o.status === 'pending_payment') ||
+
+
       (statusFilter === 'fena_paid' && isFenaAutoPaid(o)) ||
       (statusFilter === 'next_day_12' && (o as any).shippingMethod === 'next_day_12') ||
       (statusFilter === 'next_day_missed' && (o as any).nextDayMissedCutoff === true);
@@ -1275,6 +1676,8 @@ export default function OrdersTab() {
   const counts = {
     new: orders.filter(isNewOrder).length,
     unpaid: orders.filter(isUnpaidOrder).length,
+    failed_payment: orders.filter(isFailedPaymentOrder).length,
+
     all: orders.length,
     pending: orders.filter(o => o.status === 'pending' || o.status === 'pending_payment').length,
     paid: orders.filter(o => o.status === 'paid').length,
@@ -1431,19 +1834,22 @@ export default function OrdersTab() {
 
       {/* Status filter tabs */}
       <div className="flex gap-2 flex-wrap">
-        {(['new', 'unpaid', 'all', 'pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'fena_paid', 'next_day_12', 'next_day_missed'] as const).map(s => {
+        {(['new', 'unpaid', 'failed_payment', 'all', 'pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'fena_paid', 'next_day_12', 'next_day_missed'] as const).map(s => {
           const labelMap: Record<string, string> = {
             new: '🆕 New Orders',
             unpaid: '💷 Unpaid',
+            failed_payment: '❌ Failed Payment',
             fena_paid: '✅ Fena Auto-Paid',
             next_day_12: '🚀 Next Day by 12',
             next_day_missed: '⚠️ Next Day Missed',
           };
+
           const label = labelMap[s] ?? (s.charAt(0).toUpperCase() + s.slice(1));
 
           const isFena = s === 'fena_paid';
           const isNextDay = s === 'next_day_12' || s === 'new';
           const isMissed = s === 'next_day_missed';
+          const isFailed = s === 'failed_payment';
 
           return (
             <button
@@ -1452,13 +1858,16 @@ export default function OrdersTab() {
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
                 statusFilter === s
                   ? (isFena ? 'bg-green-600 border-green-500 text-white'
+                    : isFailed ? 'bg-red-600 border-red-500 text-white'
                     : isNextDay ? 'bg-emerald-600 border-emerald-500 text-white'
                     : isMissed ? 'bg-amber-600 border-amber-500 text-white'
                     : 'bg-blue-600 border-blue-500 text-white')
                   : (isFena ? 'bg-green-500/10 border-green-500/30 text-green-300 hover:text-green-200'
+                    : isFailed ? 'bg-red-500/10 border-red-500/30 text-red-300 hover:text-red-200'
                     : isNextDay ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:text-emerald-200'
                     : isMissed ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:text-amber-200'
                     : 'bg-[#0d1f35] border-white/[0.08] text-[#9cb8d9] hover:text-white')
+
               }`}
             >
               {label} ({counts[s]})
@@ -1467,7 +1876,82 @@ export default function OrdersTab() {
         })}
       </div>
 
+      {/* Bulk "Payment Not Completed" pay-again emails — unpaid orders only */}
+      {(bulkPayCandidates.length > 0 || bulkPayLog.length > 0) && (
+        <div className="p-3 bg-[#0d1f35] border border-white/[0.08] rounded-xl">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-[#9cb8d9] text-xs">
+              {bulkPayCandidates.length} <span className="text-white font-semibold">unpaid</span> order{bulkPayCandidates.length === 1 ? '' : 's'} with no pay-again email sent yet. Each email includes bank-transfer details and asks the customer to disregard it if payment has already been made.
+            </p>
+            <button
+              onClick={handleBulkSendPaymentLinks}
+              disabled={bulkPayRunning || bulkPayCandidates.length === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 hover:bg-orange-500/25 border border-orange-500/30 text-orange-300 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+            >
+              {bulkPayRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+              {bulkPayRunning
+                ? `Sending ${bulkPayProgress.done}/${bulkPayProgress.total}…`
+                : 'Bulk send Payment Not Completed'}
+            </button>
+          </div>
+          {bulkPayLog.length > 0 && (
+            <ul className="mt-2 space-y-1 max-h-40 overflow-y-auto" role="status">
+              {bulkPayLog.map((r, i) => (
+                <li
+                  key={`${r.id}-${i}`}
+                  className={`text-xs font-mono ${
+                    r.status === 'sent' ? 'text-emerald-300'
+                      : r.status === 'skipped' ? 'text-amber-300'
+                      : 'text-red-400'
+                  }`}
+                >
+                  {r.id}: {r.message}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {/* Bulk Royal Mail order creation — Processing orders only */}
+      {(bulkRmCandidates.length > 0 || bulkRmLog.length > 0) && (
+        <div className="p-3 bg-[#0d1f35] border border-white/[0.08] rounded-xl">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-[#9cb8d9] text-xs">
+              {bulkRmCandidates.length} order{bulkRmCandidates.length === 1 ? '' : 's'} in <span className="text-white font-semibold">Processing</span> without a Royal Mail order.
+            </p>
+            <button
+              onClick={handleBulkCreateRoyalMailOrders}
+              disabled={bulkRmRunning || bulkRmCandidates.length === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-300 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+            >
+              {bulkRmRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Package className="w-3.5 h-3.5" />}
+              {bulkRmRunning
+                ? `Creating ${bulkRmProgress.done}/${bulkRmProgress.total}…`
+                : 'Bulk create Royal Mail orders'}
+            </button>
+          </div>
+          {bulkRmLog.length > 0 && (
+            <ul className="mt-2 space-y-1 max-h-40 overflow-y-auto" role="status">
+              {bulkRmLog.map((r, i) => (
+                <li
+                  key={`${r.id}-${i}`}
+                  className={`text-xs font-mono ${
+                    r.status === 'created' ? 'text-emerald-300'
+                      : r.status === 'skipped' ? 'text-amber-300'
+                      : 'text-red-400'
+                  }`}
+                >
+                  {r.id}: {r.message}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
       {/* Bulk Royal Mail tracking sync */}
+
       {(() => {
         const pending = orders.filter(o =>
           String((o as any).royalMailOrderId || '').trim() && !String(o.trackingNumber || '').trim()
@@ -1509,6 +1993,70 @@ export default function OrdersTab() {
           </div>
         );
       })()}
+
+      {/* AfterShip live tracking — instant "delivered" webhooks */}
+      {(() => {
+        const unregistered = orders.filter(o =>
+          String(o.trackingNumber || '').trim() &&
+          !(o as any).aftershipRegistered &&
+          ['shipped', 'delivered'].includes(String(o.status || '').toLowerCase())
+        ).length;
+        if (unregistered === 0 && !afterShipMsg) return null;
+        return (
+          <div className="p-3 bg-[#0d1f35] border border-white/[0.08] rounded-xl">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-[#9cb8d9] text-xs">
+                {unregistered} parcel{unregistered === 1 ? '' : 's'} not yet on live tracking (AfterShip pushes
+                “delivered” instantly, no waiting for the 4-hour sync).
+              </p>
+              <button
+                onClick={handleBulkRegisterLiveTracking}
+                disabled={afterShipRunning}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+              >
+                {afterShipRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Truck className="w-3.5 h-3.5" />}
+                {afterShipRunning ? 'Registering…' : 'Enable live tracking (bulk)'}
+              </button>
+            </div>
+            {afterShipMsg && (
+              <p className="mt-2 text-xs font-mono text-[#9cb8d9]" role="status">{afterShipMsg}</p>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Bulk delivery check — which shipped parcels are already delivered? */}
+      {(() => {
+        const shippedWithTracking = orders.filter(o =>
+          String(o.trackingNumber || '').trim() &&
+          String(o.status || '').toLowerCase() === 'shipped'
+        ).length;
+        if (shippedWithTracking === 0 && !deliveryCheckMsg) return null;
+        return (
+          <div className="p-3 bg-[#0d1f35] border border-white/[0.08] rounded-xl">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-[#9cb8d9] text-xs">
+                {shippedWithTracking} shipped parcel{shippedWithTracking === 1 ? '' : 's'} — check live courier
+                status now and mark the delivered ones as “delivered” (customer gets the delivery email).
+              </p>
+              <button
+                onClick={handleBulkCheckDeliveries}
+                disabled={deliveryCheckRunning || shippedWithTracking === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+              >
+                {deliveryCheckRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Truck className="w-3.5 h-3.5" />}
+                {deliveryCheckRunning ? 'Checking deliveries…' : 'Check deliveries (bulk)'}
+              </button>
+            </div>
+            {deliveryCheckMsg && (
+              <p className="mt-2 text-xs font-mono text-[#9cb8d9]" role="status">{deliveryCheckMsg}</p>
+            )}
+          </div>
+        );
+      })()}
+
+
+
 
       {/* Dispatch email audit — verify every shipped order got its tracking email */}
       {(() => {
@@ -1694,6 +2242,7 @@ export default function OrdersTab() {
                     {isFenaOrder(order) && <FenaStatusBadge order={order} />}
                     <ProviderBadge order={order} />
                     <ReconciledCronBadge order={order} />
+                    <CheckAddressBadge order={order} addressLine={addressLine} />
                     {order.trackingNumber && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-400 font-mono">
                         <Hash className="w-3 h-3" />{order.trackingNumber}
@@ -1712,6 +2261,36 @@ export default function OrdersTab() {
                       <span className="text-[#2a4a7a]"> · Wallid ID: {wallidApiRef}</span>
                     </p>
                   )}
+                  {Array.isArray(order.items) && order.items.length > 0 && (
+                    <ul className="mt-2 space-y-1 rounded-lg border border-white/[0.07] bg-[#060f1e]/60 p-2">
+                      {order.items.map((it: any, idx: number) => {
+                        const name = it?.name || it?.productName || 'Item';
+                        const rawVariant = it?.variantName || it?.dosage || it?.variant || it?.size || it?.variantLabel || '';
+                        const variant = rawVariant && !String(name).toLowerCase().includes(String(rawVariant).toLowerCase()) ? rawVariant : (rawVariant && /mg|ml|mcg|iu/i.test(String(rawVariant)) ? rawVariant : '');
+                        const qty = Number(it?.quantity ?? 1);
+                        const price = Number(it?.price ?? it?.unitPrice ?? 0);
+                        return (
+                          <li key={idx} className="flex items-center justify-between gap-2 text-xs">
+                            <span className="text-white min-w-0 break-words">
+                              <span className="font-semibold text-emerald-300">{qty}×</span> {name}
+                              {variant ? <span className="text-[#9cb8d9]"> · {String(variant)}</span> : null}
+                            </span>
+                            {price > 0 && (
+                              <span className="text-[#9cb8d9] shrink-0">£{(price * qty).toFixed(2)}</span>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => openOrder(order)}
+                    className="mt-2 inline-flex items-center gap-1.5 min-h-[40px] px-3 py-2 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-200 rounded-lg text-xs font-medium"
+                  >
+                    <Eye className="w-4 h-4" /> Open full order
+                  </button>
+
 
                 </div>
                 <div className="flex items-center gap-3 flex-wrap sm:shrink-0">
@@ -1764,6 +2343,13 @@ export default function OrdersTab() {
 
 
                   <button
+                    onClick={() => setHistoryOrderId(historyOrderId === order.id ? null : order.id)}
+                    className={`p-1.5 rounded-lg transition-colors ${historyOrderId === order.id ? 'bg-emerald-500/20 border border-emerald-500/40' : 'bg-[#0f2640] hover:bg-[#1a3a5c]'}`}
+                    title="Customer history (paid / failed)"
+                  >
+                    <BarChart3 className={`w-4 h-4 ${historyOrderId === order.id ? 'text-emerald-300' : 'text-[#8caad4]'}`} />
+                  </button>
+                  <button
                     onClick={() => openOrder(order)}
                     className="p-1.5 bg-[#0f2640] hover:bg-[#1a3a5c] rounded-lg transition-colors"
                     title="View details"
@@ -1783,6 +2369,15 @@ export default function OrdersTab() {
                   </button>
                 </div>
               </div>
+              {historyOrderId === order.id && (
+                <div className="mt-3">
+                  <CustomerOrdersSummary
+                    email={orderEmail(order)}
+                    orders={orders}
+                    onOpenOrder={(o) => { setHistoryOrderId(null); openOrder(o); }}
+                  />
+                </div>
+              )}
             </div>
             );
           })}
@@ -2318,9 +2913,35 @@ export default function OrdersTab() {
                   </div>
                 )}
 
+                {/* Bank-side reference — what the customer's statement shows */}
+                <div className="mt-4 rounded-lg border-2 border-slate-600 bg-slate-800 p-3">
+                  <p className="text-slate-300 text-xs font-semibold mb-1">Bank statement reference</p>
+                  <p className="text-white text-sm font-mono break-all">
+                    {(selected as any).wallidBankRef
+                      || (selected as any).apiPaymentId
+                      || (selected as any).bankTransferReference
+                      || '—'}
+                  </p>
+                  <p className="text-slate-400 text-[11px] mt-1">
+                    Banks often print Wallid&apos;s own payment id instead of the PH Labs order
+                    number. Paste whatever the statement shows into the search box above to find
+                    the order.
+                  </p>
+                </div>
+
+                {/* Customer history — one-click paid/failed stats for this email */}
+                <div className="mt-4">
+                  <CustomerOrdersSummary
+                    email={orderEmail(selected)}
+                    orders={orders}
+                    onOpenOrder={(o) => openOrder(o)}
+                  />
+                </div>
+
                 {/* Payment timeline + manual retry — Wallid reliability layer */}
                 <div className="mt-4 space-y-3">
                   <PaymentTimeline orderId={selected.id} />
+
                   <WebhookRetryCard
                     orderId={selected.id}
                     apiPaymentId={

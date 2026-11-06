@@ -66,6 +66,12 @@ async function wallidFetch(
   path: string,
   init: RequestInit,
   attempt = 0,
+  /**
+   * Only safe-to-repeat calls are retried. A POST /create may already have
+   * been accepted upstream when the socket dies, so retrying it can mint a
+   * second payment link (and a second bank reference) for one order.
+   */
+  retryable = (init.method || 'GET').toUpperCase() === 'GET',
 ): Promise<Response> {
   // 8s hard timeout — Wallid p99 is well under 2s; anything longer is a hang.
   // Prevents Worker invocations from sitting on a dead socket and blowing the
@@ -89,9 +95,10 @@ async function wallidFetch(
       (err.name === "TimeoutError" || err.name === "AbortError");
     // Retry once on transient network blip OR timeout, then fail fast so the
     // order can transition out of pending_payment instead of hanging forever.
-    if (attempt < 1) {
+    // Non-idempotent calls (POST /create) are never retried — see `retryable`.
+    if (attempt < 1 && retryable) {
       await new Promise((r) => setTimeout(r, 400));
-      return wallidFetch(path, init, attempt + 1);
+      return wallidFetch(path, init, attempt + 1, retryable);
     }
     if (isTimeout) {
       throw new WallidError(504, "wallid_timeout", "Payment service timed out");
@@ -149,9 +156,12 @@ export async function createWallidPayment(
     },
   };
 
+  // Idempotency key = the PH Labs order number, so a repeated create for the
+  // same order can be collapsed upstream instead of minting a second link.
   const res = await wallidFetch("/create", {
     method: "POST",
     body: JSON.stringify(payload),
+    headers: { "idempotency-key": orderRef },
   });
 
 

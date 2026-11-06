@@ -7,9 +7,11 @@ import { dispatchAddToCart } from '@/components/Layout';
 import NextDayCountdown from '@/components/NextDayCountdown';
 import { ProductEditor } from '@/components/ProductEditor';
 import { CoaButton } from '@/components/CoaButton';
+import LabTestBadge from '@/components/LabTestBadge';
 import MarketingAdvertSlot from '@/components/MarketingAdvertSlot';
 import ReviewForm from '@/components/ReviewForm';
 import { auth, db, doc, getDoc, getDocFromServer, collection, query, where, getDocsFromServer, limit, orderBy, onAuthStateChanged } from '@/lib/firebase';
+import { excludeVipProducts } from '@/lib/vip-visibility';
 
 import type { Product, ProductVariant } from '@/lib/firebase';
 import { getProductImage } from '@/lib/productImages';
@@ -31,6 +33,7 @@ import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 import { ResearchContentBlock } from '@/components/ResearchContentBlock';
 import PuritySignature from '@/components/PuritySignature';
+import ProductTrustStrip from '@/components/ProductTrustStrip';
 import { StarRating } from '@/components/StarRating';
 import { ReviewPreview } from '@/components/ReviewPreview';
 import { ReviewsModal } from '@/components/ReviewsModal';
@@ -253,6 +256,10 @@ export default function ProductDetail() {
   const [selectedVariantIdx, setSelectedVariantIdx] = useState(0);
   const [added, setAdded] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  // VIP-exclusive products are only purchasable by VIP members (or admins).
+  const [isVipViewer, setIsVipViewer] = useState(false);
+  const [vipChecked, setVipChecked] = useState(false);
+
   const [editing, setEditing] = useState(false);
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -317,8 +324,12 @@ export default function ProductDetail() {
 
   // Touch swipe support
   const touchStartX = useRef<number | null>(null);
+  // Set when a horizontal swipe (>=40px) just changed the image — the synthetic
+  // click mobile browsers fire right after touchend must NOT open the lightbox.
+  const touchSwipedRef = useRef(false);
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
+    touchSwipedRef.current = false;
   }, []);
 
   const refetchAdverts = useCallback(() => {
@@ -341,6 +352,7 @@ export default function ProductDetail() {
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     touchStartX.current = null;
     if (Math.abs(dx) < 40) return;
+    touchSwipedRef.current = true;
     if (dx < 0) setSelectedImageIdx(i => Math.min(i + 1, imgCount - 1));
     else setSelectedImageIdx(i => Math.max(i - 1, 0));
   }, []);
@@ -582,7 +594,9 @@ export default function ProductDetail() {
                   : [];
                 return { ...rd, id: d.id, price: rp, imageUrl: toText(rd.imageUrl, rImages[0] || ''), images: rImages, variants: rVariants } as any;
               });
-            setRelatedProducts(related);
+            // Never surface VIP-exclusive compounds in "related products".
+            setRelatedProducts(excludeVipProducts(related));
+
           } catch { /* non-blocking */ }
         }
       } catch (error) {
@@ -607,13 +621,17 @@ export default function ProductDetail() {
         try {
           const snap = await getDoc(doc(db, 'customers', user.uid));
           setIsAdmin(snap.data()?.isAdmin === true);
+          setIsVipViewer(snap.data()?.isVip === true);
         } catch { /* ignore */ }
       } else {
         setIsAdmin(false);
+        setIsVipViewer(false);
       }
+      setVipChecked(true);
     });
     return () => unsub();
   }, []);
+
 
   // Inject Product structured data schema for SEO
   useEffect(() => {
@@ -988,6 +1006,36 @@ export default function ProductDetail() {
     );
   }
 
+  // VIP-exclusive product: completely invisible to non-members. While the
+  // membership check is in flight, render nothing (same silent shell as the
+  // loading state) so the compound never flashes to a non-member.
+  if ((product as any).isVip === true && !isVipViewer && !isAdmin) {
+    if (!vipChecked) {
+      return (
+        <div className="min-h-screen bg-[#060f1e] pt-24 flex items-center justify-center" aria-hidden="true">
+          <div className="w-12 h-12 rounded-full border-2 border-blue-600/20 border-t-blue-500 animate-spin" />
+        </div>
+      );
+    }
+    // Indistinguishable from a removed product — no mention of VIP at all.
+    return (
+      <div className="min-h-screen bg-[#060f1e] pt-24 flex items-center justify-center px-4">
+        <head>
+          <meta name="robots" content="noindex, nofollow" />
+        </head>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-[#f0f6ff] mb-4">Page Not Available</h2>
+          <p className="text-[#9cb8d9] mb-6">This product is no longer available or has been removed.</p>
+          <Link to="/products" className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all shadow-[0_2px_12px_rgba(37,99,235,0.3)]">
+            <ArrowLeft className="w-4 h-4" /> Back to Products
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+
+
   const displayProductName = merchantAliasInfo?.pageTitle || product.name;
   const allVariants = product.variants ?? [];
   // A variant is "valid" only if it has a non-empty name and a finite, non-negative price.
@@ -1006,7 +1054,9 @@ export default function ProductDetail() {
         price: product.price ?? 0,
         stock: product.stock ?? 0,
       } as ProductVariant);
-  const isOutOfStock = !variant || variant.stock === 0;
+  // Admin "temporarily out of stock" flag overrides live stock numbers.
+  const isTemporarilyUnavailable = (product as any).visibility === 'out_of_stock';
+  const isOutOfStock = isTemporarilyUnavailable || !variant || variant.stock === 0;
   const variantPrice = Number(variant?.price ?? product.price ?? 0);
   const displayPrice = Number.isFinite(variantPrice) ? variantPrice : 0;
 
@@ -1243,7 +1293,15 @@ export default function ProductDetail() {
                       aria-label={`View ${product.name} image enlarged`}
                       onTouchStart={handleTouchStart}
                       onTouchEnd={(e) => handleTouchEnd(e, count)}
-                      onClick={() => setLightboxOpen(true)}
+                      onClick={() => {
+                        // A horizontal swipe also fires a synthetic click on mobile —
+                        // swallow it so swiping between photos doesn't pop the lightbox.
+                        if (touchSwipedRef.current) {
+                          touchSwipedRef.current = false;
+                          return;
+                        }
+                        setLightboxOpen(true);
+                      }}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setLightboxOpen(true); } }}
                     >
                       <AnimatePresence mode="wait">
@@ -1288,7 +1346,7 @@ export default function ProductDetail() {
 
                       {isOutOfStock && (
                         <div className="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center pointer-events-none">
-                          <span className="bg-red-600/90 text-white px-6 py-2.5 rounded-xl font-semibold text-lg">Out of Stock</span>
+                          <span className="bg-red-600/90 text-white px-6 py-2.5 rounded-xl font-semibold text-lg text-center">{isTemporarilyUnavailable ? 'Temporarily Out of Stock' : 'Out of Stock'}</span>
                         </div>
                       )}
                     </button>
@@ -1318,6 +1376,9 @@ export default function ProductDetail() {
 
                   {/* ── COA / HPLC Certificate button (directly below main image) ── */}
                   <CoaButton product={product} />
+
+                  {/* ── Batch lab-test verification (only if published tests exist) ── */}
+                  <LabTestBadge productName={product.name} />
 
                   {/* ── Thumbnails ── */}
                   {count > 1 && (
@@ -1582,9 +1643,9 @@ export default function ProductDetail() {
 
               {/* "Also known as" — captures organic long-tail misspellings
                   (Semrush UK: ~1.3k/mo combined, near-zero competition).
-                  Subtle styling so it reads as a helpful synonym list, not SEO spam. */}
+                  sr-only: visible to crawlers and screen readers, hidden visually. */}
               {!merchantAliasInfo && product.slug && PRODUCT_SEO_OVERRIDES[product.slug]?.misspellings?.length ? (
-                <p className="text-xs text-[#6b829e] mb-3 leading-relaxed">
+                <p className="sr-only">
                   <span className="font-semibold text-[#8aa3c0]">Also searched as:</span>{' '}
                   {PRODUCT_SEO_OVERRIDES[product.slug]!.misspellings!.join(', ')}.
                 </p>
@@ -1759,7 +1820,7 @@ export default function ProductDetail() {
               {/* ── Trust signals row ── */}
               <div className="flex flex-wrap gap-1.5 mb-3">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-[11px] font-semibold">
-                  <Microscope className="w-3 h-3" /> HPLC-verified ≥98%
+                  <Microscope className="w-3 h-3" /> HPLC-verified ≥99%
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/25 text-blue-300 text-[11px] font-semibold">
                   <FileText className="w-3 h-3" /> COA per batch
@@ -1784,10 +1845,43 @@ export default function ProductDetail() {
               {isOutOfStock && (
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-red-400 shrink-0" />
-                  <span className="text-red-400 text-sm font-medium">Currently out of stock</span>
+                  <span className="text-red-400 text-sm font-medium">{isTemporarilyUnavailable ? 'Temporarily out of stock — back in stock soon' : 'Currently out of stock'}</span>
                 </div>
               )}
             </div>
+
+            {/* ── Trust strip (visual only — no price / availability / JSON-LD) ── */}
+            <ProductTrustStrip />
+
+            {/* ── Frequently researched together ──
+                Names + "View" only. Deliberately NO prices, no availability,
+                no offer markup — this block must stay outside the product's
+                price/offer surface. */}
+            {relatedProducts.length > 0 && (
+              <div className="rounded-2xl border border-white/[0.07] bg-[#0b1a30] p-4">
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#4a6a8a] mb-3">
+                  Frequently researched together
+                </p>
+                <ul className="space-y-1.5">
+                  {relatedProducts.slice(0, 3).map(rp => {
+                    const rpSlug = (rp as any).slug || nameToSlug(rp.name);
+                    return (
+                      <li key={`frt-${rp.id}`} className="flex items-center justify-between gap-3">
+                        <span className="text-[#c8dcf0] text-xs leading-snug">{rp.name}</span>
+                        <Link
+                          to={`/products/${rpSlug}`}
+                          className="shrink-0 inline-flex items-center min-h-[44px] px-3 text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+                        >
+                          View
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+
+
 
             {/* ── Legal disclaimer near Add to Cart ── */}
             <div className="flex items-start gap-3 p-4 bg-amber-500/[0.06] border border-amber-500/25 rounded-2xl">
@@ -1818,7 +1912,7 @@ export default function ProductDetail() {
                     </motion.span>
                   ) : isOutOfStock ? (
                     <motion.span key="oos" className="flex items-center gap-2">
-                      <Package className="w-5 h-5" /> Out of Stock
+                      <Package className="w-5 h-5" /> {isTemporarilyUnavailable ? 'Temporarily Out of Stock' : 'Out of Stock'}
                     </motion.span>
                   ) : (
                     <motion.span key="buy" className="flex items-center gap-2">

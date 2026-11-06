@@ -23,8 +23,8 @@ const Mode = z.enum(["normal", "bad-sig", "stale", "duplicate"]);
 const Input = z.object({
   idToken: z.string().min(10).max(4096),
   eventType: z.enum(["SUCCESS", "FAILED", "EXPIRED", "PENDING"]),
-  orderId: z.string().min(1).max(120),
-  apiPaymentId: z.string().min(1).max(120),
+  orderId: z.string().min(1).max(120).regex(/^[A-Za-z0-9_.:-]+$/),
+  apiPaymentId: z.string().min(1).max(120).regex(/^[A-Za-z0-9_.:-]+$/),
   amount: z.number().int().min(1).max(10_000_00),
   mode: Mode.default("normal"),
   targetOrigin: z.string().url().optional(),
@@ -84,7 +84,21 @@ export const sendTestWallidWebhook = createServerFn({ method: "POST" })
       };
     }
 
-    const origin = data.targetOrigin || "https://phlabs.co.uk";
+    // Only our own origins may receive the signed test webhook — otherwise an
+    // admin-supplied URL turns the server into a signed-request proxy (SSRF).
+    const ALLOWED_ORIGINS = [
+      "https://phlabs.co.uk",
+      "https://www.phlabs.co.uk",
+      "http://localhost:8080",
+    ];
+    const requested = (data.targetOrigin || "https://phlabs.co.uk").replace(/\/$/, "");
+    if (!ALLOWED_ORIGINS.includes(requested)) {
+      return {
+        ok: false as const,
+        error: `targetOrigin not allowed. Allowed: ${ALLOWED_ORIGINS.join(", ")}`,
+      };
+    }
+    const origin = requested;
     const url = `${origin.replace(/\/$/, "")}/api/public/hooks/wallid`;
 
     const eventId = `test_evt_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;

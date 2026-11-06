@@ -186,7 +186,7 @@ class RootHydrationBoundary extends Component<
   }
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   const [offline, setOffline] = useState<boolean>(() => !isOnline());
@@ -306,7 +306,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "PH Labs UK — HPLC-Verified Research Peptides" },
       { property: "og:description", content: "UK supplier of HPLC-verified research peptides. Lab-tested purity, transparent COAs, and fast UK dispatch for research professionals. For research use only." },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://phlabs.co.uk/" },
       { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/df310206-836b-4b3a-b755-a2a78b9ddd1a" },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
@@ -1515,7 +1514,7 @@ function RootComponent() {
     if ((window as unknown as { __phlGaBootstrapped?: boolean }).__phlGaBootstrapped) return;
     const inline = document.createElement('script');
     inline.text =
-      "(function(){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;var c={a:false,m:false};try{var r=localStorage.getItem('php_cookie_consent');if(r){var p=JSON.parse(r);c.a=!!p.analytics;c.m=!!p.marketing;}}catch(e){}gtag('consent','default',{ad_storage:c.m?'granted':'denied',ad_user_data:c.m?'granted':'denied',ad_personalization:c.m?'granted':'denied',analytics_storage:c.a?'granted':'denied',functionality_storage:'granted',security_storage:'granted',wait_for_update:500});gtag('js',new Date());gtag('set',{'transport_url':'https://phlabs.co.uk/metrics'});gtag('config','G-5HM4YT7HDW',{cookie_domain:'auto',cookie_flags:'SameSite=None;Secure',cookie_expires:63072000,cookie_update:true,send_page_view:true,anonymize_ip:true,allow_google_signals:c.m,allow_ad_personalization_signals:c.m});gtag('config','GT-P3HVF8R5',{send_page_view:false,cookie_domain:'auto'});gtag('config','GT-WRHD4Q69',{send_page_view:false,cookie_domain:'auto'});gtag('config','MC-KJMB7MKB29',{send_page_view:false,cookie_domain:'auto'});window.__phlGaBootstrapped=true;})();";
+      "(function(){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;var c={a:false,m:false};try{var r=localStorage.getItem('php_cookie_consent');if(r){var p=JSON.parse(r);c.a=!!p.analytics;c.m=!!p.marketing;}}catch(e){}gtag('consent','default',{ad_storage:c.m?'granted':'denied',ad_user_data:c.m?'granted':'denied',ad_personalization:c.m?'granted':'denied',analytics_storage:c.a?'granted':'denied',functionality_storage:'granted',security_storage:'granted',wait_for_update:500});gtag('js',new Date());gtag('set',{'transport_url':'https://phlabs.co.uk/metrics'});gtag('config','G-5HM4YT7HDW',{cookie_domain:'auto',cookie_flags:'SameSite=None;Secure',cookie_expires:63072000,cookie_update:true,send_page_view:false,anonymize_ip:true,allow_google_signals:c.m,allow_ad_personalization_signals:c.m});gtag('config','GT-P3HVF8R5',{send_page_view:false,cookie_domain:'auto'});gtag('config','GT-WRHD4Q69',{send_page_view:false,cookie_domain:'auto'});gtag('config','MC-KJMB7MKB29',{send_page_view:false,cookie_domain:'auto'});gtag('config','AW-18173004380',{send_page_view:false,cookie_domain:'auto',allow_enhanced_conversions:true});window.__phlAdsConfigured=true;window.__phlGaBootstrapped=true;if(!window.__phlPageViewSent){window.__phlPageViewSent=true;gtag('event','page_view',{page_path:location.pathname+location.search,page_location:location.href,page_title:document.title,send_to:'G-5HM4YT7HDW'});}})();";
     document.body.appendChild(inline);
     let loaded = false;
     const loadExt = () => {
@@ -1526,6 +1525,20 @@ function RootComponent() {
       ext.src = '/metrics/gtag/js?id=G-5HM4YT7HDW';
       document.body.appendChild(ext);
     };
+    // Order-confirmation routes are the conversion pages: the buyer often
+    // never interacts and may close the tab within seconds, so the LCP+idle
+    // deferral below would drop the Google Ads purchase conversion. Load the
+    // tag immediately there (these pages are noindex, not LCP-sensitive).
+    const p = window.location.pathname;
+    if (
+      p.startsWith('/checkout/success') ||
+      p.startsWith('/payment/success') ||
+      p.startsWith('/checkout/cancel')
+    ) {
+      loadExt();
+      return;
+    }
+
     // Interaction (excluding scroll — fires from restoration on Firefox/iOS
     // before the user actually interacts and defeats the deferral).
     const onInteract = () => window.setTimeout(loadExt, 1500);

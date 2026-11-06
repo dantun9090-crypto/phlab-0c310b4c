@@ -23,9 +23,11 @@ import { EmailAuthProvider, deleteUser, reauthenticateWithCredential, updatePass
 import { serverTimestamp } from 'firebase/firestore';
 
 import { revokeMyRefreshTokens } from '@/lib/revoke-refresh-tokens.functions';
+import { getOrdersForVerifiedEmail, type GuestOrdersResult } from '@/lib/account-orders.functions';
 import { logSecurityEvent } from '@/lib/security-events';
 import { OrderTrackingBar } from '@/components/OrderTrackingBar';
 import { PayAgainCTA } from '@/components/PayAgainCTA';
+import TidePayPanel from '@/components/TidePayPanel';
 import { getDisplayStatus } from '@/lib/order-payment-retry';
 import {
   openCustomerInvoice,
@@ -33,6 +35,9 @@ import {
   type InvoiceDocumentOptions,
 } from '@/lib/customer-invoice-document';
 import { formatShippingAddressLines } from '@/lib/format-address';
+import { joinAddressLine, validateUkAddressLine, NO_HOUSE_NUMBER_CHECKBOX_LABEL } from '@/lib/uk-address';
+import PostcodeLookup from '@/components/checkout/PostcodeLookup';
+import DobGateModal from '@/components/DobGateModal';
 
 /** Maps a Firestore order into the print-ready invoice document model. */
 function buildInvoiceOptions(order: any, reference: string): InvoiceDocumentOptions {
@@ -144,10 +149,34 @@ function PaymentCountdown({ createdAt }: { createdAt: any }) {
   );
 }
 
+/**
+ * Pay-by-Bank confirmations reach us 30s–3min after the customer approves
+ * the transfer in their banking app (webhook + reconcile cron). During that
+ * window the order doc still says `pending_payment`, and showing "Awaiting
+ * Payment" makes an already-paid customer think the money never left. We
+ * show "Confirming Payment" instead and re-read the order until it settles.
+ */
+const CONFIRMING_WINDOW_MS = 15 * 60_000;
+
+export function isConfirmingPayment(order: any): boolean {
+  const status = String(order?.status ?? '').toLowerCase();
+  if (status !== 'pending_payment') return false;
+  const created = toDateSafe(order?.createdAt) ?? toDateSafe(order?.orderDate);
+  if (!created) return false;
+  const age = Date.now() - created.getTime();
+  return age >= 0 && age < CONFIRMING_WINDOW_MS;
+}
+
+function badgeStatus(order: any): string {
+  return isConfirmingPayment(order) ? 'confirming_payment' : getDisplayStatus(order);
+}
+
 const STATUS_CONFIG: Record<string, { label: string; color: string; glow: string; icon: any }> = {
   pending: { label: 'Pending', color: 'bg-amber-500/15 text-amber-300 border-amber-500/25', glow: 'shadow-amber-500/10', icon: Clock },
   pending_payment: { label: 'Awaiting Payment', color: 'bg-orange-500/15 text-orange-300 border-orange-500/25', glow: 'shadow-orange-500/10', icon: Clock },
+  confirming_payment: { label: 'Confirming Payment', color: 'bg-sky-500/15 text-sky-300 border-sky-500/25', glow: 'shadow-sky-500/10', icon: RotateCcw },
   paid: { label: 'Paid', color: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25', glow: 'shadow-emerald-500/10', icon: CheckCircle2 },
+
   processing: { label: 'Processing', color: 'bg-blue-500/15 text-blue-300 border-blue-500/25', glow: 'shadow-blue-500/10', icon: RotateCcw },
   shipped: { label: 'Shipped', color: 'bg-violet-500/15 text-violet-300 border-violet-500/25', glow: 'shadow-violet-500/10', icon: Truck },
   delivered: { label: 'Delivered', color: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25', glow: 'shadow-emerald-500/10', icon: CheckCircle2 },
@@ -181,6 +210,34 @@ const inputErrorStyleBase: React.CSSProperties = { background: '#0d1f38', border
 const luxuryBtn = "inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white font-semibold rounded-xl text-sm transition-all duration-200 shadow-[0_4px_20px_rgba(99,102,241,0.3)] hover:shadow-[0_4px_28px_rgba(99,102,241,0.45)] hover:-translate-y-px active:translate-y-0";
 const ghostBtn = "inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.14] text-gray-300 hover:text-white font-medium rounded-xl text-sm transition-all duration-200";
 
+/**
+ * Full order history for the signed-in customer.
+ *
+ * Orders created while signed in carry the UID, but orders placed at guest
+ * checkout with the same (verified) email do not — those were invisible here.
+ * They are fetched server-side and merged in, newest first.
+ */
+async function loadOrderHistory(u: FirebaseUser): Promise<Order[]> {
+  const owned = await getUserOrders(u.uid);
+  const byId = new Map<string, Order>(owned.map(o => [o.id, o]));
+  try {
+    const idToken = await u.getIdToken().catch(() => null);
+    if (idToken) {
+      const res = (await getOrdersForVerifiedEmail({ data: { idToken } })) as GuestOrdersResult;
+      for (const row of res.orders || []) {
+        if (!byId.has(row.id)) byId.set(row.id, row as unknown as Order);
+      }
+    }
+  } catch (e) {
+    console.error('[account] guest order lookup failed', e);
+  }
+  return [...byId.values()].sort((a: any, b: any) => {
+    const at = toDateSafe(a?.orderDate)?.getTime() ?? toDateSafe(a?.createdAt)?.getTime() ?? 0;
+    const bt = toDateSafe(b?.orderDate)?.getTime() ?? toDateSafe(b?.createdAt)?.getTime() ?? 0;
+    return bt - at;
+  });
+}
+
 export default function AccountPage() {
   const navigate = useNavigate();
   const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -207,11 +264,13 @@ export default function AccountPage() {
   const [editFirstName, setEditFirstName] = useState('');
   const [editLastName, setEditLastName] = useState('');
   const [editPhone, setEditPhone] = useState('');
+  const [editHouseNumber, setEditHouseNumber] = useState('');
   const [editAddress, setEditAddress] = useState('');
+  const [editNoHouseNumber, setEditNoHouseNumber] = useState(false);
   const [editCity, setEditCity] = useState('');
   const [editPostcode, setEditPostcode] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<{ phone?: string; postcode?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{ phone?: string; postcode?: string; address?: string }>({});
 
   // Security
   const [changingPassword, setChangingPassword] = useState(false);
@@ -337,10 +396,12 @@ export default function AccountPage() {
             setEditLastName(data.lastName || '');
             setEditPhone(data.phone || '');
             setEditAddress(data.address || '');
+            setEditHouseNumber('');
+            setEditNoHouseNumber(Boolean((data as any).addressNoHouseNumber));
             setEditCity(data.city || '');
             setEditPostcode(data.postcode || '');
           }
-          const userOrders = await getUserOrders(u.uid);
+          const userOrders = await loadOrderHistory(u);
           setOrders(userOrders);
           await loadSavedReports(u.uid);
         } catch (e) {
@@ -351,6 +412,24 @@ export default function AccountPage() {
     });
     return unsub;
   }, []);
+
+  // While an order is inside the "confirming payment" window, re-read the
+  // orders every 12s so the badge flips to Paid on its own — the customer no
+  // longer has to reload the page to see that their transfer landed.
+  useEffect(() => {
+    if (!user) return;
+    if (!orders.some(o => isConfirmingPayment(o as any))) return;
+    const timer = setTimeout(async () => {
+      try {
+        const fresh = await loadOrderHistory(user);
+        setOrders(fresh);
+      } catch (e) {
+        console.error('[account] payment status refresh failed', e);
+      }
+    }, 12_000);
+    return () => clearTimeout(timer);
+  }, [user, orders]);
+
 
   const loadSavedReports = async (uid: string) => {
     setReportsLoading(true);
@@ -459,7 +538,12 @@ export default function AccountPage() {
   const handleSaveProfile = async () => {
     if (!user) return;
     // Validate
-    const errors: { phone?: string; postcode?: string } = {};
+    const errors: { phone?: string; postcode?: string; address?: string } = {};
+    const addressLine = joinAddressLine(editHouseNumber, editAddress);
+    if (addressLine.trim()) {
+      const addressError = validateUkAddressLine(addressLine, editNoHouseNumber);
+      if (addressError) errors.address = addressError;
+    }
     if (editPhone && !/^(\+44\s?|0)[1-9]\d{8,10}$/.test(editPhone.replace(/\s/g, ''))) {
       errors.phone = 'Enter a valid UK phone number (e.g. +44 7700 900000)';
     }
@@ -474,11 +558,14 @@ export default function AccountPage() {
         firstName: editFirstName,
         lastName: editLastName,
         phone: editPhone,
-        address: editAddress,
+        address: addressLine,
+        addressNoHouseNumber: editNoHouseNumber,
         city: editCity,
         postcode: editPostcode,
       });
-      setProfile(prev => prev ? { ...prev, firstName: editFirstName, lastName: editLastName, phone: editPhone, address: editAddress, city: editCity, postcode: editPostcode } : prev);
+      setEditAddress(addressLine);
+      setEditHouseNumber('');
+      setProfile(prev => prev ? { ...prev, firstName: editFirstName, lastName: editLastName, phone: editPhone, address: addressLine, city: editCity, postcode: editPostcode } : prev);
       setEditingProfile(false);
       setSaveMsg('Profile updated successfully');
       setTimeout(() => setSaveMsg(''), 3000);
@@ -644,6 +731,8 @@ export default function AccountPage() {
 
   return (
     <div className="min-h-screen bg-[#060f1e] pt-24 pb-20 relative overflow-hidden">
+      {/* 18+ gate for accounts created without a date of birth (Google sign-up). */}
+      <DobGateModal />
       {/* Ambient background */}
       <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full bg-blue-600/[0.04] pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full bg-violet-600/[0.04] pointer-events-none" />
@@ -803,7 +892,7 @@ export default function AccountPage() {
                       <Bell className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-amber-300 text-sm font-semibold">Email not verified</p>
-                        <p className="text-amber-400/70 text-xs mt-0.5">Please verify your email to unlock all account features.</p>
+                        <p className="text-amber-400/70 text-xs mt-0.5">Orders placed while signed in are already shown below. Confirm your email to also link orders you placed at checkout without signing in — we can only match those once the address is confirmed.</p>
                         {verifSent && <p className="text-emerald-400 text-xs mt-1">Verification email sent! Check your inbox.</p>}
                         {verifError && <p className="text-red-400 text-xs mt-1">{verifError}</p>}
                       </div>
@@ -812,7 +901,7 @@ export default function AccountPage() {
                         disabled={verifSending || verifCooldown > 0}
                         className="flex-shrink-0 text-xs px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/25 transition-colors disabled:opacity-50"
                       >
-                        {verifSending ? 'Sending…' : verifCooldown > 0 ? `Wait ${verifCooldown}s` : 'Resend'}
+                        {verifSending ? 'Sending…' : verifCooldown > 0 ? `Wait ${verifCooldown}s` : 'Send confirmation email'}
                       </button>
                     </div>
                   )}
@@ -877,7 +966,7 @@ export default function AccountPage() {
                                 <p className="text-[#3a5a82] text-xs">{formatDate(order.orderDate)}</p>
                               </div>
                               <div className="flex items-center gap-3 flex-shrink-0">
-                                <StatusBadge status={getDisplayStatus(order as any)} />
+                                <StatusBadge status={badgeStatus(order as any)} />
                                 <span className="text-white text-sm font-semibold">£{(order.totalAmount || 0).toFixed(2)}</span>
                               </div>
                             </div>
@@ -973,7 +1062,7 @@ export default function AccountPage() {
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-3">
-                                    <StatusBadge status={getDisplayStatus(order as any)} />
+                                    <StatusBadge status={badgeStatus(order as any)} />
                                     <ChevronRight className={`w-4 h-4 text-[#3a5a82] transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
                                   </div>
                                 </button>
@@ -996,6 +1085,20 @@ export default function AccountPage() {
 
                                         {/* Pay Again — for unpaid Pay-by-Bank / Fena orders (incl. cancelled-at-bank) */}
                                         <PayAgainCTA order={order as any} />
+
+                                        {/* Tide — QR code, payment link and reference stay
+                                            recoverable after the confirmation screen is gone. */}
+                                        {(order as any).paymentMethod === 'tide' &&
+                                          ['pending', 'pending_payment', 'awaiting_payment'].includes(String(order.status)) && (
+                                          <div>
+                                            <p className={sectionHeading}>Pay with Tide</p>
+                                            <TidePayPanel
+                                              reference={(order as any).bankTransferReference || (order as any).bankTransferRef || null}
+                                              amountGbp={order.totalAmount || 0}
+                                              compact
+                                            />
+                                          </div>
+                                        )}
 
                                         {/* Tracking */}
                                         <div>
@@ -1092,7 +1195,7 @@ export default function AccountPage() {
                                   <p className="text-[#3a5a82] text-xs">{formatDate(order.orderDate)} · £{(order.totalAmount || 0).toFixed(2)}</p>
                                 </div>
                                 <div className="flex items-center gap-2 flex-shrink-0">
-                                  <StatusBadge status={getDisplayStatus(order as any)} />
+                                  <StatusBadge status={badgeStatus(order as any)} />
                                   <button
                                     onClick={() => openCustomerInvoice(buildInvoiceOptions(order as any, receiptRef))}
                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-lg text-xs font-medium transition-colors"
@@ -1556,19 +1659,68 @@ export default function AccountPage() {
                       {/* Delivery address */}
                       <div>
                         <p className={sectionHeading}>Delivery Address</p>
+                        {/* Same order as checkout: postcode → house no. → street → city. */}
                         <div className="grid sm:grid-cols-2 gap-4">
+                          <div>
+                            <label htmlFor="profilePostcode" className="block text-xs text-[#9cb8d9] mb-1.5">Postcode</label>
+                            <input
+                              id="profilePostcode"
+                              value={editPostcode}
+                              onChange={e => { setEditPostcode(e.target.value.toUpperCase()); setFieldErrors(p => ({ ...p, postcode: undefined })); }}
+                              className={fieldErrors.postcode ? luxuryInputError : luxuryInput}
+                              style={fieldErrors.postcode ? inputErrorStyleBase : inputBaseStyle}
+                              placeholder="SW1A 1AA"
+                            />
+                            {fieldErrors.postcode && <p className="mt-1.5 text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3 shrink-0" />{fieldErrors.postcode}</p>}
+                          </div>
+                          <div>
+                            <label htmlFor="profileHouseNumber" className="block text-xs text-[#9cb8d9] mb-1.5">House no. / name</label>
+                            <input
+                              id="profileHouseNumber"
+                              value={editHouseNumber}
+                              onChange={e => { setEditHouseNumber(e.target.value.slice(0, 40)); setFieldErrors(p => ({ ...p, address: undefined })); }}
+                              className={luxuryInput}
+                              style={inputBaseStyle}
+                              placeholder="42"
+                            />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <PostcodeLookup
+                              postcode={editPostcode}
+                              house={editHouseNumber}
+                              onHouseChange={setEditHouseNumber}
+                              hideHouseInput
+                              onApply={patch => {
+                                if (patch.address) { setEditAddress(patch.address); setEditHouseNumber(''); setFieldErrors(p => ({ ...p, address: undefined })); }
+                                if (patch.city) setEditCity(patch.city);
+                              }}
+                            />
+                          </div>
                           <div className="sm:col-span-2">
                             <label htmlFor="profileAddress" className="block text-xs text-[#9cb8d9] mb-1.5">Street Address</label>
                             <input
                               id="profileAddress"
                               value={editAddress}
-                              onChange={e => setEditAddress(e.target.value)}
-                              className={luxuryInput}
-                              style={inputBaseStyle}
-                              placeholder="123 Example Street"
+                              onChange={e => { setEditAddress(e.target.value); setFieldErrors(p => ({ ...p, address: undefined })); }}
+                              className={fieldErrors.address ? luxuryInputError : luxuryInput}
+                              style={fieldErrors.address ? inputErrorStyleBase : inputBaseStyle}
+                              placeholder="Example Street"
                             />
+                            {fieldErrors.address && <p className="mt-1.5 text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3 shrink-0" />{fieldErrors.address}</p>}
                           </div>
-                          <div>
+                          <div className="sm:col-span-2">
+                            <label htmlFor="profileNoHouseNumber" className="flex items-start gap-2 text-xs text-[#9cb8d9] cursor-pointer">
+                              <input
+                                id="profileNoHouseNumber"
+                                type="checkbox"
+                                checked={editNoHouseNumber}
+                                onChange={e => { setEditNoHouseNumber(e.target.checked); setFieldErrors(p => ({ ...p, address: undefined })); }}
+                                className="mt-0.5 w-4 h-4 accent-emerald-500"
+                              />
+                              <span>{NO_HOUSE_NUMBER_CHECKBOX_LABEL}</span>
+                            </label>
+                          </div>
+                          <div className="sm:col-span-2">
                             <label htmlFor="profileCity" className="block text-xs text-[#9cb8d9] mb-1.5">City</label>
                             <input
                               id="profileCity"
@@ -1578,18 +1730,6 @@ export default function AccountPage() {
                               style={inputBaseStyle}
                               placeholder="London"
                             />
-                          </div>
-                          <div>
-                            <label htmlFor="profilePostcode" className="block text-xs text-[#9cb8d9] mb-1.5">Postcode</label>
-                            <input
-                              id="profilePostcode"
-                              value={editPostcode}
-                              onChange={e => { setEditPostcode(e.target.value); setFieldErrors(p => ({ ...p, postcode: undefined })); }}
-                              className={fieldErrors.postcode ? luxuryInputError : luxuryInput}
-                              style={fieldErrors.postcode ? inputErrorStyleBase : inputBaseStyle}
-                              placeholder="SW1A 1AA"
-                            />
-                            {fieldErrors.postcode && <p className="mt-1.5 text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3 shrink-0" />{fieldErrors.postcode}</p>}
                           </div>
                         </div>
                       </div>

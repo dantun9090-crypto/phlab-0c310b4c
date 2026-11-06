@@ -10,6 +10,9 @@ export type AdminAuditAction =
   | 'customer.role.update'
   | 'customer.vip.toggle'
   | 'customer.deactivate'
+  | 'customer.delete'
+  | 'customer.anonymise'
+
   | 'order.status.update'
   | 'order.dispatch'
   | 'order.royal_mail_create'
@@ -17,6 +20,7 @@ export type AdminAuditAction =
   | 'order.dispatch_email_resend'
   | 'order.payment_link_sent'
   | 'order.confirmation_email_resend'
+  | 'order.payment_confirmed_email'
 
   | 'royal_mail.manual_label_create'
   | 'royal_mail.delivery_sync'
@@ -41,7 +45,20 @@ export type AdminAuditAction =
   | 'email.brand.update'
   | 'review.approve'
   | 'review.reject'
-  | 'review.delete';
+  | 'review.delete'
+
+  | 'lab_test.create'
+  | 'lab_test.update'
+  | 'lab_test.delete'
+  | 'lab_test.publish.toggle'
+  | 'lab_test.import'
+  | 'lab_test.feature.toggle'
+  | 'theme.template.create'
+  | 'theme.template.update'
+  | 'theme.template.duplicate'
+  | 'theme.template.delete'
+  | 'theme.apply'
+  | 'theme.undo';
 
 interface LogPayload {
   action: AdminAuditAction;

@@ -82,7 +82,10 @@ export const mapRawOrderToLive = async (raw: RawOrderLike): Promise<LiveOrder | 
 
   const rawUid = raw.customer?.uid || raw.userId;
   return {
-    id,
+    // Public ticker must not expose the raw Firestore order id — the same
+    // short-hash treatment as userHash below. Admin panel reads orders
+    // directly from Firestore, so this only affects the public widget.
+    id: await shortHash(String(id)),
     initial: firstInitial(firstName),
     city,
     productName,

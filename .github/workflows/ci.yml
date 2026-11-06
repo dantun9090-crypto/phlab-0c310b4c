@@ -11,7 +11,7 @@ permissions:
 jobs:
   worker-build-and-check:
     name: Production build + Worker import guard
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
       contents: read
@@ -299,7 +299,7 @@ jobs:
             dist/sbom.cdx.json
 
       - name: Verify SLSA provenance attestation (self-check)
-        if: always()
+        if: hashFiles('dist/sbom.cdx.json.provenance.intoto.jsonl') != ''
         # See note on "Verify SBOM signature (self-check)" above — Rekor
         # search API change makes this self-check flake even when the
         # underlying attestation is valid. The signed .intoto.jsonl is
@@ -373,7 +373,7 @@ jobs:
   # failing cosign output rendered on the Check page.
   attestation-verify:
     name: Attestation verify (SLSA + CycloneDX)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: worker-build-and-check
     if: always() && needs.worker-build-and-check.result == 'success'
     timeout-minutes: 5
@@ -422,7 +422,7 @@ jobs:
   # Keeps PR feedback under a minute for touch-and-go UI tweaks.
   checkout-orders-regression:
     name: Checkout + Admin Orders regression (fast)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     if: github.event_name == 'pull_request'
     steps:

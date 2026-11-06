@@ -62,11 +62,15 @@ async function checkSitemapFresh(): Promise<Check> {
   if (!times.length) return fail("unparseable lastmod");
   const latest = Math.max(...times);
   const ageH = (Date.now() - latest) / 3_600_000;
-  const allSame = new Set(times).size === 1;
   const latestIso = new Date(latest).toISOString().slice(0, 10);
-  if (ageH > 24 && allSame) return fail(`all lastmod identical=${latestIso}, age=${ageH.toFixed(1)}h`);
-  if (ageH > 24) return fail(`latest lastmod=${latestIso}, age=${ageH.toFixed(1)}h (>24h)`);
-  return pass(`latest lastmod=${latestIso} (${ageH.toFixed(1)}h ago, ${dates.length} urls)`);
+  // Catalogue content does not change daily — only flag a genuinely stale or
+  // future-dated sitemap (SITEMAP_MAX_AGE_H = 30 days).
+  const SITEMAP_MAX_AGE_H = 30 * 24;
+  if (ageH < -24) return fail(`latest lastmod=${latestIso} is in the future`);
+  if (ageH > SITEMAP_MAX_AGE_H)
+    return fail(`latest lastmod=${latestIso}, age=${ageH.toFixed(1)}h (>${SITEMAP_MAX_AGE_H}h)`);
+  return pass(`latest lastmod=${latestIso} (${(ageH / 24).toFixed(1)}d ago, ${dates.length} urls)`);
+
 }
 
 async function checkPrerender(): Promise<Check> {
@@ -104,26 +108,34 @@ async function runEdgeChecks(): Promise<EdgeResult> {
   await new Promise((res) => setTimeout(res, 400));
   const r2 = await fetchHtml();
 
+  // The Worker owns HTML caching (X-PHL-Via: edge-html-hit|edge-html-miss) and
+  // deliberately returns `no-store` to browsers/CF so stale shells can never be
+  // pinned downstream. So read the Worker signal first and only fall back to
+  // cf-cache-status / x-phl-cache for legacy deployments.
+  const via1 = (r1?.headers.get("x-phl-via") || "").toLowerCase();
+  const via2 = (r2?.headers.get("x-phl-via") || "").toLowerCase();
+
   // F: ttl-0 on 1st fetch
   const phl1 = r1?.headers.get("x-phl-cache") || "";
-  const ttl = phl1.includes("skip;reason=ttl-0")
-    ? fail(`1st fetch x-phl-cache=${phl1}`)
-    : pass(phl1 ? `1st x-phl-cache=${phl1}` : "no x-phl-cache header (1st)");
+  const ttl = phl1.includes("skip;reason=ttl-0") || via1.includes("ttl-0")
+    ? fail(`1st fetch cache disabled (${phl1 || via1})`)
+    : pass(phl1 ? `1st x-phl-cache=${phl1}` : `1st x-phl-via=${via1 || "missing"}`);
 
-  // D: cf edge cache on 2nd
+  // D + E: HTML served from an edge cache on the 2nd fetch
   const cf2 = (r2?.headers.get("cf-cache-status") || "").toUpperCase();
-  const edge =
-    cf2 === "HIT" || cf2 === "REVALIDATED"
-      ? pass(`cf-cache-status=${cf2}`)
-      : fail(`cf-cache-status=${cf2 || "missing"}`);
-
-  // E: worker internal cache on 2nd
   const phl2 = r2?.headers.get("x-phl-cache") || "";
   const phl2L = phl2.toLowerCase();
-  const worker =
-    phl2L.includes("hit") && !phl2L.includes("inner=miss")
-      ? pass(`x-phl-cache=${phl2}`)
-      : fail(`x-phl-cache=${phl2 || "missing"}`);
+  const workerHit = via2.includes("edge-html-hit") || (phl2L.includes("hit") && !phl2L.includes("inner=miss"));
+  const cfHit = cf2 === "HIT" || cf2 === "REVALIDATED";
+
+  const edge = workerHit || cfHit
+    ? pass(workerHit ? `worker edge HTML cache HIT (x-phl-via=${via2})` : `cf-cache-status=${cf2}`)
+    : fail(`no edge HTML cache hit (x-phl-via=${via2 || "missing"}, cf-cache-status=${cf2 || "missing"})`);
+
+  const worker = workerHit
+    ? pass(phl2 ? `x-phl-cache=${phl2}` : `x-phl-via=${via2}`)
+    : fail(`worker cache miss (x-phl-via=${via2 || "missing"}, x-phl-cache=${phl2 || "missing"})`);
+
 
   // G: CSP header sanity
   const csp = r2?.headers.get("content-security-policy") || r1?.headers.get("content-security-policy") || "";

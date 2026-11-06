@@ -49,12 +49,16 @@ async function firePostPurchaseTrackingOnce(orderId: string) {
       country: String(shipAddr.country ?? shipAddr.countryCode ?? "GB") || undefined,
       postalCode: String(shipAddr.postalCode ?? shipAddr.postcode ?? shipAddr.zip ?? "") || undefined,
     };
-    trackPurchase(orderId, Number.isFinite(value) ? value : 0, items, {
+    const fired = await trackPurchase(orderId, Number.isFinite(value) ? value : 0, items, {
       tax: Number.isFinite(tax) ? tax : 0,
       shipping: Number.isFinite(shippingAmount) ? shippingAmount : 0,
       userData,
     });
     trackBingPurchase(orderId);
+    // A dropped event must NOT latch the flag — otherwise the order can
+    // never be recovered by the client retry or the server backfill.
+    if (!fired) return;
+
 
 
     // Google Customer Reviews opt-in — no-op if VITE_GCR_MERCHANT_ID
