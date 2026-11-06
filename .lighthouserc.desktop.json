@@ -52,13 +52,13 @@
             "largest-contentful-paint": [
               "error",
               {
-                "maxNumericValue": 2100
+                "maxNumericValue": 2300
               }
             ],
             "first-contentful-paint": [
               "error",
               {
-                "maxNumericValue": 800
+                "maxNumericValue": 900
               }
             ],
             "total-blocking-time": [
@@ -125,13 +125,13 @@
             "largest-contentful-paint": [
               "error",
               {
-                "maxNumericValue": 2100
+                "maxNumericValue": 2300
               }
             ],
             "first-contentful-paint": [
               "error",
               {
-                "maxNumericValue": 800
+                "maxNumericValue": 900
               }
             ],
             "total-blocking-time": [

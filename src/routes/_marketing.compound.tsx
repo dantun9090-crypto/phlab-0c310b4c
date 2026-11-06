@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { PremiumLanding } from "@/components/PremiumLanding";
 
@@ -60,16 +61,12 @@ export const Route = createFileRoute("/_marketing/compound")({
         imagesizes: "100vw",
         fetchpriority: "high",
       },
-      // Preload the Cormorant Garamond 400 woff2 used by the hero <h1> so
-      // the LCP text can paint without waiting for the Google Fonts CSS
-      // round-trip. Weight 400 is the file the hero uses.
-      {
-        rel: "preload",
-        as: "font",
-        type: "font/woff2",
-        href: "https://fonts.gstatic.com/s/cormorantgaramond/v16/co3bmX5slCNuHLi8bLeY9MK7whWMhyjornFLsS6V7w.woff2",
-        crossOrigin: "anonymous",
-      },
+      // NOTE: no hard-pinned Cormorant Garamond woff2 preload here.
+      // Google rotates the versioned gstatic filenames, and the previously
+      // pinned v16 URL started returning 404 — a wasted preload plus a
+      // console error on every visit. The font arrives via the Google Fonts
+      // stylesheet in __root; fonts.gstatic.com is already preconnected.
+
     ],
 
     scripts: [
@@ -113,5 +110,32 @@ export const Route = createFileRoute("/_marketing/compound")({
 });
 
 function CompoundPage() {
-  return <PremiumLanding eyebrow="UK Laboratory Supply" />;
+  return (
+    <Suspense
+      fallback={
+        <div
+          className="min-h-screen w-full bg-[#060b18] flex flex-col items-center justify-center px-6 text-center"
+          style={{ contain: "strict" }}
+        >
+          <h1
+            className="font-light text-white"
+            style={{
+              fontFamily: "'Cormorant Garamond','Times New Roman',serif",
+              fontSize: "clamp(2rem,5vw,5rem)",
+              lineHeight: 1.05,
+            }}
+          >
+            Premium Research Compounds
+            <br />
+            for{" "}
+            <span style={{ color: "#c9a44c", fontStyle: "italic" }}>
+              UK Laboratories
+            </span>
+          </h1>
+        </div>
+      }
+    >
+      <PremiumLanding eyebrow="UK Laboratory Supply" />
+    </Suspense>
+  );
 }

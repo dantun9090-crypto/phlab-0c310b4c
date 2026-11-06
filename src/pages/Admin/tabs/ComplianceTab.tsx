@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { csvSafeCell } from '@/lib/csv-safe';
 import {
   Shield, Search, Download, RefreshCw, CheckCircle2, XCircle,
   Calendar, Users, AlertTriangle, ChevronDown
@@ -117,7 +118,7 @@ export default function ComplianceTab() {
         r.registeredAt || '',
       ])
     ];
-    const csv = rows.map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const csv = rows.map(row => row.map(csvSafeCell).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

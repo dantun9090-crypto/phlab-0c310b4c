@@ -57,6 +57,34 @@ function ChunkRefreshFallback() {
   );
 }
 
+/**
+ * Extracts the chunk URL a dynamic-import failure names, if any. Vite/browsers
+ * report e.g. "Failed to fetch dynamically imported module: https://host/assets/x-abc.js".
+ */
+export function extractFailedChunkUrl(err: unknown): string | null {
+  const msg = String((err as { message?: unknown })?.message ?? err ?? "");
+  const match = msg.match(/https?:\/\/[^\s"')]+\.[mc]?js(?:\?[^\s"')]*)?/i);
+  return match ? match[0] : null;
+}
+
+/**
+ * Re-imports the failed chunk URL with a cache-busting query param. Plain
+ * retries of the same specifier keep hitting the same cached 404/edge response,
+ * so a bare retry loop usually can't recover a stale chunk on its own.
+ */
+async function retryWithCacheBust<T>(err: unknown): Promise<{ default: T } | null> {
+  const url = extractFailedChunkUrl(err);
+  if (!url) return null;
+  try {
+    const busted = new URL(url);
+    busted.searchParams.set("phlcb", String(Date.now()));
+    const mod = (await import(/* @vite-ignore */ busted.toString())) as { default: T };
+    return mod?.default ? mod : null;
+  } catch {
+    return null;
+  }
+}
+
 export function lazyWithRetry<T extends ComponentType<unknown>>(
   factory: () => Promise<{ default: T }>,
   { retries = 2, delayMs = 500 }: { retries?: number; delayMs?: number } = {},
@@ -68,11 +96,15 @@ export function lazyWithRetry<T extends ComponentType<unknown>>(
         return await factory();
       } catch (err) {
         lastError = err;
-        if (attempt >= retries) break;
         if (!isStaleChunkError(err)) break;
+        // Bypass any cached bad response for this exact chunk before giving up.
+        const busted = await retryWithCacheBust<T>(err);
+        if (busted) return busted;
+        if (attempt >= retries) break;
         await new Promise((r) => setTimeout(r, delayMs * Math.pow(2, attempt)));
       }
     }
+
     if (isStaleChunkError(lastError)) {
       // Kick off scoped cache eviction + hard reload in the background.
       try { void hardReload({ clean: true }); } catch { /* ignore */ }

@@ -3,10 +3,14 @@ import {
   X, ChevronDown, Package, WifiOff, RefreshCw, Microscope,
   CheckCircle2, LayoutGrid, List, Filter,
 } from 'lucide-react';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 import { useLocation, Link } from 'react-router-dom';
-import { AnimatedBackground } from '@/components/AnimatedBackground';
+// Decorative canvas behind the hero — never the LCP element, so it is
+// code-split and mounted after the first screen paints.
+const AnimatedBackground = lazy(() =>
+  import('@/components/AnimatedBackground').then(m => ({ default: m.AnimatedBackground })),
+);
 import { dispatchAddToCart, CartItem } from '@/components/Layout';
 import { auth, db, getAllProducts, doc, getDoc, getDocs, collection, query, onAuthStateChanged } from '@/lib/firebase';
 import { filterProductsForHost } from '@/lib/domain-visibility';
@@ -15,10 +19,17 @@ import {
   markPrerenderReady,
   flipPrerenderReadyWhenRendered,
 } from '@/lib/prerender-ready';
-import { ProductEditor } from '@/components/ProductEditor';
+// Admin-only modal — pulled out of the entry bundle for shoppers.
+const ProductEditor = lazy(() =>
+  import('@/components/ProductEditor').then(m => ({ default: m.ProductEditor })),
+);
 import { ProductCard } from '@/components/ProductCard';
-import MarketingAdvertSlot from '@/components/MarketingAdvertSlot';
+// Marketing slots are below the hero — code-split, height reserved by the
+// existing wrappers so there is no layout shift.
+const MarketingAdvertSlot = lazy(() => import('@/components/MarketingAdvertSlot'));
 import type { Product } from '@/lib/firebase';
+import { excludeVipProducts } from '@/lib/vip-visibility';
+
 import { nameToSlug } from '@/lib/seedProducts';
 
 // Route-critical visuals are eager. Do not wrap route/page content in
@@ -44,9 +55,11 @@ const SORT_OPTIONS = [
   { id: 'name-asc',   label: 'Name: A → Z'   },
 ];
 
-const CATEGORY_INTROS: Record<string, { h1: string; intro: string }> = {
+// h1Display: visible on-page H1 only. `h1` stays the source of document.title — do not swap them.
+const CATEGORY_INTROS: Record<string, { h1: string; h1Display?: string; intro: string }> = {
   all: {
     h1: 'Research Peptides UK | Full Catalogue',
+    h1Display: 'Tested Research Peptides UK — Retatrutide, MOTS-C, GHK-Cu',
     intro: 'HPLC-tested, research-grade lyophilised peptides. Every batch analytically verified to ≥99% purity by reverse-phase HPLC and confirmed by mass spectrometry. Certificate of Analysis included. For laboratory research use only.',
   },
   'tissue-repair': {
@@ -75,6 +88,7 @@ const CATEGORY_INTROS: Record<string, { h1: string; intro: string }> = {
   },
   accessories: {
     h1: 'Laboratory Accessories & Bacteriostatic Water UK',
+    h1Display: 'Bacteriostatic Water UK & Laboratory Accessories',
     intro: 'Bacteriostatic water, syringes, and reconstitution accessories for peptide research protocols. Supplied for laboratory use only.',
   },
 };
@@ -211,9 +225,10 @@ export default function Products() {
         if (cancelled) return;
         clearTimeout(slowTimer);
         setSlowLoad(false);
-        const visible = filterProductsForHost(products)
+        const visible = excludeVipProducts(filterProductsForHost(products))
           .filter(p => p.isActive !== false && p.visibility !== 'hidden')
           .sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
+
         setAllProducts(visible);
         setLoading(false);
         // Flip prerenderReady only once real ProductCard markup is in the DOM.
@@ -366,7 +381,7 @@ export default function Products() {
 
       {/* ── HERO ────────────────────────────────────────────────────────────── */}
       <section id="hero" className="relative overflow-hidden" style={{ background: '#030812', paddingTop: 'calc(var(--nav-h, 80px) + 2rem)', paddingBottom: '4rem' }}>
-        <AnimatedBackground variant="blue" />
+        <Suspense fallback={null}><AnimatedBackground variant="blue" /></Suspense>
 
         {/* Decorative rings */}
         <div className="absolute pointer-events-none hidden lg:block" style={{ top: '-30%', right: '-8%', width: 640, height: 640, borderRadius: '50%', border: '1px solid rgba(37,99,235,0.07)' }} />
@@ -392,7 +407,7 @@ export default function Products() {
               </div>
 
               <h1 className="font-black leading-tight mb-3" style={{ fontSize: 'clamp(2rem, 4.5vw, 3.25rem)', color: '#eef4ff', letterSpacing: '-0.025em' }}>
-                {heroInfo.h1}
+                {heroInfo.h1Display ?? heroInfo.h1}
               </h1>
               <p className="leading-relaxed text-base" style={{ color: '#9cb8d9', maxWidth: 560 }}>
                 {heroInfo.intro}
@@ -551,7 +566,9 @@ export default function Products() {
                   </Link>
                 </div>
 
-                <MarketingAdvertSlot adverts={adverts} placement="products_sidebar" variant="compact" />
+                <Suspense fallback={null}>
+                  <MarketingAdvertSlot adverts={adverts} placement="products_sidebar" variant="compact" />
+                </Suspense>
 
               </div>
             </aside>
@@ -559,7 +576,9 @@ export default function Products() {
             {/* ── CONTENT ──────────────────────────────────────────────────── */}
             <div className="flex-1 min-w-0">
 
-              <MarketingAdvertSlot adverts={adverts} placement="products_top" className="mb-6" />
+              <Suspense fallback={<div aria-hidden="true" className="mb-6" />}>
+                <MarketingAdvertSlot adverts={adverts} placement="products_top" className="mb-6" />
+              </Suspense>
 
               {/* Toolbar */}
               <div className="flex flex-wrap items-center gap-3 mb-6">
@@ -757,12 +776,14 @@ export default function Products() {
 
       {/* ── ADMIN PRODUCT EDITOR ───────────────────────────────────────────── */}
       {editingProduct && (
-        <ProductEditor
-          product={editingProduct}
-          isOpen={true}
-          onClose={() => setEditingProduct(null)}
-          onSave={() => setEditingProduct(null)}
-        />
+        <Suspense fallback={null}>
+          <ProductEditor
+            product={editingProduct}
+            isOpen={true}
+            onClose={() => setEditingProduct(null)}
+            onSave={() => setEditingProduct(null)}
+          />
+        </Suspense>
       )}
     </div>
   );

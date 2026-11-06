@@ -12,6 +12,8 @@ import { useState } from 'react';
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  /** When set, only these tab ids are shown (packing staff). */
+  allowedTabs?: string[];
   collapsed: boolean;
   setCollapsed: (v: boolean) => void;
   isMobileOpen?: boolean;
@@ -36,7 +38,10 @@ const navGroups = [
       { id: 'inventory', label: 'Inventory', icon: Package },
       { id: 'featured', label: 'Featured', icon: Star },
       { id: 'qc', label: 'QC Dashboard', icon: ShieldCheck },
+      { id: 'labtests', label: 'Lab Tests', icon: ShieldCheck },
       { id: 'orders', label: 'Orders', icon: ShoppingCart },
+      { id: 'revenue', label: 'Revenue', icon: TrendingUp },
+      { id: 'orderinvoices', label: 'Invoices / Faktury', icon: FileText },
       { id: 'customers', label: 'Customers', icon: Users },
       { id: 'compliance', label: 'Compliance', icon: Shield },
       { id: 'auditlog', label: 'Audit Log', icon: Shield },
@@ -46,6 +51,7 @@ const navGroups = [
       { id: 'invoices', label: 'Invoices', icon: FileText },
       { id: 'payments', label: 'Payment Gateways', icon: CreditCard },
       { id: 'paymenttriage', label: 'Payment Triage', icon: Activity },
+      { id: 'brokkrpay', label: 'BrokkrPay (Cards)', icon: CreditCard },
 
       { id: 'fena', label: 'Fena Payments', icon: CreditCard },
       { id: 'wallidpreview', label: 'Wallid Preview', icon: Eye },
@@ -150,6 +156,7 @@ const ITEM_ACCENTS: Record<string, string> = {
   dashboard: 'from-blue-500 to-blue-600',
   inventory: 'from-cyan-500 to-cyan-600',
   orders: 'from-violet-500 to-violet-600',
+  revenue: 'from-emerald-500 to-emerald-600',
   customers: 'from-indigo-500 to-indigo-600',
   compliance: 'from-emerald-500 to-emerald-600',
   invoices: 'from-sky-500 to-sky-600',
@@ -171,11 +178,17 @@ const ITEM_ACCENTS: Record<string, string> = {
   backup: 'from-teal-500 to-teal-600',
   featured: 'from-amber-400 to-yellow-500',
   qc: 'from-emerald-400 to-teal-500',
+  labtests: 'from-sky-400 to-emerald-500',
   promocodes: 'from-emerald-500 to-green-600',
   freegift: 'from-emerald-400 to-teal-500',
 };
 
-export default function AdminSidebar({ activeTab, setActiveTab, collapsed, setCollapsed, isMobileOpen, onMobileClose }: SidebarProps) {
+export default function AdminSidebar({ activeTab, setActiveTab, collapsed, setCollapsed, isMobileOpen, onMobileClose, allowedTabs }: SidebarProps) {
+  const visibleGroups = allowedTabs
+    ? navGroups
+        .map((g) => ({ ...g, items: g.items.filter((i) => allowedTabs.includes(i.id)) }))
+        .filter((g) => g.items.length > 0)
+    : navGroups;
   const navigate = useNavigate();
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
@@ -255,7 +268,7 @@ export default function AdminSidebar({ activeTab, setActiveTab, collapsed, setCo
         className="flex-1 overflow-y-auto overflow-x-hidden py-2"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        {navGroups.map((group) => {
+        {visibleGroups.map((group) => {
           const isGroupCollapsed = collapsedGroups.has(group.label);
           const hasActiveItem = group.items.some(i => i.id === activeTab);
 

@@ -23,6 +23,12 @@ export interface ProgrammaticPage {
   faqs: Array<{ q: string; a: string }>;
   /** Last content update — drives sitemap <lastmod>. */
   updated: string;         // YYYY-MM-DD
+  /** Optional extra rows appended to the "At a glance" table. */
+  extraRows?: Array<{ label: string; left: string; right: string }>;
+  /** Optional "which one for which research goal" section. */
+  goals?: Array<{ goal: string; pick: string }>;
+  /** Optional in-body contextual links (rendered as a short paragraph). */
+  bodyLinks?: Array<{ href: string; anchor: string; before?: string; after?: string }>;
 }
 
 export interface PeptideRef {
@@ -31,10 +37,47 @@ export interface PeptideRef {
   family: string;          // "Pentadecapeptide", "GLP-1/GIP", etc.
   // Compliance-safe research-context bullets (NOT medical claims).
   bullets: string[];
+  /** Approximate molecular weight as cited in research literature. */
+  mw?: string;
+  /** Chemical class in plain terms (peptide chain, complex, coenzyme…). */
+  chemClass?: string;
+  /** Standard laboratory diluent used for reconstitution. */
+  diluent?: string;
+  /** Handling / storage note specific to this compound. */
+  storage?: string;
+  /** One sentence describing the literature context it appears in. */
+  researchContext?: string;
+  /** Typical in-vitro assay families it appears in. */
+  assays?: string;
+}
+
+const DEFAULT_PROFILE = {
+  mw: "See batch certificate of analysis",
+  chemClass: "Lyophilised research compound",
+  diluent: "Bacteriostatic water (0.9% benzyl alcohol)",
+  storage: "−20°C lyophilised; 2–8°C once reconstituted",
+  researchContext: "Appears in UK laboratory in-vitro literature as a reference compound.",
+  assays: "In-vitro cell-culture and analytical characterisation panels",
+} as const;
+
+/** Fill any missing profile fields so comparison tables always render fully. */
+export function profileOf(ref: PeptideRef) {
+  return {
+    mw: ref.mw ?? DEFAULT_PROFILE.mw,
+    chemClass: ref.chemClass ?? DEFAULT_PROFILE.chemClass,
+    diluent: ref.diluent ?? DEFAULT_PROFILE.diluent,
+    storage: ref.storage ?? DEFAULT_PROFILE.storage,
+    researchContext: ref.researchContext ?? DEFAULT_PROFILE.researchContext,
+    assays: ref.assays ?? DEFAULT_PROFILE.assays,
+  };
 }
 
 const PEPTIDES: Record<string, PeptideRef> = {
   "bpc-157": {
+    mw: "~1,419 Da (15 amino acids)",
+    chemClass: "Linear synthetic peptide chain",
+    researchContext: "Cited across angiogenesis and tendon/gastrointestinal in-vitro repair literature.",
+    assays: "Fibroblast migration, tube-formation and VEGFR2/NO pathway assays",
     name: "BPC-157",
     slug: "bpc-157",
     family: "Pentadecapeptide (15-aa)",
@@ -46,6 +89,10 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "tb-500": {
+    mw: "~4,963 Da (Tβ4 C-terminal fragment)",
+    chemClass: "Synthetic protein fragment",
+    researchContext: "Studied for G-actin sequestration and cell-migration endpoints.",
+    assays: "Actin-binding, scratch/migration and cardiac cell-culture models",
     name: "TB-500",
     slug: "tb-500",
     family: "Thymosin Beta-4 fragment",
@@ -57,6 +104,11 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "ghk-cu": {
+    mw: "~340 Da tripeptide plus bound copper(II)",
+    chemClass: "Copper(II) tripeptide complex",
+    researchContext: "Used in skin-fibroblast, collagen and MMP/TIMP remodelling research.",
+    assays: "Fibroblast collagen synthesis and MMP/TIMP expression panels",
+    storage: "−20°C lyophilised, protected from light; 2–8°C once reconstituted",
     name: "GHK-Cu",
     slug: "ghk-cu",
     family: "Copper tripeptide",
@@ -68,6 +120,10 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "retatrutide": {
+    mw: "~4,731 Da",
+    chemClass: "Long-chain synthetic analogue peptide",
+    researchContext: "Newer triple-agonist reference compound in receptor-pharmacology literature.",
+    assays: "cAMP accumulation and receptor-binding assays at GLP-1, GIP and glucagon receptors",
     name: "Retatrutide",
     slug: "retatrutide",
     family: "GLP-1 / GIP / glucagon triple agonist (research)",
@@ -79,6 +135,10 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "tirzepatide": {
+    mw: "~4,813 Da",
+    chemClass: "Long-chain synthetic analogue peptide",
+    researchContext: "Well-characterised dual-agonist benchmark in receptor-pharmacology papers.",
+    assays: "cAMP and receptor-binding assays at GIP and GLP-1 receptors",
     name: "Tirzepatide",
     slug: "tirzepatide",
     family: "GLP-1 / GIP dual agonist (research)",
@@ -90,6 +150,10 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "mots-c": {
+    mw: "~2,174 Da (16 amino acids)",
+    chemClass: "Mitochondrial-derived peptide",
+    researchContext: "Studied in mitochondrial-signalling and AMPK-pathway research.",
+    assays: "AMPK phosphorylation, mitochondrial respiration and metabolic-flux assays",
     name: "MOTS-c",
     slug: "metabolic-signaling",
     family: "Mitochondrial-derived peptide (16-aa)",
@@ -101,6 +165,11 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "nad-plus": {
+    mw: "~663 Da",
+    chemClass: "Dinucleotide coenzyme (not a peptide)",
+    diluent: "Sterile diluent per batch documentation",
+    researchContext: "Central redox cofactor in sirtuin and cellular-aging research.",
+    assays: "NAD+/NADH ratio, sirtuin activity and redox-balance assays",
     name: "NAD+",
     slug: "cellular-aging",
     family: "Coenzyme (nicotinamide adenine dinucleotide)",
@@ -112,6 +181,10 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "pt-141": {
+    mw: "~1,025 Da (cyclic heptapeptide)",
+    chemClass: "Cyclic α-MSH analogue",
+    researchContext: "Reference ligand in melanocortin receptor-binding research.",
+    assays: "MC3R/MC4R binding and cAMP reporter assays",
     name: "PT-141",
     slug: "neurological",
     family: "Melanocortin receptor research peptide",
@@ -123,6 +196,10 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "melanotan-2": {
+    mw: "~1,024 Da (cyclic heptapeptide)",
+    chemClass: "Cyclic α-MSH analogue",
+    researchContext: "Comparator to PT-141 in melanocortin and pigmentation literature.",
+    assays: "MC1R/MC4R binding and melanocyte pigmentation assays",
     name: "Melanotan-II",
     slug: "melanin",
     family: "Melanocortin agonist (research)",
@@ -134,6 +211,10 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "kpv": {
+    mw: "~342 Da (3 amino acids)",
+    chemClass: "Short linear tripeptide",
+    researchContext: "α-MSH C-terminal fragment studied in inflammation-signalling models.",
+    assays: "NF-κB reporter and cytokine-expression cell assays",
     name: "KPV",
     slug: "tissue-repair",
     family: "Tripeptide (Lys-Pro-Val) — α-MSH C-terminal fragment",
@@ -145,6 +226,10 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "glow": {
+    mw: "Blend — per-component masses on the batch CoA",
+    chemClass: "Three-peptide research blend",
+    researchContext: "Used where a combined formulation is the study variable.",
+    assays: "Comparative blend-vs-single-agent in-vitro designs",
     name: "GLOW Blend",
     slug: "blends",
     family: "Research blend (GHK-Cu + BPC-157 + TB-500)",
@@ -156,6 +241,10 @@ const PEPTIDES: Record<string, PeptideRef> = {
     ],
   },
   "klow": {
+    mw: "Blend — per-component masses on the batch CoA",
+    chemClass: "Four-peptide research blend",
+    researchContext: "Used where KPV addition to a three-peptide blend is the study variable.",
+    assays: "Comparative blend-vs-single-agent in-vitro designs",
     name: "KLOW Blend",
     slug: "blends",
     family: "Research blend (KPV + GHK-Cu + BPC-157 + TB-500)",
@@ -166,7 +255,43 @@ const PEPTIDES: Record<string, PeptideRef> = {
       "Stored at −20°C lyophilised",
     ],
   },
+  "ghrp-2": {
+    mw: "~818 Da (hexapeptide)",
+    chemClass: "Synthetic hexapeptide (GHRP class)",
+    researchContext: "Reference GHS-R1a agonist in growth-hormone secretagogue literature.",
+    assays: "GHS-R1a binding, calcium-flux and pituitary cell GH-release assays",
+    name: "GHRP-2",
+    slug: "neurological",
+    family: "Growth-hormone-releasing peptide (GHRP)",
+    bullets: [
+      "Synthetic hexapeptide ghrelin-receptor (GHS-R1a) agonist",
+      "Broader receptor/axis activity reported than ipamorelin in published work",
+      "Common comparator arm in GH secretagogue studies",
+      "Lyophilised; reconstitute with bacteriostatic water",
+    ],
+  },
+  "ipamorelin": {
+    mw: "~712 Da (pentapeptide)",
+    chemClass: "Synthetic pentapeptide (GHRP class)",
+    researchContext: "Cited as a highly selective GHS-R1a agonist in secretagogue research.",
+    assays: "GHS-R1a binding, calcium-flux and pituitary cell GH-release assays",
+    name: "Ipamorelin",
+    slug: "neurological",
+    family: "Selective growth-hormone secretagogue (GHRP class)",
+    bullets: [
+      "Synthetic pentapeptide ghrelin-receptor (GHS-R1a) agonist",
+      "Reported high receptor selectivity in published literature",
+      "Frequently used as the selective arm in GHRP comparisons",
+      "Lyophilised; reconstitute with bacteriostatic water",
+    ],
+  },
   "bacteriostatic-water": {
+    mw: "n/a — diluent",
+    chemClass: "Sterile water with 0.9% benzyl alcohol",
+    diluent: "n/a — this is the diluent",
+    storage: "Room temperature; refrigerate after opening",
+    researchContext: "Standard laboratory diluent for reconstituting lyophilised compounds.",
+    assays: "n/a — laboratory accessory",
     name: "Bacteriostatic Water",
     slug: "bacteriostatic-water",
     family: "Diluent (0.9% benzyl alcohol)",
@@ -184,6 +309,9 @@ function pair(slug: string, leftKey: string, rightKey: string, opts: {
   intro: string;
   faqs: Array<{ q: string; a: string }>;
   updated: string;
+  extraRows?: ProgrammaticPage["extraRows"];
+  goals?: ProgrammaticPage["goals"];
+  bodyLinks?: ProgrammaticPage["bodyLinks"];
 }): ProgrammaticPage {
   return {
     slug,
@@ -195,7 +323,7 @@ function pair(slug: string, leftKey: string, rightKey: string, opts: {
 
 const UPDATED = "2026-06-26";
 
-export const PROGRAMMATIC_PAGES: ProgrammaticPage[] = [
+const RAW_PAGES: ProgrammaticPage[] = [
   pair("bpc-157-vs-tb-500", "bpc-157", "tb-500", {
     metaDescription:
       "BPC-157 vs TB-500 — research-peptide comparison covering molecular weight, family, reconstitution and lab storage. UK research-use-only data.",
@@ -543,7 +671,95 @@ export const PROGRAMMATIC_PAGES: ProgrammaticPage[] = [
     ],
     updated: UPDATED,
   } as Omit<ProgrammaticPage, "slug"> & { slug: string }),
+  pair("ghrp-2-vs-ipamorelin", "ghrp-2", "ipamorelin", {
+    metaDescription:
+      "GHRP-2 vs Ipamorelin — GHS-R1a research peptides compared: mechanism, receptor selectivity, half-life and research applications. UK research use only.",
+    intro:
+      "GHRP-2 and ipamorelin are both synthetic growth-hormone secretagogues that act at the ghrelin receptor (GHS-R1a). They are among the most frequently compared compounds in secretagogue research because they share a receptor target but differ in selectivity. This page sets out the laboratory and mechanistic differences for research planning — it contains no guidance on human use.",
+    extraRows: [
+      { label: "Mechanism", left: "GHS-R1a (ghrelin receptor) agonist", right: "GHS-R1a (ghrelin receptor) agonist" },
+      { label: "Receptor selectivity", left: "Lower — co-release of ACTH/cortisol and prolactin reported in published models", right: "Higher — minimal ACTH/cortisol and prolactin co-release reported in published models" },
+      { label: "Reported half-life (literature)", left: "Short — on the order of tens of minutes in published pharmacokinetic studies", right: "Short — roughly two hours reported in published pharmacokinetic studies" },
+      { label: "Research applications", left: "Robust GH-axis stimulation models; comparator arm in secretagogue studies", right: "Selective GHS-R1a signalling studies; isolating GH release from other pituitary axes" },
+    ],
+    goals: [
+      { goal: "Studying maximal GHS-R1a-driven GH release, or needing a well-characterised comparator", pick: "GHRP-2 is the more common choice in published designs." },
+      { goal: "Isolating GH-axis signalling with minimal cortisol/prolactin confounders", pick: "Ipamorelin is usually preferred because of its reported selectivity." },
+      { goal: "Characterising receptor selectivity itself", pick: "Run both side by side — the contrast between them is the variable of interest." },
+    ],
+    faqs: [
+      { q: "Do GHRP-2 and ipamorelin act on the same receptor?", a: "Yes. Both are agonists of the growth-hormone secretagogue receptor GHS-R1a (the ghrelin receptor). They differ mainly in selectivity and in the off-target pituitary responses reported in published research." },
+      { q: "What does receptor selectivity mean for study design?", a: "A more selective compound (ipamorelin) makes it easier to attribute an observed effect to GH-axis signalling. A less selective compound (GHRP-2) produces broader pituitary responses, which can be useful as a comparator but adds confounders." },
+      { q: "How do their reported half-lives compare?", a: "Published pharmacokinetic work describes both as short-acting, with ipamorelin reported at roughly two hours and GHRP-2 shorter. Researchers should rely on the primary literature relevant to their own model." },
+      { q: "How are they stored in the lab?", a: "Both are supplied lyophilised, stored at −20°C and held at 2–8°C after reconstitution with bacteriostatic water." },
+      { q: "Are they sold for human use?", a: "No. Any compound discussed here is For Research Use Only. Not for Human Consumption. This page contains no dosing or administration guidance." },
+    ],
+    bodyLinks: [
+      { before: "For a deeper mechanistic review of the GHRP class, see our ", href: "/resources/ipamorelin-ghrp-research", anchor: "ipamorelin and GHRP research guide", after: "." },
+      { before: " Related receptor-context reading: ", href: "/research/cjc-1295-ipamorelin-synergy", anchor: "CJC-1295 and ipamorelin research notes", after: "," },
+      { before: " and the ", href: "/products/bacteriostatic-water-research-compound", anchor: "bacteriostatic water research diluent", after: " used to reconstitute lyophilised peptides." },
+    ],
+    updated: "2026-09-26",
+  }), 
 ];
+
+/**
+ * Reversed-word-order duplicates consolidated into one kept page
+ * (2026-09-26). The removed slug 301s to the kept slug (see
+ * src/lib/legacy-redirects.ts). Unique FAQs from the removed page are
+ * merged into the kept page before it is dropped from the list.
+ */
+export const COMPARE_CONSOLIDATION: Record<string, string> = {
+  "ghk-cu-vs-bpc-157": "bpc-157-vs-ghk-cu",
+  "ghk-cu-vs-tb-500": "tb-500-vs-ghk-cu",
+  "kpv-vs-bpc-157": "bpc-157-vs-kpv",
+  "nad-plus-vs-mots-c": "mots-c-vs-nad-plus",
+  "klow-vs-glow-blend": "klow-vs-glow",
+};
+
+/** Contextual in-body links added to specific comparison pages. */
+const BODY_LINKS: Record<string, NonNullable<ProgrammaticPage["bodyLinks"]>> = {
+  "tirzepatide-vs-mots-c": [
+    { before: "Batch documentation for the incretin arm of this comparison is on the ", href: "/products/tirzepatide-research-peptide", anchor: "tirzepatide research peptide", after: " page." },
+  ],
+  "tirzepatide-vs-glow": [
+    { before: "Laboratories sourcing the single-agent arm can review the ", href: "/products/tirzepatide-research-peptide", anchor: "UK tirzepatide research peptide", after: " with its batch CoA." },
+  ],
+  "klow-vs-glow": [
+    { before: "Composition and batch CoA for the four-peptide arm are listed on the ", href: "/products/klow-blend", anchor: "KLOW Blend research peptide mix", after: " page." },
+  ],
+};
+
+const CONSOLIDATION_UPDATED = "2026-09-26";
+
+function buildPages(raw: ProgrammaticPage[]): ProgrammaticPage[] {
+  const bySlug = new Map(raw.map((p) => [p.slug, { ...p, faqs: [...p.faqs] }]));
+  for (const [removed, kept] of Object.entries(COMPARE_CONSOLIDATION)) {
+    const from = bySlug.get(removed);
+    const to = bySlug.get(kept);
+    if (from && to) {
+      const known = new Set(to.faqs.map((f) => f.q.trim().toLowerCase()));
+      for (const f of from.faqs) {
+        if (!known.has(f.q.trim().toLowerCase())) {
+          to.faqs.push(f);
+          known.add(f.q.trim().toLowerCase());
+        }
+      }
+      to.updated = CONSOLIDATION_UPDATED;
+    }
+    bySlug.delete(removed);
+  }
+  for (const [slug, links] of Object.entries(BODY_LINKS)) {
+    const p = bySlug.get(slug);
+    if (p) {
+      p.bodyLinks = [...(p.bodyLinks ?? []), ...links];
+      p.updated = CONSOLIDATION_UPDATED;
+    }
+  }
+  return raw.filter((p) => bySlug.has(p.slug)).map((p) => bySlug.get(p.slug)!);
+}
+
+export const PROGRAMMATIC_PAGES: ProgrammaticPage[] = buildPages(RAW_PAGES);
 
 export function findProgrammaticPage(slug: string): ProgrammaticPage | undefined {
   return PROGRAMMATIC_PAGES.find((p) => p.slug === slug);
@@ -551,4 +767,18 @@ export function findProgrammaticPage(slug: string): ProgrammaticPage | undefined
 
 export function listProgrammaticSlugs(): string[] {
   return PROGRAMMATIC_PAGES.map((p) => p.slug);
+}
+
+/**
+ * Other comparison pages that share a compound with the given slug.
+ * Used to give each /compare page a unique internal-link block instead of
+ * 32 near-identical shells.
+ */
+export function relatedComparisons(slug: string, limit = 6): ProgrammaticPage[] {
+  const current = findProgrammaticPage(slug);
+  if (!current) return [];
+  const names = new Set([current.left.name, current.right.name]);
+  return PROGRAMMATIC_PAGES.filter(
+    (p) => p.slug !== slug && (names.has(p.left.name) || names.has(p.right.name)),
+  ).slice(0, limit);
 }

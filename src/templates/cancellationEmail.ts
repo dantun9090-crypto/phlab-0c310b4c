@@ -112,7 +112,7 @@ export function buildCancellationEmail({
 
     <p style="color:${C.textDimmed};font-size:12px;line-height:1.6;margin:0;text-align:center;font-family:${EMAIL_FONT};">
       Questions? Contact us at <a href="mailto:info@phlabs.co.uk" style="color:${C.accent};text-decoration:none;">info@phlabs.co.uk</a><br>
-      All products are for laboratory research use only. Not for human or veterinary consumption.
+      <strong>For Research Use Only. Not for Human Consumption.</strong>
     </p>
   `;
 

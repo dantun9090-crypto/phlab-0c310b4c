@@ -63,7 +63,7 @@ export const createFenaPaymentLink = createServerFn({ method: "POST" })
     const user = await verifyFirebaseIdToken(data.idToken);
     const order = await getDocAdmin("orders", data.orderId);
     if (!order) throw new Error("Order not found");
-    if (order.userId && order.userId !== user.uid) {
+    if (typeof order.userId !== "string" || order.userId !== user.uid) {
       throw new Error("Forbidden: order belongs to another account");
     }
     const status = String(order.status ?? "").toLowerCase();
@@ -128,11 +128,20 @@ export const getOrderPaymentStatus = createServerFn({ method: "POST" })
     const orderIdFromPayment = data.paymentId
       ? await findDocByFieldAdmin("orders", "truelayerPaymentId", data.paymentId)
       : null;
-    const orderId = data.orderId || (typeof orderIdFromPayment?.__id === "string" ? orderIdFromPayment.__id : "");
+    // When resolved by paymentId, the payment's own order id is authoritative;
+    // a caller-supplied orderId must match it (prevents acting on another order).
+    const resolvedFromPayment = typeof orderIdFromPayment?.__id === "string" ? orderIdFromPayment.__id : "";
+    if (data.paymentId && !resolvedFromPayment) throw new Error("Order not found");
+    if (resolvedFromPayment && data.orderId && data.orderId !== resolvedFromPayment) {
+      throw new Error("Forbidden");
+    }
+    const orderId = resolvedFromPayment || data.orderId || "";
     const order = orderIdFromPayment || (orderId ? await getDocAdmin("orders", orderId) : null);
     if (!order) throw new Error("Order not found");
     if (!orderId) throw new Error("Order id could not be resolved");
-    if (order.userId && order.userId !== user.uid) {
+    // Ownership must be explicit: an order without a stored userId is not
+    // claimable by any signed-in caller.
+    if (typeof order.userId !== "string" || order.userId !== user.uid) {
       throw new Error("Forbidden");
     }
     let status = String(order.status ?? "pending").toLowerCase();
@@ -989,13 +998,37 @@ export const listFenaWebhookEventsPaged = createServerFn({ method: "POST" })
     const wantFilter = Boolean(data.search || data.outcome);
     const pageSize = data.pageSize ?? 25;
     const fetchSize = wantFilter ? 200 : Math.min(pageSize + 1, 100);
-    const rawRows = await listDocsAdmin("fena_webhook_events", {
-      orderBy: "createdAt",
-      direction: "DESCENDING",
-      limit: fetchSize,
-      startAfter: data.cursorCreatedAt,
-      where: data.level ? { field: "level", value: data.level } : undefined,
-    });
+    // where(level)+orderBy(createdAt) needs a composite index that may not
+    // be deployed yet; fall back to an unindexed fetch + in-memory filter.
+    let rawRows: Array<Record<string, unknown> & { id: string }>;
+    if (data.level) {
+      try {
+        rawRows = await listDocsAdmin("fena_webhook_events", {
+          orderBy: "createdAt",
+          direction: "DESCENDING",
+          limit: fetchSize,
+          startAfter: data.cursorCreatedAt,
+          where: { field: "level", value: data.level },
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (!/FAILED_PRECONDITION|index/i.test(msg)) throw e;
+        rawRows = (
+          await listDocsAdmin("fena_webhook_events", {
+            orderBy: "createdAt",
+            direction: "DESCENDING",
+            limit: 500,
+          })
+        ).filter((r) => String(r.level ?? "") === data.level);
+      }
+    } else {
+      rawRows = await listDocsAdmin("fena_webhook_events", {
+        orderBy: "createdAt",
+        direction: "DESCENDING",
+        limit: fetchSize,
+        startAfter: data.cursorCreatedAt,
+      });
+    }
     const search = data.search?.trim().toLowerCase() ?? "";
     const mapped = rawRows.map((row): FenaWebhookEventRow => {
       const ctxObj =

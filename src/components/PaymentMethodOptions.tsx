@@ -1,15 +1,15 @@
 /**
  * Customer-facing payment method selector used on Checkout.
  *
- * Two selectable cards inside a single radiogroup:
- *  - Primary "Pay by Bank" (Open Banking) — recommended, richer trust signals
- *  - Secondary "Manual Bank Transfer" — reserved order for 48h
+ * Premium accordion-style cards. Each method is a clean, selectable row;
+ * clicking it selects the method and expands a smooth drawer with full details.
+ * Only one option can be expanded at a time.
  *
  * Pure UI: all payment logic (API calls, webhooks, cart state, gateway
  * routing) is owned by the parent Checkout page. No external logo images —
  * text + Tailwind + Lucide icons only, safe on the pre-rendered dark theme.
  */
-import { useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import {
   CheckCircle2,
   ChevronDown,
@@ -21,24 +21,44 @@ import {
   ArrowLeftRight,
   Activity,
   Wallet,
+  Clock,
+  Bitcoin,
+  QrCode,
 } from "lucide-react";
 
 import UkBankBadges from "@/components/UkBankBadges";
+import TidePayPanel from "@/components/TidePayPanel";
 import type { CheckoutPaymentOptions } from "@/lib/payments/types";
+
+export type PaymentMethodValue =
+  | "pay_by_bank"
+  | "bank_transfer"
+  | "wallid"
+  | "peptidepay"
+  | "brokkrpay"
+  | "nowpayments"
+  | "tide";
+
 
 export interface PaymentMethodOptionsProps {
   options: CheckoutPaymentOptions | null;
   /** Wallid Pay-by-Bank kill switch from admin panel (default false). */
   wallidEnabled?: boolean;
-  value: "pay_by_bank" | "bank_transfer" | "wallid";
-  onChange: (next: "pay_by_bank" | "bank_transfer" | "wallid") => void;
+  /** PeptidePay (card / Apple Pay / Google Pay / crypto) availability. */
+  peptidepayEnabled?: boolean;
+  /** BrokkrPay hosted card checkout availability (admin kill switch). */
+  brokkrpayEnabled?: boolean;
+  /** NOWPayments crypto invoice availability (admin kill switch). */
+  nowpaymentsEnabled?: boolean;
+  /** Pay with Tide (hosted QR / Open Banking link) availability. */
+  tideEnabled?: boolean;
+  /** Reference reserved for this checkout, shown inside the Tide panel. */
+  /** Manual Bank Transfer kill switch from admin panel (default true). */
+  manualEnabled?: boolean;
+  /** Empty string means no method selected yet — both cards stay collapsed. */
+  value: PaymentMethodValue | "";
+  onChange: (next: PaymentMethodValue) => void;
 }
-
-const WHAT_HAPPENS_NEXT = [
-  "You will be redirected to your bank app to authorise the payment.",
-  "Once confirmed, your order is instantly verified.",
-  "You will receive an email confirmation with your order details.",
-];
 
 const TRUST_ITEMS: { icon: React.ComponentType<{ className?: string }>; label: string }[] = [
   { icon: ShieldCheck, label: "Secure Open Banking" },
@@ -49,7 +69,6 @@ const TRUST_ITEMS: { icon: React.ComponentType<{ className?: string }>; label: s
   { icon: ArrowLeftRight, label: "Direct Bank Payment" },
   { icon: Activity, label: "Real-time Settlement" },
   { icon: Wallet, label: "Pay from Your Bank" },
-
 ];
 
 function Radio({ checked, tone = "emerald" }: { checked: boolean; tone?: "emerald" | "slate" }) {
@@ -57,75 +76,51 @@ function Radio({ checked, tone = "emerald" }: { checked: boolean; tone?: "emeral
   return (
     <span
       aria-hidden="true"
-      className={`w-5 h-5 rounded-full border-2 ${borderClass} flex items-center justify-center shrink-0 mt-0.5`}
+      className={`w-5 h-5 rounded-full border-2 ${borderClass} flex items-center justify-center shrink-0`}
     >
       {checked && <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />}
     </span>
   );
 }
 
-function TrustBadgesRow() {
+function TrustBadgesGrid() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4 pt-4 border-t border-emerald-500/20">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
       {TRUST_ITEMS.map(({ icon: Icon, label }) => (
-        <div
+        <span
           key={label}
-          className="flex items-center gap-2 text-[11px] sm:text-xs text-slate-200 whitespace-nowrap"
+          className="flex items-center gap-2 rounded-lg border border-emerald-500/15 bg-emerald-500/[0.06] px-2.5 py-2 text-[11px] font-medium text-slate-200"
         >
           <Icon className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-          <span>{label}</span>
-        </div>
+          <span className="leading-tight">{label}</span>
+        </span>
       ))}
     </div>
   );
 }
 
-
-function WhatHappensNext() {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] px-4">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        className="flex w-full items-center justify-between text-sm font-medium text-white cursor-pointer py-2"
-      >
-        <span>What happens next?</span>
-        <ChevronDown
-          className={`w-4 h-4 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
-          aria-hidden="true"
-        />
-      </button>
-      {open && (
-        <ol className="text-sm text-slate-300 space-y-2 pt-2 pb-4 list-none">
-          {WHAT_HAPPENS_NEXT.map((step, i) => (
-            <li key={i} className="flex gap-2">
-              <span
-                aria-hidden="true"
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-[11px] font-semibold text-emerald-300"
-              >
-                {i + 1}
-              </span>
-              <span>{step}</span>
-            </li>
-          ))}
-        </ol>
-      )}
-    </div>
-  );
-}
-
-function WallidCheckoutTrustInline({ className = "" }: { className?: string }) {
+/** Smooth height drawer wrapper. */
+function Drawer({
+  open,
+  children,
+  id,
+  "data-testid": testId,
+}: {
+  open: boolean;
+  children: React.ReactNode;
+  id?: string;
+  "data-testid"?: string;
+}) {
   return (
     <div
-      data-testid="wallid-trust-elements"
-      className={`mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-center ${className}`}
+      data-testid={testId}
+      id={id}
+      aria-hidden={!open}
+      className={`grid transition-all duration-300 ease-out ${
+        open ? "grid-rows-[1fr] opacity-100 mt-3" : "grid-rows-[0fr] opacity-0 mt-0"
+      }`}
     >
-      <p className="text-sm font-semibold text-emerald-200">Pay by Bank — Open Banking secure checkout</p>
-      <p className="mt-1 text-[11px] leading-snug text-slate-200">
-        Your payment is processed securely via FCA-regulated open banking. No card details stored.
-      </p>
+      <div className="overflow-hidden">{children}</div>
     </div>
   );
 }
@@ -133,14 +128,17 @@ function WallidCheckoutTrustInline({ className = "" }: { className?: string }) {
 export default function PaymentMethodOptions({
   options,
   wallidEnabled = false,
+  peptidepayEnabled = false,
+  brokkrpayEnabled = false,
+  nowpaymentsEnabled = false,
+  tideEnabled = true,
+  manualEnabled = true,
   value,
   onChange,
 }: PaymentMethodOptionsProps) {
-  const hasOnline = Boolean(
-    options && (options.primary || options.backups.length > 0),
-  );
+  const hasOnline = Boolean(options && (options.primary || options.backups.length > 0));
   const noOnline = Boolean(
-    !wallidEnabled && options && !options.primary && options.backups.length === 0,
+    manualEnabled && !wallidEnabled && options && !options.primary && options.backups.length === 0,
   );
 
   const showPrimary = hasOnline || wallidEnabled;
@@ -151,35 +149,26 @@ export default function PaymentMethodOptions({
   const primaryTestId = wallidEnabled ? "wallid-pay-by-bank-button" : "pay-by-bank-button";
   const primaryInstructionsId = wallidEnabled ? "wallid-instructions" : "pay-by-bank-instructions";
 
-  const primaryCardClass = `relative rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 sm:p-5 cursor-pointer transition-all hover:bg-emerald-500/15 text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 ${
-    primarySelected ? "ring-2 ring-emerald-500/50" : ""
-  }`;
-
-  const manualCardClass = `relative rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5 cursor-pointer transition-all hover:bg-white/10 text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 ${
-    manualSelected ? "ring-2 ring-emerald-500/50" : ""
-  }`;
-
   const rootRef = useRef<HTMLDivElement>(null);
-  const manualDetailsRef = useRef<HTMLDivElement>(null);
 
   /**
    * Scroll-preserving selection change.
    *
-   * When the primary card's expanded content (WhatHappensNext + trust inline)
-   * mounts/unmounts, the manual card jumps up or down and it feels like the
-   * whole page scrolled to the top. We capture the clicked button's viewport
-   * position before the state change, then after paint re-anchor window
-   * scroll so the button stays at the same y — no visible jump.
-   *
-   * For manual bank transfer we additionally scroll its details into view
-   * (gentle, block: 'nearest') once it's expanded.
+   * When a drawer expands/collapses, the clicked button's viewport position can
+   * shift. We re-anchor scroll so the button stays at the same y for small
+   * shifts, avoiding the "page jumped to top" feeling.
    */
   const handleSelect = (
-    next: "pay_by_bank" | "bank_transfer" | "wallid",
+    next: PaymentMethodValue,
     clickTarget: HTMLElement | null,
   ) => {
-    if (next === value) return;
     console.log(`[PAYMENT] select method=${next}`);
+    if (next === value) {
+      // Re-tapping the already selected card must not feel like a dead click:
+      // re-emit the selection so the parent clears any validation error.
+      onChange(next);
+      return;
+    }
     const anchorTop = clickTarget?.getBoundingClientRect().top ?? null;
     onChange(next);
     if (typeof window === "undefined") return;
@@ -188,188 +177,571 @@ export default function PaymentMethodOptions({
         if (anchorTop != null && clickTarget) {
           const newTop = clickTarget.getBoundingClientRect().top;
           const delta = newTop - anchorTop;
-          // Only re-anchor small layout shifts (< 400px). Larger deltas mean
-          // a big section expanded/collapsed and re-anchoring compounds into
-          // the "infinite scroll" feel users reported on Manual Bank Transfer.
           if (Math.abs(delta) > 1 && Math.abs(delta) < 400) {
             window.scrollBy({ top: delta, left: 0, behavior: "auto" });
           }
         }
-        // Deliberately no scrollIntoView here — details render inline
-        // directly below the selected option; forcing scroll caused the
-        // page to keep chasing the expanding accordion.
       });
     });
-
   };
+
+  const methodCount =
+    (showPrimary ? 1 : 0) +
+    (peptidepayEnabled ? 1 : 0) +
+    (brokkrpayEnabled ? 1 : 0) +
+    (nowpaymentsEnabled ? 1 : 0) +
+    (tideEnabled ? 1 : 0) +
+    (manualEnabled ? 1 : 0);
+
+  /**
+   * Manual Bank Transfer is the ONLY method available. Customers were tapping
+   * the card and thinking "nothing happens" (there was no other option to
+   * switch to), so we pre-select it, give it the premium emerald treatment and
+   * spell out the next step instead of leaving it looking like a dead choice.
+   */
+  const soleManual = manualEnabled && methodCount === 1;
+  const solePrimary = !manualEnabled && showPrimary && methodCount === 1;
+
+  useEffect(() => {
+    // Manual transfer suspended while it was selected — move to Pay by Bank.
+    if (!manualEnabled && value === "bank_transfer" && showPrimary) {
+      onChange(primaryValue);
+      return;
+    }
+    if (value !== "") return;
+    if (soleManual) onChange("bank_transfer");
+    else if (solePrimary) onChange(primaryValue);
+  }, [manualEnabled, showPrimary, soleManual, solePrimary, primaryValue, value, onChange]);
+
+
+  const baseCardClass =
+    "group relative rounded-2xl border p-4 sm:p-5 cursor-pointer transition-all text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70";
+
+  const primaryCardClass = `${baseCardClass} border-slate-700/50 bg-slate-900/60 hover:bg-slate-800/60 ${
+    primarySelected ? "ring-2 ring-emerald-500/40" : ""
+  }`;
+
+  const manualCardClass = soleManual
+    ? `${baseCardClass} border-emerald-500/40 bg-gradient-to-br from-emerald-500/[0.14] to-emerald-900/[0.10] shadow-lg shadow-emerald-900/25 ring-2 ring-emerald-500/50`
+    : `${baseCardClass} border-slate-700/50 bg-slate-900/60 hover:bg-slate-800/60 ${
+        manualSelected ? "ring-2 ring-emerald-500/40" : ""
+      }`;
+
+  const peptidepayCardClass = `${baseCardClass} border-slate-700/50 bg-slate-900/60 hover:bg-slate-800/60 ${
+    value === "peptidepay" ? "ring-2 ring-emerald-500/40" : ""
+  }`;
+
+  const brokkrpayCardClass = `${baseCardClass} border-emerald-500/30 bg-gradient-to-br from-emerald-500/[0.12] to-emerald-900/[0.08] hover:from-emerald-500/[0.16] hover:to-emerald-900/[0.10] ${
+    value === "brokkrpay" ? "ring-2 ring-emerald-500/50 shadow-lg shadow-emerald-900/20" : ""
+  }`;
+
+  const cryptoCardClass = `${baseCardClass} border-slate-700/50 bg-slate-900/60 hover:bg-slate-800/60 ${
+    value === "nowpayments" ? "ring-2 ring-emerald-500/40" : ""
+  }`;
+
+  const tideCardClass = `${baseCardClass} border-slate-700/50 bg-slate-900/60 hover:bg-slate-800/60 ${
+    value === "tide" ? "ring-2 ring-emerald-500/40" : ""
+  }`;
 
   return (
     <>
-    <div
-      ref={rootRef}
-      role="radiogroup"
-      aria-label="Choose how you want to pay"
-      className="space-y-3"
-    >
-      {noOnline && (
-        <div
-          data-testid="manual-only-notice"
-          role="status"
-          className="rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 leading-relaxed"
-        >
-          Instant Pay-by-Bank is temporarily unavailable. Please complete your
-          order via Manual Bank Transfer below — your order will be reserved for
-          48 hours.
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-white">
+            Payment method
+          </h3>
+          <p className="text-xs text-slate-400 mt-0.5">
+            {soleManual
+              ? "Manual Bank Transfer — the only option right now"
+              : `${methodCount} secure ${methodCount === 1 ? "way" : "ways"} to pay — choose one below`}
+          </p>
         </div>
-      )}
+        <span className="inline-flex items-center gap-1.5 shrink-0 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-[10.5px] font-semibold text-emerald-300">
+          <Lock className="w-3 h-3" aria-hidden="true" />
+          Secure
+        </span>
+      </div>
 
-      {/* PRIMARY: Pay by Bank */}
-      {showPrimary && (
-        <div>
+      <div
+        ref={rootRef}
+        role="radiogroup"
+        aria-label="Choose how you want to pay"
+        className="space-y-3"
+      >
+        {noOnline && (
+          <div
+            data-testid="manual-only-notice"
+            role="status"
+            className="rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 leading-relaxed"
+          >
+            Instant Pay-by-Bank is temporarily unavailable. Please complete your
+            order via Manual Bank Transfer below — your order will be reserved for
+            48 hours.
+          </div>
+        )}
+
+        {/* FEATURED: BrokkrPay — hosted card checkout */}
+        {brokkrpayEnabled && (
+          <div className="relative">
+            <button
+              type="button"
+              data-testid="brokkrpay-button"
+              onClick={(e) => handleSelect("brokkrpay", e.currentTarget)}
+              role="radio"
+              aria-checked={value === "brokkrpay"}
+              aria-describedby={value === "brokkrpay" ? "brokkrpay-instructions" : undefined}
+              className={brokkrpayCardClass}
+            >
+              {/* Badge row in normal flow */}
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <span className="inline-flex items-center rounded-full bg-emerald-500 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-900 shadow-sm">
+                  Recommended
+                </span>
+                <ChevronDown
+                  className={`w-4 h-4 shrink-0 text-slate-400 transition-transform ${
+                    value === "brokkrpay" ? "rotate-180" : ""
+                  }`}
+                  aria-hidden="true"
+                />
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Radio checked={value === "brokkrpay"} tone="emerald" />
+                <span
+                  aria-hidden="true"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-500/25 bg-emerald-500/10"
+                >
+                  <CreditCard className="h-5 w-5 text-emerald-300" />
+                </span>
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-base font-semibold text-white leading-tight">
+                      Debit or credit card
+                    </span>
+                    {value === "brokkrpay" && (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
+                        <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                        Selected
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-300 mt-1">
+                    Secure hosted checkout — we never see your card details.
+                  </p>
+                </div>
+              </div>
+            </button>
+
+            <Drawer open={value === "brokkrpay"} id="brokkrpay-instructions">
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.05] px-4 py-3 text-xs leading-relaxed text-slate-300">
+                <p className="font-semibold text-white">Before you pay</p>
+                <p className="mt-1">
+                  Your payment is handled by our retail partner — an online retail store — so your
+                  receipt and card statement will show retail items, not the products you ordered.
+                  Same products, same price, same delivery.
+                </p>
+                <p className="mt-2">
+                  You will be redirected to a secure payment page. Once the payment is confirmed you
+                  will receive an email with your order details.
+                </p>
+                <p className="mt-2 flex items-center gap-2 text-slate-400">
+                  <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
+                  Card details are handled entirely by the payment provider.
+                </p>
+              </div>
+            </Drawer>
+          </div>
+        )}
+
+
+        {/* SECONDARY: Pay by Bank */}
+        {showPrimary && (
+          <div className="relative">
+            <button
+              type="button"
+              data-testid={primaryTestId}
+              onClick={(e) => handleSelect(primaryValue, e.currentTarget)}
+              role="radio"
+              aria-checked={primarySelected}
+              aria-describedby={primarySelected ? primaryInstructionsId : undefined}
+              className={primaryCardClass}
+            >
+              <div className="flex items-start gap-3">
+                <Radio checked={primarySelected} tone="slate" />
+                <span
+                  aria-hidden="true"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5"
+                >
+                  <Landmark className="h-5 w-5 text-slate-300" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <span className="block text-base font-semibold leading-snug text-white">
+                    Pay by Bank{" "}
+                    <span className="text-xs font-medium text-emerald-300/90">— Open Banking</span>
+                  </span>
+                  {primarySelected && (
+                    <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
+                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                      Selected
+                    </span>
+                  )}
+                  <p className="mt-1 text-xs leading-relaxed text-slate-300">
+                    Instant UK bank transfer — no card needed.
+                  </p>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-slate-400 shrink-0 mt-2 transition-transform ${
+                    primarySelected ? "rotate-180" : ""
+                  }`}
+                  aria-hidden="true"
+                />
+              </div>
+
+            </button>
+
+            <Drawer open={primarySelected} id={primaryInstructionsId}>
+              <div className="rounded-2xl border border-slate-700/50 bg-slate-900/60 p-4 sm:p-5 text-sm text-slate-200 space-y-4">
+                <p className="text-slate-300 leading-relaxed">
+                  Pay securely from any UK bank app — instant confirmation, no card needed.
+                </p>
+
+                {options?.primary && !wallidEnabled && (
+                  <p data-testid="active-gateway-label" className="text-xs text-emerald-300/90">
+                    via {options.primary.name}
+                    {options.primary.sandbox && " (sandbox)"}
+                    {options.backups.length > 0 && (
+                      <span className="text-slate-400">
+                        {" "}
+                        · auto-failover to {options.backups.map((b) => b.name).join(", ")}
+                      </span>
+                    )}
+                  </p>
+                )}
+
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                    Supported banks
+                  </p>
+                  <UkBankBadges />
+                </div>
+
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                    Why it is secure
+                  </p>
+                  <TrustBadgesGrid />
+                </div>
+
+                {wallidEnabled && (
+                  <div
+                    data-testid="wallid-trust-elements"
+                    className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-center"
+                  >
+                    <p className="text-sm font-semibold text-emerald-200">Pay by Bank — Open Banking secure checkout</p>
+                    <p className="mt-1 text-[11px] leading-snug text-slate-200">
+                      Your payment is processed securely via FCA-regulated open banking. No card details stored.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </Drawer>
+          </div>
+        )}
+
+        {/* SECONDARY: PeptidePay — card / Apple Pay / Google Pay / crypto */}
+        {peptidepayEnabled && (
+          <div className="relative">
+            <button
+              type="button"
+              data-testid="peptidepay-button"
+              onClick={(e) => handleSelect("peptidepay", e.currentTarget)}
+              role="radio"
+              aria-checked={value === "peptidepay"}
+              aria-describedby={value === "peptidepay" ? "peptidepay-instructions" : undefined}
+              className={peptidepayCardClass}
+            >
+              <div className="flex items-start gap-3">
+                <Radio checked={value === "peptidepay"} tone="slate" />
+                <span
+                  aria-hidden="true"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5"
+                >
+                  <CreditCard className="h-5 w-5 text-slate-300" />
+                </span>
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-base font-semibold text-white leading-tight">
+                      Card, Apple Pay, Google Pay or crypto
+                    </span>
+                    {value === "peptidepay" && (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
+                        <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                        Selected
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-300 mt-1">
+                    Secure hosted checkout — we never see your card details.
+                  </p>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-slate-400 shrink-0 mt-2 transition-transform ${
+                    value === "peptidepay" ? "rotate-180" : ""
+                  }`}
+                  aria-hidden="true"
+                />
+              </div>
+            </button>
+
+            <Drawer open={value === "peptidepay"} id="peptidepay-instructions">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs leading-relaxed text-slate-300">
+                <p>
+                  You will be redirected to a secure payment page to complete your order. Once the
+                  payment is confirmed you will receive an email with your order details.
+                </p>
+                <p className="mt-2 flex items-center gap-2 text-slate-400">
+                  <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
+                  Card details are handled entirely by the payment provider.
+                </p>
+                <p className="mt-2">
+                  <a
+                    href="https://pay.qistdigital.com"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    className="text-[11px] font-medium text-slate-400 underline decoration-slate-600 underline-offset-2 hover:text-emerald-400"
+                  >
+                    Secured by PeptidePay
+                  </a>
+                </p>
+              </div>
+
+            </Drawer>
+          </div>
+        )}
+
+        {/* SECONDARY: Crypto via NOWPayments (hosted invoice) */}
+        {nowpaymentsEnabled && (
+          <div className="relative">
+            <button
+              type="button"
+              data-testid="nowpayments-button"
+              onClick={(e) => handleSelect("nowpayments", e.currentTarget)}
+              role="radio"
+              aria-checked={value === "nowpayments"}
+              aria-describedby={value === "nowpayments" ? "nowpayments-instructions" : undefined}
+              className={cryptoCardClass}
+            >
+              <div className="flex items-start gap-3">
+                <Radio checked={value === "nowpayments"} tone="slate" />
+                <span
+                  aria-hidden="true"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5"
+                >
+                  <Bitcoin className="h-5 w-5 text-amber-300" />
+                </span>
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-base font-semibold text-white leading-tight">
+                      Pay with crypto
+                    </span>
+                    {value === "nowpayments" && (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
+                        <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                        Selected
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-300 mt-1">
+                    BTC, ETH, USDT and 300+ assets — priced in GBP.
+                  </p>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-slate-400 shrink-0 mt-2 transition-transform ${
+                    value === "nowpayments" ? "rotate-180" : ""
+                  }`}
+                  aria-hidden="true"
+                />
+              </div>
+            </button>
+
+            <Drawer open={value === "nowpayments"} id="nowpayments-instructions">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs leading-relaxed text-slate-300 space-y-2">
+                <p>
+                  You will be redirected to a secure hosted invoice where you pick your coin and
+                  network. The GBP total is locked to a live exchange rate for the invoice window.
+                </p>
+                <p>
+                  Your order is confirmed automatically once the network confirms the payment, and
+                  you will receive a confirmation email.
+                </p>
+                <p className="flex items-center gap-2 text-slate-400">
+                  <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
+                  Send the full amount in one transaction — underpayments are held for review.
+                </p>
+              </div>
+            </Drawer>
+          </div>
+        )}
+
+        {/* SECONDARY: Pay with Tide (QR code / Open Banking) */}
+        {tideEnabled && (
+        <div className="relative">
           <button
             type="button"
-            data-testid={primaryTestId}
-            onClick={(e) => handleSelect(primaryValue, e.currentTarget)}
+            data-testid="tide-button"
+            onClick={(e) => handleSelect("tide", e.currentTarget)}
             role="radio"
-            aria-checked={primarySelected}
-            aria-describedby={primarySelected ? primaryInstructionsId : undefined}
-            className={primaryCardClass}
+            aria-checked={value === "tide"}
+            aria-describedby={value === "tide" ? "tide-instructions" : undefined}
+            className={tideCardClass}
           >
-            <span className="absolute top-3 right-3 bg-emerald-500 text-slate-900 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
-              Recommended
-            </span>
-
-            <div className="flex items-start gap-3 pr-24">
-              <Radio checked={primarySelected} tone="emerald" />
-              <div className="min-w-0 flex-1">
+            <div className="flex items-start gap-3">
+              <Radio checked={value === "tide"} tone="slate" />
+              <span
+                aria-hidden="true"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5"
+              >
+                <QrCode className="h-5 w-5 text-emerald-300" />
+              </span>
+              <div className="min-w-0 flex-1 pt-0.5">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-lg font-semibold text-white">Pay by Bank</span>
-                  {primarySelected && (
+                  <span className="text-base font-semibold text-white leading-tight">
+                    Pay with Tide
+                  </span>
+                  {value === "tide" && (
                     <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
                       <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
                       Selected
                     </span>
                   )}
                 </div>
+                <p className="text-xs text-slate-300 mt-1">
+                  Pay by QR code or payment link — shown right after you place the order.
+                </p>
               </div>
+              <ChevronDown
+                className={`w-4 h-4 text-slate-400 shrink-0 mt-2 transition-transform ${
+                  value === "tide" ? "rotate-180" : ""
+                }`}
+                aria-hidden="true"
+              />
             </div>
-
-            <p className="text-sm text-slate-300 mt-1 ml-8">
-              Pay securely from any UK bank app — instant confirmation, no card needed.
-            </p>
-
-            {options?.primary && !wallidEnabled && (
-              <p
-                data-testid="active-gateway-label"
-                className="mt-1.5 ml-8 text-xs text-emerald-300/90"
-              >
-                via {options.primary.name}
-                {options.primary.sandbox && " (sandbox)"}
-                {options.backups.length > 0 && (
-                  <span className="text-slate-400">
-                    {" "}· auto-failover to{" "}
-                    {options.backups.map((b) => b.name).join(", ")}
-                  </span>
-                )}
-              </p>
-            )}
-
-            <div className="flex flex-wrap gap-2 mt-3 ml-8">
-              <UkBankBadges />
-            </div>
-
-            <TrustBadgesRow />
           </button>
 
+          <Drawer open={value === "tide"} id="tide-instructions">
+            <TidePayPanel preview />
+          </Drawer>
         </div>
-      )}
+        )}
 
-      {/* SECONDARY: Manual Bank Transfer */}
-      <div>
-        <button
-          type="button"
-          data-testid="manual-bank-transfer-button"
-          onClick={(e) => handleSelect("bank_transfer", e.currentTarget)}
-          role="radio"
-          aria-checked={manualSelected}
-          aria-describedby={manualSelected ? "manual-bank-transfer-details" : undefined}
-          className={manualCardClass}
-        >
-          <div className="flex items-start gap-3">
-            <Radio checked={manualSelected} tone="slate" />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-base font-medium text-white">Manual Bank Transfer</span>
+
+
+        {/* Manual Bank Transfer temporarily suspended by admin */}
+        {!manualEnabled && (
+          <div
+            data-testid="manual-suspended-notice"
+            role="status"
+            className="rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 leading-relaxed"
+          >
+            Manual Bank Transfer is temporarily suspended. Please pay securely with Pay by Bank
+            above — it is instant and confirms your order straight away.
+          </div>
+        )}
+
+        {/* SECONDARY: Manual Bank Transfer */}
+        {manualEnabled && (
+        <div className="relative">
+          <button
+            type="button"
+            data-testid="manual-bank-transfer-button"
+            onClick={(e) => handleSelect("bank_transfer", e.currentTarget)}
+            role="radio"
+            aria-checked={manualSelected}
+            aria-describedby={manualSelected ? "manual-bank-transfer-details" : undefined}
+            className={manualCardClass}
+          >
+            {/* Badge row: in normal flow so it never squeezes the title column */}
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <span
+                className={
+                  soleManual
+                    ? "inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-900 shadow-sm"
+                    : "inline-flex items-center gap-1 rounded-full border border-slate-600 bg-slate-800 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-300"
+                }
+              >
+                <Clock className="w-3 h-3 shrink-0" aria-hidden="true" />
+                {soleManual ? "Only option · 48h hold" : "48h hold"}
+              </span>
+              <ChevronDown
+                className={`w-4 h-4 shrink-0 text-slate-400 transition-transform ${
+                  manualSelected ? "rotate-180" : ""
+                }`}
+                aria-hidden="true"
+              />
+            </div>
+
+            <div className="flex items-start gap-3">
+              <Radio checked={manualSelected} tone={soleManual ? "emerald" : "slate"} />
+              <span
+                aria-hidden="true"
+                className={
+                  soleManual
+                    ? "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10"
+                    : "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5"
+                }
+              >
+                <ArrowLeftRight
+                  className={soleManual ? "h-5 w-5 text-emerald-300" : "h-5 w-5 text-slate-300"}
+                />
+              </span>
+              <div className="min-w-0 flex-1">
+                <span className="block text-base font-semibold leading-snug text-white">
+                  Manual Bank Transfer
+                </span>
                 {manualSelected && (
-                  <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
-                    <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                     Selected
                   </span>
                 )}
+                <p className="mt-1 text-xs leading-relaxed text-slate-300">
+                  Receive bank details by email and transfer manually within 48 hours.
+                </p>
               </div>
             </div>
-          </div>
-          <p className="text-sm text-slate-300 mt-1 ml-8">
-            Receive bank details by email and transfer manually within 48 hours.
-          </p>
-          <p className="text-xs text-slate-300 mt-2 ml-8">
-            Your order will be reserved for 48 hours. Confirmation email sent immediately.
-          </p>
-        </button>
 
-        {/* Inline expanded details — accordion under the manual card so
-            selecting it never scrolls the page to the top. */}
-        <div
-          ref={manualDetailsRef}
-          data-testid="manual-bank-transfer-details"
-          id="manual-bank-transfer-details"
-          aria-hidden={!manualSelected}
-          className={`grid transition-all duration-300 ease-out ${
-            manualSelected
-              ? "grid-rows-[1fr] opacity-100 mt-2"
-              : "grid-rows-[0fr] opacity-0 mt-0"
-          }`}
-        >
-          <div className="overflow-hidden">
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-slate-200 space-y-2">
-              <p className="font-semibold text-emerald-200">
-                How Manual Bank Transfer works
+            {soleManual && (
+              <p className="mt-3 flex items-start gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 text-[11.5px] font-medium leading-snug text-emerald-200">
+                <CheckCircle2 className="mt-0.5 w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                <span>Nothing to choose — continue to “Place Order” below</span>
               </p>
-              <ol className="list-decimal list-inside space-y-1 text-slate-300 text-[13px] leading-relaxed">
+            )}
+
+          </button>
+
+          <Drawer
+            open={manualSelected}
+            id="manual-bank-transfer-details"
+            data-testid="manual-bank-transfer-details"
+          >
+            <div className="rounded-2xl border border-slate-700/50 bg-slate-900/60 p-4 sm:p-5 text-sm text-slate-200 space-y-3">
+              <p className="font-semibold text-emerald-200">How Manual Bank Transfer works</p>
+              <ol className="list-decimal list-inside space-y-2 text-slate-300 text-[13px] leading-relaxed">
                 <li>Place your order — we reserve your items for 48 hours.</li>
                 <li>
-                  You'll get an email with our UK bank details and a unique
-                  reference number.
+                  You will get an email with our UK bank details and a unique reference number.
                 </li>
-                <li>
-                  Transfer the total from your bank app using that reference.
-                </li>
-                <li>
-                  Once funds clear, we ship your order and email tracking.
-                </li>
+                <li>Transfer the total from your bank app using that reference.</li>
+                <li>Once funds clear, we ship your order and email tracking.</li>
               </ol>
-              <p className="text-[11px] text-slate-300 pt-1">
-                No card details required. Reference expires after 48 hours if
-                unpaid.
+              <p className="text-[11px] text-slate-400 pt-1 border-t border-slate-700/50 mt-3">
+                No card details required. Reference expires after 48 hours if unpaid.
               </p>
             </div>
-          </div>
+          </Drawer>
         </div>
+        )}
       </div>
-    </div>
-
-    {/* Expanded instructions for the primary option. Rendered OUTSIDE the
-        radiogroup so the accordion toggle is not part of the group's tab
-        order (keyboard users must be able to Shift+Tab out of the group —
-        radiogroup contains only the two role=radio cards). */}
-    {primarySelected && (
-      <>
-        <div id={primaryInstructionsId}>
-          <WhatHappensNext />
-        </div>
-        {wallidEnabled && <WallidCheckoutTrustInline />}
-      </>
-    )}
     </>
   );
 }

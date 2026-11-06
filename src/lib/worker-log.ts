@@ -72,8 +72,45 @@ export function extractClientIp(req: Request): string | null {
   return null;
 }
 
+/**
+ * Mask a client IP before it reaches the log stream. Logs are retained
+ * outside the app, so full visitor IPs (personal data) are never written:
+ * IPv4 keeps the first two octets, IPv6 the first two hextets.
+ */
+export function maskIpForLog(ip: string | null | undefined): string | null {
+  if (!ip) return null;
+  if (ip.includes(":")) {
+    const parts = ip.split(":").filter(Boolean);
+    return parts.length ? `${parts.slice(0, 2).join(":")}:…` : null;
+  }
+  const octets = ip.split(".");
+  if (octets.length === 4) return `${octets[0]}.${octets[1]}.x.x`;
+  return "…";
+}
+
 /** Truncate URLs / user agents to keep log lines bounded. */
 export function truncate(value: string | null | undefined, max = 256): string | null {
   if (value == null) return null;
   return value.length > max ? value.slice(0, max) + "…" : value;
+}
+
+const SENSITIVE_QUERY_KEY = /^(key|token|secret|pt|password|pass|apikey|api_key|access_token|id_token|auth|signature|sig|code)$/i;
+
+/**
+ * Redact credential-like query parameters (e.g. the offline-conversions
+ * `key`, guest payment tokens) before a query string is written to logs.
+ */
+export function redactQueryForLog(search: string | null | undefined, max = 200): string | undefined {
+  if (!search) return undefined;
+  try {
+    const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
+    const out: string[] = [];
+    for (const [k, v] of params) {
+      out.push(`${encodeURIComponent(k)}=${SENSITIVE_QUERY_KEY.test(k) ? "[REDACTED]" : encodeURIComponent(v)}`);
+    }
+    const s = out.length ? `?${out.join("&")}` : "";
+    return s.length > max ? s.slice(0, max) + "…" : s || undefined;
+  } catch {
+    return "[unparseable]";
+  }
 }

@@ -13,9 +13,9 @@ import { SITE_URL } from "@/lib/seo-meta";
 
 const URL = `${SITE_URL}/research/retatrutide-comprehensive-guide`;
 const TITLE =
-  "Retatrutide Comprehensive Research Guide | Triple Agonist Mechanism & Tirzepatide Comparison | PH Labs";
+  "Retatrutide Research Guide | Triple Agonist | PH Labs";
 const DESCRIPTION =
-  "Comprehensive UK research guide to retatrutide (LY3437943): triple-agonist mechanism at GLP-1, GIP and glucagon receptors, in-vitro pharmacology, QC, and a technical head-to-head against tirzepatide. Research use only.";
+  "UK research guide to retatrutide (LY3437943): triple-agonist mechanism at GLP-1, GIP and glucagon receptors, in-vitro data and QC. Research use only.";
 
 const FAQS: Array<{ q: string; a: string }> = [
   {

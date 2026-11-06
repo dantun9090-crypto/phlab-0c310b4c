@@ -12,9 +12,9 @@ import { SITE_URL } from "@/lib/seo-meta";
 
 const URL = `${SITE_URL}/research/bpc-157-vs-tb-500`;
 const TITLE =
-  "BPC-157 vs TB-500 | Mechanism Comparison for Tissue-Repair Research | PH Labs";
+  "BPC-157 vs TB-500 | Mechanism Comparison | PH Labs";
 const DESCRIPTION =
-  "Side-by-side comparison of BPC-157 and TB-500 in preclinical tissue-repair research: BPC-157 angiogenesis via VEGFR2/NO vs TB-500 (Tβ4 fragment) cell migration via G-actin sequestration. UK research-use only.";
+  "BPC-157 vs TB-500 in preclinical tissue-repair research: VEGFR2/NO angiogenesis vs G-actin sequestration and cell migration. UK research-use only.";
 
 const FAQS: Array<{ q: string; a: string }> = [
   {

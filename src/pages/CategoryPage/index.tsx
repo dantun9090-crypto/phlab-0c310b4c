@@ -3,6 +3,8 @@ import { useParams, Link, Navigate } from 'react-router-dom';
 import { FlaskConical, ChevronRight, ArrowLeft, SlidersHorizontal } from 'lucide-react';
 import { subscribeToProducts } from '@/lib/firebase';
 import type { Product } from '@/lib/firebase';
+import { isVipProduct } from '@/lib/vip-visibility';
+
 import { ProductCard } from '@/components/ProductCard';
 import { dispatchAddToCart } from '@/components/Layout';
 import { useSEO } from '@/hooks/useSEO';
@@ -224,7 +226,9 @@ export default function CategoryPage() {
     const slugList = config?.productSlugs;
     const unsub = subscribeToProducts((all) => {
       const filtered = all.filter((p) => {
+        if (isVipProduct(p)) return false;
         if (p.isActive === false || p.stock <= 0) return false;
+
         if (slugList && slugList.length) return slugList.includes(p.slug ?? '');
         return p.category === slug;
       });
@@ -237,20 +241,55 @@ export default function CategoryPage() {
 
   // SEO: when a category is empty (no in-stock products), tell crawlers
   // to skip it. Avoids "0 compounds available" pages appearing in the
-  // index as soft-404s. Tag is removed when products are present.
+  // index as soft-404s. Tags are removed when products are present.
+  //
+  // Two empty cases:
+  //  - KNOWN slug (CATEGORY_CONFIG) but empty: noindex only — the hub may
+  //    be restocked, so the URL must stay a 200.
+  //  - UNKNOWN slug (typo / scraper probe / dead link, e.g.
+  //    /products/category/lithuania): noindex AND prerender-status-code 404
+  //    so prerender.io serves a real 404 to crawlers and the junk doorway
+  //    URL drops out of the index instead of lingering as a soft-404.
+  //
+  // ALL pre-existing robots tags (incl. the __root default "index, follow")
+  // are removed before adding noindex so crawlers never see two conflicting
+  // directives; the default is restored when products are present again.
+  const isKnownSlug = slug ? slug in CATEGORY_CONFIG : false;
   useEffect(() => {
     if (loading) return;
-    const SEL = 'meta[name="robots"][data-category-empty]';
-    document.querySelector(SEL)?.remove();
+    const DEFAULT_ROBOTS =
+      'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
+    const ADDED_SEL = '[data-category-empty]';
+    const restoreDefaultRobots = () => {
+      if (document.querySelector('meta[name="robots"]')) return;
+      const m = document.createElement('meta');
+      m.setAttribute('name', 'robots');
+      m.setAttribute('content', DEFAULT_ROBOTS);
+      document.head.appendChild(m);
+    };
+    document.querySelectorAll(ADDED_SEL).forEach((m) => m.remove());
     if (products.length === 0) {
+      document.querySelectorAll('meta[name="robots"]').forEach((m) => m.remove());
       const m = document.createElement('meta');
       m.setAttribute('name', 'robots');
       m.setAttribute('content', 'noindex, follow');
       m.setAttribute('data-category-empty', '1');
       document.head.appendChild(m);
+      if (!isKnownSlug) {
+        const s = document.createElement('meta');
+        s.setAttribute('name', 'prerender-status-code');
+        s.setAttribute('content', '404');
+        s.setAttribute('data-category-empty', '1');
+        document.head.appendChild(s);
+      }
+    } else {
+      restoreDefaultRobots();
     }
-    return () => { document.querySelector(SEL)?.remove(); };
-  }, [products.length, loading]);
+    return () => {
+      document.querySelectorAll(ADDED_SEL).forEach((m) => m.remove());
+      restoreDefaultRobots();
+    };
+  }, [products.length, loading, isKnownSlug]);
 
 
   // Redirect if no slug
@@ -339,7 +378,7 @@ export default function CategoryPage() {
                 {config?.description}
               </p>
               <p className="mt-2 text-xs" style={{ color: '#1e3a2a' }}>
-                For laboratory research use only · MHRA compliant · Not for human use
+                For laboratory research use only · Not evaluated by the MHRA · Not for human use
               </p>
             </div>
           </div>
@@ -428,8 +467,14 @@ export default function CategoryPage() {
               >
                 <FlaskConical className="w-7 h-7 opacity-20" />
               </div>
-              <p className="text-lg font-semibold mb-2" style={{ color: '#c8dff5' }}>No products in this category yet</p>
-              <p className="text-sm mb-6" style={{ color: '#3a5a82' }}>Check back soon or browse the full catalogue</p>
+              <p className="text-lg font-semibold mb-2" style={{ color: '#c8dff5' }}>
+                {isKnownSlug ? 'No products in this category yet' : 'Category not found'}
+              </p>
+              <p className="text-sm mb-6" style={{ color: '#3a5a82' }}>
+                {isKnownSlug
+                  ? 'Check back soon or browse the full catalogue'
+                  : 'This category does not exist — browse the full catalogue'}
+              </p>
               <Link
                 to="/products"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"

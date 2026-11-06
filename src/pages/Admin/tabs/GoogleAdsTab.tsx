@@ -8,6 +8,13 @@ import {
 } from '@/lib/google-ads-campaign';
 import { pushCampaignToGoogleAds } from '@/lib/google-ads-push.functions';
 import { auth } from '@/lib/firebase';
+import {
+  ADS_BACKUP_TAKEN_AT,
+  ADS_BACKUP_CUSTOMER_ID,
+  ADS_CAMPAIGN_BACKUP,
+  ADS_CONVERSION_BACKUP,
+  ADS_GOAL_BACKUP,
+} from '@/data/google-ads-conversion-backup';
 
 
 function download(filename: string, content: string, mime = 'text/csv') {
@@ -253,6 +260,88 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
   );
 }
 
+function ConversionBackupPanel() {
+  const [open, setOpen] = useState(false);
+  const json = useMemo(
+    () =>
+      JSON.stringify(
+        {
+          takenAt: ADS_BACKUP_TAKEN_AT,
+          customerId: ADS_BACKUP_CUSTOMER_ID,
+          campaign: ADS_CAMPAIGN_BACKUP,
+          conversionActions: ADS_CONVERSION_BACKUP,
+          accountGoals: ADS_GOAL_BACKUP,
+        },
+        null,
+        2,
+      ),
+    [],
+  );
+
+  return (
+    <div className="mb-6 rounded-lg border-2 border-amber-700 bg-amber-950/40 p-4 text-sm text-amber-100">
+      <div className="font-semibold text-white mb-1">
+        🛟 Conversion settings backup — {new Date(ADS_BACKUP_TAKEN_AT).toLocaleString('en-GB')}
+      </div>
+      <p className="text-amber-200/90">
+        Snapshot of the Google Ads conversion setup taken <strong>before</strong> the conversion
+        clean-up (account {ADS_BACKUP_CUSTOMER_ID}). To roll back, re-apply the
+        primary / include-in-conversions flags and the biddable goals listed here.
+      </p>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="min-h-[48px] rounded-lg border-2 border-slate-600 bg-slate-800 px-4 text-white"
+          aria-expanded={open}
+        >
+          {open ? 'Hide backup' : 'Show backup'}
+        </button>
+        <button
+          type="button"
+          onClick={() => download('google-ads-conversion-backup.json', json, 'application/json')}
+          className="min-h-[48px] rounded-lg border-2 border-slate-600 bg-slate-800 px-4 text-white"
+        >
+          Download JSON
+        </button>
+      </div>
+
+      {open && (
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead className="text-amber-300">
+              <tr>
+                <th className="text-left py-1 pr-3">Conversion action</th>
+                <th className="text-left py-1 pr-3">Category</th>
+                <th className="text-left py-1 pr-3">Primary</th>
+                <th className="text-left py-1">Counted</th>
+              </tr>
+            </thead>
+            <tbody className="text-slate-200">
+              {ADS_CONVERSION_BACKUP.map((a) => (
+                <tr key={a.id} className="border-t border-slate-700">
+                  <td className="py-1 pr-3">{a.name}</td>
+                  <td className="py-1 pr-3">{a.category}</td>
+                  <td className="py-1 pr-3">{a.primaryForGoal ? 'yes' : 'no'}</td>
+                  <td className="py-1">{a.includeInConversionsMetric ? 'yes' : 'no'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="mt-3 font-semibold text-white">Account goals Google bid on</div>
+          <ul className="list-disc list-inside text-slate-200">
+            {ADS_GOAL_BACKUP.filter((g) => g.biddable).map((g) => (
+              <li key={g.goal}>{g.goal}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function GoogleAdsTab() {
   const allScan = CAMPAIGNS.map(scanCampaign);
   const allClean = allScan.every((s) => s.ok);
@@ -270,6 +359,9 @@ export default function GoogleAdsTab() {
           <span className="text-amber-300">Note: <code>/research</code> is the research information hub and is intentionally excluded from paid campaigns.</span>
         </p>
       </header>
+
+      <ConversionBackupPanel />
+
 
       <div className="mb-4 rounded-lg border-2 border-blue-700 bg-blue-950 p-3 text-sm text-blue-200">
         <strong>ℹ️ Search-only — no Merchant Center</strong>{' '}

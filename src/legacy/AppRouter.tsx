@@ -62,6 +62,11 @@ const Install = lazyWithRetry(() => import('@/pages/Install'));
 const RequestCatalog = lazyWithRetry(() => import('@/pages/RequestCatalog'));
 const CategoryPage = lazyWithRetry(() => import('@/pages/CategoryPage'));
 const PrivacyRequests = lazyWithRetry(() => import('@/pages/PrivacyRequests'));
+// Public lab-test verification page — shared with the TanStack route
+// `src/routes/verify.tsx` so a client-side nav to /verify does not 404.
+const VerifyLazy = lazyWithRetry(() =>
+  import('@/routes/verify').then((m) => ({ default: m.VerifyPage })),
+);
 
 
 // Minimal spinner shown while lazy chunks load.
@@ -147,6 +152,9 @@ const routes = [
   // shop Layout during emergency CSR boot so it never falls through to 404
   // or renders a duplicate storefront header.
   { path: '/compound', element: <PremiumLanding eyebrow="UK Laboratory Supply" /> },
+  // /landingad (Google Ads copy of /compound) — same deal: without this entry
+  // the legacy router falls through to <NotFound /> during emergency CSR boot.
+  { path: '/landingad', element: <PremiumLanding eyebrow="UK Laboratory Supply" /> },
   // /uk-research-store is an SSR-first landing page (own <main>, own SEO
   // head). Registered here too so the legacy client-side router does NOT
   // fall through to <NotFound /> after hydration on that path.
@@ -185,6 +193,7 @@ const routes = [
       { path: 'privacy-requests',  element: <PrivacyRequests /> },
       { path: 'payment',           element: <Payment /> },
       { path: 'checkout',           element: <Checkout /> },
+      { path: 'cart',              element: <Navigate to="/checkout" replace /> },
       { path: 'landing/peptides',  element: <Navigate to="/products" replace /> },
       { path: 'landing/:slug',     element: <LandingPage /> },
       { path: 'lp/:slug',          element: <CampaignLanding /> },
@@ -196,6 +205,7 @@ const routes = [
       { path: 'research',          element: <Research /> },
       { path: 'install',           element: <Install /> },
       { path: 'request-catalog',   element: <RequestCatalog /> },
+      { path: 'verify',            element: <VerifyLazy /> },
       { path: '*',                 element: <NotFound /> },
     ],
   },

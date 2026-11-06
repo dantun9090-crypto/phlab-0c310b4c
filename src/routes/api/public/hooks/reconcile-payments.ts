@@ -5,7 +5,7 @@
  * Auth: `x-cron-secret: ${CRON_SECRET}` header (constant-time compare).
  *
  * Called every 5 minutes by the `wallid-reconcile.yml` GitHub Actions
- * workflow. Two responsibilities:
+ * workflow. Three responsibilities:
  *
  *   1. Drain `retryQueue` — events the webhook failed to fully apply.
  *      For each ready item (nextAttemptAt <= now, attemptCount < 5):
@@ -20,6 +20,12 @@
  *   2. Stuck-order sweep — orders still `pending`/`pending_payment` after
  *      30 minutes with no lastWebhookAt/lastReconciledAt. Poll Wallid
  *      directly and, if it reports a terminal state, apply it.
+ *
+ *   3. GA4 MP purchase backfill — paid Wallid orders >2h old (max 72h)
+ *      with no client-side purchase confirmation get one server-side GA4
+ *      Measurement Protocol purchase, backdated to paidAt. Dedup markers:
+ *      gaClientPurchaseAt / gaMpPurchaseAt. Requires GA4_MP_API_SECRET.
+ *      See lib/server/ga-measurement.ts.
  *
  * Idempotent by construction: same api_payment_id keys the retryQueue row
  * and the Supabase `wallid_webhook_events.event_id` UNIQUE index still
@@ -129,13 +135,18 @@ async function maybeSendPendingReminder(
     ``,
     `— PH Labs`,
   ].join("\n");
+  const escHtml = (v: unknown) =>
+    String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
+  const firstNameHtml = escHtml(firstName);
+  const refHtml = escHtml(ref);
+  const linkHtml = escHtml(link);
   const html = `<!doctype html><html><body style="margin:0;background:#0b1220;padding:24px;font-family:Arial,Helvetica,sans-serif;color:#e5e7eb">
   <div style="max-width:520px;margin:0 auto;background:#0f1d33;border:1px solid rgba(16,185,129,.25);border-radius:12px;padding:28px">
     <h1 style="margin:0 0 12px;font-size:18px;color:#fff">Payment still pending</h1>
-    <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#cbd5e1">Hi ${firstName},</p>
-    <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#cbd5e1">Your order <strong style="color:#fff">${ref}</strong> is reserved, but your bank hasn't confirmed the payment yet.</p>
+    <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#cbd5e1">Hi ${firstNameHtml},</p>
+    <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#cbd5e1">Your order <strong style="color:#fff">${refHtml}</strong> is reserved, but your bank hasn't confirmed the payment yet.</p>
     <p style="margin:0 0 18px;font-size:14px;line-height:1.6;color:#cbd5e1">If your bank app didn't redirect you back to the shop, that's fine — check the live status here:</p>
-    <p style="margin:0 0 18px"><a href="${link}" style="display:inline-block;background:#059669;color:#fff;text-decoration:none;font-size:14px;font-weight:bold;padding:12px 22px;border-radius:8px">Check order status</a></p>
+    <p style="margin:0 0 18px"><a href="${linkHtml}" style="display:inline-block;background:#059669;color:#fff;text-decoration:none;font-size:14px;font-weight:bold;padding:12px 22px;border-radius:8px">Check order status</a></p>
     <p style="margin:0 0 8px;font-size:12px;line-height:1.6;color:#94a3b8">Already paid in the app? The page confirms automatically within a few minutes.<br/>Changed your mind? Just ignore this email — unpaid reservations expire automatically.</p>
     <p style="margin:16px 0 0;font-size:12px;color:#64748b">— PH Labs</p>
   </div>
@@ -192,19 +203,37 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
         new Response("Method Not Allowed", { status: 405, headers: NO_STORE_HEADERS }),
       POST: async ({ request }) => {
         // ---- auth ---------------------------------------------------
-        const expected = process.env.CRON_SECRET || "";
+        // Accept EITHER shared secret: the GitHub Actions workflow uses
+        // CRON_SECRET, the database scheduler uses RECONCILE_CRON_SECRET.
+        // Rejecting one of them silently disables that scheduler and leaves
+        // paid orders stuck on pending.
+        const candidates = [
+          process.env.CRON_SECRET || "",
+          process.env.RECONCILE_CRON_SECRET || "",
+        ].filter((s) => s.length > 0);
         const provided = request.headers.get("x-cron-secret") || "";
-        if (!expected || provided.length !== expected.length) {
-          return json({ error: "forbidden" }, 403);
-        }
-        // constant-time compare
-        let diff = 0;
-        for (let i = 0; i < expected.length; i++) {
-          diff |= expected.charCodeAt(i) ^ provided.charCodeAt(i);
-        }
-        if (diff !== 0) return json({ error: "forbidden" }, 403);
+        const ok =
+          provided.length > 0 &&
+          candidates.some((expected) => {
+            if (provided.length !== expected.length) return false;
+            let diff = 0;
+            for (let i = 0; i < expected.length; i++) {
+              diff |= expected.charCodeAt(i) ^ provided.charCodeAt(i);
+            }
+            return diff === 0;
+          });
+        if (!ok) return json({ error: "forbidden" }, 403);
 
-        const results = { processed: 0, failed: 0, skipped: 0, conflicts: 0, stuck: 0 };
+        const results = {
+          processed: 0,
+          failed: 0,
+          skipped: 0,
+          conflicts: 0,
+          stuck: 0,
+          mpBackfill: 0,
+          flagged: 0,
+        };
+
 
         const [{ listDocsAdmin, updateDocAdmin, transitionDocStatusAdmin }, reliability] =
           await Promise.all([
@@ -407,30 +436,101 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
         // the payment but our webhook never landed (network, edge cold
         // start, signature drift, etc.). 3-minute cutoff so recovery
         // happens within ~5-8 min of the customer paying, not 30+.
+        //
+        // Sweep rules (2026-09 hardening — orders were sitting pending for
+        // hours until the customer emailed):
+        //   - every unsettled status is swept, not just `pending_payment`
+        //     (`pending`, `awaiting_payment`, `processing_payment` too),
+        //   - NEWEST FIRST inside a 14-day window, so a pile of old
+        //     abandoned reservations can never starve a fresh paid order
+        //     out of the per-tick budget,
+        //   - orders with no resolvable Wallid payment id are flagged
+        //     (`needsPaymentCheck`) instead of being silently skipped, so
+        //     Admin → Payment triage surfaces them.
         try {
           const cutoff = new Date(Date.now() - 3 * 60_000);
-          const stuck = await listDocsAdmin("orders", {
-            orderBy: "createdAt",
-            direction: "ASCENDING",
-            limit: 20,
-            where: { field: "status", op: "EQUAL", value: "pending_payment" },
-            rangeFilter: { field: "createdAt", lte: cutoff },
-          });
+          const horizon = new Date(Date.now() - 14 * 24 * 60 * 60_000);
+          const UNSETTLED_STATUSES = [
+            "pending_payment",
+            "pending",
+            "awaiting_payment",
+            "processing_payment",
+          ];
+          const seen = new Set<string>();
+          const stuck: Array<Record<string, unknown> & { id: string }> = [];
+          for (const st of UNSETTLED_STATUSES) {
+            let rows: Array<Record<string, unknown> & { id: string }> = [];
+            try {
+              rows = (await listDocsAdmin("orders", {
+                orderBy: "createdAt",
+                direction: "DESCENDING",
+                limit: 25,
+                where: { field: "status", op: "EQUAL", value: st },
+                rangeFilter: { field: "createdAt", gte: horizon, lte: cutoff },
+              })) as Array<Record<string, unknown> & { id: string }>;
+            } catch (e) {
+              console.warn(`[reconcile] sweep query failed for ${st}:`, e instanceof Error ? e.message : e);
+            }
+            for (const r of rows) {
+              const id = String(r.id);
+              if (seen.has(id)) continue;
+              seen.add(id);
+              stuck.push(r);
+            }
+          }
 
           for (const order of stuck) {
             const orderId = String(order.id);
-            let apiPaymentId =
-              String((order as { paymentRef?: string; apiPaymentId?: string }).paymentRef ||
-                (order as { apiPaymentId?: string }).apiPaymentId || "");
-            // Order doc may not have paymentRef yet if the webhook
-            // never ran — look it up from wallid_payments by order_id.
+            // BrokkrPay orders are reconciled by their own sweep (2b) —
+            // never poll Wallid or flag them here.
+            if (String((order as { paymentProvider?: unknown }).paymentProvider ?? "") === "brokkrpay") {
+              continue;
+            }
+            const o = order as {
+              paymentRef?: string;
+              apiPaymentId?: string;
+              wallidApiPaymentId?: string;
+            };
+            // IMPORTANT: paymentRef holds the INTERNAL order number (it is
+            // the bank narrative reference), never Wallid's api_payment_id.
+            // Polling Wallid with it returns 404 "payment not found", which
+            // used to leave paid orders stuck on pending forever.
+            let apiPaymentId = String(
+              o.wallidApiPaymentId || o.apiPaymentId || "",
+            );
+            if (apiPaymentId === orderId) apiPaymentId = "";
+            // Nothing on the doc yet (webhook never ran) — look it up from
+            // wallid_payments by order_id.
             let returnToken: string | null = null;
             if (!apiPaymentId) {
               const lookedUp = await lookupApiPaymentIdForOrder(orderId);
               apiPaymentId = lookedUp?.apiPaymentId || "";
               returnToken = lookedUp?.returnToken ?? null;
             }
-            if (!apiPaymentId) continue;
+
+            if (!apiPaymentId) {
+              // No provider reference anywhere: the create call itself never
+              // landed (or this is a manual/Tide order). Still nudge the
+              // customer once, and flag it so it shows up in admin rather
+              // than disappearing until someone complains.
+              await maybeSendPendingReminder(order, returnToken).catch((e) =>
+                console.warn(`[reconcile] reminder failed for ${orderId}:`, e instanceof Error ? e.message : e),
+              );
+              if (!(order as { needsPaymentCheck?: unknown }).needsPaymentCheck) {
+                try {
+                  await updateDocAdmin("orders", orderId, {
+                    needsPaymentCheck: true,
+                    needsPaymentCheckAt: new Date(),
+                    needsPaymentCheckReason: "No provider payment reference found for unsettled order",
+                  });
+                  results.flagged += 1;
+                } catch (e) {
+                  console.warn(`[reconcile] flag failed for ${orderId}:`, e instanceof Error ? e.message : e);
+                }
+              }
+              continue;
+            }
+
 
             const providerStatus = await queryWallidPaymentStatus(apiPaymentId);
             if (!providerStatus || providerStatus.toLowerCase() === "pending") {
@@ -504,6 +604,183 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
           console.warn("[reconcile] stuck-order sweep failed:", e);
         }
 
+        // ---- 2b) BrokkrPay stuck-order sweep -----------------------
+        // A BrokkrPay order whose webhook never arrived used to sit on
+        // `pending` forever. Poll the operator for `pending` brokkrpay
+        // orders older than 30 min and apply the state with the SAME
+        // allow-lists as the webhook (allowFromFor).
+        try {
+          const { getBrokkrPayOrder, isBrokkrPayConfigured } = await import("@/lib/brokkrpay.server");
+          const { allowFromFor } = await import("@/lib/payment-transitions");
+          if (isBrokkrPayConfigured()) {
+            const cutoff = new Date(Date.now() - 30 * 60_000);
+            const horizon = new Date(Date.now() - 14 * 24 * 60 * 60_000);
+            const rows = (await listDocsAdmin("orders", {
+              orderBy: "createdAt",
+              direction: "DESCENDING",
+              limit: 50,
+              where: { field: "status", op: "EQUAL", value: "pending" },
+              rangeFilter: { field: "createdAt", gte: horizon, lte: cutoff },
+            })) as Array<Record<string, unknown> & { id: string }>;
+            const brokkr = rows.filter((r) => String(r.paymentProvider ?? "") === "brokkrpay").slice(0, 20);
+
+            for (const order of brokkr) {
+              const orderId = String(order.id);
+              const brokkrOrderId = String(order.brokkrpayOrderId ?? "");
+              if (!brokkrOrderId) continue;
+              let state = "";
+              try {
+                const bo = await getBrokkrPayOrder(brokkrOrderId);
+                state = String(bo?.state ?? "").toUpperCase();
+              } catch (e) {
+                console.warn(`[reconcile] BrokkrPay getOrder failed for ${orderId}:`, e instanceof Error ? e.message : e);
+                continue;
+              }
+
+              if (state === "FROZEN") {
+                if (!order.paymentNeedsReview) {
+                  await updateDocAdmin("orders", orderId, {
+                    brokkrpayState: state,
+                    paymentNeedsReview: true,
+                    paymentFailureReason: "BrokkrPay order frozen — manual review required",
+                    lastReconciledAt: new Date(),
+                    paymentUpdatedAt: new Date(),
+                  }).catch(() => undefined);
+                  results.flagged += 1;
+                }
+                continue;
+              }
+
+              const mapped =
+                state === "SUCCESS" ? "paid"
+                : state === "FAILED" ? "failed"
+                : state === "CANCELLED" ? "cancelled"
+                : null;
+              if (!mapped) continue; // PENDING / PROCESSING / unknown — wait
+
+              const { transitioned, prior } = await transitionDocStatusAdmin("orders", orderId, {
+                allowFrom: allowFromFor(mapped),
+                updates: {
+                  status: mapped,
+                  paymentProvider: "brokkrpay",
+                  brokkrpayOrderId: brokkrOrderId,
+                  brokkrpayState: state,
+                  lastReconciledAt: new Date(),
+                  paymentUpdatedAt: new Date(),
+                  ...(mapped === "paid" ? { paidAt: new Date() } : {}),
+                  ...(mapped === "cancelled" ? { cancelledAt: new Date() } : {}),
+                  paymentTokenHash: null,
+                },
+              });
+              if (!transitioned) continue;
+
+              await reliability.writePaymentTimelineAdmin(orderId, {
+                actor: "cron_job",
+                eventType: "reconciliation_run",
+                statusFrom: "pending",
+                statusTo: mapped,
+                metadata: { reason: "BrokkrPay webhook missing — polled operator", brokkrOrderId, state },
+              });
+
+              if (mapped === "paid" && prior) {
+                const customerObj = (prior.customer as Record<string, unknown> | undefined) || {};
+                const to = String(prior.customerEmail ?? prior.email ?? customerObj.email ?? "");
+                if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
+                  try {
+                    const { paymentConfirmedEmail } = await import("@/templates/paymentConfirmedEmail");
+                    const firstName =
+                      String(
+                        (prior.firstName as string) ||
+                          (customerObj.firstName as string) ||
+                          (prior.customerName as string) ||
+                          "",
+                      ).split(" ")[0] || "there";
+                    const { subject, html, text } = paymentConfirmedEmail({
+                      firstName,
+                      orderNumber: String(prior.orderNumber ?? orderId),
+                      amount: Number((prior.totalAmount as number) ?? (prior.total as number) ?? 0),
+                      paymentMethod: "Card (BrokkrPay)",
+                      paidAt: new Date(),
+                    });
+                    const { enqueueMailOnce } = await import("@/lib/server/enqueue-mail");
+                    // Same dedup key as the webhook — never a double email.
+                    await enqueueMailOnce(`payment-confirmed:${orderId}`, {
+                      to,
+                      message: { subject, html, text },
+                      source: "brokkrpay:reconcile",
+                    });
+                  } catch (mailErr) {
+                    console.warn("[reconcile] BrokkrPay confirmation email failed:", mailErr instanceof Error ? mailErr.message : mailErr);
+                  }
+                }
+              }
+
+              results.stuck += 1;
+              results.processed += 1;
+            }
+          }
+        } catch (e) {
+          console.warn("[reconcile] BrokkrPay sweep failed:", e instanceof Error ? e.message : e);
+        }
+
+
+        // ---- 3) GA4 Measurement Protocol purchase backfill ------------
+        // The browser fires the GA4/Ads purchase event on /checkout/success,
+        // but bank-app redirects sometimes strand the customer — they pay and
+        // never return, so no client event ever fires (2026-08: 30 days of
+        // Wallid sales with zero recorded conversions). Sweep paid Wallid
+        // orders older than 2h (GA4 MP accepts backdated events up to 72h)
+        // and send ONE server-side purchase when the client never confirmed.
+        //
+        // Dedup markers on the order doc (either suppresses the backfill):
+        //   gaClientPurchaseAt — /api/payments/status handed the tracking
+        //     payload to a verified owner, or the success page acked it.
+        //   gaMpPurchaseAt     — this sweep already sent the MP event.
+        // Only paymentProvider==="wallid" orders qualify (bank_transfer
+        // orders fire client-side at checkout time by design).
+        try {
+          const mpCutoff = new Date(Date.now() - 2 * 60 * 60_000);
+          const mpHorizon = new Date(Date.now() - 72 * 60 * 60_000);
+          const candidates = await listDocsAdmin("orders", {
+            orderBy: "paidAt",
+            direction: "DESCENDING",
+            limit: 200,
+            rangeFilter: { field: "paidAt", gte: mpHorizon, lte: mpCutoff },
+          });
+          // Any post-payment status counts — orders move on to processing /
+          // shipped / delivered quickly, so requiring status==="paid" here
+          // silently skipped almost every real sale.
+          const PAID_STATUSES = new Set([
+            "paid",
+            "processing",
+            "shipped",
+            "delivered",
+            "completed",
+          ]);
+          const eligible = candidates.filter((order) => {
+            if (!PAID_STATUSES.has(String(order.status ?? "").toLowerCase())) return false;
+            const prov = String((order as { paymentProvider?: unknown }).paymentProvider ?? "").toLowerCase();
+            if (prov !== "wallid" && prov !== "peptidepay") return false;
+            if ((order as { gaClientPurchaseAt?: unknown }).gaClientPurchaseAt) return false;
+            if ((order as { gaMpPurchaseAt?: unknown }).gaMpPurchaseAt) return false;
+            return true;
+          });
+          console.info(
+            `[reconcile] GA4 MP backfill: scanned=${candidates.length} eligible=${eligible.length} secretSet=${Boolean(process.env.GA4_MP_API_SECRET)}`,
+          );
+          for (const order of eligible) {
+            const orderId = String(order.id);
+            const { sendGa4MpPurchase } = await import("@/lib/server/ga-measurement");
+            const sent = await sendGa4MpPurchase(orderId, order);
+            if (sent) {
+              await updateDocAdmin("orders", orderId, { gaMpPurchaseAt: new Date() });
+              results.mpBackfill += 1;
+            }
+          }
+          console.info(`[reconcile] GA4 MP backfill: sent=${results.mpBackfill}/${eligible.length}`);
+        } catch (e) {
+          console.warn("[reconcile] GA4 MP backfill failed:", e instanceof Error ? e.message : e);
+        }
 
         return json({ ok: true, ...results });
       },

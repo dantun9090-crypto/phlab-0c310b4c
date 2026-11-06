@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 
 const PROMO_CODES = [
   { code: "SALE5", label: "5% off · min £20" },
-  { code: "SALE10", label: "10% off · min £80 · free 3ml vial case 🎁" },
+  { code: "SALE10", label: "10% off all products 🎁" },
 ] as const;
 const PROMO_HEADLINE = "Launch promo — save on your research order";
 const DISMISS_KEY = "phl_landing_promo_dismissed_v2";
@@ -117,7 +117,9 @@ export function LandingPromoStrip({ theme = "dark" }: Props) {
             <button
               type="button"
               onClick={() => copy(code)}
-              aria-label={`Copy promo code ${code}`}
+              aria-label={
+                copiedCode === code ? `${code} Copied` : `${code} Copy promo code`
+              }
               className={`inline-flex items-center gap-2 rounded-md border px-2.5 py-1 font-mono text-[12px] tracking-[0.18em] uppercase transition-colors ${codeBox}`}
             >
               {code}

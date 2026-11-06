@@ -44,6 +44,8 @@ export default function Login() {
   const [resetSent, setResetSent] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError] = useState('');
+  // Short cooldown so a customer can ask for a second link without spamming.
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [settings, setSettings] = useState<SiteSettings>({});
   const redirectTarget = (() => {
     const value = new URLSearchParams(location.search).get('redirect') || '/account';
@@ -174,8 +176,15 @@ export default function Login() {
 
 
 
-  const handleReset = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Tick the resend cooldown down to zero.
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
+
+  const handleReset = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     setResetError('');
     setResetLoading(true);
     try {
@@ -186,15 +195,28 @@ export default function Login() {
       const result = await requestPasswordReset({ data: { email: resetEmail.trim() } });
       if (result?.throttled) {
         setResetError('Too many reset requests from your network. Try again in 15 minutes.');
+      } else if (result?.ok === false) {
+        // Server-side send failed — retry from the browser, where the Firebase
+        // web API key referrer restriction is satisfied.
+        const { auth, sendPasswordResetEmail } = await import('@/lib/firebase');
+        try {
+          await sendPasswordResetEmail(auth, resetEmail.trim());
+        } catch (err: any) {
+          if (err?.code !== 'auth/user-not-found') throw err;
+        }
+        setResetSent(true);
+        setResendCooldown(30);
       } else {
         // Generic success message — never reveal whether the address is registered.
         setResetSent(true);
+        setResendCooldown(30);
       }
     } catch {
       setResetError('Unable to send reset email right now. Please try again later.');
     } finally {
       setResetLoading(false);
     }
+
   };
 
   const shareUrl = encodeURIComponent(window.location.origin);

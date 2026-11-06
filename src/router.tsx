@@ -2,7 +2,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
-function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function DefaultErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   console.error("[ROUTER DEFAULT ERROR]", error);
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 text-foreground">

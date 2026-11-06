@@ -11,8 +11,10 @@
  * NEVER import this file from client code.
  */
 import { z } from 'zod';
+import { validateUkAddressLine } from './uk-address';
+import { computeBundleDiscount } from './bundle-discount';
 import { runValidateCart, type ValidateCartResult } from './cart-validation.server';
-import { addDocAdmin, getDocAdmin, updateDocAdmin } from './server/firestore-admin';
+import { addDocAdmin, adjustProductStockAdmin, getDocAdmin, updateDocAdmin } from './server/firestore-admin';
 import { verifyFirebaseIdToken } from './server/firebase-auth-admin';
 import { invalidateProductCacheFromServer } from './server/cache-invalidation';
 import {
@@ -57,11 +59,19 @@ const customerSchema = z.object({
   city:      z.string().trim().min(1).max(80),
   postcode:  z.string().trim().min(1).max(20),
   country:   z.string().trim().min(1).max(80),
+  /** Explicit "named property, no house number" confirmation from the shopper. */
+  addressNoHouseNumber: z.boolean().optional().default(false),
 }).superRefine((c, ctx) => {
   const pc = normalisePostcode(c.postcode);
   if (c.country === 'United Kingdom') {
     if (!UK_POSTCODE_RE.test(pc)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['postcode'], message: 'Enter a valid UK postcode' });
+    }
+    // Royal Mail cannot label "High Street, London" — a house number (or an
+    // explicitly confirmed named property) is mandatory.
+    const addressError = validateUkAddressLine(c.address, c.addressNoHouseNumber);
+    if (addressError) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['address'], message: addressError });
     }
   } else if (c.country === 'Germany') {
     if (!DE_POSTCODE_RE.test(pc)) {
@@ -86,16 +96,37 @@ const customerSchema = z.object({
   }
 });
 
+// Ad click IDs (gclid/gbraid/wbraid) captured from the landing-page URL by
+// src/lib/gclid-capture.ts. They live in the query string, not cookies, so
+// they are available even when the visitor declines marketing cookies —
+// the server-side Google Ads offline conversion import (CSV feed at
+// /api/public/hooks/offline-conversions) uses them to attribute those
+// sales. Strict shape: these strings end up in a feed fetched by Google.
+const clickIdValue = z.string().regex(/^[A-Za-z0-9_.\-~]{10,500}$/);
+const adClickIdsSchema = z.object({
+  gclid: clickIdValue.optional(),
+  gbraid: clickIdValue.optional(),
+  wbraid: clickIdValue.optional(),
+  capturedAt: z.string().max(40).optional(),
+}).optional().nullable();
+
 export const createOrderInputSchema = z.object({
   items: z.array(itemSchema).min(1).max(50),
   customer: customerSchema,
   shippingMethod: z.enum(['standard', 'next_day_12']),
-  paymentMethod: z.enum(['bank_transfer', 'pay_by_bank', 'wallid']),
+  paymentMethod: z.enum(['bank_transfer', 'pay_by_bank', 'wallid', 'peptidepay', 'brokkrpay', 'nowpayments', 'tide']),
   ageVerified: z.literal(true),
   termsAccepted: z.literal(true),
   couponCode: z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/).optional().nullable(),
   customerNote: z.string().trim().max(500).optional().nullable(),
   idToken: z.string().min(1).max(4096).optional().nullable(),
+  adClickIds: adClickIdsSchema,
+  /**
+   * Reference reserved on the client for Tide payments (shown in the QR panel
+   * before the order exists so the customer can type it into their bank's
+   * reference field). Only honoured for `paymentMethod: 'tide'`.
+   */
+  clientReference: z.string().regex(/^INV-\d{4}-[A-Z0-9]{6,12}$/).optional().nullable(),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderInputSchema>;
@@ -105,11 +136,23 @@ export interface CreateOrderResult {
   orderId: string;
   bankTransferReference: string;
   subtotal: number;
+  /** Coupon discount + bundle discount (the total taken off the subtotal). */
   discount: number;
+  couponDiscount: number;
+  bundleDiscount: number;
+  bundlePercent: number;
   shippingCost: number;
   totalAmount: number;
   couponCode: string | null;
   paymentToken: string | null;
+}
+
+/** Short random suffix so two orders placed in the same millisecond never collide. */
+function orderIdSuffix(len = 3): string {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const bytes = new Uint8Array(len);
+  globalThis.crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => alphabet[b % alphabet.length]).join('');
 }
 
 function createPaymentToken(): string {
@@ -124,6 +167,12 @@ async function hashPaymentToken(token: string): Promise<string> {
 }
 
 export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrderResult> {
+  // Admin "pause checkout" switch (site_config/checkoutPause).
+  const pauseDoc = await getDocAdmin('site_config', 'checkoutPause').catch(() => null);
+  if (pauseDoc?.paused === true) {
+    throw new Error('Checkout is temporarily unavailable. Please try again later.');
+  }
+
   // ── Sync contract with the Checkout UI ─────────────────────────────
   // The UI in src/pages/Checkout/index.tsx hides `next_day_12` when EITHER
   //   (a) `country !== 'United Kingdom'`  (isUkAddress === false), OR
@@ -180,7 +229,14 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
   const baseCost = isFreeShipping ? 0 : baseShipping;
   const shippingDisc = (isNextDay || isEuInternational) ? 0 : validation.shippingDiscount;
   const shippingCost = +Math.max(0, baseCost - shippingDisc).toFixed(2);
-  const totalAmount  = +Math.max(0, validation.subtotal - validation.discount + shippingCost).toFixed(2);
+
+  // Tiered bundle discount (2 units −5%, 3+ units −10%), computed from the
+  // SERVER-validated quantities and subtotal only. Never combined with a
+  // coupon discount (e.g. SALE11) — see src/lib/bundle-discount.ts.
+  const bundle = computeBundleDiscount(validation.subtotal, validation.items, validation.discount);
+  const bundleDiscount = bundle.amount;
+  const discountTotal = +Math.min(validation.subtotal, validation.discount + bundleDiscount).toFixed(2);
+  const totalAmount  = +Math.max(0, validation.subtotal - discountTotal + shippingCost).toFixed(2);
 
   // Both guards above already rejected any missed-cutoff next-day request,
   // so this flag is retained only as a defence-in-depth breadcrumb on the
@@ -199,12 +255,68 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
     }
   }
 
-  const orderId = 'PHP-' + Date.now().toString(36).toUpperCase();
-  const btRef = `PHP-${orderId.slice(4)}-BT`;
+  // A registered customer's email typed at guest checkout must NOT transfer
+  // ownership: anyone could type a stranger's address (or a typo) and pin the
+  // order to that account, while the actual buyer loses access to status
+  // polling and the conversion ack. Record the match as a non-authoritative
+  // hint only; ownership stays with the verified id token (or stays guest).
+  let emailLinkCandidateUid: string | null = null;
+  if (!userId) {
+    try {
+      const email = (input.customer?.email || '').trim().toLowerCase();
+      if (email) {
+        const { findDocByFieldAdmin } = await import('@/lib/server/firestore-admin');
+        const match = await findDocByFieldAdmin('customers', 'email', email);
+        const uid = match?.__id;
+        if (typeof uid === 'string' && uid) emailLinkCandidateUid = uid;
+      }
+    } catch {
+      // Non-fatal: order is still created as a guest order.
+    }
+  }
+
+
+
+
+  // Manual bank transfer can be temporarily suspended by an admin kill switch.
+  if (input.paymentMethod === 'bank_transfer') {
+    const { readManualTransferEnabled } = await import('@/lib/manual-transfer-config.server');
+    if (!(await readManualTransferEnabled())) {
+      throw new Error('Manual bank transfer is temporarily unavailable. Please pay by bank.');
+    }
+  }
+
+  const orderId = 'PHP-' + Date.now().toString(36).toUpperCase() + orderIdSuffix();
+  // Manual bank transfer reference — invoice style, e.g. INV-2026-MT32LX6S.
+  // Derived 1:1 from orderId so it is globally unique and the admin invoice
+  // number for the same order always matches this reference exactly.
+  const refYear = new Date().getFullYear();
+  // Tide payments happen on a hosted page before the order exists, so the
+  // client reserves and displays the reference first; honour it verbatim so the
+  // bank narrative matches the stored order.
+  const btRef =
+    input.paymentMethod === 'tide' && input.clientReference
+      ? input.clientReference
+      : `INV-${refYear}-${orderId.replace(/^PHP-/, '')}`;
+
   const nowIso = new Date();
-  const paymentToken = input.paymentMethod === 'wallid' && !userId
-    ? createPaymentToken()
-    : null;
+  // Guest orders get a one-time token so the browser can prove ownership when
+  // polling status and when acking the GA4/Ads purchase conversion. Manual
+  // bank transfer and Tide need it too: without a token the analytics ack is
+  // refused (order is still pending_payment, so the terminal-status
+  // short-circuit doesn't apply), no adsClientConversionAt marker is written,
+  // and the offline gclid CSV import later exports the same purchase again —
+  // double-counting it in Google Ads.
+  const paymentToken =
+    (input.paymentMethod === 'wallid' ||
+      input.paymentMethod === 'peptidepay' ||
+      input.paymentMethod === 'brokkrpay' ||
+      input.paymentMethod === 'nowpayments' ||
+      input.paymentMethod === 'bank_transfer' ||
+      input.paymentMethod === 'tide') && !userId
+      ? createPaymentToken()
+      : null;
+
   const paymentTokenHash = paymentToken ? await hashPaymentToken(paymentToken) : null;
 
   // Rebuild items using server-validated unit prices.
@@ -261,7 +373,11 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
     customerNote: (input.customerNote ?? '').trim() || null,
     items: orderItems,
     subtotal: validation.subtotal,
-    discount: validation.discount,
+    discount: discountTotal,
+    couponDiscount: validation.discount,
+    bundleDiscount,
+    bundlePercent: bundle.percent,
+    bundleUnits: bundle.units,
     couponCode: validation.coupon?.code ?? null,
     shippingCost,
     shippingMethod: input.shippingMethod,
@@ -292,6 +408,16 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
       paymentTokenHash,
       paymentTokenCreatedAt: nowIso,
     } : {}),
+    // Ad click IDs for the offline Google Ads conversion import. Stored on
+    // the order so the CSV feed can attribute consent-declined buyers.
+    ...(input.adClickIds && (input.adClickIds.gclid || input.adClickIds.gbraid || input.adClickIds.wbraid) ? {
+      adClickIds: {
+        ...(input.adClickIds.gclid ? { gclid: input.adClickIds.gclid } : {}),
+        ...(input.adClickIds.gbraid ? { gbraid: input.adClickIds.gbraid } : {}),
+        ...(input.adClickIds.wbraid ? { wbraid: input.adClickIds.wbraid } : {}),
+        capturedAt: input.adClickIds.capturedAt ?? nowIso,
+      },
+    } : {}),
   };
 
   await addDocAdmin('orders', orderData, orderId);
@@ -317,12 +443,18 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
       })),
       bankTransferReference: btRef,
       paymentPending: true,
+      paymentMethod: input.paymentMethod,
     });
     await enqueueMailOnce(`order-received:${orderId}`, {
       to: input.customer.email,
+      // Blind copy so every confirmation is provable from the shop inbox even
+      // when the customer says it never arrived (spam filtering, typo domains).
+      bcc: 'info@phlabs.co.uk',
+      replyTo: 'info@phlabs.co.uk',
       message: mail,
       source: 'order-received',
     });
+
   } catch (err) {
     console.error('[create-order] order-received email failed', {
       orderId,
@@ -353,24 +485,13 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
   const touchedProducts = await Promise.all(
     input.items.map(async (item) => {
       try {
-        const doc = await getDocAdmin('products', item.productId);
-        if (!doc) return null;
-        if (Array.isArray(doc.variants) && doc.variants.length > 0 && item.variantId) {
-          const variants = (doc.variants as Array<Record<string, any>>).map((v) =>
-            v?.id === item.variantId
-              ? { ...v, stock: Math.max(0, Number(v?.stock ?? 0) - item.quantity) }
-              : v,
-          );
-          await updateDocAdmin('products', item.productId, { variants });
-        } else if (typeof doc.stock === 'number') {
-          await updateDocAdmin('products', item.productId, {
-            stock: Math.max(0, doc.stock - item.quantity),
-          });
-        }
-        return {
-          slug: typeof doc.slug === 'string' ? doc.slug : null,
-          category: typeof doc.category === 'string' ? doc.category : null,
-        };
+        // Atomic read-write transaction — two simultaneous orders for the
+        // same variant can no longer lose a decrement (was: plain
+        // read-modify-write with a lost-update race).
+        return await adjustProductStockAdmin(item.productId, {
+          variantId: item.variantId ?? null,
+          quantity: item.quantity,
+        });
       } catch {
         // Swallow — order is already placed, manual reconciliation possible.
         return null;
@@ -396,7 +517,10 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
     orderId,
     bankTransferReference: btRef,
     subtotal: validation.subtotal,
-    discount: validation.discount,
+    discount: discountTotal,
+    couponDiscount: validation.discount,
+    bundleDiscount,
+    bundlePercent: bundle.percent,
     shippingCost,
     totalAmount,
     couponCode: validation.coupon?.code ?? null,

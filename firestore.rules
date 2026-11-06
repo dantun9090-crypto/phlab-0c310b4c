@@ -17,11 +17,21 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/customers/$(request.auth.uid))
         && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.isAdmin == true;
     }
+    // Packing staff: customers/{uid}.staffRole == 'orders'. Server-set only.
+    // May read/update orders (no delete) and send order emails. Nothing else.
+    function isOrdersStaff() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/customers/$(request.auth.uid))
+        && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.staffRole == 'orders';
+    }
     // Prevent users from elevating their own privileges.
     function notTouchingPrivilegedFields() {
-      return !('isAdmin' in request.resource.data.diff(resource.data).affectedKeys())
-          && !('role'    in request.resource.data.diff(resource.data).affectedKeys())
-          && !('isVip'   in request.resource.data.diff(resource.data).affectedKeys());
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+        'isAdmin', 'role', 'isVip', 'staffRole',
+        // Referral / spend fields are server-derived — never self-writable.
+        'referredBy', 'totalSpend', 'referralBalance', 'referralCount',
+        'referralRewardClaimed', 'referralCode'
+      ]);
     }
 
     // ---------- customers ----------
@@ -32,7 +42,8 @@ service cloud.firestore {
       allow create: if isSelf(uid)
                     && !('isAdmin' in request.resource.data)
                     && !('role'    in request.resource.data)
-                    && !('isVip'   in request.resource.data);
+                    && !('isVip'   in request.resource.data)
+                    && !('staffRole' in request.resource.data);
       allow update: if (isSelf(uid) && notTouchingPrivilegedFields()) || isAdmin();
       allow delete: if isAdmin();
     }
@@ -61,15 +72,15 @@ service cloud.firestore {
     }
     match /orders/{orderId} {
       allow create: if false; // server-only — see createOrder server fn
-      allow read:   if isAdmin() || isOrderOwner();
-      allow update: if isAdmin() || (isOrderOwner() && ownerNoteOnlyUpdate());
+      allow read:   if isAdmin() || isOrdersStaff() || isOrderOwner();
+      allow update: if isAdmin() || isOrdersStaff() || (isOrderOwner() && ownerNoteOnlyUpdate());
       allow delete: if isAdmin();
 
       // Payment audit trail — admin panel PaymentTimeline reads via client SDK;
       // server writes bypass rules via service account, but the admin
       // "Force Reconciliation" control also appends here client-side.
       match /paymentTimeline/{eventId} {
-        allow read:   if isAdmin();
+        allow read:   if isAdmin() || isOrdersStaff();
         allow create: if isAdmin();
         allow update, delete: if false;
       }
@@ -195,7 +206,7 @@ service cloud.firestore {
       // by the /api/public/send-mail server route using a service-account
       // credential (which bypasses rules). Client writes are restricted to
       // admins so an attacker cannot use this collection as an open relay.
-      allow create: if isAdmin()
+      allow create: if (isAdmin() || isOrdersStaff())
                     && request.resource.data.to is string
                     && request.resource.data.to.size() > 3
                     && request.resource.data.to.size() < 320
@@ -206,6 +217,32 @@ service cloud.firestore {
                     && request.resource.data.message.html is string
                     && request.resource.data.message.html.size() < 200000;
       allow read, update, delete: if isAdmin();
+    }
+
+    // ---------- contact form enquiries (public create, admin read) ----------
+    // The /contact page persists every enquiry here (durable record; the
+    // email notification goes out separately via /api/public/send-mail).
+    // Anyone may CREATE a validated enquiry; only admins can read. No
+    // client updates or deletes.
+    match /contactMessages/{id} {
+      allow read: if isAdmin();
+      allow create: if request.resource.data.keys().hasOnly(
+                        ['name', 'email', 'subject', 'message', 'createdAt', 'status'])
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.name.size() < 200
+                    && request.resource.data.email is string
+                    && request.resource.data.email.size() > 3
+                    && request.resource.data.email.size() < 320
+                    && request.resource.data.email.matches('.+@.+\\..+')
+                    && request.resource.data.subject is string
+                    && request.resource.data.subject.size() < 300
+                    && request.resource.data.message is string
+                    && request.resource.data.message.size() > 0
+                    && request.resource.data.message.size() < 5000
+                    && request.resource.data.status == 'new'
+                    && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
     }
     match /invoices/{id}        { allow read: if isAdmin(); allow write: if isAdmin(); }
     match /backups/{id}         { allow read: if isAdmin(); allow write: if isAdmin(); }
@@ -289,6 +326,23 @@ service cloud.firestore {
     // rules). Admins read the run history in the Watchdog / Auto-Heal tab.
     // Clients never write.
     match /watchdog_runs/{id} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    // ---------- error events (server-written, admin-read) ----------
+    // Written by /api/public/error-monitor via firebase-admin (bypasses
+    // rules). Admins read them in the Blank Watchdog tab. Clients never
+    // write directly.
+    match /error_events/{id} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    // ---------- cache purge history (server-written, admin-read) ----------
+    // Written by src/lib/cache-admin.functions.ts via firebase-admin.
+    // Admins read it in the Purge Incidents tab. Clients never write.
+    match /cache_purge_history/{id} {
       allow read: if isAdmin();
       allow create, update, delete: if false;
     }
@@ -492,6 +546,21 @@ service cloud.firestore {
     }
 
 
+    // ---------- brokkrpay webhook events (admin-read diagnostic log) ----------
+    // Written exclusively by /api/public/brokkrpay-webhook via the service
+    // account (bypasses rules) after the signature is verified.
+    match /brokkrpay_webhook_events/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ---------- payment_secrets (server-only signing secrets) ----------
+    // Holds the BrokkrPay webhook signing secret. No client — admin included —
+    // may ever read or write this; only the service account touches it.
+    match /payment_secrets/{id} {
+      allow read, write: if false;
+    }
+
     // ---------- fena webhook events (admin-read diagnostic log) ----------
     // Written exclusively by the /api/public/hooks/fena server route via
     // firebase-admin (bypasses rules). Admins read from the Fena tab.
@@ -589,10 +658,45 @@ service cloud.firestore {
     }
 
     match /checkoutTelemetry/{doc} {
-      allow create: if true;  // anonymous users can create telemetry logs
+      // Shape-locked anonymous create (pattern mirrors /cart_events above).
+      allow create: if request.resource.data.keys().hasOnly([
+                         'type', 'sessionId', 'createdAt',
+                         'path', 'source', 'code', 'message', 'extra'
+                       ])
+                    && request.resource.data.keys().hasAll(['type', 'sessionId', 'createdAt'])
+                    && request.resource.data.type is string
+                    && request.resource.data.type.size() > 0
+                    && request.resource.data.type.size() < 64
+                    && request.resource.data.sessionId is string
+                    && request.resource.data.sessionId.size() > 0
+                    && request.resource.data.sessionId.size() < 80
+                    && request.resource.data.createdAt == request.time
+                    && (!('path' in request.resource.data)
+                        || request.resource.data.path == null
+                        || (request.resource.data.path is string
+                            && request.resource.data.path.size() < 320))
+                    && (!('source' in request.resource.data)
+                        || request.resource.data.source == null
+                        || (request.resource.data.source is string
+                            && request.resource.data.source.size() < 200))
+                    && (!('code' in request.resource.data)
+                        || request.resource.data.code == null
+                        || (request.resource.data.code is string
+                            && request.resource.data.code.size() < 100))
+                    && (!('message' in request.resource.data)
+                        || request.resource.data.message == null
+                        || (request.resource.data.message is string
+                            && request.resource.data.message.size() < 500))
+                    && (!('extra' in request.resource.data)
+                        || request.resource.data.extra == null
+                        || (request.resource.data.extra is string
+                            && request.resource.data.extra.size() < 600));
       allow read: if false;   // no one reads directly — only admin via console
       allow update, delete: if false;
     }
+
+    // ---------- admin theme templates (custom, admin-only) ----------
+    match /themeTemplates/{id} { allow read: if isAdmin(); allow write: if isAdmin(); }
 
     // ---------- default deny ----------
 

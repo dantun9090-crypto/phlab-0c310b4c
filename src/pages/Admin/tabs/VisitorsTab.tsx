@@ -3,6 +3,7 @@ import { Users, Eye, Clock, Activity, RefreshCw, CalendarIcon, Download, X, Aler
 import { format, startOfDay, endOfDay, subDays, differenceInDays } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
 import { toast } from 'sonner';
+import { csvSafeCell } from '@/lib/csv-safe';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
 } from 'recharts';
@@ -56,11 +57,7 @@ function fmtDate(ms: number): string {
   return new Date(ms).toLocaleString('en-GB');
 }
 
-function csvEscape(v: unknown): string {
-  const s = v == null ? '' : String(v);
-  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
-}
+const csvEscape = csvSafeCell;
 
 function downloadCsv(filename: string, rows: string[][]): void {
   const csv = rows.map(r => r.map(csvEscape).join(',')).join('\n');

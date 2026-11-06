@@ -4,6 +4,7 @@
  * for the read path and `updateProduct` for the write path. Each row
  * is opt-in with a Preview → Apply flow; nothing changes silently.
  */
+import DOMPurify from 'isomorphic-dompurify';
 import { useEffect, useMemo, useState } from 'react';
 import { Link2, CheckCircle2, AlertCircle, Loader2, Eye } from 'lucide-react';
 import { fetchAllProducts, type SeoProduct } from '@/lib/firestore-rest';
@@ -232,7 +233,7 @@ export default function InternalLinksTab() {
             <div
               className="prose prose-invert prose-sm max-w-none"
               // eslint-disable-next-line react/no-danger -- admin-only preview of admin-authored HTML
-              dangerouslySetInnerHTML={{ __html: preview.html }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(preview.html) }}
             />
           </div>
         </div>

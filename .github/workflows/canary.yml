@@ -33,7 +33,7 @@ jobs:
 
       - name: Restore canary state
         id: state-restore
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: .canary-state
           key: canary-state-v2
@@ -61,7 +61,7 @@ jobs:
 
       - name: Save canary state
         if: always()
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: .canary-state
           key: canary-state-v2-${{ github.run_id }}

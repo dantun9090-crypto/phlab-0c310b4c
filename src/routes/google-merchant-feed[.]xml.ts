@@ -38,8 +38,10 @@ const CURRENCY = "GBP";
  *
  * SETUP (required for the promo badge to render in Google listings):
  *   1. Merchant Center → Marketing → Promotions → "Create promotion".
- *   2. Set "Promotion ID" to exactly `PHL_LAUNCH` (or each ID supplied
- *      via the `MERCHANT_PROMO_IDS` env var, comma-separated).
+ *   2. Set "Promotion ID" to exactly one of the defaults — currently
+ *      `PHL_LAUNCH`, `PHL_LAUNCH2`, `PHL_LAUNCH3`, `SALE10`, `SALE11`
+ *      (or each ID supplied via the `MERCHANT_PROMO_IDS` env var,
+ *      comma-separated). One Merchant Center promotion per ID.
  *   3. Configure offer details (e.g. "10% off", "Free shipping"),
  *      destination = Shopping ads + free listings, country = GB.
  *   4. Submit and wait for review — until "Active", the badge will not
@@ -53,13 +55,13 @@ export const DEFAULT_MERCHANT_PROMO_ID = "PHL_LAUNCH";
 export function getMerchantPromoIds(): string[] {
   const raw = process.env.MERCHANT_PROMO_IDS;
   if (!raw || typeof raw !== "string") {
-    return [DEFAULT_MERCHANT_PROMO_ID, "PHL_LAUNCH2", "PHL_LAUNCH3", "SALE15"];
+    return [DEFAULT_MERCHANT_PROMO_ID, "PHL_LAUNCH2", "PHL_LAUNCH3", "SALE10", "SALE11"];
   }
   const ids = raw
     .split(",")
     .map((s: string) => s.trim())
     .filter((s: string) => s.length > 0);
-  return ids.length > 0 ? ids : [DEFAULT_MERCHANT_PROMO_ID, "PHL_LAUNCH2", "PHL_LAUNCH3", "SALE15"];
+  return ids.length > 0 ? ids : [DEFAULT_MERCHANT_PROMO_ID, "PHL_LAUNCH2", "PHL_LAUNCH3", "SALE10", "SALE11"];
 }
 
 const MERCHANT_PROMO_IDS: string[] = getMerchantPromoIds();
@@ -483,7 +485,10 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             const link = `${BASE_URL}/products/${merchantLinkId}`;
             const price = `${p.price.toFixed(2)} ${CURRENCY}`;
             const availability =
-              typeof p.stock === "number" && p.stock <= 0 ? "out of stock" : "in stock";
+              (p as any).visibility === "out_of_stock" ||
+              (typeof p.stock === "number" && p.stock <= 0)
+                ? "out of stock"
+                : "in stock";
             const sku = (highRisk ? skuCode : (p.sku || skuCode || docId)).trim();
             void p.gtin; // GTIN intentionally omitted — MPN-only per Google policy for lab reagents
 
@@ -587,7 +592,10 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               );
               if (!v || typeof v.price !== "number" || v.price <= 0) return [];
               const availability =
-                typeof v.stock === "number" && v.stock <= 0 ? "out of stock" : "in stock";
+                (p as any).visibility === "out_of_stock" ||
+                (typeof v.stock === "number" && v.stock <= 0)
+                  ? "out of stock"
+                  : "in stock";
               const title = highRisk
                 ? `${displaySku} ${compact} — Lyophilised Analytical Reference Standard ${e.variantName} (RUO) | PH Labs`
                 : `${clean} ${e.variantName} — Analytical Reference Standard | PH Labs`;

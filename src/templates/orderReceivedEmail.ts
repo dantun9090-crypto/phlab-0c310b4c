@@ -18,6 +18,7 @@ import {
   sectionHeading,
   statusBadge,
 } from './emailBase';
+import { TIDE_PAYMENT_URL } from '@/lib/tide';
 
 export interface OrderReceivedEmailParams {
   firstName?: string;
@@ -26,6 +27,9 @@ export interface OrderReceivedEmailParams {
   items?: Array<{ name: string; variantName?: string; quantity: number; total: number }>;
   bankTransferReference?: string;
   paymentPending?: boolean;
+  /** When 'tide', the email carries the Tide payment link + reference so the
+   *  customer can still pay after leaving the confirmation screen. */
+  paymentMethod?: string;
 }
 
 export function orderReceivedEmail(p: OrderReceivedEmailParams): {
@@ -35,6 +39,7 @@ export function orderReceivedEmail(p: OrderReceivedEmailParams): {
 } {
   const subject = `Order received — ${p.orderNumber}`;
   const totalStr = `£${Number(p.totalAmount || 0).toFixed(2)}`;
+  const isTide = p.paymentMethod === 'tide';
 
   const itemRows = (p.items ?? [])
     .map(
@@ -84,6 +89,20 @@ export function orderReceivedEmail(p: OrderReceivedEmailParams): {
            </p>`
         : ''
     }
+    ${
+      isTide
+        ? `<p style="margin:0 0 14px;color:${C.text};font-size:14px;line-height:1.6;font-family:${EMAIL_FONT};">
+             Pay securely via Tide (QR code or Open Banking). When you pay, enter
+             the amount <strong style="color:${C.textBright};">${totalStr}</strong>
+             and this payment reference exactly as shown${
+               p.bankTransferReference
+                 ? `: <strong style="color:${C.textBright};font-family:monospace;">${esc(p.bankTransferReference)}</strong>`
+                 : ''
+             }, so we can match your payment.
+           </p>
+           ${ctaButton('Pay with Tide', TIDE_PAYMENT_URL)}`
+        : ''
+    }
     ${ctaButton('View your order', 'https://phlabs.co.uk/account')}
     ${divider()}
     <p style="margin:0;color:${C.textMuted};font-size:13px;line-height:1.6;font-family:${EMAIL_FONT};">
@@ -108,6 +127,13 @@ export function orderReceivedEmail(p: OrderReceivedEmailParams): {
     ``,
     ...(p.paymentPending
       ? [`We have not received your payment yet — you can pay from https://phlabs.co.uk/account`]
+      : []),
+    ...(isTide
+      ? [
+          `Pay with Tide (QR code or Open Banking): ${TIDE_PAYMENT_URL}`,
+          `Enter amount ${totalStr}${p.bankTransferReference ? ` and reference ${p.bankTransferReference}` : ''} when you pay.`,
+          ``,
+        ]
       : []),
     `View your order: https://phlabs.co.uk/account`,
     `Questions? info@phlabs.co.uk`,

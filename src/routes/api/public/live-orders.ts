@@ -236,9 +236,21 @@ export const Route = createFileRoute('/api/public/live-orders')({
             throw new CodedError(LogCode.MAPPING_FAILED, 'failed to map order rows', { cause: error });
           }
 
-          const orders = mapped
+          // Public, unauthenticated feed: strip anything tied to a real
+          // customer. No name initial, no city, no real order id, no
+          // user hash, time rounded to 5 minutes. Product name only.
+          const orders: LiveOrder[] = mapped
             .filter((order): order is LiveOrder => Boolean(order))
-            .slice(0, limit);
+            .slice(0, limit)
+            .map((o, i) => ({
+              id: `live-${i}-${Math.floor(o.createdAtMs / 300_000)}`,
+              initial: 'A researcher',
+              city: 'the UK',
+              productName: o.productName,
+              productImage: o.productImage,
+              createdAtMs: Math.floor(o.createdAtMs / 300_000) * 300_000,
+              status: o.status,
+            }));
 
           // Debug body — safe by default. Only stage/code/counts/durations/requestId.
           // No raw Firestore data, no field values.

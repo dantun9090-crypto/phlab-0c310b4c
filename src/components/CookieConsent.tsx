@@ -79,7 +79,7 @@ export function CookieConsent() {
       timer = setTimeout(() => {
         if (getCookiePreferences()) return;
         setVisible(true);
-      }, 600);
+      }, 1200);
     };
 
     const isGateBlocking = () => {
@@ -120,24 +120,27 @@ export function CookieConsent() {
     };
   }, []);
 
+  /** Fade the bar out, then unmount once the 300ms transition finishes. */
+  const closeWithFade = () => {
+    setVisible(false);
+    window.setTimeout(() => setDismissed(true), 320);
+  };
+
   const acceptAll = () => {
     savePreferences({ essential: true, analytics: true, marketing: true });
-    setVisible(false);
-    setDismissed(true);
+    closeWithFade();
   };
 
   const rejectAll = () => {
     savePreferences({ essential: true, analytics: false, marketing: false });
     setAnalytics(false);
     setMarketing(false);
-    setVisible(false);
-    setDismissed(true);
+    closeWithFade();
   };
 
   const acceptSelected = () => {
     savePreferences({ essential: true, analytics, marketing });
-    setVisible(false);
-    setDismissed(true);
+    closeWithFade();
   };
 
   // Consent already stored → do not render the banner at all. The footer
@@ -154,16 +157,30 @@ export function CookieConsent() {
       aria-modal="true"
       aria-label="Cookie consent"
     >
-      <div className="w-full sm:max-w-2xl bg-[#0b1a30] border border-white/[0.08] sm:rounded-2xl shadow-2xl shadow-black/60 overflow-hidden">
+      <div className="w-full sm:max-w-3xl bg-[#0b1a30]/95 backdrop-blur-md border border-white/[0.08] sm:rounded-2xl shadow-2xl shadow-black/60 overflow-hidden">
 
-        <div className="flex items-start sm:items-center gap-3 px-4 sm:px-5 py-4 border-b border-white/[0.06]">
-          <div className="w-8 h-8 rounded-lg bg-blue-600/20 flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
-            <Cookie className="w-4 h-4 text-blue-400" />
-          </div>
+        <div className="flex items-start gap-3 px-4 sm:px-5 pt-4 pb-3">
+          {/* Friendly cookie mark */}
+          <span
+            aria-hidden="true"
+            className="w-10 h-10 rounded-full bg-amber-400/15 border border-amber-300/25 flex items-center justify-center shrink-0"
+          >
+            <svg viewBox="0 0 32 32" className="w-6 h-6" role="presentation">
+              <circle cx="16" cy="16" r="12" fill="#d9a15b" />
+              <path d="M16 4a12 12 0 1 0 12 12 6 6 0 0 1-7-5 6 6 0 0 1-5-7z" fill="#c78b45" />
+              <circle cx="12" cy="12.5" r="1.7" fill="#6b4423" />
+              <circle cx="19.5" cy="18.5" r="1.7" fill="#6b4423" />
+              <circle cx="13" cy="20" r="1.3" fill="#6b4423" />
+              <circle cx="20" cy="11.5" r="1.1" fill="#6b4423" />
+            </svg>
+          </span>
           <div className="flex-1 min-w-0">
-            <p className="text-[#f0f6ff] text-sm font-semibold leading-snug">We use cookies</p>
-            <p className="text-[#9cb8d9] text-xs mt-0.5 leading-relaxed">
-              Essential cookies only by default. We never sell your data.{" "}
+            <p className="text-[#f0f6ff] text-sm font-semibold leading-snug">
+              We use cookies to make your experience smoother
+            </p>
+            <p className="text-[#9cb8d9] text-xs mt-1 leading-relaxed">
+              Accept to unlock the best, most personalised version of the site. You can change your
+              mind any time.{" "}
               <Link to="/privacy-policy" onClick={() => setVisible(false)} className="text-blue-300 underline hover:text-blue-200">
                 Privacy Policy
               </Link>
@@ -240,32 +257,32 @@ export function CookieConsent() {
           </div>
         </div>
 
-        <div className="px-4 sm:px-5 py-3 flex flex-col sm:flex-row gap-2">
+        <div className="px-4 sm:px-5 pb-4 pt-1 flex flex-col sm:flex-row sm:items-center gap-2">
           <button
             onClick={acceptAll}
-            className="w-full sm:flex-1 min-h-[44px] bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors"
+            className="w-full sm:flex-[2] min-h-[52px] bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-[#04180f] text-[15px] font-bold rounded-xl shadow-lg shadow-emerald-500/25 transition-all hover:shadow-emerald-400/35 hover:-translate-y-[1px]"
           >
-            Accept All
+            Accept all &amp; continue
           </button>
           <button
             onClick={rejectAll}
-            className="w-full sm:flex-1 min-h-[44px] text-[#9cb8d9] hover:text-[#f0f6ff] text-sm font-semibold border border-white/[0.12] hover:border-white/[0.25] rounded-xl transition-colors"
+            className="w-full sm:flex-1 min-h-[44px] px-4 text-[#9cb8d9] hover:text-[#f0f6ff] text-[13px] font-medium bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.1] rounded-xl transition-colors"
           >
-            Reject All
+            Only necessary
           </button>
           {showDetails ? (
             <button
               onClick={acceptSelected}
-              className="w-full sm:flex-1 min-h-[44px] text-[#9cb8d9] hover:text-[#f0f6ff] text-sm font-medium border border-white/[0.1] hover:border-white/[0.2] rounded-xl transition-colors"
+              className="w-full sm:w-auto min-h-[44px] px-4 text-[#9cb8d9] hover:text-[#f0f6ff] text-[13px] font-medium border border-white/[0.1] hover:border-white/[0.2] rounded-xl transition-colors"
             >
-              Save My Choices
+              Save my choices
             </button>
           ) : (
             <button
               onClick={() => setShowDetails(true)}
-              className="w-full sm:flex-1 min-h-[44px] text-[#9cb8d9] hover:text-[#f0f6ff] text-sm font-medium border border-white/[0.1] hover:border-white/[0.2] rounded-xl transition-colors"
+              className="w-full sm:w-auto min-h-[44px] px-3 text-[#7f9bbc] hover:text-[#f0f6ff] text-[13px] font-medium rounded-xl transition-colors"
             >
-              Manage Cookies
+              Customise
             </button>
           )}
         </div>

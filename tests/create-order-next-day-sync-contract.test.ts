@@ -148,7 +148,9 @@ describe('Sync contract: every branch that hides next_day_12 in the UI is reject
 
     const res = await runCreateOrder(nextDayInput(UK));
     expect(res.shippingCost).toBe(7.99);
-    expect(written).toHaveLength(1);
+    // The order doc is written first; the "order received" email doc follows.
+    expect(written.length).toBeGreaterThanOrEqual(1);
+
     expect((written[0] as { shippingMethod: string }).shippingMethod).toBe('next_day_12');
     expect((written[0] as { expectedDeliveryDate: string }).expectedDeliveryDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });

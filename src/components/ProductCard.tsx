@@ -75,7 +75,10 @@ export function ProductCard({
   const vars = variants.length > 0 ? variants : [{ id: 'default', dosage: '', price: product.price ?? 0 }];
   const selectedVariant = vars.find(v => v.id === selectedVariantId) || vars[0];
   const price = selectedVariant.price ?? 0;
-  const isOutOfStock = (stock ?? 0) < 1;
+  // Admin can flag a product as temporarily out of stock (visibility) even
+  // when Firestore stock is still > 0 — treat both as unavailable.
+  const isTemporarilyUnavailable = product.visibility === 'out_of_stock';
+  const isOutOfStock = isTemporarilyUnavailable || (stock ?? 0) < 1;
   const slug = nameToSlug(name);
   const imgUrl = getProductImage(name, imageUrl, images);
   const categoryColor = CATEGORY_COLORS[category || ''] || '#3b82f6';
@@ -109,18 +112,15 @@ export function ProductCard({
     <div
       ref={isAboveFold ? undefined : revealRef}
       data-product-card={slug || product.id || 'product'}
-      className={`group relative rounded-2xl overflow-hidden flex flex-col phl-hover-lift ${isAboveFold ? '' : 'scroll-reveal'}`}
+      className={`group relative rounded-2xl overflow-hidden flex flex-col phl-hover-lift phl-glass-card ${isAboveFold ? '' : 'scroll-reveal'}`}
       style={{
-        background: 'rgba(255,255,255,0.025)',
         border: '1px solid rgba(255,255,255,0.06)',
       }}
       onMouseEnter={e => {
         (e.currentTarget as HTMLElement).style.borderColor = 'rgba(16,185,129,0.2)';
-        (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
       }}
       onMouseLeave={e => {
         (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)';
-        (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.025)';
       }}
     >
       {/* Image area */}
@@ -130,7 +130,10 @@ export function ProductCard({
             {...cfImgProps(imgUrl, { widths: [280, 400, 600, 800], sizes: '(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 400px', quality: 90, fallbackWidth: 400 })}
             alt={getProductAlt(name, product.category)}
             loading={index === 0 ? "eager" : "lazy"}
-            fetchPriority="auto"
+            // First card in the grid is the LCP candidate on /products (the
+            // hero there is text-only, no hero image) — raise its priority so
+            // it is not queued behind lazy cards and below-fold assets.
+            fetchPriority={index === 0 ? "high" : "auto"}
             width="288"
             height="216"
             decoding="async"
@@ -204,8 +207,8 @@ export function ProductCard({
         {/* Out of stock overlay */}
         {isOutOfStock && (
           <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.72)' }}>
-            <span className="px-4 py-2 rounded-xl font-bold text-sm" style={{ background: 'rgba(0,0,0,0.85)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8' }}>
-              Out of Stock
+            <span className="px-4 py-2 rounded-xl font-bold text-sm text-center" style={{ background: 'rgba(0,0,0,0.85)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8' }}>
+              {isTemporarilyUnavailable ? 'Temporarily Out of Stock' : 'Out of Stock'}
             </span>
           </div>
         )}

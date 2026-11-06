@@ -8,6 +8,15 @@ import {
   WhatsAppIcon, FacebookIcon, InstagramIcon, TwitterXIcon, YoutubeIcon, LinkedInIcon
 } from '@/components/SocialIcons';
 
+// Bounded await: resolves to `fallback` if `p` doesn't settle within `ms`.
+// Firestore WebChannel can hang for tens of seconds on some networks/browsers —
+// it must never block user-facing flows (see the submit handler below).
+function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([p, new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms))]);
+}
+
+const PERSIST_TIMEOUT_MS = 4_000;
+
 interface SiteSettings {
   whatsappNumber?: string;
   facebookUrl?: string;
@@ -151,16 +160,23 @@ export default function Contact() {
         createdAt: Timestamp.now(),
         status: 'new' as const,
       };
-      let savedEnquiry = false;
-      try {
-        await addDoc(collection(db, 'contactMessages'), enquiryPayload);
-        savedEnquiry = true;
-      } catch (persistErr) {
-        console.error('[Contact] contactMessages write failed:', persistErr);
-      }
+      // 1b) Persist runs fire-and-forget with a hard bound — Firestore
+      //     (WebChannel/long-polling) can hang in some browsers/networks and
+      //     must never delay or block the admin notification below.
+      const persisted = withTimeout(
+        addDoc(collection(db, 'contactMessages'), enquiryPayload)
+          .then(() => true)
+          .catch((persistErr) => {
+            console.error('[Contact] contactMessages write failed:', persistErr);
+            return false;
+          }),
+        PERSIST_TIMEOUT_MS,
+        false,
+      );
 
       // 2) Send the admin notification via the secured server endpoint
-      //    (replaces the previous direct Firestore `mail` write).
+      //    (replaces the previous direct Firestore `mail` write). This is the
+      //    critical path and runs in parallel with the enquiry persist.
       const mailedOk = await sendPublicMail({
         template: 'contact',
         name,
@@ -168,6 +184,7 @@ export default function Contact() {
         subject: subject || undefined,
         message,
       });
+      const savedEnquiry = await persisted;
 
       if (mailedOk || savedEnquiry) {
         setSent(true);

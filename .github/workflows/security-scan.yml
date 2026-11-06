@@ -24,8 +24,11 @@ permissions:
 jobs:
   security-scan:
     name: Dependency vulnerability scan
-    runs-on: ubuntu-latest
-    timeout-minutes: 8
+    runs-on: ubuntu-24.04
+    # 8 min was too tight: cosign attest-blob (Rekor) intermittently hangs
+    # ~7 min, so runs died at the timeout during cleanup even when the
+    # audit gate itself passed. 15 min matches the real p95 of this job.
+    timeout-minutes: 15
     permissions:
       contents: read
       security-events: write
@@ -82,7 +85,7 @@ jobs:
 
       - name: Cache Bun install store
         id: bun_cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.bun/install/cache
@@ -98,7 +101,7 @@ jobs:
 
       - name: Cache SBOM (CycloneDX)
         id: sbom_cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: dist/sbom.cdx.json
           key: ${{ steps.keys.outputs.sbom_key }}
@@ -256,11 +259,14 @@ jobs:
       #     --certificate-identity-regexp '^https://github\.com/.*/\.github/workflows/security-scan\.yml@' \
       #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
       #     dist/sbom.cdx.json
+      # Manual install with retry + pinned SHA-256 (see script header).
+      # sigstore/cosign-installer's download intermittently died with curl
+      # exit 35 (TLS reset from the release CDN), which cascaded into
+      # exit 127 (cosign: command not found) across all sign/attest steps
+      # and failed the whole scan on a pure network flake.
       - name: Install cosign
         if: always()
-        uses: sigstore/cosign-installer@v4.1.2
-        with:
-          cosign-release: v2.6.0
+        run: bash scripts/install-cosign.sh
 
       - name: Sign SBOM (cosign keyless)
         if: always()
@@ -381,7 +387,7 @@ jobs:
   # rendered on the Check page.
   attestation-verify:
     name: Attestation verify (SLSA + CycloneDX)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: security-scan
     if: always() && needs.security-scan.result == 'success'
     timeout-minutes: 5
@@ -391,9 +397,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@v4.1.2
-        with:
-          cosign-release: v2.6.0
+        run: bash scripts/install-cosign.sh
 
       - name: Download SBOM bundle artifact
         uses: actions/download-artifact@v5
@@ -428,7 +432,7 @@ jobs:
   # unstable map ordering, network response ordering).
   determinism-check:
     name: Determinism check (cached vs fresh)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: security-scan
     if: always() && needs.security-scan.result == 'success'
     timeout-minutes: 10

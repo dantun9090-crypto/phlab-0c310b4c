@@ -18,6 +18,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { enforceRateLimit, getClientIp } from "@/lib/rate-limit";
 import { verifyWallidSignature, computeHmacHex } from "@/lib/webhook-signature";
 import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
+import { allowFromFor } from "@/lib/payment-transitions";
 
 interface WallidEvent {
   event_id?: string;
@@ -275,6 +276,14 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
 
         try {
           let processed = 0;
+          // Degraded-mode flags (2026-10-28): when the Supabase event log is
+          // unreachable we still transition orders in Firestore — the
+          // customer-facing source of truth — and raise an alert after the
+          // loop. Previously a Supabase failure returned 503 here, Wallid
+          // retried forever, and PAID orders stayed `pending` (no paidAt,
+          // no confirmation email) for as long as the outage lasted.
+          let supabaseLogFailed = false;
+          let supabaseLogError: string | null = null;
           for (const ev of events) {
             const eventId = String(ev.event_id || ev.id || "").trim();
             if (!eventId) continue;
@@ -316,32 +325,33 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
                 } catch { /* non-blocking */ }
                 continue;
               }
-              console.error("[Wallid webhook] Insert failed", insertErr.message);
-              return finish(
-                retryableResp(`event insert failed: ${insertErr.message}`),
-                "event_insert_failed",
-                {
-                  errorMessage: insertErr.message,
-                  alertHeadline: "Webhook event insert into Supabase failed — Wallid will retry.",
-                  alertMeta: { eventId, apiPaymentId, orderId },
-                },
+              console.error(
+                "[Wallid webhook] Supabase event insert failed — degraded mode: Firestore transition still runs:",
+                insertErr.message,
               );
+              supabaseLogFailed = true;
+              supabaseLogError = insertErr.message;
             }
+            const supabaseLogOk = !insertErr;
 
             try {
               // Guarded against downgrades + out-of-order deliveries so
               // repeat callbacks can't flip SUCCESS back to PENDING.
-              const { applyWallidPaymentUpdate } = await import("@/lib/server/wallid-idempotency");
-              const guardRes = await applyWallidPaymentUpdate({
-                supabaseAdmin,
-                apiPaymentId,
-                orderId,
-                status,
-                occurredAt,
-                event: ev as Record<string, unknown>,
-              });
-              if (!guardRes.applied && guardRes.reason === "no_identifier") {
-                console.error("[Wallid webhook] Refusing UPDATE — no api_payment_id or order_id", eventId);
+              // Skipped in degraded mode: the idempotency tables live in
+              // Supabase — exactly what is unreachable then.
+              if (supabaseLogOk) {
+                const { applyWallidPaymentUpdate } = await import("@/lib/server/wallid-idempotency");
+                const guardRes = await applyWallidPaymentUpdate({
+                  supabaseAdmin,
+                  apiPaymentId,
+                  orderId,
+                  status,
+                  occurredAt,
+                  event: ev as Record<string, unknown>,
+                });
+                if (!guardRes.applied && guardRes.reason === "no_identifier") {
+                  console.error("[Wallid webhook] Refusing UPDATE — no api_payment_id or order_id", eventId);
+                }
               }
 
               if (orderId) {
@@ -363,7 +373,7 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
                       "orders",
                       orderId,
                       {
-                        allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", "needs_review", ""],
+                        allowFrom: allowFromFor(firestoreStatus),
                         updates: {
                           status: firestoreStatus,
                           paymentProvider: "wallid",
@@ -473,6 +483,17 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
             } catch (e) {
               console.error("[Wallid webhook] Event apply failed:", e);
             }
+          }
+
+          if (supabaseLogFailed) {
+            try {
+              const { alertWebhookIssue } = await import("@/lib/server/webhook-alerts");
+              await alertWebhookIssue(
+                "webhook_event_log_degraded",
+                "Supabase webhook event log unavailable — orders still transition to paid/failed in Firestore, but the audit/idempotency log is not being written. Check the Supabase project.",
+                { errorMessage: supabaseLogError },
+              );
+            } catch { /* non-blocking */ }
           }
 
           return finish(json({ received: true, processed }), "accepted");

@@ -545,7 +545,18 @@ async function gotoGuarded(page, url) {
 // Fixed bypass token (GitHub secret E2E_BYPASS_TOKEN) sent on every request;
 // a Cloudflare WAF "skip" custom rule matching this header lets CI traffic
 // through the rate limiter. Falls back to no header when the secret is unset.
-const E2E_BYPASS_TOKEN = process.env.E2E_BYPASS_TOKEN || null;
+// Secret values pasted into the GitHub UI often pick up a trailing newline —
+// Chromium rejects such header values ("Invalid header value") and every
+// scenario crashes at newPage. Trim, and drop anything not header-safe.
+const E2E_BYPASS_TOKEN = (() => {
+  const raw = (process.env.E2E_BYPASS_TOKEN || '').trim();
+  if (!raw) return null;
+  if (!/^[\x21-\x7E]+$/.test(raw)) {
+    console.warn('[warn] E2E_BYPASS_TOKEN has non-header-safe characters — ignoring it (WAF bypass disabled for this run)');
+    return null;
+  }
+  return raw;
+})();
 
 async function withContext(browser, name, fn) {
   currentScenario = name;

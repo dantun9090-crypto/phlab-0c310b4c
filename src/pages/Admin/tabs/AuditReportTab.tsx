@@ -1,3 +1,4 @@
+import { adminFetch } from '@/lib/admin-fetch';
 import { useEffect, useState } from 'react';
 import { RefreshCw, Loader2 } from 'lucide-react';
 
@@ -60,7 +61,7 @@ export default function AuditReportTab() {
   const load = async (force = false) => {
     if (force) setRerunning(true);
     try {
-      const res = await fetch(`/api/public/audit-report${force ? '?force=1' : ''}`, {
+      const res = await adminFetch(`/api/public/audit-report${force ? '?force=1' : ''}`, {
         cache: 'no-store',
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

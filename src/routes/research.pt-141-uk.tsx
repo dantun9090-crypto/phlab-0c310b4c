@@ -12,7 +12,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SITE_URL } from "@/lib/seo-meta";
 
 const URL = `${SITE_URL}/research/pt-141-uk`;
-const TITLE = "PT-141 Research UK | Melanocortin MC4R Reference Hub | PH Labs";
+const TITLE = "PT-141 Research UK | Melanocortin MC4R Hub | PH Labs";
 const DESCRIPTION =
   "PT-141 (Bremelanotide) research reference for UK laboratories: MC3R/MC4R pharmacology, in-vitro assays, HPLC QC, storage, citations. Research use only.";
 

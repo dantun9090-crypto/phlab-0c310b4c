@@ -12,6 +12,7 @@ import {
   type WebhookAttemptRow,
   type WebhookAttemptSummary,
 } from '@/lib/webhook-attempts.functions';
+import PendingPaymentsReviewCard from '@/pages/Admin/components/PendingPaymentsReviewCard';
 
 
 type StatusFilter = 'all' | 'needs_attention' | 'success' | 'pending' | 'failed';
@@ -150,6 +151,9 @@ export default function PaymentTriageTab() {
           </button>
         </div>
       </div>
+
+      {/* Manual rescue — unsettled orders confirmed on the bank statement */}
+      <PendingPaymentsReviewCard />
 
       {/* Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
