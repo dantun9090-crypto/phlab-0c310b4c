@@ -217,8 +217,10 @@ export default function PaymentMethodOptions({
   const baseCardClass =
     "group relative rounded-2xl border p-4 sm:p-5 cursor-pointer transition-all text-left w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70";
 
-  const primaryCardClass = `${baseCardClass} border-emerald-500/30 bg-gradient-to-br from-emerald-500/[0.12] to-emerald-900/[0.08] hover:from-emerald-500/[0.16] hover:to-emerald-900/[0.10] ${
-    primarySelected ? "ring-2 ring-emerald-500/50 shadow-lg shadow-emerald-900/20" : ""
+  // Pay by Bank is now a plain SECONDARY option (slate, no badge) — the
+  // featured/recommended slot belongs to the card option below.
+  const primaryCardClass = `${baseCardClass} border-slate-700/50 bg-slate-900/60 hover:bg-slate-800/60 ${
+    primarySelected ? "ring-2 ring-emerald-500/40" : ""
   }`;
 
   const manualCardClass = soleManual
@@ -231,8 +233,10 @@ export default function PaymentMethodOptions({
     value === "peptidepay" ? "ring-2 ring-emerald-500/40" : ""
   }`;
 
-  const brokkrpayCardClass = `${baseCardClass} border-slate-700/50 bg-slate-900/60 hover:bg-slate-800/60 ${
-    value === "brokkrpay" ? "ring-2 ring-emerald-500/40" : ""
+  // BrokkrPay card is the featured/recommended method: premium emerald
+  // gradient styling (previously used by Pay by Bank).
+  const brokkrpayCardClass = `${baseCardClass} border-emerald-500/30 bg-gradient-to-br from-emerald-500/[0.12] to-emerald-900/[0.08] hover:from-emerald-500/[0.16] hover:to-emerald-900/[0.10] ${
+    value === "brokkrpay" ? "ring-2 ring-emerald-500/50 shadow-lg shadow-emerald-900/20" : ""
   }`;
 
   const cryptoCardClass = `${baseCardClass} border-slate-700/50 bg-slate-900/60 hover:bg-slate-800/60 ${
@@ -280,7 +284,78 @@ export default function PaymentMethodOptions({
           </div>
         )}
 
-        {/* PRIMARY: Pay by Bank */}
+        {/* FEATURED (recommended): BrokkrPay — hosted card checkout */}
+        {brokkrpayEnabled && (
+          <div className="relative">
+            <button
+              type="button"
+              data-testid="brokkrpay-button"
+              onClick={(e) => handleSelect("brokkrpay", e.currentTarget)}
+              role="radio"
+              aria-checked={value === "brokkrpay"}
+              aria-describedby={value === "brokkrpay" ? "brokkrpay-instructions" : undefined}
+              className={brokkrpayCardClass}
+            >
+              {/* Badge row in normal flow */}
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <span className="inline-flex items-center rounded-full bg-emerald-500 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-900 shadow-sm">
+                  Recommended
+                </span>
+                <ChevronDown
+                  className={`w-4 h-4 shrink-0 text-slate-400 transition-transform ${
+                    value === "brokkrpay" ? "rotate-180" : ""
+                  }`}
+                  aria-hidden="true"
+                />
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Radio checked={value === "brokkrpay"} tone="emerald" />
+                <span
+                  aria-hidden="true"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-500/25 bg-emerald-500/10"
+                >
+                  <CreditCard className="h-5 w-5 text-emerald-300" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <span className="block text-base font-semibold leading-snug text-white">
+                    Debit or credit card
+                  </span>
+                  {value === "brokkrpay" && (
+                    <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
+                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                      Selected
+                    </span>
+                  )}
+                  <p className="mt-1 text-xs leading-relaxed text-slate-300">
+                    Secure hosted checkout — we never see your card details.
+                  </p>
+                </div>
+              </div>
+            </button>
+
+            <Drawer open={value === "brokkrpay"} id="brokkrpay-instructions">
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.05] px-4 py-3 text-xs leading-relaxed text-slate-300">
+                <p className="font-semibold text-white">Before you pay</p>
+                <p className="mt-1">
+                  Your payment is handled by our retail partner — an online retail store — so your
+                  receipt and card statement will show retail items, not the products you ordered.
+                  Same products, same price, same delivery.
+                </p>
+                <p className="mt-2">
+                  You will be redirected to a secure payment page. Once the payment is confirmed you
+                  will receive an email with your order details.
+                </p>
+                <p className="mt-2 flex items-center gap-2 text-slate-400">
+                  <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
+                  Card details are handled entirely by the payment provider.
+                </p>
+              </div>
+            </Drawer>
+          </div>
+        )}
+
+        {/* SECONDARY: Pay by Bank */}
         {showPrimary && (
           <div className="relative">
             <button
@@ -292,48 +367,42 @@ export default function PaymentMethodOptions({
               aria-describedby={primarySelected ? primaryInstructionsId : undefined}
               className={primaryCardClass}
             >
-              {/* Badge row in normal flow */}
-              <div className="mb-3 flex items-center justify-between gap-2">
-                <span className="inline-flex items-center rounded-full bg-emerald-500 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-900 shadow-sm">
-                  Recommended
+              <div className="flex items-start gap-3">
+                <Radio checked={primarySelected} tone="slate" />
+                <span
+                  aria-hidden="true"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5"
+                >
+                  <Landmark className="h-5 w-5 text-slate-300" />
                 </span>
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-base font-semibold text-white leading-tight">
+                      Pay by Bank{" "}
+                      <span className="text-xs font-medium text-emerald-300/90">— Open Banking</span>
+                    </span>
+                    {primarySelected && (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
+                        <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                        Selected
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-300 mt-1">
+                    Instant UK bank transfer — no card needed.
+                  </p>
+                </div>
                 <ChevronDown
-                  className={`w-4 h-4 shrink-0 text-slate-400 transition-transform ${
+                  className={`w-4 h-4 text-slate-400 shrink-0 mt-2 transition-transform ${
                     primarySelected ? "rotate-180" : ""
                   }`}
                   aria-hidden="true"
                 />
               </div>
-
-              <div className="flex items-start gap-3">
-                <Radio checked={primarySelected} tone="emerald" />
-                <span
-                  aria-hidden="true"
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-500/25 bg-emerald-500/10"
-                >
-                  <Landmark className="h-5 w-5 text-emerald-300" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <span className="block text-base font-semibold leading-snug text-white">
-                    Pay by Bank{" "}
-                    <span className="text-xs font-medium text-emerald-300/90">— Open Banking</span>
-                  </span>
-                  {primarySelected && (
-                    <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
-                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                      Selected
-                    </span>
-                  )}
-                  <p className="mt-1 text-xs leading-relaxed text-slate-300">
-                    Instant UK bank transfer — no card needed.
-                  </p>
-                </div>
-              </div>
-
             </button>
 
             <Drawer open={primarySelected} id={primaryInstructionsId}>
-              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.05] p-4 sm:p-5 text-sm text-slate-200 space-y-4">
+              <div className="rounded-2xl border border-slate-700/50 bg-slate-900/60 p-4 sm:p-5 text-sm text-slate-200 space-y-4">
                 <p className="text-slate-300 leading-relaxed">
                   Pay securely from any UK bank app — instant confirmation, no card needed.
                 </p>
@@ -448,72 +517,6 @@ export default function PaymentMethodOptions({
                 </p>
               </div>
 
-            </Drawer>
-          </div>
-        )}
-
-        {/* SECONDARY: BrokkrPay — hosted card checkout */}
-        {brokkrpayEnabled && (
-          <div className="relative">
-            <button
-              type="button"
-              data-testid="brokkrpay-button"
-              onClick={(e) => handleSelect("brokkrpay", e.currentTarget)}
-              role="radio"
-              aria-checked={value === "brokkrpay"}
-              aria-describedby={value === "brokkrpay" ? "brokkrpay-instructions" : undefined}
-              className={brokkrpayCardClass}
-            >
-              <div className="flex items-start gap-3">
-                <Radio checked={value === "brokkrpay"} tone="slate" />
-                <span
-                  aria-hidden="true"
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5"
-                >
-                  <CreditCard className="h-5 w-5 text-slate-300" />
-                </span>
-                <div className="min-w-0 flex-1 pt-0.5">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-base font-semibold text-white leading-tight">
-                      Debit or credit card
-                    </span>
-                    {value === "brokkrpay" && (
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-300">
-                        <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
-                        Selected
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-300 mt-1">
-                    Secure hosted checkout — we never see your card details.
-                  </p>
-                </div>
-                <ChevronDown
-                  className={`w-4 h-4 text-slate-400 shrink-0 mt-2 transition-transform ${
-                    value === "brokkrpay" ? "rotate-180" : ""
-                  }`}
-                  aria-hidden="true"
-                />
-              </div>
-            </button>
-
-            <Drawer open={value === "brokkrpay"} id="brokkrpay-instructions">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs leading-relaxed text-slate-300">
-                <p className="font-semibold text-white">Before you pay</p>
-                <p className="mt-1">
-                  Your payment is handled by our retail partner — an online retail store — so your
-                  receipt and card statement will show retail items, not the products you ordered.
-                  Same products, same price, same delivery.
-                </p>
-                <p className="mt-2">
-                  You will be redirected to a secure payment page. Once the payment is confirmed you
-                  will receive an email with your order details.
-                </p>
-                <p className="mt-2 flex items-center gap-2 text-slate-400">
-                  <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
-                  Card details are handled entirely by the payment provider.
-                </p>
-              </div>
             </Drawer>
           </div>
         )}
