@@ -523,7 +523,7 @@ export default function EmailMarketingTab() {
 
       setMsg({
         type: 'success',
-        text: `Campaign queued for ${result.enqueued} recipient${result.enqueued === 1 ? '' : 's'}${result.failed ? ` (${result.failed} failed)` : ''}. ${missingFirstName} got the "there" fallback (no first name).`,
+        text: `Campaign queued for ${result.enqueued} recipient${result.enqueued === 1 ? '' : 's'}${result.failed ? ` (${result.failed} failed)` : ''}. ${result.sentNow ?? 0} sending now${result.waiting > 0 ? `, ${result.waiting} waiting — sent automatically at max ${result.hourlyCap ?? 90}/hour (about ${Math.ceil(result.waiting / (result.hourlyCap ?? 90))}h)` : ''}. ${missingFirstName} got the "there" fallback (no first name).`,
       });
       setTimeout(() => setMsg(null), 10000);
       loadHistory();

@@ -26,7 +26,7 @@ jobs:
           bun-version: "1.2.21"
 
       - name: Cache Bun install store
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock', 'package.json') }}

@@ -141,6 +141,7 @@ import { Route as ApiPublicHooksFirestoreBackupRouteImport } from './routes/api/
 import { Route as ApiPublicHooksHealthCheckRouteImport } from './routes/api/public/hooks/health-check'
 import { Route as ApiPublicHooksKlaviyoSyncRouteImport } from './routes/api/public/hooks/klaviyo-sync'
 import { Route as ApiPublicHooksLighthousePsiRouteImport } from './routes/api/public/hooks/lighthouse-psi'
+import { Route as ApiPublicHooksMarketingDripRouteImport } from './routes/api/public/hooks/marketing-drip'
 import { Route as ApiPublicHooksMonitorProductUrlsRouteImport } from './routes/api/public/hooks/monitor-product-urls'
 import { Route as ApiPublicHooksOfflineConversionsRouteImport } from './routes/api/public/hooks/offline-conversions'
 import { Route as ApiPublicHooksOfflineConversionsDotcsvRouteImport } from './routes/api/public/hooks/offline-conversions[.]csv'
@@ -853,6 +854,12 @@ const ApiPublicHooksLighthousePsiRoute =
     path: '/api/public/hooks/lighthouse-psi',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksMarketingDripRoute =
+  ApiPublicHooksMarketingDripRouteImport.update({
+    id: '/api/public/hooks/marketing-drip',
+    path: '/api/public/hooks/marketing-drip',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksMonitorProductUrlsRoute =
   ApiPublicHooksMonitorProductUrlsRouteImport.update({
     id: '/api/public/hooks/monitor-product-urls',
@@ -1084,6 +1091,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/health-check': typeof ApiPublicHooksHealthCheckRoute
   '/api/public/hooks/klaviyo-sync': typeof ApiPublicHooksKlaviyoSyncRoute
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
+  '/api/public/hooks/marketing-drip': typeof ApiPublicHooksMarketingDripRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/offline-conversions': typeof ApiPublicHooksOfflineConversionsRoute
   '/api/public/hooks/offline-conversions.csv': typeof ApiPublicHooksOfflineConversionsDotcsvRoute
@@ -1233,6 +1241,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/health-check': typeof ApiPublicHooksHealthCheckRoute
   '/api/public/hooks/klaviyo-sync': typeof ApiPublicHooksKlaviyoSyncRoute
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
+  '/api/public/hooks/marketing-drip': typeof ApiPublicHooksMarketingDripRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/offline-conversions': typeof ApiPublicHooksOfflineConversionsRoute
   '/api/public/hooks/offline-conversions.csv': typeof ApiPublicHooksOfflineConversionsDotcsvRoute
@@ -1385,6 +1394,7 @@ export interface FileRoutesById {
   '/api/public/hooks/health-check': typeof ApiPublicHooksHealthCheckRoute
   '/api/public/hooks/klaviyo-sync': typeof ApiPublicHooksKlaviyoSyncRoute
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
+  '/api/public/hooks/marketing-drip': typeof ApiPublicHooksMarketingDripRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/offline-conversions': typeof ApiPublicHooksOfflineConversionsRoute
   '/api/public/hooks/offline-conversions.csv': typeof ApiPublicHooksOfflineConversionsDotcsvRoute
@@ -1537,6 +1547,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/health-check'
     | '/api/public/hooks/klaviyo-sync'
     | '/api/public/hooks/lighthouse-psi'
+    | '/api/public/hooks/marketing-drip'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/offline-conversions'
     | '/api/public/hooks/offline-conversions.csv'
@@ -1686,6 +1697,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/health-check'
     | '/api/public/hooks/klaviyo-sync'
     | '/api/public/hooks/lighthouse-psi'
+    | '/api/public/hooks/marketing-drip'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/offline-conversions'
     | '/api/public/hooks/offline-conversions.csv'
@@ -1837,6 +1849,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/health-check'
     | '/api/public/hooks/klaviyo-sync'
     | '/api/public/hooks/lighthouse-psi'
+    | '/api/public/hooks/marketing-drip'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/offline-conversions'
     | '/api/public/hooks/offline-conversions.csv'
@@ -1969,6 +1982,7 @@ export interface RootRouteChildren {
   ApiPublicHooksHealthCheckRoute: typeof ApiPublicHooksHealthCheckRoute
   ApiPublicHooksKlaviyoSyncRoute: typeof ApiPublicHooksKlaviyoSyncRoute
   ApiPublicHooksLighthousePsiRoute: typeof ApiPublicHooksLighthousePsiRoute
+  ApiPublicHooksMarketingDripRoute: typeof ApiPublicHooksMarketingDripRoute
   ApiPublicHooksMonitorProductUrlsRoute: typeof ApiPublicHooksMonitorProductUrlsRoute
   ApiPublicHooksOfflineConversionsRoute: typeof ApiPublicHooksOfflineConversionsRoute
   ApiPublicHooksOfflineConversionsDotcsvRoute: typeof ApiPublicHooksOfflineConversionsDotcsvRoute
@@ -2914,6 +2928,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksLighthousePsiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/marketing-drip': {
+      id: '/api/public/hooks/marketing-drip'
+      path: '/api/public/hooks/marketing-drip'
+      fullPath: '/api/public/hooks/marketing-drip'
+      preLoaderRoute: typeof ApiPublicHooksMarketingDripRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/monitor-product-urls': {
       id: '/api/public/hooks/monitor-product-urls'
       path: '/api/public/hooks/monitor-product-urls'
@@ -3241,6 +3262,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksHealthCheckRoute: ApiPublicHooksHealthCheckRoute,
   ApiPublicHooksKlaviyoSyncRoute: ApiPublicHooksKlaviyoSyncRoute,
   ApiPublicHooksLighthousePsiRoute: ApiPublicHooksLighthousePsiRoute,
+  ApiPublicHooksMarketingDripRoute: ApiPublicHooksMarketingDripRoute,
   ApiPublicHooksMonitorProductUrlsRoute: ApiPublicHooksMonitorProductUrlsRoute,
   ApiPublicHooksOfflineConversionsRoute: ApiPublicHooksOfflineConversionsRoute,
   ApiPublicHooksOfflineConversionsDotcsvRoute:
