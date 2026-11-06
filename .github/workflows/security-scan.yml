@@ -85,7 +85,7 @@ jobs:
 
       - name: Cache Bun install store
         id: bun_cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.bun/install/cache
@@ -101,7 +101,7 @@ jobs:
 
       - name: Cache SBOM (CycloneDX)
         id: sbom_cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: dist/sbom.cdx.json
           key: ${{ steps.keys.outputs.sbom_key }}
