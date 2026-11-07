@@ -345,12 +345,11 @@ export default function PaymentMethodOptions({
                         key={badge.name}
                         src={badge.src}
                         alt={badge.name}
-                        width={312}
-                        height={200}
-                        loading="lazy"
+                        width={34}
+                        height={22}
                         decoding="async"
                         className="block shrink-0 rounded object-contain shadow-sm"
-                        style={{ height: 22, width: "auto", maxWidth: "none" }}
+                        style={{ height: 22, width: 34, minHeight: 0, maxWidth: "none", background: "transparent" }}
                       />
                     ))}
                   </div>
