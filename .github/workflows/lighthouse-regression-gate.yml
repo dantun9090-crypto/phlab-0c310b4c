@@ -95,8 +95,14 @@ jobs:
           LAST_CODE=1
           for attempt in 1 2 3; do
             rm -rf .lighthouseci
-            lhci autorun --config=.lighthouserc.${{ matrix.profile }}.json
+            # Hard-kill hung runs: Chrome occasionally wedges (NO_NAVSTART)
+            # and lhci never exits on its own — without a timeout the retry
+            # loop never fires and the job burns the full 55min job timeout.
+            timeout --signal=KILL 12m lhci autorun --config=.lighthouserc.${{ matrix.profile }}.json
             code=$?
+            if [ $code -eq 124 ] || [ $code -eq 137 ] || [ $code -eq 128 ]; then
+              echo "::warning::Lighthouse attempt $attempt/3 killed after 12m (hung Chrome / NO_NAVSTART)"
+            fi
             if [ $code -eq 0 ]; then
               echo "::notice::Lighthouse gate passed on attempt $attempt"
               exit 0
