@@ -27,6 +27,14 @@ import {
 } from "lucide-react";
 
 import UkBankBadges from "@/components/UkBankBadges";
+
+/** White card/wallet brand badges shown under the hosted card-checkout option. */
+const CARD_BRAND_BADGES: ReadonlyArray<{ name: string; src: string }> = [
+  { name: "Mastercard", src: "/payment-badges/mastercard.png" },
+  { name: "Visa", src: "/payment-badges/visa.png" },
+  { name: "Google Pay", src: "/payment-badges/gpay.png" },
+  { name: "Apple Pay", src: "/payment-badges/applepay.png" },
+];
 import TidePayPanel from "@/components/TidePayPanel";
 import type { CheckoutPaymentOptions } from "@/lib/payments/types";
 
