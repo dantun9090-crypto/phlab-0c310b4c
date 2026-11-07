@@ -341,22 +341,17 @@ export default function PaymentMethodOptions({
                     aria-label="Accepted card and wallet payment methods"
                   >
                     {CARD_BRAND_BADGES.map((badge) => (
-                      <span
+                      <img
                         key={badge.name}
-                        className="inline-flex h-7 w-11 shrink-0 overflow-hidden rounded-md shadow-sm"
-                        style={{ height: 28, width: 44 }}
-                      >
-                        <img
-                          src={badge.src}
-                          alt={badge.name}
-                          width={312}
-                          height={200}
-                          loading="lazy"
-                          decoding="async"
-                          className="block h-full w-full object-contain"
-                          style={{ height: "100%", width: "100%", maxWidth: "none" }}
-                        />
-                      </span>
+                        src={badge.src}
+                        alt={badge.name}
+                        width={312}
+                        height={200}
+                        loading="lazy"
+                        decoding="async"
+                        className="block shrink-0 rounded object-contain shadow-sm"
+                        style={{ height: 22, width: "auto", maxWidth: "none" }}
+                      />
                     ))}
                   </div>
                 </div>
