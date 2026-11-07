@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   ShoppingCart, Search, Clock, Package, Truck, CheckCircle, XCircle,
@@ -27,6 +27,23 @@ import { getAdminIdToken } from '@/lib/auth-ready';
 import { toDateSafe, toMillisSafe } from '@/lib/to-date';
 import { hasHouseNumber } from '@/lib/uk-address';
 import { canRetryPayment } from '@/lib/order-payment-retry';
+
+// ── Order-classification constants (module level: stable identities keep memoized selectors cheap) ──
+/** Statuses that mean "money not received yet". */
+const UNPAID_STATUSES = [
+  'pending',
+  'pending_payment',
+  'pending_bank_transfer',
+  'awaiting_payment',
+  'processing_payment',
+  'unpaid',
+  'failed',
+  'expired',
+];
+const FAILED_PAYMENT_STATUSES = ['failed', 'expired', 'payment_failed', 'failed_payment', 'declined'];
+const STALE_UNPAID_MS = 24 * 60 * 60 * 1000;
+const NEW_ORDER_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const UNPAID_FOR_PAYLINK = ['pending', 'pending_payment', 'awaiting_payment', 'processing_payment', 'failed'];
 
 // ── "Check address" badge — order has no deliverable house number ──
 function CheckAddressBadge({ order, addressLine }: { order: any; addressLine: string }) {
@@ -248,6 +265,12 @@ export default function OrdersTab() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [search, setSearch] = useState('');
+  // Debounced value drives the expensive list filtering so each keystroke stays cheap.
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 250);
+    return () => clearTimeout(t);
+  }, [search]);
   const [statusFilter, setStatusFilter] = useState<string>('new');
   const [selected, setSelected] = useState<Order | null>(null);
   // Per-row "customer history" toggle — one click shows paid/failed stats
@@ -1117,8 +1140,7 @@ export default function OrdersTab() {
    * payment the customer abandoned at the bank — exactly what canRetryPayment()
    * checks (same rule the customer-facing "Pay Again" CTA uses).
    */
-  const UNPAID_FOR_PAYLINK = ['pending', 'pending_payment', 'awaiting_payment', 'processing_payment', 'failed'];
-  const bulkPayCandidates = orders.filter(o => {
+  const bulkPayCandidates = useMemo(() => orders.filter(o => {
     const status = String(o.status || '').toLowerCase();
     const eligible =
       UNPAID_FOR_PAYLINK.includes(status) ||
@@ -1132,7 +1154,7 @@ export default function OrdersTab() {
     if (String((o as any).paymentRetryLinkSentAt || (o as any).paymentRetryEmailAt || '').trim()) return false;
     const email = String((o as any).userEmail || (o as any).customerEmail || (o as any).customer?.email || '').trim();
     return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
-  });
+  }), [orders]);
 
   /**
    * Sends the one-click "Pay Again" email (with bank-transfer fallback) to every
@@ -1182,10 +1204,10 @@ export default function OrdersTab() {
   };
 
   /** Orders eligible for bulk Click & Drop creation: PROCESSING only, no label yet. */
-  const bulkRmCandidates = orders.filter(o =>
+  const bulkRmCandidates = useMemo(() => orders.filter(o =>
     String(o.status || '').toLowerCase() === 'processing' &&
     !String((o as any).royalMailOrderId || '').trim()
-  );
+  ), [orders]);
 
   /**
    * Bulk-creates Click & Drop orders for every PROCESSING order that has no
@@ -1570,38 +1592,23 @@ export default function OrdersTab() {
     setTimeout(() => setCopiedTrackingId(null), 2000);
   };
 
-  /** Statuses that mean "money not received yet". */
-  const UNPAID_STATUSES = [
-    'pending',
-    'pending_payment',
-    'pending_bank_transfer',
-    'awaiting_payment',
-    'processing_payment',
-    'unpaid',
-    'failed',
-    'expired',
-  ];
-  const isUnpaidOrder = (o: Order) => UNPAID_STATUSES.includes(String(o.status));
-
-  /** A "new" order = awaiting action, never opened by an admin, placed < 24h ago. */
-  const NEW_ORDER_MAX_AGE_MS = 24 * 60 * 60 * 1000;
-  const isNewOrder = (o: Order) => {
-    const ts = orderTimeMs(o);
-    if (!ts || Date.now() - ts > NEW_ORDER_MAX_AGE_MS) return false;
-    return !seenIds.includes(o.id) && (isUnpaidOrder(o) || String(o.status) === 'paid');
-  };
-
-
-
-
-  const orderTimeMs = (o: Order): number => {
+  const orderTimeMs = useCallback((o: Order): number => {
     const raw: any = (o as any).orderDate ?? (o as any).createdAt;
     if (!raw) return 0;
     if (typeof raw?.toDate === 'function') return raw.toDate().getTime();
     if (typeof raw?.seconds === 'number') return raw.seconds * 1000;
     const t = new Date(raw).getTime();
     return Number.isFinite(t) ? t : 0;
-  };
+  }, []);
+
+  const isUnpaidOrder = useCallback((o: Order) => UNPAID_STATUSES.includes(String(o.status)), []);
+
+  /** A "new" order = awaiting action, never opened by an admin, placed < 24h ago. */
+  const isNewOrder = useCallback((o: Order) => {
+    const ts = orderTimeMs(o);
+    if (!ts || Date.now() - ts > NEW_ORDER_MAX_AGE_MS) return false;
+    return !seenIds.includes(o.id) && (isUnpaidOrder(o) || String(o.status) === 'paid');
+  }, [seenIds, orderTimeMs, isUnpaidOrder]);
 
   /**
    * "Failed payment" category.
@@ -1610,9 +1617,7 @@ export default function OrdersTab() {
    * order was left sitting in "pending" — anything unpaid and older than 24h
    * is treated as a failed payment so it stops hiding in Pending.
    */
-  const FAILED_PAYMENT_STATUSES = ['failed', 'expired', 'payment_failed', 'failed_payment', 'declined'];
-  const STALE_UNPAID_MS = 24 * 60 * 60 * 1000;
-  const isFailedPaymentOrder = (o: Order) => {
+  const isFailedPaymentOrder = useCallback((o: Order) => {
     const s = String(o.status || '').toLowerCase();
     const ps = String((o as any).paymentStatus || '').toLowerCase();
     if (FAILED_PAYMENT_STATUSES.includes(s) || FAILED_PAYMENT_STATUSES.includes(ps)) return true;
@@ -1620,10 +1625,10 @@ export default function OrdersTab() {
     if (!UNPAID_STATUSES.includes(s)) return false;
     const ts = orderTimeMs(o);
     return ts > 0 && Date.now() - ts > STALE_UNPAID_MS;
-  };
+  }, [orderTimeMs]);
 
 
-  const filtered = orders.filter(o => {
+  const filtered = useMemo(() => orders.filter(o => {
 
     const c = (o as any).customer;
     const customerName = c ? `${c.firstName || ''} ${c.lastName || ''}`.trim() : (o.userName || '');
@@ -1644,12 +1649,12 @@ export default function OrdersTab() {
       (o as any).fenaPaymentId,
     ].filter(Boolean).join(' ');
 
-    const s = search.toLowerCase();
+    const s = debouncedSearch.toLowerCase();
     // Bank statements show the Wallid id without dashes (e.g. "9b37b618d5"),
     // so compare an alphanumeric-only version too.
     const norm = (v: string) => v.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const sNorm = norm(search);
-    const matchSearch = !search ||
+    const sNorm = norm(debouncedSearch);
+    const matchSearch = !debouncedSearch ||
       orderId.toLowerCase().includes(s) ||
       o.id?.toLowerCase().includes(s) ||
       customerName.toLowerCase().includes(s) ||
@@ -1670,41 +1675,50 @@ export default function OrdersTab() {
       (statusFilter === 'next_day_12' && (o as any).shippingMethod === 'next_day_12') ||
       (statusFilter === 'next_day_missed' && (o as any).nextDayMissedCutoff === true);
     return matchSearch && matchStatus;
-  }).sort((a, b) => orderTimeMs(b) - orderTimeMs(a));
+  }).sort((a, b) => orderTimeMs(b) - orderTimeMs(a)),
+  [orders, debouncedSearch, statusFilter, isNewOrder, isUnpaidOrder, isFailedPaymentOrder, orderTimeMs]);
 
 
-  const counts = {
-    new: orders.filter(isNewOrder).length,
-    unpaid: orders.filter(isUnpaidOrder).length,
-    failed_payment: orders.filter(isFailedPaymentOrder).length,
-
-    all: orders.length,
-    pending: orders.filter(o => o.status === 'pending' || o.status === 'pending_payment').length,
-    paid: orders.filter(o => o.status === 'paid').length,
-
-    processing: orders.filter(o => o.status === 'processing').length,
-    shipped: orders.filter(o => o.status === 'shipped').length,
-    delivered: orders.filter(o => o.status === 'delivered').length,
-    cancelled: orders.filter(o => o.status === 'cancelled').length,
-    fena_paid: orders.filter(isFenaAutoPaid).length,
-    next_day_12: orders.filter(o => (o as any).shippingMethod === 'next_day_12').length,
-    next_day_missed: orders.filter(o => (o as any).nextDayMissedCutoff === true).length,
-  };
+  // Single-pass aggregation (was: 12 separate full-array filters on every render).
+  const counts = useMemo(() => {
+    const c = {
+      new: 0, unpaid: 0, failed_payment: 0, all: orders.length,
+      pending: 0, paid: 0, processing: 0, shipped: 0, delivered: 0,
+      cancelled: 0, fena_paid: 0, next_day_12: 0, next_day_missed: 0,
+    };
+    for (const o of orders) {
+      if (isNewOrder(o)) c.new++;
+      if (isUnpaidOrder(o)) c.unpaid++;
+      if (isFailedPaymentOrder(o)) c.failed_payment++;
+      if (o.status === 'pending' || o.status === 'pending_payment') c.pending++;
+      if (o.status === 'paid') c.paid++;
+      if (o.status === 'processing') c.processing++;
+      if (o.status === 'shipped') c.shipped++;
+      if (o.status === 'delivered') c.delivered++;
+      if (o.status === 'cancelled') c.cancelled++;
+      if (isFenaAutoPaid(o)) c.fena_paid++;
+      if ((o as any).shippingMethod === 'next_day_12') c.next_day_12++;
+      if ((o as any).nextDayMissedCutoff === true) c.next_day_missed++;
+    }
+    return c;
+  }, [orders, isNewOrder, isUnpaidOrder, isFailedPaymentOrder]);
 
 
   // TrueLayer Open Banking orders still in 'pending' (no bank_transfer)
-  const trueLayerPending = orders.filter(o =>
+  const trueLayerPending = useMemo(() => orders.filter(o =>
     o.status === 'pending' && (o as any).paymentMethod !== 'bank_transfer'
-  );
+  ), [orders]);
 
   // Expired pending orders: pending (either method) older than 24h
-  const EXPIRY_MS = 24 * 60 * 60 * 1000;
-  const now = Date.now();
-  const expiredPending = orders.filter(o => {
-    if (o.status !== 'pending') return false;
-    const ts = toMillisSafe(o.orderDate);
-    return ts > 0 && now - ts > EXPIRY_MS;
-  });
+  const expiredPending = useMemo(() => {
+    const EXPIRY_MS = 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    return orders.filter(o => {
+      if (o.status !== 'pending') return false;
+      const ts = toMillisSafe(o.orderDate);
+      return ts > 0 && now - ts > EXPIRY_MS;
+    });
+  }, [orders]);
 
   const handleCancelExpired = async (orderId: string) => {
     setUpdating(orderId);
@@ -1803,7 +1817,7 @@ export default function OrdersTab() {
           </div>
           <div className="divide-y divide-white/[0.04]">
             {expiredPending.map(o => {
-              const hoursAgo = Math.floor((now - toMillisSafe(o.orderDate)) / (60 * 60 * 1000));
+              const hoursAgo = Math.floor((Date.now() - toMillisSafe(o.orderDate)) / (60 * 60 * 1000));
               const method = (o as any).paymentMethod === 'bank_transfer' ? 'Bank Transfer' : 'Card';
               const name = `${(o as any).customer?.firstName || ''} ${(o as any).customer?.lastName || ''}`.trim() || 'Unknown';
               return (
