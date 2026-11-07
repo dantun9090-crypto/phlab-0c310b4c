@@ -328,6 +328,23 @@ export default function PaymentMethodOptions({
                   <p className="text-xs text-slate-300 mt-1">
                     Secure hosted checkout — we never see your card details.
                   </p>
+                  <div
+                    className="mt-2.5 flex items-center gap-2"
+                    aria-label="Accepted card and wallet payment methods"
+                  >
+                    {CARD_BRAND_BADGES.map((badge) => (
+                      <img
+                        key={badge.name}
+                        src={badge.src}
+                        alt={badge.name}
+                        width={312}
+                        height={200}
+                        loading="lazy"
+                        decoding="async"
+                        className="h-8 w-auto rounded-md shadow-sm"
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </button>
