@@ -10,7 +10,7 @@
 
 /** Tokens that identify a named property (no street number by design). */
 const NAMED_PROPERTY_RE =
-  /\b(?:cottage|house|villa|lodge|farm|barn|manor|hall|bungalow|rectory|vicarage|mill|grange|croft|the\s+old)\b/i;
+  /\b(?:cottage|house|villa|lodge|farm|barn|manor|hall|bungalow|rectory|vicarage|mill|grange|croft|den|nook|retreat|annexe?|chalet|the\s+old)\b/i;
 
 /** Flat / unit prefixes that already carry a number ("Flat 3", "Unit 12b"). */
 const UNIT_NUMBER_RE = /\b(?:flat|apt|apartment|unit|suite|room|studio|no\.?)\s*\d+[a-z]?\b/i;
