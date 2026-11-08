@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ShieldCheck, ShieldAlert, Loader2, RefreshCw, Activity } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { probeSecurityRegression } from '@/lib/security-regression.functions';
@@ -239,16 +239,18 @@ export default function SecurityAuditTab() {
 
   useEffect(() => { refresh(); }, []);
 
-  const total = checks.length;
-  const passed = checks.filter(c => c.status === 'pass').length;
-  const failed = checks.filter(c => c.status === 'fail').length;
-  const warn = checks.filter(c => c.status === 'warn').length;
-  const unknown = checks.filter(c => c.status === 'unknown').length;
-
-  const byCategory = checks.reduce<Record<string, Check[]>>((acc, c) => {
-    (acc[c.category] = acc[c.category] || []).push(c);
-    return acc;
-  }, {});
+  const { total, passed, failed, warn, unknown, byCategory } = useMemo(() => {
+    let passed = 0, failed = 0, warn = 0, unknown = 0;
+    const byCategory: Record<string, Check[]> = {};
+    for (const c of checks) {
+      if (c.status === 'pass') passed++;
+      else if (c.status === 'fail') failed++;
+      else if (c.status === 'warn') warn++;
+      else unknown++;
+      (byCategory[c.category] = byCategory[c.category] || []).push(c);
+    }
+    return { total: checks.length, passed, failed, warn, unknown, byCategory };
+  }, [checks]);
 
   return (
     <div className="space-y-6">

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { csvSafeCell } from '@/lib/csv-safe';
 import {
   Shield, Search, Download, RefreshCw, CheckCircle2, XCircle,
@@ -73,12 +73,15 @@ export default function ComplianceTab() {
 
   useEffect(() => { void fetchData(); }, [fetchData]);
 
-  const accepted = records.filter(r => r.termsAccepted);
-  const notAccepted = records.filter(r => !r.termsAccepted);
-  const rate = records.length > 0 ? Math.round((accepted.length / records.length) * 100) : 0;
-  const nonCompliantBuyers = notAccepted.filter(r => r.orderCount > 0).length;
+  const { accepted, notAccepted, rate, nonCompliantBuyers } = useMemo(() => {
+    const accepted = records.filter(r => r.termsAccepted);
+    const notAccepted = records.filter(r => !r.termsAccepted);
+    const rate = records.length > 0 ? Math.round((accepted.length / records.length) * 100) : 0;
+    const nonCompliantBuyers = notAccepted.filter(r => r.orderCount > 0).length;
+    return { accepted, notAccepted, rate, nonCompliantBuyers };
+  }, [records]);
 
-  const filtered = records
+  const filtered = useMemo(() => records
     .filter(r => {
       if (filter === 'accepted') return r.termsAccepted;
       if (filter === 'not_accepted') return !r.termsAccepted;
@@ -100,7 +103,7 @@ export default function ComplianceTab() {
         cmp = a.totalSpend - b.totalSpend;
       }
       return sortDir === 'asc' ? cmp : -cmp;
-    });
+    }), [records, filter, search, sortKey, sortDir]);
 
   const handleSort = (key: 'email' | 'date' | 'spend') => {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
