@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Users, Search, DollarSign, ShoppingBag, UserX, RefreshCw, Shield, ChevronDown, Crown, Trash2, AlertTriangle, X, KeyRound, MailCheck
 } from 'lucide-react';
@@ -321,17 +321,25 @@ export default function CustomersTab() {
     }
   };
 
-  const filtered = customers.filter(c => {
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return customers.filter(c => {
+      const matchSearch =
+        (c.email || '').toLowerCase().includes(q) ||
+        (`${c.firstName || ''} ${c.lastName || ''}`).toLowerCase().includes(q);
+      const matchRole = roleFilter === 'all' || (c.role || 'customer') === roleFilter;
+      return matchSearch && matchRole;
+    });
+  }, [customers, search, roleFilter]);
 
-    const matchSearch =
-      (c.email || '').toLowerCase().includes(search.toLowerCase()) ||
-      (`${c.firstName || ''} ${c.lastName || ''}`).toLowerCase().includes(search.toLowerCase());
-    const matchRole = roleFilter === 'all' || (c.role || 'customer') === roleFilter;
-    return matchSearch && matchRole;
-  });
-
-  const totalRevenue = customers.reduce((s, c) => s + c.totalSpend, 0);
-  const activeCustomers = customers.filter(c => c.orderCount > 0).length;
+  const { totalRevenue, activeCustomers } = useMemo(() => {
+    let totalRevenue = 0, activeCustomers = 0;
+    for (const c of customers) {
+      totalRevenue += c.totalSpend;
+      if (c.orderCount > 0) activeCustomers++;
+    }
+    return { totalRevenue, activeCustomers };
+  }, [customers]);
 
   return (
     <div className="space-y-6">
