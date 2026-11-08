@@ -367,6 +367,11 @@ export default function OrdersTab() {
   const [bulkSyncProgress, setBulkSyncProgress] = useState({ done: 0, total: 0 });
   const [bulkSyncLog, setBulkSyncLog] = useState<{ id: string; status: 'synced' | 'waiting' | 'error'; message: string }[]>([]);
 
+  // Bulk sync tracking + dispatch (one click: RM tracking sync → shipped → dispatch email → live tracking)
+  const [bulkDispatchRunning, setBulkDispatchRunning] = useState(false);
+  const [bulkDispatchProgress, setBulkDispatchProgress] = useState({ done: 0, total: 0 });
+  const [bulkDispatchLog, setBulkDispatchLog] = useState<{ id: string; status: 'dispatched' | 'skipped' | 'error'; message: string }[]>([]);
+
   // Bulk Royal Mail order creation — PROCESSING orders only.
   const [bulkRmRunning, setBulkRmRunning] = useState(false);
   const [bulkRmProgress, setBulkRmProgress] = useState({ done: 0, total: 0 });
@@ -928,10 +933,11 @@ export default function OrdersTab() {
 
   // Register the parcel with AfterShip so we get live courier checkpoints and
   // an instant "delivered" webhook. Best-effort — never blocks dispatch.
-  const registerLiveTracking = async (orderId: string, tracking: string, courier: string) => {
+  const registerLiveTracking = async (orderId: string, tracking: string, courier: string, email?: string) => {
     try {
       const idToken = await getAdminIdToken();
       if (!idToken) return;
+      const trackerEmail = email || selected?.userEmail;
       await registerTracker({
         data: {
           idToken,
@@ -942,7 +948,7 @@ export default function OrdersTab() {
             : /dpd/i.test(courier)
               ? 'dpd-uk'
               : 'royal-mail',
-          ...(selected?.userEmail ? { email: selected.userEmail } : {}),
+          ...(trackerEmail ? { email: trackerEmail } : {}),
         },
       });
     } catch (err) {
@@ -1508,6 +1514,109 @@ export default function OrdersTab() {
       },
       createdAt: Timestamp.now(),
     };
+  };
+
+  /**
+   * Bulk "sync tracking + dispatch" candidates: PAID orders (paid/processing,
+   * never pending/cancelled) that have a Click & Drop order ID or a tracking
+   * number but are not shipped yet.
+   */
+  const bulkDispatchCandidates = useMemo(() => orders.filter(o => {
+    const st = String(o.status || '').toLowerCase();
+    if (!['paid', 'processing'].includes(st)) return false;
+    return String((o as any).royalMailOrderId || '').trim() || String(o.trackingNumber || '').trim();
+  }), [orders]);
+
+  /**
+   * One-click bulk dispatch: for every candidate order it (1) pulls the tracking
+   * number from Royal Mail when missing, (2) marks the order as shipped,
+   * (3) queues the dispatch email and (4) registers AfterShip live tracking.
+   * Saves the per-order "Dispatch" click for batches prepared in Click & Drop.
+   */
+  const handleBulkSyncAndDispatch = async () => {
+    if (bulkDispatchRunning) return;
+    const candidates = bulkDispatchCandidates;
+    setBulkDispatchLog([]);
+    setBulkDispatchProgress({ done: 0, total: candidates.length });
+    if (candidates.length === 0) return;
+
+    setBulkDispatchRunning(true);
+    try {
+      const idToken = await getAdminIdToken();
+      if (!idToken) {
+        setBulkDispatchLog([{ id: '—', status: 'error', message: 'You must be signed in as an admin to dispatch.' }]);
+        return;
+      }
+
+      for (const o of candidates) {
+        try {
+          // 1. Resolve tracking number — sync from Royal Mail when missing
+          let tracking = String(o.trackingNumber || '').trim();
+          if (!tracking) {
+            const rmOrderId = String((o as any).royalMailOrderId || '').trim();
+            const res = await syncRoyalMailTracking({ data: { idToken, royalMailOrderId: rmOrderId, orderReference: o.id } });
+            if (!res.ok) throw new Error(res.error || 'Failed to read Royal Mail order.');
+
+            const returnedRef = String(res.orderReference || '').trim().toUpperCase();
+            const ourRef = String(o.id || '').trim().toUpperCase();
+            if (returnedRef && ourRef && returnedRef !== ourRef) {
+              setBulkDispatchLog(prev => [...prev, { id: o.id, status: 'error', message: `Royal Mail returned a different order (${res.orderReference}) — skipped.` }]);
+              continue;
+            }
+            tracking = res.trackingNumber ? String(res.trackingNumber).trim() : '';
+            if (!tracking) {
+              setBulkDispatchLog(prev => [...prev, { id: o.id, status: 'skipped', message: 'No tracking yet — apply postage in Click & Drop.' }]);
+              continue;
+            }
+          }
+
+          const courier = String((o as any).courier || 'Royal Mail');
+
+          // 2. Mark as shipped + persist tracking
+          await updateDoc(doc(db, 'orders', o.id), {
+            trackingNumber: tracking,
+            royalMailTracking: tracking,
+            courier,
+            status: 'shipped',
+          });
+          await logAdminAction({
+            action: 'order.dispatch',
+            target: `orders/${o.id}`,
+            after: { trackingNumber: tracking, courier, status: 'shipped' },
+            meta: { bulk: true, via: 'sync_and_dispatch' },
+          });
+
+          // 3. Dispatch email (Trigger Email extension picks it up)
+          const customerEmail = o.userEmail || (o as any).customer?.email;
+          if (customerEmail) {
+            await addDoc(collection(db, 'mail'), buildDispatchMailDoc(o, tracking, customerEmail));
+          }
+
+          // 4. AfterShip live tracking (best-effort, order's own email)
+          await registerLiveTracking(o.id, tracking, courier, customerEmail || undefined);
+
+          // 5. Local state
+          setOrders(prev => prev.map(x => x.id === o.id
+            ? { ...x, trackingNumber: tracking, courier, status: 'shipped' } as Order
+            : x));
+          setSelected(prev => prev && prev.id === o.id
+            ? { ...prev, trackingNumber: tracking, courier, status: 'shipped' } as Order
+            : prev);
+          setBulkDispatchLog(prev => [...prev, {
+            id: o.id,
+            status: 'dispatched',
+            message: customerEmail ? `${tracking} — shipped + email sent` : `${tracking} — shipped (no customer email)`,
+          }]);
+        } catch (e: any) {
+          console.error('[bulk-dispatch] failed for', o.id, e);
+          setBulkDispatchLog(prev => [...prev, { id: o.id, status: 'error', message: e?.message || 'Dispatch failed.' }]);
+        } finally {
+          setBulkDispatchProgress(prev => ({ ...prev, done: prev.done + 1 }));
+        }
+      }
+    } finally {
+      setBulkDispatchRunning(false);
+    }
   };
 
   /**
@@ -2201,6 +2310,48 @@ export default function OrdersTab() {
                     className={`text-xs font-mono ${
                       r.status === 'synced' ? 'text-emerald-300'
                         : r.status === 'waiting' ? 'text-amber-300'
+                        : 'text-red-400'
+                    }`}
+                  >
+                    {r.id}: {r.message}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Bulk sync tracking + dispatch — one click ships the whole prepared batch */}
+      {(() => {
+        const pending = bulkDispatchCandidates.length;
+        if (pending === 0 && bulkDispatchLog.length === 0) return null;
+        return (
+          <div className="p-3 bg-[#0d1f35] border border-white/[0.08] rounded-xl">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-[#9cb8d9] text-xs">
+                {pending} paid order{pending === 1 ? '' : 's'} ready to dispatch — pulls any missing Royal Mail
+                tracking, marks as shipped and sends the dispatch email.
+              </p>
+              <button
+                onClick={handleBulkSyncAndDispatch}
+                disabled={bulkDispatchRunning || pending === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+              >
+                {bulkDispatchRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Truck className="w-3.5 h-3.5" />}
+                {bulkDispatchRunning
+                  ? `Dispatching ${bulkDispatchProgress.done}/${bulkDispatchProgress.total}…`
+                  : 'Sync tracking + dispatch (bulk)'}
+              </button>
+            </div>
+            {bulkDispatchLog.length > 0 && (
+              <ul className="mt-2 space-y-1 max-h-40 overflow-y-auto" role="status">
+                {bulkDispatchLog.map((r, i) => (
+                  <li
+                    key={`${r.id}-${i}`}
+                    className={`text-xs font-mono ${
+                      r.status === 'dispatched' ? 'text-emerald-300'
+                        : r.status === 'skipped' ? 'text-amber-300'
                         : 'text-red-400'
                     }`}
                   >
