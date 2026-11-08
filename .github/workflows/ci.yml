@@ -323,6 +323,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: sbom-${{ github.sha }}
+          overwrite: true
           path: |
             dist/sbom.cdx.json
             dist/sbom.cdx.json.sha256
