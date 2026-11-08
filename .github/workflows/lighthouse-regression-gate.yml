@@ -65,7 +65,7 @@ jobs:
     # process). Skip cleanly rather than fail.
     if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    timeout-minutes: 70
     strategy:
       fail-fast: false
       matrix:
@@ -83,7 +83,7 @@ jobs:
         run: npm i -g @lhci/cli@0.14.x
 
       - name: Run Lighthouse CI (${{ matrix.profile }})
-        # Retry up to 3 full attempts. Shared-CI CPU/network noise alone can
+        # Retry up to 2 full attempts. Shared-CI CPU/network noise alone can
         # trip the assert thresholds on a single attempt (see header comments:
         # TBT medians swung 315-720ms on identical code). The gate now fails
         # only when ALL attempts fail = persistent regression, not one noisy
@@ -93,16 +93,24 @@ jobs:
         run: |
           set +e
           LAST_CODE=1
-          for attempt in 1 2 3; do
+          for attempt in 1 2; do
             rm -rf .lighthouseci
-            lhci autorun --config=.lighthouserc.${{ matrix.profile }}.json
+            # Hard-kill hung runs: Chrome occasionally wedges (NO_NAVSTART)
+            # and lhci never exits on its own — without a timeout the retry
+            # loop never fires and the job burns the full job timeout. The cap
+            # must exceed a healthy full pass: 4 URLs x 4 runs at 60-80s per
+            # run against live prod = ~19-21 min, so 28m kills only true hangs.
+            timeout --signal=KILL 28m lhci autorun --config=.lighthouserc.${{ matrix.profile }}.json
             code=$?
+            if [ $code -eq 124 ] || [ $code -eq 137 ] || [ $code -eq 128 ]; then
+              echo "::warning::Lighthouse attempt $attempt/2 killed after 28m (hung Chrome / NO_NAVSTART)"
+            fi
             if [ $code -eq 0 ]; then
-              echo "::notice::Lighthouse gate passed on attempt $attempt"
+              echo "::notice::Lighthouse gate passed on attempt $attempt/2"
               exit 0
             fi
             LAST_CODE=$code
-            echo "::warning::Lighthouse attempt $attempt/3 failed (exit $code)"
+            echo "::warning::Lighthouse attempt $attempt/2 failed (exit $code)"
             if [ -d .lighthouseci ]; then
               cp -r .lighthouseci ".lighthouseci-attempt-$attempt"
             fi
@@ -110,8 +118,8 @@ jobs:
           done
           # Restore the last attempt's reports so the Summarise CWV step and
           # the uploaded artifact reflect the most recent failure.
-          if [ -d .lighthouseci-attempt-3 ]; then
-            cp -r .lighthouseci-attempt-3 .lighthouseci
+          if [ -d .lighthouseci-attempt-2 ]; then
+            cp -r .lighthouseci-attempt-2 .lighthouseci
           fi
           exit $LAST_CODE
         env:
