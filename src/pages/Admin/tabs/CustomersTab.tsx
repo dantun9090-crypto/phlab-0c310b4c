@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Users, Search, DollarSign, ShoppingBag, UserX, RefreshCw, Shield, ChevronDown, Crown, Trash2, AlertTriangle, X, KeyRound, MailCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db, collection, getDocs, updateDoc, doc, auth } from '@/lib/firebase';
-import { getAllOrders } from '@/lib/firebase';
+import { useQueryClient } from '@tanstack/react-query';
+import { fetchAllOrders, refetchAllOrders } from '@/lib/queries/all-orders';
 import { logAdminAction } from '@/lib/admin-audit';
 import { toDateSafe, toMillisSafe } from '@/lib/to-date';
 
@@ -88,7 +89,8 @@ export default function CustomersTab() {
   const [pwResult, setPwResult] = useState<string | null>(null);
 
 
-  const fetchData = async () => {
+  const qc = useQueryClient();
+  const fetchData = useCallback(async (hard = false) => {
     setLoading(true);
     setFetchError(null);
     try {
@@ -99,7 +101,7 @@ export default function CustomersTab() {
       // Sort client-side by email
       usersData.sort((a: any, b: any) => (a.email || '').localeCompare(b.email || ''));
 
-      const orders = await getAllOrders();
+      const orders = await (hard ? refetchAllOrders(qc) : fetchAllOrders(qc));
 
       const enriched: CustomerProfile[] = usersData.map((u: any) => {
         const userOrders = orders.filter(o => o.userId === u.uid && o.status !== 'cancelled');
@@ -131,9 +133,9 @@ export default function CustomersTab() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [qc]);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { void fetchData(); }, [fetchData]);
 
   const handleRoleChange = async (uid: string, role: string) => {
     setSaving(uid);
@@ -340,7 +342,7 @@ export default function CustomersTab() {
           <p className="text-[#9cb8d9] text-xs sm:text-sm mt-1">{customers.length} registered users · £{totalRevenue.toFixed(2)} total revenue</p>
         </div>
         <button
-          onClick={fetchData}
+          onClick={() => fetchData(true)}
           aria-label="Refresh customer data"
           className="p-2 bg-[#0f2640] hover:bg-[#1a3a5c] text-[#8caad4] rounded-lg transition-colors"
         >
