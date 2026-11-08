@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { csvSafeCell } from '@/lib/csv-safe';
 import {
   Shield, Search, Download, RefreshCw, CheckCircle2, XCircle,
   Calendar, Users, AlertTriangle, ChevronDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { db, getAllOrders, collection, getDocs } from '@/lib/firebase';
+import { db, collection, getDocs } from '@/lib/firebase';
+import { useQueryClient } from '@tanstack/react-query';
+import { fetchAllOrders, refetchAllOrders } from '@/lib/queries/all-orders';
 
 interface ComplianceRecord {
   uid: string;
@@ -32,12 +34,13 @@ export default function ComplianceTab() {
   const [sortKey, setSortKey] = useState<'email' | 'date' | 'spend'>('date');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
-  const fetchData = async () => {
+  const qc = useQueryClient();
+  const fetchData = useCallback(async (hard = false) => {
     setLoading(true);
     try {
       const snap = await getDocs(collection(db, 'customers'));
       const users = snap.docs.map(d => ({ uid: d.id, ...d.data() } as any));
-      const orders = await getAllOrders();
+      const orders = await (hard ? refetchAllOrders(qc) : fetchAllOrders(qc));
 
       const enriched: ComplianceRecord[] = users.map((u: any) => {
         const userOrders = orders.filter((o: any) => o.userId === u.uid);
@@ -66,9 +69,9 @@ export default function ComplianceTab() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [qc]);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { void fetchData(); }, [fetchData]);
 
   const accepted = records.filter(r => r.termsAccepted);
   const notAccepted = records.filter(r => !r.termsAccepted);
@@ -143,7 +146,7 @@ export default function ComplianceTab() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={fetchData}
+            onClick={() => fetchData(true)}
             disabled={loading}
             aria-label="Refresh compliance data"
             className="p-2 text-[#9cb8d9] hover:text-white bg-[#0b1a30] hover:bg-[#1a3a5c] border border-white/[0.07] rounded-xl transition-all disabled:opacity-50"

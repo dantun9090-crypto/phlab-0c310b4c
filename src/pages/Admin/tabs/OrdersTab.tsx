@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CustomerOrdersSummary, { orderEmail } from '@/components/admin/CustomerOrdersSummary';
-import { getAllOrders, updateOrderStatus, Order, db, doc, updateDoc, addDoc, collection, query, where, getDocs, getDoc, setDoc, Timestamp, deleteDoc, sendOrderStatusEmail } from '@/lib/firebase';
+import { updateOrderStatus, Order, db, doc, updateDoc, addDoc, collection, query, where, getDocs, getDoc, setDoc, Timestamp, deleteDoc, sendOrderStatusEmail } from '@/lib/firebase';
 import { auth } from '@/lib/firebase';
 import { logAdminAction } from '@/lib/admin-audit';
 import PaymentTimeline from '@/components/admin/PaymentTimeline';
@@ -27,6 +27,12 @@ import { getAdminIdToken } from '@/lib/auth-ready';
 import { toDateSafe, toMillisSafe } from '@/lib/to-date';
 import { hasHouseNumber } from '@/lib/uk-address';
 import { canRetryPayment } from '@/lib/order-payment-retry';
+import { useQueryClient } from '@tanstack/react-query';
+import { fetchAllOrders, refetchAllOrders } from '@/lib/queries/all-orders';
+import ConfirmDialog from '@/components/admin/ConfirmDialog';
+import OrdersListSkeleton from '@/components/admin/OrdersListSkeleton';
+import EmptyState from '@/components/admin/EmptyState';
+import VirtualizedOrdersList from '@/components/admin/VirtualizedOrdersList';
 
 // ── Order-classification constants (module level: stable identities keep memoized selectors cheap) ──
 /** Statuses that mean "money not received yet". */
@@ -44,6 +50,8 @@ const FAILED_PAYMENT_STATUSES = ['failed', 'expired', 'payment_failed', 'failed_
 const STALE_UNPAID_MS = 24 * 60 * 60 * 1000;
 const NEW_ORDER_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const UNPAID_FOR_PAYLINK = ['pending', 'pending_payment', 'awaiting_payment', 'processing_payment', 'failed'];
+/** Lists longer than this render through the window virtualizer; shorter ones use a plain map (tests, small filters). */
+const VIRTUALIZE_THRESHOLD = 60;
 
 // ── "Check address" badge — order has no deliverable house number ──
 function CheckAddressBadge({ order, addressLine }: { order: any; addressLine: string }) {
@@ -261,6 +269,7 @@ function ReconciledCronBadge({ order }: { order: any }) {
 }
 
 export default function OrdersTab() {
+  const qc = useQueryClient();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -327,6 +336,8 @@ export default function OrdersTab() {
   };
   const [updating, setUpdating] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  // Id of the order awaiting delete confirmation (ConfirmDialog).
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   // Tracking number state
   const [trackingInput, setTrackingInput] = useState('');
@@ -401,10 +412,6 @@ export default function OrdersTab() {
   const [paymentStatusInput, setPaymentStatusInput] = useState<'pending_bank_transfer' | 'paid' | 'cancelled'>('pending_bank_transfer');
   const [transferLoading, setTransferLoading] = useState(false);
   const [transferMsg, setTransferMsg] = useState('');
-
-  useEffect(() => {
-    loadOrders();
-  }, []);
 
   // Trigger element to return focus to when the modal closes.
   const triggerRef = useRef<HTMLElement | null>(null);
@@ -501,11 +508,11 @@ export default function OrdersTab() {
     setTransferMsg('');
   }, [selected?.id]);
 
-  const loadOrders = async () => {
+  const loadOrders = useCallback(async (hard = false) => {
     setLoading(true);
     setLoadError('');
     try {
-      const data = await getAllOrders();
+      const data = await (hard ? refetchAllOrders(qc) : fetchAllOrders(qc));
       setOrders(data);
     } catch (e: any) {
       console.error('Failed to load orders:', e);
@@ -513,7 +520,11 @@ export default function OrdersTab() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [qc]);
+
+  useEffect(() => {
+    void loadOrders();
+  }, [loadOrders]);
 
   const handleStatusChange = async (orderId: string, status: Order['status']) => {
     setUpdating(orderId);
@@ -782,10 +793,13 @@ export default function OrdersTab() {
     }
   };
 
-  const handleDeleteOrder = async (orderId: string) => {
+  // Opens the ConfirmDialog; the destructive work happens in confirmDeleteOrder.
+  const handleDeleteOrder = (orderId: string) => setPendingDeleteId(orderId);
+
+  const confirmDeleteOrder = async () => {
+    const orderId = pendingDeleteId;
+    if (!orderId) return;
     const orderRef = orders.find(o => o.id === orderId);
-    const label = (orderRef as any)?.bankTransferRef || `#${orderId?.slice(-8).toUpperCase()}`;
-    if (!window.confirm(`Permanently delete order ${label}?\n\nThis cannot be undone.`)) return;
     setDeleting(orderId);
     try {
       await deleteDoc(doc(db, 'orders', orderId));
@@ -796,12 +810,18 @@ export default function OrdersTab() {
       });
       setOrders(prev => prev.filter(o => o.id !== orderId));
       if (selected?.id === orderId) setSelected(null);
+      setPendingDeleteId(null);
     } catch (e: any) {
       alert('Failed to delete order: ' + (e?.message || 'Please try again.'));
     } finally {
       setDeleting(null);
     }
   };
+
+  const pendingDeleteOrder = pendingDeleteId ? orders.find(o => o.id === pendingDeleteId) : undefined;
+  const pendingDeleteLabel = pendingDeleteId
+    ? String((pendingDeleteOrder as any)?.bankTransferRef || `#${pendingDeleteId.slice(-8).toUpperCase()}`)
+    : '';
 
   // Save bank transfer payment status + transfer reference
   const handleSavePaymentStatus = async () => {
@@ -1738,8 +1758,193 @@ export default function OrdersTab() {
     }
   };
 
+  // Renders one order row. Extracted so the plain list (small result
+  // sets) and the virtualized list share the exact same markup.
+  const renderOrderRow = (order: Order) => {
+    const c = (order as any).customer;
+    const customerName = c ? `${c.firstName || ''} ${c.lastName || ''}`.trim() : (order.userName || 'Guest');
+    const customerEmail = c?.email || order.userEmail || '';
+    const addressLine = c ? [c.address, c.city, c.postcode].filter(Boolean).join(', ') : (order.shippingAddress || '');
+    const orderRef = (order as any).orderId || `#${order.id?.slice(-8).toUpperCase()}`;
+    const wallidApiRef = (order as any).apiPaymentId || (order as any).wallidApiPaymentId || '';
+    const orderTs = order.orderDate || (order as any).createdAt;
+    return (
+    <div key={order.id} className="bg-[#0b1a30]/60 border border-white/[0.07] rounded-xl p-4 hover:border-white/[0.12] transition-colors">
+      {/* Mobile: stack info above actions — the old flex-wrap row let
+          the price/select column squeeze the info column to a few
+          characters wide, wrapping text letter-by-letter. */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="font-mono text-white font-semibold text-sm">
+              {orderRef}
+              {wallidApiRef && (
+                <span className="text-emerald-300">
+                  {' '}+ {String(wallidApiRef).replace(/-/g, '').slice(0, 10)}
+                </span>
+              )}
+            </span>
+
+            <StatusBadge status={order.status} />
+            {(order as any).paymentMethod === 'bank_transfer' && (
+              <PaymentStatusBadge paymentStatus={(order as any).paymentStatus || 'pending_bank_transfer'} />
+            )}
+            {isFenaOrder(order) && <FenaStatusBadge order={order} />}
+            <ProviderBadge order={order} />
+            <ReconciledCronBadge order={order} />
+            <CheckAddressBadge order={order} addressLine={addressLine} />
+            {order.trackingNumber && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-400 font-mono">
+                <Hash className="w-3 h-3" />{order.trackingNumber}
+              </span>
+            )}
+          </div>
+          <p className="text-white text-xs mt-1 font-medium">{customerName}{customerEmail ? <span className="text-[#9cb8d9] font-normal"> · {customerEmail}</span> : ''}</p>
+          <p className="text-[#9cb8d9] text-xs mt-0.5 truncate">{addressLine || 'No address'}</p>
+          <p className="text-[#2a4a7a] text-xs mt-0.5">
+            {order.items?.length || 0} item(s) ·{' '}
+            {orderTs?.toDate?.()?.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) || 'Unknown date'}
+          </p>
+          {wallidApiRef && (
+            <p className="text-[#8caad4] text-xs mt-1 font-mono break-all">
+              Bank ref: <span className="text-emerald-300">{String(wallidApiRef).replace(/-/g, '').slice(0, 10)}</span>
+              <span className="text-[#2a4a7a]"> · Wallid ID: {wallidApiRef}</span>
+            </p>
+          )}
+          {Array.isArray(order.items) && order.items.length > 0 && (
+            <ul className="mt-2 space-y-1 rounded-lg border border-white/[0.07] bg-[#060f1e]/60 p-2">
+              {order.items.map((it: any, idx: number) => {
+                const name = it?.name || it?.productName || 'Item';
+                const rawVariant = it?.variantName || it?.dosage || it?.variant || it?.size || it?.variantLabel || '';
+                const variant = rawVariant && !String(name).toLowerCase().includes(String(rawVariant).toLowerCase()) ? rawVariant : (rawVariant && /mg|ml|mcg|iu/i.test(String(rawVariant)) ? rawVariant : '');
+                const qty = Number(it?.quantity ?? 1);
+                const price = Number(it?.price ?? it?.unitPrice ?? 0);
+                return (
+                  <li key={idx} className="flex items-center justify-between gap-2 text-xs">
+                    <span className="text-white min-w-0 break-words">
+                      <span className="font-semibold text-emerald-300">{qty}×</span> {name}
+                      {variant ? <span className="text-[#9cb8d9]"> · {String(variant)}</span> : null}
+                    </span>
+                    {price > 0 && (
+                      <span className="text-[#9cb8d9] shrink-0">£{(price * qty).toFixed(2)}</span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <button
+            type="button"
+            onClick={() => openOrder(order)}
+            className="mt-2 inline-flex items-center gap-1.5 min-h-[40px] px-3 py-2 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-200 rounded-lg text-xs font-medium"
+          >
+            <Eye className="w-4 h-4" /> Open full order
+          </button>
+
+
+        </div>
+        <div className="flex items-center gap-3 flex-wrap sm:shrink-0">
+          <span className="text-green-400 font-bold text-lg">£{((order as any).total || order.totalAmount || 0).toFixed(2)}</span>
+
+          {/* Status selector */}
+          <div className="relative">
+            <select
+              value={order.status}
+              onChange={e => handleStatusChange(order.id, e.target.value as Order['status'])}
+              disabled={updating === order.id}
+              className="appearance-none pl-3 pr-8 py-1.5 bg-white border border-gray-300 rounded-lg text-gray-900 text-xs focus:outline-none focus:border-blue-500 disabled:opacity-50 cursor-pointer"
+            >
+              {WORKFLOW.map(s => (
+                <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
+              ))}
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[#9cb8d9] pointer-events-none" />
+          </div>
+
+          {/* Quick-advance to next workflow status */}
+          {(() => {
+            const idx = WORKFLOW.indexOf(order.status as Order['status']);
+            if (idx < 0 || idx >= WORKFLOW.length - 1) return null;
+            const next = WORKFLOW[idx + 1];
+            const nextCfg = STATUS_CONFIG[next];
+            const needsDispatch = next === 'shipped';
+            return (
+              <button
+                onClick={() => {
+                  if (needsDispatch) {
+                    openOrder(order);
+
+                  } else {
+                    handleStatusChange(order.id, next);
+                  }
+                }}
+                disabled={updating === order.id}
+                title={needsDispatch ? `Open dispatch — requires tracking number` : `Advance to ${nextCfg.label}`}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 hover:border-emerald-500/50 text-emerald-300 hover:text-emerald-200 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+              >
+                {updating === order.id
+                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  : <ArrowRight className="w-3.5 h-3.5" />}
+                {nextCfg.label}
+              </button>
+            );
+          })()}
+
+
+          <button
+            onClick={() => setHistoryOrderId(historyOrderId === order.id ? null : order.id)}
+            className={`p-1.5 rounded-lg transition-colors ${historyOrderId === order.id ? 'bg-emerald-500/20 border border-emerald-500/40' : 'bg-[#0f2640] hover:bg-[#1a3a5c]'}`}
+            title="Customer history (paid / failed)"
+          >
+            <BarChart3 className={`w-4 h-4 ${historyOrderId === order.id ? 'text-emerald-300' : 'text-[#8caad4]'}`} />
+          </button>
+          <button
+            onClick={() => openOrder(order)}
+            className="p-1.5 bg-[#0f2640] hover:bg-[#1a3a5c] rounded-lg transition-colors"
+            title="View details"
+          >
+            <Eye className="w-4 h-4 text-[#8caad4]" />
+          </button>
+          <button
+            onClick={() => handleDeleteOrder(order.id)}
+            disabled={deleting === order.id}
+            className="p-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 rounded-lg transition-colors disabled:opacity-50"
+            title="Delete order"
+          >
+            {deleting === order.id
+              ? <Loader2 className="w-4 h-4 text-red-400 animate-spin" />
+              : <Trash2 className="w-4 h-4 text-red-400" />
+            }
+          </button>
+        </div>
+      </div>
+      {historyOrderId === order.id && (
+        <div className="mt-3">
+          <CustomerOrdersSummary
+            email={orderEmail(order)}
+            orders={orders}
+            onOpenOrder={(o) => { setHistoryOrderId(null); openOrder(o); }}
+          />
+        </div>
+      )}
+
+    </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        title="Delete order"
+        body={`Permanently delete order ${pendingDeleteLabel}?\n\nThis cannot be undone.`}
+        confirmLabel="Delete"
+        destructive
+        busy={pendingDeleteId !== null && deleting === pendingDeleteId}
+        onConfirm={confirmDeleteOrder}
+        onCancel={() => setPendingDeleteId(null)}
+      />
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
@@ -1757,7 +1962,7 @@ export default function OrdersTab() {
             TrueLayer Console
             <ExternalLink className="w-3 h-3 opacity-60" />
           </button>
-          <button onClick={loadOrders} className="flex items-center gap-2 px-3 py-2 bg-[#0f2640] hover:bg-[#1a3a5c] text-white rounded-lg text-sm transition-colors">
+          <button onClick={() => loadOrders(true)} className="flex items-center gap-2 px-3 py-2 bg-[#0f2640] hover:bg-[#1a3a5c] text-white rounded-lg text-sm transition-colors">
             <RefreshCw className="w-4 h-4" /> Refresh
           </button>
         </div>
@@ -2209,193 +2414,27 @@ export default function OrdersTab() {
 
       {/* Orders list */}
       {loading ? (
-        <div className="text-center py-16 text-[#9cb8d9]">Loading orders...</div>
+        <OrdersListSkeleton rows={8} />
       ) : loadError ? (
         <div className="text-center py-16">
           <p className="text-red-400 mb-3">{loadError}</p>
           <button
-            onClick={loadOrders}
+            onClick={() => loadOrders(true)}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
           >
             Retry
           </button>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-[#9cb8d9]">No orders found</div>
+        <EmptyState title="No orders found" hint="Try a different search term or status filter." />
       ) : (
-        <div className="space-y-3">
-          {filtered.map(order => {
-            const c = (order as any).customer;
-            const customerName = c ? `${c.firstName || ''} ${c.lastName || ''}`.trim() : (order.userName || 'Guest');
-            const customerEmail = c?.email || order.userEmail || '';
-            const addressLine = c ? [c.address, c.city, c.postcode].filter(Boolean).join(', ') : (order.shippingAddress || '');
-            const orderRef = (order as any).orderId || `#${order.id?.slice(-8).toUpperCase()}`;
-            const wallidApiRef = (order as any).apiPaymentId || (order as any).wallidApiPaymentId || '';
-            const orderTs = order.orderDate || (order as any).createdAt;
-            return (
-            <div key={order.id} className="bg-[#0b1a30]/60 border border-white/[0.07] rounded-xl p-4 hover:border-white/[0.12] transition-colors">
-              {/* Mobile: stack info above actions — the old flex-wrap row let
-                  the price/select column squeeze the info column to a few
-                  characters wide, wrapping text letter-by-letter. */}
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span className="font-mono text-white font-semibold text-sm">
-                      {orderRef}
-                      {wallidApiRef && (
-                        <span className="text-emerald-300">
-                          {' '}+ {String(wallidApiRef).replace(/-/g, '').slice(0, 10)}
-                        </span>
-                      )}
-                    </span>
-
-                    <StatusBadge status={order.status} />
-                    {(order as any).paymentMethod === 'bank_transfer' && (
-                      <PaymentStatusBadge paymentStatus={(order as any).paymentStatus || 'pending_bank_transfer'} />
-                    )}
-                    {isFenaOrder(order) && <FenaStatusBadge order={order} />}
-                    <ProviderBadge order={order} />
-                    <ReconciledCronBadge order={order} />
-                    <CheckAddressBadge order={order} addressLine={addressLine} />
-                    {order.trackingNumber && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-400 font-mono">
-                        <Hash className="w-3 h-3" />{order.trackingNumber}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-white text-xs mt-1 font-medium">{customerName}{customerEmail ? <span className="text-[#9cb8d9] font-normal"> · {customerEmail}</span> : ''}</p>
-                  <p className="text-[#9cb8d9] text-xs mt-0.5 truncate">{addressLine || 'No address'}</p>
-                  <p className="text-[#2a4a7a] text-xs mt-0.5">
-                    {order.items?.length || 0} item(s) ·{' '}
-                    {orderTs?.toDate?.()?.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) || 'Unknown date'}
-                  </p>
-                  {wallidApiRef && (
-                    <p className="text-[#8caad4] text-xs mt-1 font-mono break-all">
-                      Bank ref: <span className="text-emerald-300">{String(wallidApiRef).replace(/-/g, '').slice(0, 10)}</span>
-                      <span className="text-[#2a4a7a]"> · Wallid ID: {wallidApiRef}</span>
-                    </p>
-                  )}
-                  {Array.isArray(order.items) && order.items.length > 0 && (
-                    <ul className="mt-2 space-y-1 rounded-lg border border-white/[0.07] bg-[#060f1e]/60 p-2">
-                      {order.items.map((it: any, idx: number) => {
-                        const name = it?.name || it?.productName || 'Item';
-                        const rawVariant = it?.variantName || it?.dosage || it?.variant || it?.size || it?.variantLabel || '';
-                        const variant = rawVariant && !String(name).toLowerCase().includes(String(rawVariant).toLowerCase()) ? rawVariant : (rawVariant && /mg|ml|mcg|iu/i.test(String(rawVariant)) ? rawVariant : '');
-                        const qty = Number(it?.quantity ?? 1);
-                        const price = Number(it?.price ?? it?.unitPrice ?? 0);
-                        return (
-                          <li key={idx} className="flex items-center justify-between gap-2 text-xs">
-                            <span className="text-white min-w-0 break-words">
-                              <span className="font-semibold text-emerald-300">{qty}×</span> {name}
-                              {variant ? <span className="text-[#9cb8d9]"> · {String(variant)}</span> : null}
-                            </span>
-                            {price > 0 && (
-                              <span className="text-[#9cb8d9] shrink-0">£{(price * qty).toFixed(2)}</span>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => openOrder(order)}
-                    className="mt-2 inline-flex items-center gap-1.5 min-h-[40px] px-3 py-2 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-200 rounded-lg text-xs font-medium"
-                  >
-                    <Eye className="w-4 h-4" /> Open full order
-                  </button>
-
-
-                </div>
-                <div className="flex items-center gap-3 flex-wrap sm:shrink-0">
-                  <span className="text-green-400 font-bold text-lg">£{((order as any).total || order.totalAmount || 0).toFixed(2)}</span>
-
-                  {/* Status selector */}
-                  <div className="relative">
-                    <select
-                      value={order.status}
-                      onChange={e => handleStatusChange(order.id, e.target.value as Order['status'])}
-                      disabled={updating === order.id}
-                      className="appearance-none pl-3 pr-8 py-1.5 bg-white border border-gray-300 rounded-lg text-gray-900 text-xs focus:outline-none focus:border-blue-500 disabled:opacity-50 cursor-pointer"
-                    >
-                      {WORKFLOW.map(s => (
-                        <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
-                      ))}
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[#9cb8d9] pointer-events-none" />
-                  </div>
-
-                  {/* Quick-advance to next workflow status */}
-                  {(() => {
-                    const idx = WORKFLOW.indexOf(order.status as Order['status']);
-                    if (idx < 0 || idx >= WORKFLOW.length - 1) return null;
-                    const next = WORKFLOW[idx + 1];
-                    const nextCfg = STATUS_CONFIG[next];
-                    const needsDispatch = next === 'shipped';
-                    return (
-                      <button
-                        onClick={() => {
-                          if (needsDispatch) {
-                            openOrder(order);
-
-                          } else {
-                            handleStatusChange(order.id, next);
-                          }
-                        }}
-                        disabled={updating === order.id}
-                        title={needsDispatch ? `Open dispatch — requires tracking number` : `Advance to ${nextCfg.label}`}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 hover:border-emerald-500/50 text-emerald-300 hover:text-emerald-200 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
-                      >
-                        {updating === order.id
-                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          : <ArrowRight className="w-3.5 h-3.5" />}
-                        {nextCfg.label}
-                      </button>
-                    );
-                  })()}
-
-
-                  <button
-                    onClick={() => setHistoryOrderId(historyOrderId === order.id ? null : order.id)}
-                    className={`p-1.5 rounded-lg transition-colors ${historyOrderId === order.id ? 'bg-emerald-500/20 border border-emerald-500/40' : 'bg-[#0f2640] hover:bg-[#1a3a5c]'}`}
-                    title="Customer history (paid / failed)"
-                  >
-                    <BarChart3 className={`w-4 h-4 ${historyOrderId === order.id ? 'text-emerald-300' : 'text-[#8caad4]'}`} />
-                  </button>
-                  <button
-                    onClick={() => openOrder(order)}
-                    className="p-1.5 bg-[#0f2640] hover:bg-[#1a3a5c] rounded-lg transition-colors"
-                    title="View details"
-                  >
-                    <Eye className="w-4 h-4 text-[#8caad4]" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteOrder(order.id)}
-                    disabled={deleting === order.id}
-                    className="p-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 rounded-lg transition-colors disabled:opacity-50"
-                    title="Delete order"
-                  >
-                    {deleting === order.id
-                      ? <Loader2 className="w-4 h-4 text-red-400 animate-spin" />
-                      : <Trash2 className="w-4 h-4 text-red-400" />
-                    }
-                  </button>
-                </div>
-              </div>
-              {historyOrderId === order.id && (
-                <div className="mt-3">
-                  <CustomerOrdersSummary
-                    email={orderEmail(order)}
-                    orders={orders}
-                    onOpenOrder={(o) => { setHistoryOrderId(null); openOrder(o); }}
-                  />
-                </div>
-              )}
-            </div>
-            );
-          })}
-        </div>
+        filtered.length <= VIRTUALIZE_THRESHOLD ? (
+          <div className="space-y-3">
+            {filtered.map(renderOrderRow)}
+          </div>
+        ) : (
+          <VirtualizedOrdersList rows={filtered} renderRow={renderOrderRow} />
+        )
       )}
 
       {/* Order Detail Modal — portalled to body so transformed ancestors don't break `fixed` positioning */}
