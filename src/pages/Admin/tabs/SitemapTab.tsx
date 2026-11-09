@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { db, doc, setDoc, updateProduct, getAllProducts } from '@/lib/firebase';
 import type { Product } from '@/lib/firebase';
 import { Map, RefreshCw, Globe, CheckCircle2, XCircle, AlertCircle, ExternalLink, Copy, Loader2, ToggleLeft, ToggleRight, ChevronDown, ChevronUp } from 'lucide-react';
@@ -186,7 +186,10 @@ export default function SitemapTab() {
     setTimeout(() => setCopiedXml(false), 2000);
   };
 
-  const includedCount = products.filter(p => !(p as any).excludeFromSitemap && p.visibility !== 'hidden').length;
+  const includedCount = useMemo(
+    () => products.filter(p => !(p as any).excludeFromSitemap && p.visibility !== 'hidden').length,
+    [products]
+  );
 
   return (
     <div className="p-4 sm:p-6 space-y-6">

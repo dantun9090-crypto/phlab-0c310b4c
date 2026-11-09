@@ -15,7 +15,8 @@
  *   - paid (any post-payment status) on any payment route (see
  *     ELIGIBLE_PROVIDERS — gateway `paymentProvider`, or `paymentMethod`
  *     for manual bank transfer / Tide),
- *   - has a captured adClickIds.gclid (see src/lib/gclid-capture.ts),
+ *   - has a captured ad click id (gclid, gbraid or wbraid — the first
+ *     available, in that order; see src/lib/gclid-capture.ts),
  *   - regardless of the adsClientConversionAt marker — the website tag is a
  *     Secondary action, so it never counts as Primary alongside this import.
  *   - each order once per file (dedup by order id); the "Order ID" column
@@ -47,6 +48,19 @@ import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
 const CONVERSION_NAME =
   (process.env.ADS_IMPORT_CONVERSION_NAME || "").trim() || "Purchase (offline import)";
 const LOOKBACK_MS = 90 * 24 * 60 * 60_000;
+const CLICK_ID_RE = /^[A-Za-z0-9_.\-~]{10,500}$/;
+
+/** First valid ad click id in order gclid → gbraid → wbraid, or "" if none. */
+export function pickAdClickId(clickIds: unknown): string {
+  if (!clickIds || typeof clickIds !== "object") return "";
+  const ids = clickIds as Record<string, unknown>;
+  for (const key of ["gclid", "gbraid", "wbraid"]) {
+    const v = ids[key];
+    if (typeof v === "string" && CLICK_ID_RE.test(v.trim())) return v.trim();
+  }
+  return "";
+}
+
 /** Minimum order age before export — see "Which orders are exported". */
 const MIN_AGE_MS = 48 * 60 * 60_000;
 
@@ -214,11 +228,8 @@ export async function getOfflineConversionsCsv(request: Request): Promise<Respon
       const orderId = String(order.id || "");
       if (!orderId || seenOrderIds.has(orderId)) continue;
 
-      const clickIds = (order as { adClickIds?: unknown }).adClickIds as
-        | { gclid?: unknown }
-        | undefined;
-      const gclid = typeof clickIds?.gclid === "string" ? clickIds.gclid : "";
-      if (!gclid) continue;
+      const clickId = pickAdClickId((order as { adClickIds?: unknown }).adClickIds);
+      if (!clickId) continue;
 
       const paidAt =
         toDate((order as { paidAt?: unknown }).paidAt) ??
@@ -236,7 +247,7 @@ export async function getOfflineConversionsCsv(request: Request): Promise<Respon
 
       rows.push(
         [
-          csvCell(gclid),
+          csvCell(clickId),
           csvCell(CONVERSION_NAME),
           csvCell(formatAdsTime(paidAt)),
           value.toFixed(2),

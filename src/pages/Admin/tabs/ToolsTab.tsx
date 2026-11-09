@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Database, AlertTriangle, CheckCircle2, Loader2, Package, Zap, Shield,
   RefreshCw, Globe, Clock, ExternalLink, Copy
@@ -118,6 +118,10 @@ export default function ToolsTab() {
   type DupGroup = { slug: string; keepId: string; deleteIds: string[]; names: string[] };
   const [dedupeLoading, setDedupeLoading] = useState(false);
   const [dedupeGroups, setDedupeGroups] = useState<DupGroup[] | null>(null);
+  const dedupeDeleteTotal = useMemo(
+    () => (dedupeGroups ? dedupeGroups.reduce((n, g) => n + g.deleteIds.length, 0) : 0),
+    [dedupeGroups]
+  );
   const [dedupeResult, setDedupeResult] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
 
   const scanDuplicates = async () => {
@@ -499,7 +503,7 @@ export default function ToolsTab() {
               disabled={dedupeLoading}
               className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <AlertTriangle className="w-4 h-4" /> Apply: delete {dedupeGroups.reduce((n, g) => n + g.deleteIds.length, 0)} duplicate(s)
+              <AlertTriangle className="w-4 h-4" /> Apply: delete {dedupeDeleteTotal} duplicate(s)
             </button>
           )}
         </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { subscribeToProducts } from '@/lib/firebase';
 import type { Product } from '@/lib/firebase';
 import {
@@ -46,20 +46,33 @@ export default function QCDashboardTab() {
     return () => unsub();
   }, []);
 
-  // Stats
-  const active = products.filter(p => p.isActive !== false && p.stock > 0);
-  const withPurity = active.filter(p => p.purity && parsePurity(p.purity) > 0);
-  const avgPurity = withPurity.length
-    ? withPurity.reduce((s, p) => s + parsePurity(p.purity), 0) / withPurity.length
-    : 0;
-  const excellent = withPurity.filter(p => parsePurity(p.purity) >= 99.5).length;
-  const needsReview = active.filter(p => !p.purity || parsePurity(p.purity) < 98).length;
+  // Stats — one memoized pass over products
+  const { active, withPurity, avgPurity, excellent, needsReview } = useMemo(() => {
+    const active = products.filter(p => p.isActive !== false && p.stock > 0);
+    const withPurity = active.filter(p => p.purity && parsePurity(p.purity) > 0);
+    const avgPurity = withPurity.length
+      ? withPurity.reduce((s, p) => s + parsePurity(p.purity), 0) / withPurity.length
+      : 0;
+    const excellent = withPurity.filter(p => parsePurity(p.purity) >= 99.5).length;
+    const needsReview = active.filter(p => !p.purity || parsePurity(p.purity) < 98).length;
+    return { active, withPurity, avgPurity, excellent, needsReview };
+  }, [products]);
 
   // Unique categories
-  const categories = ['all', ...Array.from(new Set(products.map(p => p.category).filter(Boolean) as string[]))];
+  const categories = useMemo(
+    () => ['all', ...Array.from(new Set(products.map(p => p.category).filter(Boolean) as string[]))],
+    [products]
+  );
+  const categoryOptions = useMemo(() => categories.filter(c => c !== 'all'), [categories]);
+
+  // Top purity products (chart) — derived from withPurity
+  const topPurityProducts = useMemo(
+    () => [...withPurity].sort((a, b) => parsePurity(b.purity) - parsePurity(a.purity)).slice(0, 12),
+    [withPurity]
+  );
 
   // Filtered + sorted
-  const filtered = products
+  const filtered = useMemo(() => products
     .filter(p => filterCat === 'all' || p.category === filterCat)
     .filter(p => {
       if (filterStatus === 'all') return true;
@@ -77,7 +90,7 @@ export default function QCDashboardTab() {
       else if (sortBy === 'name') diff = a.name.localeCompare(b.name);
       else if (sortBy === 'category') diff = (a.category ?? '').localeCompare(b.category ?? '');
       return sortDir === 'asc' ? diff : -diff;
-    });
+    }), [products, filterCat, filterStatus, sortBy, sortDir]);
 
   const toggleSort = (col: typeof sortBy) => {
     if (sortBy === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -165,11 +178,7 @@ export default function QCDashboardTab() {
           Purity by Product — Active Stock
         </h3>
         <div className="space-y-3">
-          {active
-            .filter(p => p.purity && parsePurity(p.purity) > 0)
-            .sort((a, b) => parsePurity(b.purity) - parsePurity(a.purity))
-            .slice(0, 12)
-            .map(p => {
+          {topPurityProducts.map(p => {
               const pur = parsePurity(p.purity);
               const color = CATEGORY_COLORS[p.category ?? ''] ?? '#3b82f6';
               const status = getPurityStatus(pur);
@@ -192,7 +201,7 @@ export default function QCDashboardTab() {
                 </div>
               );
             })}
-          {active.filter(p => p.purity && parsePurity(p.purity) > 0).length === 0 && (
+          {withPurity.length === 0 && (
             <p className="text-sm text-slate-500 py-4 text-center">
               No purity data yet — add purity values in the Inventory tab
             </p>
@@ -218,7 +227,7 @@ export default function QCDashboardTab() {
             style={{ background: '#0b1a2e', border: '1px solid rgba(255,255,255,0.1)', color: '#c8dff5' }}
           >
             <option value="all">All Categories</option>
-            {categories.filter(c => c !== 'all').map(c => (
+            {categoryOptions.map(c => (
               <option key={c} value={c}>{c.replace(/-/g, ' ').replace(/\b\w/g, x => x.toUpperCase())}</option>
             ))}
           </select>
