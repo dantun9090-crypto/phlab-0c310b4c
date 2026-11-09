@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, Component, ReactNode, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { logoutUser } from '@/lib/firebase';
 import { useAdminGuard } from '@/hooks/useAdminGuard';
@@ -13,6 +14,13 @@ import CommandPalette, { type CommandItem } from './components/CommandPalette';
 import DevModeBanner from './components/DevModeBanner';
 import AdminSpaFallbackBanner from '@/components/admin/AdminSpaFallbackBanner';
 import DashboardTab from './tabs/DashboardTab';
+
+/**
+ * Admin-scoped React Query client. The storefront never imports this module,
+ * so its cache/defaults stay isolated to the panel. Module-level singleton:
+ * one cache shared by every tab (see src/lib/queries/all-orders.ts).
+ */
+const adminQueryClient = new QueryClient();
 const InventoryTab = lazy(() => import('./tabs/InventoryTab'));
 const OrdersTab = lazy(() => import('./tabs/OrdersTab'));
 const RevenueTab = lazy(() => import('./tabs/RevenueTab'));
@@ -669,6 +677,7 @@ export default function AdminPage() {
   ];
 
   return (
+    <QueryClientProvider client={adminQueryClient}>
     <div
       id="admin-panel"
       className="min-h-screen flex overflow-x-hidden"
@@ -854,5 +863,6 @@ export default function AdminPage() {
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} items={paletteItems} />
     </div>
+    </QueryClientProvider>
   );
 }

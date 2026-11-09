@@ -22,9 +22,11 @@ permissions:
 jobs:
   live-orders-api:
     runs-on: ubuntu-24.04
-    timeout-minutes: 6
+    # 6min was too tight for a cache-miss Playwright install (runner showed
+    # mid-install cancellations); 12min covers cold cache + smoke with margin.
+    timeout-minutes: 12
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.2.21"
@@ -41,7 +43,7 @@ jobs:
 
       - name: Cache Playwright browsers
         id: pw-cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ steps.pw-version.outputs.version }}-chromium
