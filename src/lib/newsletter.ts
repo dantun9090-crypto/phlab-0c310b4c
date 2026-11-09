@@ -138,8 +138,18 @@ export async function getNewsletterSubscribers(): Promise<Subscriber[]> {
 export async function updateSubscriberStatus(
   id: string,
   status: SubscriberStatus,
+  email?: string,
 ): Promise<void> {
   await updateDoc(doc(db, 'emailSubscribers', id), { status });
+  // Mirror opt-outs into Klaviyo. Suppression only — marking someone back
+  // 'active' here never re-subscribes them (that needs fresh consent).
+  if (status === 'unsubscribed' && email) {
+    void import('@/lib/klaviyo.functions')
+      .then(({ unsubscribeNewsletterFromKlaviyo }) =>
+        unsubscribeNewsletterFromKlaviyo({ data: { email } }),
+      )
+      .catch((err) => console.warn('[newsletter] klaviyo unsubscribe mirror skipped:', err));
+  }
 }
 
 /** Hard delete — admin only. */
