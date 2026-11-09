@@ -90,7 +90,23 @@ export function initSentry(): void {
       replaysSessionSampleRate: isProd ? 0.02 : 0.1,
       replaysOnErrorSampleRate: 1.0,
       // PII scrubbing — never send auth cookies, tokens, or bank details.
-      sendDefaultPii: false,
+      // Sentry v11 removed `sendDefaultPii` and flipped several collectors
+      // ON by default via `dataCollection`. This explicit restrictive block
+      // preserves the v10 `sendDefaultPii: false` behaviour (GDPR-safe).
+      dataCollection: {
+        userInfo: false,
+        cookies: false,
+        httpHeaders: {
+          request: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+          response: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+        },
+        httpBodies: [],
+        urlQueryParams: { deny: ["forwarded", "-ip", "remote-", "via", "-user"] },
+        genAI: { inputs: false, outputs: false },
+        databaseQueryData: false,
+        queues: false,
+        graphQL: { document: false, variables: false },
+      },
       beforeSend(event) {
         try {
           // Drop noise from ephemeral Lovable sandbox previews — only
