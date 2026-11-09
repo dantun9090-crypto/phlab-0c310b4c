@@ -10,7 +10,13 @@
  *
  * @vitest-environment node
  */
-import { describe, test, expect } from "vitest";
+import { describe, test, expect, vi } from "vitest";
+
+// Live-network probes against phlabs.co.uk can exceed the 5s default
+// testTimeout on a contended runner (observed as a 5s timeout flake
+// in "production build"). The per-request AbortSignal stays at 10s;
+// this only gives the file headroom for 2 paths x slow edge.
+vi.setConfig({ testTimeout: 30_000 });
 import { readFileSync } from "node:fs";
 
 const BASE =

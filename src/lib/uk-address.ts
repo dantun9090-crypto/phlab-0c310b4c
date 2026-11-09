@@ -10,7 +10,15 @@
 
 /** Tokens that identify a named property (no street number by design). */
 const NAMED_PROPERTY_RE =
-  /\b(?:cottage|house|villa|lodge|farm|barn|manor|hall|bungalow|rectory|vicarage|mill|grange|croft|the\s+old)\b/i;
+  /\b(?:cottage|house|villa|lodge|farm|barn|manor|hall|bungalow|rectory|vicarage|mill|grange|croft|den|nook|retreat|annexe?|chalet|the\s+old)\b/i;
+
+/**
+ * "The <Name>" pattern ("The Fox Den", "The Willows") — the classic UK named
+ * property form. Common street-name suffixes are excluded so bare streets
+ * like "The Avenue" or "The Green" still require a house number.
+ */
+const THE_NAMED_PROPERTY_RE =
+  /^the\s+(?!(?:avenue|broadway|close|court|crescent|drive|gardens?|green|grove|hill|lane|meads?|park|place|rise|road|row|square|street|terrace|view|walk|way)\b)[a-z]/i;
 
 /** Flat / unit prefixes that already carry a number ("Flat 3", "Unit 12b"). */
 const UNIT_NUMBER_RE = /\b(?:flat|apt|apartment|unit|suite|room|studio|no\.?)\s*\d+[a-z]?\b/i;
@@ -54,9 +62,10 @@ export function hasHouseNumber(address: string | null | undefined): boolean {
   return m.some(token => !isZeroLikeNumber(token));
 }
 
-/** True when the line reads like a named property (Rose Cottage, The Old Mill). */
+/** True when the line reads like a named property (Rose Cottage, The Old Mill, The Fox Den). */
 export function looksLikeNamedProperty(address: string | null | undefined): boolean {
-  return NAMED_PROPERTY_RE.test(String(address ?? ''));
+  const value = String(address ?? '');
+  return NAMED_PROPERTY_RE.test(value) || THE_NAMED_PROPERTY_RE.test(value.trim());
 }
 
 export const NO_HOUSE_NUMBER_MESSAGE =

@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FileText, Download, RefreshCw, Search, Loader2, ShieldCheck } from 'lucide-react';
-import { getAllOrders, Order } from '@/lib/firebase';
+import { Order } from '@/lib/firebase';
+import { useQueryClient } from '@tanstack/react-query';
+import { fetchAllOrders, refetchAllOrders } from '@/lib/queries/all-orders';
 import { toDateSafe, toMillisSafe } from '@/lib/to-date';
 import { invoiceNumberForOrder, downloadBankSafeInvoicePdf } from '@/lib/bank-safe-invoice';
 
@@ -35,10 +37,11 @@ export default function OrderInvoicesTab() {
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
 
-  const load = async () => {
+  const qc = useQueryClient();
+  const load = useCallback(async (hard = false) => {
     setLoading(true);
     try {
-      const orders = await getAllOrders();
+      const orders = await (hard ? refetchAllOrders(qc) : fetchAllOrders(qc));
       setRows(
         [...orders]
           .sort((a, b) => toMillisSafe(b.orderDate) - toMillisSafe(a.orderDate))
@@ -63,11 +66,11 @@ export default function OrderInvoicesTab() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [qc]);
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -145,7 +148,7 @@ export default function OrderInvoicesTab() {
           </p>
         </div>
         <button
-          onClick={() => void load()}
+          onClick={() => void load(true)}
           disabled={loading}
           className="flex items-center gap-2 px-3 py-2 bg-[#0f2640] hover:bg-[#1a3a5c] text-white rounded-lg text-sm transition-colors disabled:opacity-50 min-h-[44px]"
         >
