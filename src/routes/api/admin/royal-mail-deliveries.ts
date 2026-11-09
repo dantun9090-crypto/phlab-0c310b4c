@@ -187,20 +187,21 @@ export const Route = createFileRoute("/api/admin/royal-mail-deliveries")({
           delivered: [] as string[],
           skipped: [] as string[],
           errors: [] as Array<{ orderId: string; error: string }>,
+          deferred: 0,
         };
 
-        for (const order of shipped) {
+        const processOrder = async (order: OrderRow): Promise<void> => {
           const tracking = (order.trackingNumber || "").trim();
           if (!tracking) {
             summary.skipped.push(`${order.id} (no tracking)`);
-            continue;
+            return;
           }
           summary.checked++;
 
           const track = await checkDelivered(tracking);
           if (track.error) {
             summary.errors.push({ orderId: order.id, error: track.error });
-            continue;
+            return;
           }
           if (!track.delivered) {
             // Include the lookup source + raw category so we can tell whether
@@ -215,7 +216,7 @@ export const Route = createFileRoute("/api/admin/royal-mail-deliveries")({
                 : " api:NO-SECRETS"
               : "";
             summary.skipped.push(`${order.id} (${track.status || "in transit"})${cat}${src}${diag}`);
-            continue;
+            return;
           }
 
           try {
@@ -241,9 +242,30 @@ export const Route = createFileRoute("/api/admin/royal-mail-deliveries")({
               error: err instanceof Error ? err.message : String(err),
             });
           }
+        };
+
+        // Cloudflare cuts the request at ~100s (HTTP 524) and the loop used to
+        // run strictly sequentially: ~200 shipped orders × RM API latency
+        // overshoots that cap once volume grows (first seen 2026-11-09 after
+        // bulk dispatch raised the shipped backlog). Two guards:
+        //   1. bounded parallelism — 6 concurrent lookups per chunk;
+        //   2. a 75s time budget — remaining orders are reported as
+        //      `deferred` and picked up by the next cron run, so the route
+        //      always answers before the edge kills it.
+        const TIME_BUDGET_MS = 75_000;
+        const CONCURRENCY = 6;
+        const startedAt = Date.now();
+        const queue = [...shipped];
+        while (queue.length > 0) {
+          if (Date.now() - startedAt > TIME_BUDGET_MS) {
+            summary.deferred = queue.length;
+            break;
+          }
+          const chunk = queue.splice(0, CONCURRENCY);
+          await Promise.all(chunk.map(processOrder));
         }
 
-        return json({ ok: true, ...summary });
+        return json({ ok: true, partial: summary.deferred > 0, ...summary });
       },
     },
   },
