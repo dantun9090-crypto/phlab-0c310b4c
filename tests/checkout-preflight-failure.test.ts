@@ -15,25 +15,25 @@
  *   3. Telemetry never throws even when Firestore writes fail.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-import { callPreflightWithRetry } from '../src/lib/checkoutPreflightRetry';
+import { callPreflightWithRetry } from "../src/lib/checkoutPreflightRetry";
 
-vi.mock('../src/lib/firebase', () => ({ db: {} }));
+vi.mock("../src/lib/firebase", () => ({ db: {} }));
 
 // Capture addDoc calls so we can assert telemetry payloads without touching
 // real Firestore. `serverTimestamp` is a placeholder value.
 const addDocMock = vi.fn();
-vi.mock('firebase/firestore', () => ({
+vi.mock("firebase/firestore", () => ({
   addDoc: (...args: unknown[]) => addDocMock(...args),
   collection: (_db: unknown, name: string) => ({ name }),
-  serverTimestamp: () => '__server_ts__',
+  serverTimestamp: () => "__server_ts__",
 }));
 
 // Import after mocks so the module picks them up.
-import { logCheckoutEvent } from '../src/lib/checkoutTelemetry';
+import { logCheckoutEvent } from "../src/lib/checkoutTelemetry";
 
-describe('callPreflightWithRetry', () => {
+describe("callPreflightWithRetry", () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -41,15 +41,15 @@ describe('callPreflightWithRetry', () => {
     vi.useRealTimers();
   });
 
-  it('returns immediately on first success', async () => {
+  it("returns immediately on first success", async () => {
     const fn = vi.fn().mockResolvedValue({ ok: true });
     const result = await callPreflightWithRetry(fn, { maxRetries: 3, baseDelayMs: 1000 });
     expect(result).toEqual({ ok: true });
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
-  it('retries transient 500 errors up to maxRetries then rethrows', async () => {
-    const err = Object.assign(new Error('boom'), { statusCode: 500 });
+  it("retries transient 500 errors up to maxRetries then rethrows", async () => {
+    const err = Object.assign(new Error("boom"), { statusCode: 500 });
     const fn = vi.fn().mockRejectedValue(err);
     const attempts: number[] = [];
 
@@ -70,18 +70,20 @@ describe('callPreflightWithRetry', () => {
     expect(attempts).toEqual([1, 2, 3, 4]);
   });
 
-  it('does not retry deterministic 4xx errors', async () => {
-    const err = Object.assign(new Error('bad request'), { statusCode: 400 });
+  it("does not retry deterministic 4xx errors", async () => {
+    const err = Object.assign(new Error("bad request"), { statusCode: 400 });
     const fn = vi.fn().mockRejectedValue(err);
-    const outcome = await callPreflightWithRetry(fn, { maxRetries: 3, baseDelayMs: 10 }).catch((e) => e);
+    const outcome = await callPreflightWithRetry(fn, { maxRetries: 3, baseDelayMs: 10 }).catch(
+      (e) => e,
+    );
     expect(outcome).toBe(err);
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
-  it('retries plain thrown errors (no statusCode → treat as network)', async () => {
+  it("retries plain thrown errors (no statusCode → treat as network)", async () => {
     const fn = vi
       .fn()
-      .mockRejectedValueOnce(new Error('network down'))
+      .mockRejectedValueOnce(new Error("network down"))
       .mockResolvedValueOnce({ ok: true });
     const promise = callPreflightWithRetry(fn, { maxRetries: 3, baseDelayMs: 500 });
     await vi.advanceTimersByTimeAsync(500);
@@ -90,33 +92,38 @@ describe('callPreflightWithRetry', () => {
   });
 });
 
-describe('logCheckoutEvent', () => {
+describe("logCheckoutEvent", () => {
   beforeEach(() => {
     addDocMock.mockReset();
   });
 
-  it('writes to the checkoutTelemetry collection', async () => {
-    addDocMock.mockResolvedValueOnce({ id: 'x' });
+  it("writes to the checkoutTelemetry collection with the shape-locked payload", async () => {
+    addDocMock.mockResolvedValueOnce({ id: "x" });
     await logCheckoutEvent({
-      stage: 'pay_click',
-      cartId: 'cart-1',
+      stage: "pay_click",
+      cartId: "cart-1",
       timestamp: 123,
     });
     expect(addDocMock).toHaveBeenCalledTimes(1);
     const [colRef, payload] = addDocMock.mock.calls[0];
-    expect((colRef as { name: string }).name).toBe('checkoutTelemetry');
+    expect((colRef as { name: string }).name).toBe("checkoutTelemetry");
+    // Shape-locked contract — must match the /checkoutTelemetry rule in
+    // firestore.rules: type/sessionId/createdAt/path/source/code/message/extra.
     expect(payload).toMatchObject({
-      stage: 'pay_click',
-      cartId: 'cart-1',
-      timestamp: 123,
-      loggedAt: '__server_ts__',
+      type: "pay_click",
+      sessionId: "cart-1",
+      source: "checkout",
+      createdAt: "__server_ts__",
     });
+    expect(Object.keys(payload as object).sort()).toEqual(
+      ["code", "createdAt", "extra", "message", "path", "sessionId", "source", "type"].sort(),
+    );
   });
 
-  it('never throws when Firestore write fails', async () => {
-    addDocMock.mockRejectedValueOnce(new Error('offline'));
+  it("never throws when Firestore write fails", async () => {
+    addDocMock.mockRejectedValueOnce(new Error("offline"));
     await expect(
-      logCheckoutEvent({ stage: 'pay_click', cartId: 'c', timestamp: 0 }),
+      logCheckoutEvent({ stage: "pay_click", cartId: "c", timestamp: 0 }),
     ).resolves.toBeUndefined();
   });
 });
