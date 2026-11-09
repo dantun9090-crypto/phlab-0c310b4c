@@ -667,8 +667,10 @@ export default function EmailMarketingTab() {
   })();
 
   // Filtered recipient list for the "preview as recipient" picker.
+  // Memoized: typing in the subject/body editors re-renders this tab every
+  // keystroke and previously re-filtered the full customer list each time.
   const previewSearchLc = previewSearch.trim().toLowerCase();
-  const previewCandidates = customers
+  const previewCandidates = useMemo(() => customers
     .filter(c => c.email)
     .filter(c => {
       if (!previewSearchLc) return true;
@@ -678,11 +680,11 @@ export default function EmailMarketingTab() {
         (c.lastName || '').toLowerCase().includes(previewSearchLc)
       );
     })
-    .slice(0, 50);
+    .slice(0, 50), [customers, previewSearchLc]);
 
   const selectedRecipient = customers.find(c => c.id === selectedPreviewId) || previewCandidates[0] || null;
 
-  const selectedPreview = (() => {
+  const selectedPreview = useMemo(() => {
     if (!selectedRecipient) return null;
     const firstName = (selectedRecipient.firstName || '').trim();
     const lastName = (selectedRecipient.lastName || '').trim();
@@ -700,20 +702,33 @@ export default function EmailMarketingTab() {
       subject: personalisePreview(subject, vars),
       body: personalisePreview(body, vars),
     };
-  })();
+  }, [selectedRecipient, subject, body]);
 
   // Personalisation coverage — how many recipients will get the "there" fallback
   // because their firstName is missing/blank in Firestore.
-  const emailedCustomers = customers.filter(c => c.email);
-  const missingFirstName = emailedCustomers.filter(c => !(c.firstName || '').trim());
-  const missingLastName = emailedCustomers.filter(c => !(c.lastName || '').trim());
-  const missingBoth = emailedCustomers.filter(
-    c => !(c.firstName || '').trim() && !(c.lastName || '').trim(),
-  );
-  const totalEmailable = emailedCustomers.length;
-  const fallbackPct = totalEmailable > 0
-    ? Math.round((missingFirstName.length / totalEmailable) * 100)
-    : 0;
+  // Single-pass memo (was: 4 separate full-array filters on every render).
+  const { emailedCustomers, missingFirstName, missingLastName, missingBoth, totalEmailable, fallbackPct } = useMemo(() => {
+    const emailed = customers.filter(c => c.email);
+    const missFirst: typeof emailed = [];
+    const missLast: typeof emailed = [];
+    const missBoth: typeof emailed = [];
+    for (const c of emailed) {
+      const noFirst = !(c.firstName || '').trim();
+      const noLast = !(c.lastName || '').trim();
+      if (noFirst) missFirst.push(c);
+      if (noLast) missLast.push(c);
+      if (noFirst && noLast) missBoth.push(c);
+    }
+    const total = emailed.length;
+    return {
+      emailedCustomers: emailed,
+      missingFirstName: missFirst,
+      missingLastName: missLast,
+      missingBoth: missBoth,
+      totalEmailable: total,
+      fallbackPct: total > 0 ? Math.round((missFirst.length / total) * 100) : 0,
+    };
+  }, [customers]);
   const [showFallbackList, setShowFallbackList] = useState(false);
 
   const selectedTpl = TEMPLATES.find(t => t.id === selectedTemplate);

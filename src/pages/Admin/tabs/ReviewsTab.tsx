@@ -5,7 +5,7 @@
  * (homepage testimonials + product page), reject hides it, delete removes
  * the document. Every action is written to `auditLogs`.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Star, Loader2, Check, X, Trash2, RefreshCw, ShieldAlert, MessageSquare,
 } from 'lucide-react';
@@ -87,12 +87,19 @@ export default function ReviewsTab() {
     }
   }
 
-  const visible = filter === 'all' ? rows : rows.filter((r) => r.status === filter);
-  const counts = {
-    pending: rows.filter((r) => r.status === 'pending').length,
-    approved: rows.filter((r) => r.status === 'approved').length,
-    rejected: rows.filter((r) => r.status === 'rejected').length,
-  };
+  const visible = useMemo(
+    () => (filter === 'all' ? rows : rows.filter((r) => r.status === filter)),
+    [rows, filter]
+  );
+  const counts = useMemo(() => {
+    const c = { pending: 0, approved: 0, rejected: 0 };
+    for (const r of rows) {
+      if (r.status === 'pending') c.pending++;
+      else if (r.status === 'approved') c.approved++;
+      else if (r.status === 'rejected') c.rejected++;
+    }
+    return c;
+  }, [rows]);
 
   return (
     <div className="p-4 sm:p-6">

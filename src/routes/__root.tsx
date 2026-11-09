@@ -1259,6 +1259,45 @@ const STALE_ASSET_RECOVERY = `
       if(ASSET_RE.test(src)) recover(src);
     },true);
 
+    // Early-CSS race fix: React 19 hoists stylesheet <link>s above every
+    // inline <script> in the served HTML, so a fast edge 404 on a hashed
+    // stylesheet can fire its error event BEFORE the capture listener above
+    // is registered — the failure is then silently missed and the visitor is
+    // left on an unstyled page (root cause of the intermittent e2e
+    // css-link-error failures). Resource timing is immune to listener timing:
+    // once parsing finishes, sweep every same-origin /assets stylesheet and
+    // script and recover() the ones the browser recorded as 4xx.
+    var sweepAssetFailures=function(){
+      try{
+        if(hasHydration()) return;
+        if(typeof performance==='undefined'||typeof performance.getEntriesByName!=='function') return;
+        var nodes=document.querySelectorAll('link[rel="stylesheet"][href],script[src]');
+        var seen={};
+        for(var i=0;i<nodes.length;i++){
+          var raw=(nodes[i].href||nodes[i].src||'')+'';
+          if(!raw) continue;
+          var path='';
+          try{ var u=new URL(raw,location.href); if(u.origin!==location.origin) continue; path=u.pathname+u.search; }catch(e){ continue; }
+          if(!ASSET_RE.test(path)||seen[path]) continue;
+          seen[path]=1;
+          var entries=[];
+          try{ entries=performance.getEntriesByName(raw,'resource')||[]; }catch(e2){}
+          if(!entries.length) continue;
+          var status=null;
+          for(var ei=entries.length-1;ei>=0;ei--){
+            var rs=entries[ei].responseStatus;
+            if(typeof rs==='number'&&rs>0){ status=rs; break; }
+          }
+          // Browsers without responseStatus keep the error-event guard only.
+          if(status===null) continue;
+          if(status>=400) recover(path);
+        }
+      }catch(e){}
+    };
+    var scheduleAssetSweep=function(){ setTimeout(sweepAssetFailures,1200); };
+    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',scheduleAssetSweep,{once:true});
+    else scheduleAssetSweep();
+
     // Auto-reset the stale-asset counter once the app has clearly booted
     // without any asset 404s. Without this, a single transient 404 leaves
     // the counter at 1 forever, so the very next 404 immediately shows the

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   ShoppingCart, Search, Clock, Package, Truck, CheckCircle, XCircle,
@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CustomerOrdersSummary, { orderEmail } from '@/components/admin/CustomerOrdersSummary';
-import { getAllOrders, updateOrderStatus, Order, db, doc, updateDoc, addDoc, collection, query, where, getDocs, getDoc, setDoc, Timestamp, deleteDoc, sendOrderStatusEmail } from '@/lib/firebase';
+import { updateOrderStatus, Order, db, doc, updateDoc, addDoc, collection, query, where, getDocs, getDoc, setDoc, Timestamp, deleteDoc, sendOrderStatusEmail } from '@/lib/firebase';
 import { auth } from '@/lib/firebase';
 import { logAdminAction } from '@/lib/admin-audit';
 import PaymentTimeline from '@/components/admin/PaymentTimeline';
@@ -27,6 +27,31 @@ import { getAdminIdToken } from '@/lib/auth-ready';
 import { toDateSafe, toMillisSafe } from '@/lib/to-date';
 import { hasHouseNumber } from '@/lib/uk-address';
 import { canRetryPayment } from '@/lib/order-payment-retry';
+import { useQueryClient } from '@tanstack/react-query';
+import { fetchAllOrders, refetchAllOrders } from '@/lib/queries/all-orders';
+import ConfirmDialog from '@/components/admin/ConfirmDialog';
+import OrdersListSkeleton from '@/components/admin/OrdersListSkeleton';
+import EmptyState from '@/components/admin/EmptyState';
+import VirtualizedOrdersList from '@/components/admin/VirtualizedOrdersList';
+
+// ── Order-classification constants (module level: stable identities keep memoized selectors cheap) ──
+/** Statuses that mean "money not received yet". */
+const UNPAID_STATUSES = [
+  'pending',
+  'pending_payment',
+  'pending_bank_transfer',
+  'awaiting_payment',
+  'processing_payment',
+  'unpaid',
+  'failed',
+  'expired',
+];
+const FAILED_PAYMENT_STATUSES = ['failed', 'expired', 'payment_failed', 'failed_payment', 'declined'];
+const STALE_UNPAID_MS = 24 * 60 * 60 * 1000;
+const NEW_ORDER_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const UNPAID_FOR_PAYLINK = ['pending', 'pending_payment', 'awaiting_payment', 'processing_payment', 'failed'];
+/** Lists longer than this render through the window virtualizer; shorter ones use a plain map (tests, small filters). */
+const VIRTUALIZE_THRESHOLD = 60;
 
 // ── "Check address" badge — order has no deliverable house number ──
 function CheckAddressBadge({ order, addressLine }: { order: any; addressLine: string }) {
@@ -244,10 +269,17 @@ function ReconciledCronBadge({ order }: { order: any }) {
 }
 
 export default function OrdersTab() {
+  const qc = useQueryClient();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [search, setSearch] = useState('');
+  // Debounced value drives the expensive list filtering so each keystroke stays cheap.
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 250);
+    return () => clearTimeout(t);
+  }, [search]);
   const [statusFilter, setStatusFilter] = useState<string>('new');
   const [selected, setSelected] = useState<Order | null>(null);
   // Per-row "customer history" toggle — one click shows paid/failed stats
@@ -304,6 +336,8 @@ export default function OrdersTab() {
   };
   const [updating, setUpdating] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  // Id of the order awaiting delete confirmation (ConfirmDialog).
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   // Tracking number state
   const [trackingInput, setTrackingInput] = useState('');
@@ -332,6 +366,11 @@ export default function OrdersTab() {
 
   const [bulkSyncProgress, setBulkSyncProgress] = useState({ done: 0, total: 0 });
   const [bulkSyncLog, setBulkSyncLog] = useState<{ id: string; status: 'synced' | 'waiting' | 'error'; message: string }[]>([]);
+
+  // Bulk sync tracking + dispatch (one click: RM tracking sync → shipped → dispatch email → live tracking)
+  const [bulkDispatchRunning, setBulkDispatchRunning] = useState(false);
+  const [bulkDispatchProgress, setBulkDispatchProgress] = useState({ done: 0, total: 0 });
+  const [bulkDispatchLog, setBulkDispatchLog] = useState<{ id: string; status: 'dispatched' | 'skipped' | 'error'; message: string }[]>([]);
 
   // Bulk Royal Mail order creation — PROCESSING orders only.
   const [bulkRmRunning, setBulkRmRunning] = useState(false);
@@ -378,10 +417,6 @@ export default function OrdersTab() {
   const [paymentStatusInput, setPaymentStatusInput] = useState<'pending_bank_transfer' | 'paid' | 'cancelled'>('pending_bank_transfer');
   const [transferLoading, setTransferLoading] = useState(false);
   const [transferMsg, setTransferMsg] = useState('');
-
-  useEffect(() => {
-    loadOrders();
-  }, []);
 
   // Trigger element to return focus to when the modal closes.
   const triggerRef = useRef<HTMLElement | null>(null);
@@ -478,11 +513,11 @@ export default function OrdersTab() {
     setTransferMsg('');
   }, [selected?.id]);
 
-  const loadOrders = async () => {
+  const loadOrders = useCallback(async (hard = false) => {
     setLoading(true);
     setLoadError('');
     try {
-      const data = await getAllOrders();
+      const data = await (hard ? refetchAllOrders(qc) : fetchAllOrders(qc));
       setOrders(data);
     } catch (e: any) {
       console.error('Failed to load orders:', e);
@@ -490,7 +525,11 @@ export default function OrdersTab() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [qc]);
+
+  useEffect(() => {
+    void loadOrders();
+  }, [loadOrders]);
 
   const handleStatusChange = async (orderId: string, status: Order['status']) => {
     setUpdating(orderId);
@@ -759,10 +798,13 @@ export default function OrdersTab() {
     }
   };
 
-  const handleDeleteOrder = async (orderId: string) => {
+  // Opens the ConfirmDialog; the destructive work happens in confirmDeleteOrder.
+  const handleDeleteOrder = (orderId: string) => setPendingDeleteId(orderId);
+
+  const confirmDeleteOrder = async () => {
+    const orderId = pendingDeleteId;
+    if (!orderId) return;
     const orderRef = orders.find(o => o.id === orderId);
-    const label = (orderRef as any)?.bankTransferRef || `#${orderId?.slice(-8).toUpperCase()}`;
-    if (!window.confirm(`Permanently delete order ${label}?\n\nThis cannot be undone.`)) return;
     setDeleting(orderId);
     try {
       await deleteDoc(doc(db, 'orders', orderId));
@@ -773,12 +815,18 @@ export default function OrdersTab() {
       });
       setOrders(prev => prev.filter(o => o.id !== orderId));
       if (selected?.id === orderId) setSelected(null);
+      setPendingDeleteId(null);
     } catch (e: any) {
       alert('Failed to delete order: ' + (e?.message || 'Please try again.'));
     } finally {
       setDeleting(null);
     }
   };
+
+  const pendingDeleteOrder = pendingDeleteId ? orders.find(o => o.id === pendingDeleteId) : undefined;
+  const pendingDeleteLabel = pendingDeleteId
+    ? String((pendingDeleteOrder as any)?.bankTransferRef || `#${pendingDeleteId.slice(-8).toUpperCase()}`)
+    : '';
 
   // Save bank transfer payment status + transfer reference
   const handleSavePaymentStatus = async () => {
@@ -885,10 +933,11 @@ export default function OrdersTab() {
 
   // Register the parcel with AfterShip so we get live courier checkpoints and
   // an instant "delivered" webhook. Best-effort — never blocks dispatch.
-  const registerLiveTracking = async (orderId: string, tracking: string, courier: string) => {
+  const registerLiveTracking = async (orderId: string, tracking: string, courier: string, email?: string) => {
     try {
       const idToken = await getAdminIdToken();
       if (!idToken) return;
+      const trackerEmail = email || selected?.userEmail;
       await registerTracker({
         data: {
           idToken,
@@ -899,7 +948,7 @@ export default function OrdersTab() {
             : /dpd/i.test(courier)
               ? 'dpd-uk'
               : 'royal-mail',
-          ...(selected?.userEmail ? { email: selected.userEmail } : {}),
+          ...(trackerEmail ? { email: trackerEmail } : {}),
         },
       });
     } catch (err) {
@@ -1117,8 +1166,7 @@ export default function OrdersTab() {
    * payment the customer abandoned at the bank — exactly what canRetryPayment()
    * checks (same rule the customer-facing "Pay Again" CTA uses).
    */
-  const UNPAID_FOR_PAYLINK = ['pending', 'pending_payment', 'awaiting_payment', 'processing_payment', 'failed'];
-  const bulkPayCandidates = orders.filter(o => {
+  const bulkPayCandidates = useMemo(() => orders.filter(o => {
     const status = String(o.status || '').toLowerCase();
     const eligible =
       UNPAID_FOR_PAYLINK.includes(status) ||
@@ -1132,7 +1180,7 @@ export default function OrdersTab() {
     if (String((o as any).paymentRetryLinkSentAt || (o as any).paymentRetryEmailAt || '').trim()) return false;
     const email = String((o as any).userEmail || (o as any).customerEmail || (o as any).customer?.email || '').trim();
     return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
-  });
+  }), [orders]);
 
   /**
    * Sends the one-click "Pay Again" email (with bank-transfer fallback) to every
@@ -1182,10 +1230,10 @@ export default function OrdersTab() {
   };
 
   /** Orders eligible for bulk Click & Drop creation: PROCESSING only, no label yet. */
-  const bulkRmCandidates = orders.filter(o =>
+  const bulkRmCandidates = useMemo(() => orders.filter(o =>
     String(o.status || '').toLowerCase() === 'processing' &&
     !String((o as any).royalMailOrderId || '').trim()
-  );
+  ), [orders]);
 
   /**
    * Bulk-creates Click & Drop orders for every PROCESSING order that has no
@@ -1469,6 +1517,109 @@ export default function OrdersTab() {
   };
 
   /**
+   * Bulk "sync tracking + dispatch" candidates: PAID orders (paid/processing,
+   * never pending/cancelled) that have a Click & Drop order ID or a tracking
+   * number but are not shipped yet.
+   */
+  const bulkDispatchCandidates = useMemo(() => orders.filter(o => {
+    const st = String(o.status || '').toLowerCase();
+    if (!['paid', 'processing'].includes(st)) return false;
+    return String((o as any).royalMailOrderId || '').trim() || String(o.trackingNumber || '').trim();
+  }), [orders]);
+
+  /**
+   * One-click bulk dispatch: for every candidate order it (1) pulls the tracking
+   * number from Royal Mail when missing, (2) marks the order as shipped,
+   * (3) queues the dispatch email and (4) registers AfterShip live tracking.
+   * Saves the per-order "Dispatch" click for batches prepared in Click & Drop.
+   */
+  const handleBulkSyncAndDispatch = async () => {
+    if (bulkDispatchRunning) return;
+    const candidates = bulkDispatchCandidates;
+    setBulkDispatchLog([]);
+    setBulkDispatchProgress({ done: 0, total: candidates.length });
+    if (candidates.length === 0) return;
+
+    setBulkDispatchRunning(true);
+    try {
+      const idToken = await getAdminIdToken();
+      if (!idToken) {
+        setBulkDispatchLog([{ id: '—', status: 'error', message: 'You must be signed in as an admin to dispatch.' }]);
+        return;
+      }
+
+      for (const o of candidates) {
+        try {
+          // 1. Resolve tracking number — sync from Royal Mail when missing
+          let tracking = String(o.trackingNumber || '').trim();
+          if (!tracking) {
+            const rmOrderId = String((o as any).royalMailOrderId || '').trim();
+            const res = await syncRoyalMailTracking({ data: { idToken, royalMailOrderId: rmOrderId, orderReference: o.id } });
+            if (!res.ok) throw new Error(res.error || 'Failed to read Royal Mail order.');
+
+            const returnedRef = String(res.orderReference || '').trim().toUpperCase();
+            const ourRef = String(o.id || '').trim().toUpperCase();
+            if (returnedRef && ourRef && returnedRef !== ourRef) {
+              setBulkDispatchLog(prev => [...prev, { id: o.id, status: 'error', message: `Royal Mail returned a different order (${res.orderReference}) — skipped.` }]);
+              continue;
+            }
+            tracking = res.trackingNumber ? String(res.trackingNumber).trim() : '';
+            if (!tracking) {
+              setBulkDispatchLog(prev => [...prev, { id: o.id, status: 'skipped', message: 'No tracking yet — apply postage in Click & Drop.' }]);
+              continue;
+            }
+          }
+
+          const courier = String((o as any).courier || 'Royal Mail');
+
+          // 2. Mark as shipped + persist tracking
+          await updateDoc(doc(db, 'orders', o.id), {
+            trackingNumber: tracking,
+            royalMailTracking: tracking,
+            courier,
+            status: 'shipped',
+          });
+          await logAdminAction({
+            action: 'order.dispatch',
+            target: `orders/${o.id}`,
+            after: { trackingNumber: tracking, courier, status: 'shipped' },
+            meta: { bulk: true, via: 'sync_and_dispatch' },
+          });
+
+          // 3. Dispatch email (Trigger Email extension picks it up)
+          const customerEmail = o.userEmail || (o as any).customer?.email;
+          if (customerEmail) {
+            await addDoc(collection(db, 'mail'), buildDispatchMailDoc(o, tracking, customerEmail));
+          }
+
+          // 4. AfterShip live tracking (best-effort, order's own email)
+          await registerLiveTracking(o.id, tracking, courier, customerEmail || undefined);
+
+          // 5. Local state
+          setOrders(prev => prev.map(x => x.id === o.id
+            ? { ...x, trackingNumber: tracking, courier, status: 'shipped' } as Order
+            : x));
+          setSelected(prev => prev && prev.id === o.id
+            ? { ...prev, trackingNumber: tracking, courier, status: 'shipped' } as Order
+            : prev);
+          setBulkDispatchLog(prev => [...prev, {
+            id: o.id,
+            status: 'dispatched',
+            message: customerEmail ? `${tracking} — shipped + email sent` : `${tracking} — shipped (no customer email)`,
+          }]);
+        } catch (e: any) {
+          console.error('[bulk-dispatch] failed for', o.id, e);
+          setBulkDispatchLog(prev => [...prev, { id: o.id, status: 'error', message: e?.message || 'Dispatch failed.' }]);
+        } finally {
+          setBulkDispatchProgress(prev => ({ ...prev, done: prev.done + 1 }));
+        }
+      }
+    } finally {
+      setBulkDispatchRunning(false);
+    }
+  };
+
+  /**
    * Audit: walks every shipped/delivered order and verifies the customer really
    * received a dispatch email containing THIS order's tracking number.
    */
@@ -1570,38 +1721,23 @@ export default function OrdersTab() {
     setTimeout(() => setCopiedTrackingId(null), 2000);
   };
 
-  /** Statuses that mean "money not received yet". */
-  const UNPAID_STATUSES = [
-    'pending',
-    'pending_payment',
-    'pending_bank_transfer',
-    'awaiting_payment',
-    'processing_payment',
-    'unpaid',
-    'failed',
-    'expired',
-  ];
-  const isUnpaidOrder = (o: Order) => UNPAID_STATUSES.includes(String(o.status));
-
-  /** A "new" order = awaiting action, never opened by an admin, placed < 24h ago. */
-  const NEW_ORDER_MAX_AGE_MS = 24 * 60 * 60 * 1000;
-  const isNewOrder = (o: Order) => {
-    const ts = orderTimeMs(o);
-    if (!ts || Date.now() - ts > NEW_ORDER_MAX_AGE_MS) return false;
-    return !seenIds.includes(o.id) && (isUnpaidOrder(o) || String(o.status) === 'paid');
-  };
-
-
-
-
-  const orderTimeMs = (o: Order): number => {
+  const orderTimeMs = useCallback((o: Order): number => {
     const raw: any = (o as any).orderDate ?? (o as any).createdAt;
     if (!raw) return 0;
     if (typeof raw?.toDate === 'function') return raw.toDate().getTime();
     if (typeof raw?.seconds === 'number') return raw.seconds * 1000;
     const t = new Date(raw).getTime();
     return Number.isFinite(t) ? t : 0;
-  };
+  }, []);
+
+  const isUnpaidOrder = useCallback((o: Order) => UNPAID_STATUSES.includes(String(o.status)), []);
+
+  /** A "new" order = awaiting action, never opened by an admin, placed < 24h ago. */
+  const isNewOrder = useCallback((o: Order) => {
+    const ts = orderTimeMs(o);
+    if (!ts || Date.now() - ts > NEW_ORDER_MAX_AGE_MS) return false;
+    return !seenIds.includes(o.id) && (isUnpaidOrder(o) || String(o.status) === 'paid');
+  }, [seenIds, orderTimeMs, isUnpaidOrder]);
 
   /**
    * "Failed payment" category.
@@ -1610,9 +1746,7 @@ export default function OrdersTab() {
    * order was left sitting in "pending" — anything unpaid and older than 24h
    * is treated as a failed payment so it stops hiding in Pending.
    */
-  const FAILED_PAYMENT_STATUSES = ['failed', 'expired', 'payment_failed', 'failed_payment', 'declined'];
-  const STALE_UNPAID_MS = 24 * 60 * 60 * 1000;
-  const isFailedPaymentOrder = (o: Order) => {
+  const isFailedPaymentOrder = useCallback((o: Order) => {
     const s = String(o.status || '').toLowerCase();
     const ps = String((o as any).paymentStatus || '').toLowerCase();
     if (FAILED_PAYMENT_STATUSES.includes(s) || FAILED_PAYMENT_STATUSES.includes(ps)) return true;
@@ -1620,10 +1754,10 @@ export default function OrdersTab() {
     if (!UNPAID_STATUSES.includes(s)) return false;
     const ts = orderTimeMs(o);
     return ts > 0 && Date.now() - ts > STALE_UNPAID_MS;
-  };
+  }, [orderTimeMs]);
 
 
-  const filtered = orders.filter(o => {
+  const filtered = useMemo(() => orders.filter(o => {
 
     const c = (o as any).customer;
     const customerName = c ? `${c.firstName || ''} ${c.lastName || ''}`.trim() : (o.userName || '');
@@ -1644,12 +1778,12 @@ export default function OrdersTab() {
       (o as any).fenaPaymentId,
     ].filter(Boolean).join(' ');
 
-    const s = search.toLowerCase();
+    const s = debouncedSearch.toLowerCase();
     // Bank statements show the Wallid id without dashes (e.g. "9b37b618d5"),
     // so compare an alphanumeric-only version too.
     const norm = (v: string) => v.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const sNorm = norm(search);
-    const matchSearch = !search ||
+    const sNorm = norm(debouncedSearch);
+    const matchSearch = !debouncedSearch ||
       orderId.toLowerCase().includes(s) ||
       o.id?.toLowerCase().includes(s) ||
       customerName.toLowerCase().includes(s) ||
@@ -1670,41 +1804,50 @@ export default function OrdersTab() {
       (statusFilter === 'next_day_12' && (o as any).shippingMethod === 'next_day_12') ||
       (statusFilter === 'next_day_missed' && (o as any).nextDayMissedCutoff === true);
     return matchSearch && matchStatus;
-  }).sort((a, b) => orderTimeMs(b) - orderTimeMs(a));
+  }).sort((a, b) => orderTimeMs(b) - orderTimeMs(a)),
+  [orders, debouncedSearch, statusFilter, isNewOrder, isUnpaidOrder, isFailedPaymentOrder, orderTimeMs]);
 
 
-  const counts = {
-    new: orders.filter(isNewOrder).length,
-    unpaid: orders.filter(isUnpaidOrder).length,
-    failed_payment: orders.filter(isFailedPaymentOrder).length,
-
-    all: orders.length,
-    pending: orders.filter(o => o.status === 'pending' || o.status === 'pending_payment').length,
-    paid: orders.filter(o => o.status === 'paid').length,
-
-    processing: orders.filter(o => o.status === 'processing').length,
-    shipped: orders.filter(o => o.status === 'shipped').length,
-    delivered: orders.filter(o => o.status === 'delivered').length,
-    cancelled: orders.filter(o => o.status === 'cancelled').length,
-    fena_paid: orders.filter(isFenaAutoPaid).length,
-    next_day_12: orders.filter(o => (o as any).shippingMethod === 'next_day_12').length,
-    next_day_missed: orders.filter(o => (o as any).nextDayMissedCutoff === true).length,
-  };
+  // Single-pass aggregation (was: 12 separate full-array filters on every render).
+  const counts = useMemo(() => {
+    const c = {
+      new: 0, unpaid: 0, failed_payment: 0, all: orders.length,
+      pending: 0, paid: 0, processing: 0, shipped: 0, delivered: 0,
+      cancelled: 0, fena_paid: 0, next_day_12: 0, next_day_missed: 0,
+    };
+    for (const o of orders) {
+      if (isNewOrder(o)) c.new++;
+      if (isUnpaidOrder(o)) c.unpaid++;
+      if (isFailedPaymentOrder(o)) c.failed_payment++;
+      if (o.status === 'pending' || o.status === 'pending_payment') c.pending++;
+      if (o.status === 'paid') c.paid++;
+      if (o.status === 'processing') c.processing++;
+      if (o.status === 'shipped') c.shipped++;
+      if (o.status === 'delivered') c.delivered++;
+      if (o.status === 'cancelled') c.cancelled++;
+      if (isFenaAutoPaid(o)) c.fena_paid++;
+      if ((o as any).shippingMethod === 'next_day_12') c.next_day_12++;
+      if ((o as any).nextDayMissedCutoff === true) c.next_day_missed++;
+    }
+    return c;
+  }, [orders, isNewOrder, isUnpaidOrder, isFailedPaymentOrder]);
 
 
   // TrueLayer Open Banking orders still in 'pending' (no bank_transfer)
-  const trueLayerPending = orders.filter(o =>
+  const trueLayerPending = useMemo(() => orders.filter(o =>
     o.status === 'pending' && (o as any).paymentMethod !== 'bank_transfer'
-  );
+  ), [orders]);
 
   // Expired pending orders: pending (either method) older than 24h
-  const EXPIRY_MS = 24 * 60 * 60 * 1000;
-  const now = Date.now();
-  const expiredPending = orders.filter(o => {
-    if (o.status !== 'pending') return false;
-    const ts = toMillisSafe(o.orderDate);
-    return ts > 0 && now - ts > EXPIRY_MS;
-  });
+  const expiredPending = useMemo(() => {
+    const EXPIRY_MS = 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    return orders.filter(o => {
+      if (o.status !== 'pending') return false;
+      const ts = toMillisSafe(o.orderDate);
+      return ts > 0 && now - ts > EXPIRY_MS;
+    });
+  }, [orders]);
 
   const handleCancelExpired = async (orderId: string) => {
     setUpdating(orderId);
@@ -1724,8 +1867,193 @@ export default function OrdersTab() {
     }
   };
 
+  // Renders one order row. Extracted so the plain list (small result
+  // sets) and the virtualized list share the exact same markup.
+  const renderOrderRow = (order: Order) => {
+    const c = (order as any).customer;
+    const customerName = c ? `${c.firstName || ''} ${c.lastName || ''}`.trim() : (order.userName || 'Guest');
+    const customerEmail = c?.email || order.userEmail || '';
+    const addressLine = c ? [c.address, c.city, c.postcode].filter(Boolean).join(', ') : (order.shippingAddress || '');
+    const orderRef = (order as any).orderId || `#${order.id?.slice(-8).toUpperCase()}`;
+    const wallidApiRef = (order as any).apiPaymentId || (order as any).wallidApiPaymentId || '';
+    const orderTs = order.orderDate || (order as any).createdAt;
+    return (
+    <div key={order.id} className="bg-[#0b1a30]/60 border border-white/[0.07] rounded-xl p-4 hover:border-white/[0.12] transition-colors">
+      {/* Mobile: stack info above actions — the old flex-wrap row let
+          the price/select column squeeze the info column to a few
+          characters wide, wrapping text letter-by-letter. */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="font-mono text-white font-semibold text-sm">
+              {orderRef}
+              {wallidApiRef && (
+                <span className="text-emerald-300">
+                  {' '}+ {String(wallidApiRef).replace(/-/g, '').slice(0, 10)}
+                </span>
+              )}
+            </span>
+
+            <StatusBadge status={order.status} />
+            {(order as any).paymentMethod === 'bank_transfer' && (
+              <PaymentStatusBadge paymentStatus={(order as any).paymentStatus || 'pending_bank_transfer'} />
+            )}
+            {isFenaOrder(order) && <FenaStatusBadge order={order} />}
+            <ProviderBadge order={order} />
+            <ReconciledCronBadge order={order} />
+            <CheckAddressBadge order={order} addressLine={addressLine} />
+            {order.trackingNumber && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-400 font-mono">
+                <Hash className="w-3 h-3" />{order.trackingNumber}
+              </span>
+            )}
+          </div>
+          <p className="text-white text-xs mt-1 font-medium">{customerName}{customerEmail ? <span className="text-[#9cb8d9] font-normal"> · {customerEmail}</span> : ''}</p>
+          <p className="text-[#9cb8d9] text-xs mt-0.5 truncate">{addressLine || 'No address'}</p>
+          <p className="text-[#2a4a7a] text-xs mt-0.5">
+            {order.items?.length || 0} item(s) ·{' '}
+            {orderTs?.toDate?.()?.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) || 'Unknown date'}
+          </p>
+          {wallidApiRef && (
+            <p className="text-[#8caad4] text-xs mt-1 font-mono break-all">
+              Bank ref: <span className="text-emerald-300">{String(wallidApiRef).replace(/-/g, '').slice(0, 10)}</span>
+              <span className="text-[#2a4a7a]"> · Wallid ID: {wallidApiRef}</span>
+            </p>
+          )}
+          {Array.isArray(order.items) && order.items.length > 0 && (
+            <ul className="mt-2 space-y-1 rounded-lg border border-white/[0.07] bg-[#060f1e]/60 p-2">
+              {order.items.map((it: any, idx: number) => {
+                const name = it?.name || it?.productName || 'Item';
+                const rawVariant = it?.variantName || it?.dosage || it?.variant || it?.size || it?.variantLabel || '';
+                const variant = rawVariant && !String(name).toLowerCase().includes(String(rawVariant).toLowerCase()) ? rawVariant : (rawVariant && /mg|ml|mcg|iu/i.test(String(rawVariant)) ? rawVariant : '');
+                const qty = Number(it?.quantity ?? 1);
+                const price = Number(it?.price ?? it?.unitPrice ?? 0);
+                return (
+                  <li key={idx} className="flex items-center justify-between gap-2 text-xs">
+                    <span className="text-white min-w-0 break-words">
+                      <span className="font-semibold text-emerald-300">{qty}×</span> {name}
+                      {variant ? <span className="text-[#9cb8d9]"> · {String(variant)}</span> : null}
+                    </span>
+                    {price > 0 && (
+                      <span className="text-[#9cb8d9] shrink-0">£{(price * qty).toFixed(2)}</span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <button
+            type="button"
+            onClick={() => openOrder(order)}
+            className="mt-2 inline-flex items-center gap-1.5 min-h-[40px] px-3 py-2 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-200 rounded-lg text-xs font-medium"
+          >
+            <Eye className="w-4 h-4" /> Open full order
+          </button>
+
+
+        </div>
+        <div className="flex items-center gap-3 flex-wrap sm:shrink-0">
+          <span className="text-green-400 font-bold text-lg">£{((order as any).total || order.totalAmount || 0).toFixed(2)}</span>
+
+          {/* Status selector */}
+          <div className="relative">
+            <select
+              value={order.status}
+              onChange={e => handleStatusChange(order.id, e.target.value as Order['status'])}
+              disabled={updating === order.id}
+              className="appearance-none pl-3 pr-8 py-1.5 bg-white border border-gray-300 rounded-lg text-gray-900 text-xs focus:outline-none focus:border-blue-500 disabled:opacity-50 cursor-pointer"
+            >
+              {WORKFLOW.map(s => (
+                <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
+              ))}
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[#9cb8d9] pointer-events-none" />
+          </div>
+
+          {/* Quick-advance to next workflow status */}
+          {(() => {
+            const idx = WORKFLOW.indexOf(order.status as Order['status']);
+            if (idx < 0 || idx >= WORKFLOW.length - 1) return null;
+            const next = WORKFLOW[idx + 1];
+            const nextCfg = STATUS_CONFIG[next];
+            const needsDispatch = next === 'shipped';
+            return (
+              <button
+                onClick={() => {
+                  if (needsDispatch) {
+                    openOrder(order);
+
+                  } else {
+                    handleStatusChange(order.id, next);
+                  }
+                }}
+                disabled={updating === order.id}
+                title={needsDispatch ? `Open dispatch — requires tracking number` : `Advance to ${nextCfg.label}`}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 hover:border-emerald-500/50 text-emerald-300 hover:text-emerald-200 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+              >
+                {updating === order.id
+                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  : <ArrowRight className="w-3.5 h-3.5" />}
+                {nextCfg.label}
+              </button>
+            );
+          })()}
+
+
+          <button
+            onClick={() => setHistoryOrderId(historyOrderId === order.id ? null : order.id)}
+            className={`p-1.5 rounded-lg transition-colors ${historyOrderId === order.id ? 'bg-emerald-500/20 border border-emerald-500/40' : 'bg-[#0f2640] hover:bg-[#1a3a5c]'}`}
+            title="Customer history (paid / failed)"
+          >
+            <BarChart3 className={`w-4 h-4 ${historyOrderId === order.id ? 'text-emerald-300' : 'text-[#8caad4]'}`} />
+          </button>
+          <button
+            onClick={() => openOrder(order)}
+            className="p-1.5 bg-[#0f2640] hover:bg-[#1a3a5c] rounded-lg transition-colors"
+            title="View details"
+          >
+            <Eye className="w-4 h-4 text-[#8caad4]" />
+          </button>
+          <button
+            onClick={() => handleDeleteOrder(order.id)}
+            disabled={deleting === order.id}
+            className="p-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 rounded-lg transition-colors disabled:opacity-50"
+            title="Delete order"
+          >
+            {deleting === order.id
+              ? <Loader2 className="w-4 h-4 text-red-400 animate-spin" />
+              : <Trash2 className="w-4 h-4 text-red-400" />
+            }
+          </button>
+        </div>
+      </div>
+      {historyOrderId === order.id && (
+        <div className="mt-3">
+          <CustomerOrdersSummary
+            email={orderEmail(order)}
+            orders={orders}
+            onOpenOrder={(o) => { setHistoryOrderId(null); openOrder(o); }}
+          />
+        </div>
+      )}
+
+    </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        title="Delete order"
+        body={`Permanently delete order ${pendingDeleteLabel}?\n\nThis cannot be undone.`}
+        confirmLabel="Delete"
+        destructive
+        busy={pendingDeleteId !== null && deleting === pendingDeleteId}
+        onConfirm={confirmDeleteOrder}
+        onCancel={() => setPendingDeleteId(null)}
+      />
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
@@ -1743,7 +2071,7 @@ export default function OrdersTab() {
             TrueLayer Console
             <ExternalLink className="w-3 h-3 opacity-60" />
           </button>
-          <button onClick={loadOrders} className="flex items-center gap-2 px-3 py-2 bg-[#0f2640] hover:bg-[#1a3a5c] text-white rounded-lg text-sm transition-colors">
+          <button onClick={() => loadOrders(true)} className="flex items-center gap-2 px-3 py-2 bg-[#0f2640] hover:bg-[#1a3a5c] text-white rounded-lg text-sm transition-colors">
             <RefreshCw className="w-4 h-4" /> Refresh
           </button>
         </div>
@@ -1803,7 +2131,7 @@ export default function OrdersTab() {
           </div>
           <div className="divide-y divide-white/[0.04]">
             {expiredPending.map(o => {
-              const hoursAgo = Math.floor((now - toMillisSafe(o.orderDate)) / (60 * 60 * 1000));
+              const hoursAgo = Math.floor((Date.now() - toMillisSafe(o.orderDate)) / (60 * 60 * 1000));
               const method = (o as any).paymentMethod === 'bank_transfer' ? 'Bank Transfer' : 'Card';
               const name = `${(o as any).customer?.firstName || ''} ${(o as any).customer?.lastName || ''}`.trim() || 'Unknown';
               return (
@@ -1982,6 +2310,48 @@ export default function OrdersTab() {
                     className={`text-xs font-mono ${
                       r.status === 'synced' ? 'text-emerald-300'
                         : r.status === 'waiting' ? 'text-amber-300'
+                        : 'text-red-400'
+                    }`}
+                  >
+                    {r.id}: {r.message}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Bulk sync tracking + dispatch — one click ships the whole prepared batch */}
+      {(() => {
+        const pending = bulkDispatchCandidates.length;
+        if (pending === 0 && bulkDispatchLog.length === 0) return null;
+        return (
+          <div className="p-3 bg-[#0d1f35] border border-white/[0.08] rounded-xl">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-[#9cb8d9] text-xs">
+                {pending} paid order{pending === 1 ? '' : 's'} ready to dispatch — pulls any missing Royal Mail
+                tracking, marks as shipped and sends the dispatch email.
+              </p>
+              <button
+                onClick={handleBulkSyncAndDispatch}
+                disabled={bulkDispatchRunning || pending === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+              >
+                {bulkDispatchRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Truck className="w-3.5 h-3.5" />}
+                {bulkDispatchRunning
+                  ? `Dispatching ${bulkDispatchProgress.done}/${bulkDispatchProgress.total}…`
+                  : 'Sync tracking + dispatch (bulk)'}
+              </button>
+            </div>
+            {bulkDispatchLog.length > 0 && (
+              <ul className="mt-2 space-y-1 max-h-40 overflow-y-auto" role="status">
+                {bulkDispatchLog.map((r, i) => (
+                  <li
+                    key={`${r.id}-${i}`}
+                    className={`text-xs font-mono ${
+                      r.status === 'dispatched' ? 'text-emerald-300'
+                        : r.status === 'skipped' ? 'text-amber-300'
                         : 'text-red-400'
                     }`}
                   >
@@ -2195,193 +2565,27 @@ export default function OrdersTab() {
 
       {/* Orders list */}
       {loading ? (
-        <div className="text-center py-16 text-[#9cb8d9]">Loading orders...</div>
+        <OrdersListSkeleton rows={8} />
       ) : loadError ? (
         <div className="text-center py-16">
           <p className="text-red-400 mb-3">{loadError}</p>
           <button
-            onClick={loadOrders}
+            onClick={() => loadOrders(true)}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
           >
             Retry
           </button>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-[#9cb8d9]">No orders found</div>
+        <EmptyState title="No orders found" hint="Try a different search term or status filter." />
       ) : (
-        <div className="space-y-3">
-          {filtered.map(order => {
-            const c = (order as any).customer;
-            const customerName = c ? `${c.firstName || ''} ${c.lastName || ''}`.trim() : (order.userName || 'Guest');
-            const customerEmail = c?.email || order.userEmail || '';
-            const addressLine = c ? [c.address, c.city, c.postcode].filter(Boolean).join(', ') : (order.shippingAddress || '');
-            const orderRef = (order as any).orderId || `#${order.id?.slice(-8).toUpperCase()}`;
-            const wallidApiRef = (order as any).apiPaymentId || (order as any).wallidApiPaymentId || '';
-            const orderTs = order.orderDate || (order as any).createdAt;
-            return (
-            <div key={order.id} className="bg-[#0b1a30]/60 border border-white/[0.07] rounded-xl p-4 hover:border-white/[0.12] transition-colors">
-              {/* Mobile: stack info above actions — the old flex-wrap row let
-                  the price/select column squeeze the info column to a few
-                  characters wide, wrapping text letter-by-letter. */}
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span className="font-mono text-white font-semibold text-sm">
-                      {orderRef}
-                      {wallidApiRef && (
-                        <span className="text-emerald-300">
-                          {' '}+ {String(wallidApiRef).replace(/-/g, '').slice(0, 10)}
-                        </span>
-                      )}
-                    </span>
-
-                    <StatusBadge status={order.status} />
-                    {(order as any).paymentMethod === 'bank_transfer' && (
-                      <PaymentStatusBadge paymentStatus={(order as any).paymentStatus || 'pending_bank_transfer'} />
-                    )}
-                    {isFenaOrder(order) && <FenaStatusBadge order={order} />}
-                    <ProviderBadge order={order} />
-                    <ReconciledCronBadge order={order} />
-                    <CheckAddressBadge order={order} addressLine={addressLine} />
-                    {order.trackingNumber && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-400 font-mono">
-                        <Hash className="w-3 h-3" />{order.trackingNumber}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-white text-xs mt-1 font-medium">{customerName}{customerEmail ? <span className="text-[#9cb8d9] font-normal"> · {customerEmail}</span> : ''}</p>
-                  <p className="text-[#9cb8d9] text-xs mt-0.5 truncate">{addressLine || 'No address'}</p>
-                  <p className="text-[#2a4a7a] text-xs mt-0.5">
-                    {order.items?.length || 0} item(s) ·{' '}
-                    {orderTs?.toDate?.()?.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) || 'Unknown date'}
-                  </p>
-                  {wallidApiRef && (
-                    <p className="text-[#8caad4] text-xs mt-1 font-mono break-all">
-                      Bank ref: <span className="text-emerald-300">{String(wallidApiRef).replace(/-/g, '').slice(0, 10)}</span>
-                      <span className="text-[#2a4a7a]"> · Wallid ID: {wallidApiRef}</span>
-                    </p>
-                  )}
-                  {Array.isArray(order.items) && order.items.length > 0 && (
-                    <ul className="mt-2 space-y-1 rounded-lg border border-white/[0.07] bg-[#060f1e]/60 p-2">
-                      {order.items.map((it: any, idx: number) => {
-                        const name = it?.name || it?.productName || 'Item';
-                        const rawVariant = it?.variantName || it?.dosage || it?.variant || it?.size || it?.variantLabel || '';
-                        const variant = rawVariant && !String(name).toLowerCase().includes(String(rawVariant).toLowerCase()) ? rawVariant : (rawVariant && /mg|ml|mcg|iu/i.test(String(rawVariant)) ? rawVariant : '');
-                        const qty = Number(it?.quantity ?? 1);
-                        const price = Number(it?.price ?? it?.unitPrice ?? 0);
-                        return (
-                          <li key={idx} className="flex items-center justify-between gap-2 text-xs">
-                            <span className="text-white min-w-0 break-words">
-                              <span className="font-semibold text-emerald-300">{qty}×</span> {name}
-                              {variant ? <span className="text-[#9cb8d9]"> · {String(variant)}</span> : null}
-                            </span>
-                            {price > 0 && (
-                              <span className="text-[#9cb8d9] shrink-0">£{(price * qty).toFixed(2)}</span>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => openOrder(order)}
-                    className="mt-2 inline-flex items-center gap-1.5 min-h-[40px] px-3 py-2 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-200 rounded-lg text-xs font-medium"
-                  >
-                    <Eye className="w-4 h-4" /> Open full order
-                  </button>
-
-
-                </div>
-                <div className="flex items-center gap-3 flex-wrap sm:shrink-0">
-                  <span className="text-green-400 font-bold text-lg">£{((order as any).total || order.totalAmount || 0).toFixed(2)}</span>
-
-                  {/* Status selector */}
-                  <div className="relative">
-                    <select
-                      value={order.status}
-                      onChange={e => handleStatusChange(order.id, e.target.value as Order['status'])}
-                      disabled={updating === order.id}
-                      className="appearance-none pl-3 pr-8 py-1.5 bg-white border border-gray-300 rounded-lg text-gray-900 text-xs focus:outline-none focus:border-blue-500 disabled:opacity-50 cursor-pointer"
-                    >
-                      {WORKFLOW.map(s => (
-                        <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
-                      ))}
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[#9cb8d9] pointer-events-none" />
-                  </div>
-
-                  {/* Quick-advance to next workflow status */}
-                  {(() => {
-                    const idx = WORKFLOW.indexOf(order.status as Order['status']);
-                    if (idx < 0 || idx >= WORKFLOW.length - 1) return null;
-                    const next = WORKFLOW[idx + 1];
-                    const nextCfg = STATUS_CONFIG[next];
-                    const needsDispatch = next === 'shipped';
-                    return (
-                      <button
-                        onClick={() => {
-                          if (needsDispatch) {
-                            openOrder(order);
-
-                          } else {
-                            handleStatusChange(order.id, next);
-                          }
-                        }}
-                        disabled={updating === order.id}
-                        title={needsDispatch ? `Open dispatch — requires tracking number` : `Advance to ${nextCfg.label}`}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 hover:border-emerald-500/50 text-emerald-300 hover:text-emerald-200 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
-                      >
-                        {updating === order.id
-                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          : <ArrowRight className="w-3.5 h-3.5" />}
-                        {nextCfg.label}
-                      </button>
-                    );
-                  })()}
-
-
-                  <button
-                    onClick={() => setHistoryOrderId(historyOrderId === order.id ? null : order.id)}
-                    className={`p-1.5 rounded-lg transition-colors ${historyOrderId === order.id ? 'bg-emerald-500/20 border border-emerald-500/40' : 'bg-[#0f2640] hover:bg-[#1a3a5c]'}`}
-                    title="Customer history (paid / failed)"
-                  >
-                    <BarChart3 className={`w-4 h-4 ${historyOrderId === order.id ? 'text-emerald-300' : 'text-[#8caad4]'}`} />
-                  </button>
-                  <button
-                    onClick={() => openOrder(order)}
-                    className="p-1.5 bg-[#0f2640] hover:bg-[#1a3a5c] rounded-lg transition-colors"
-                    title="View details"
-                  >
-                    <Eye className="w-4 h-4 text-[#8caad4]" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteOrder(order.id)}
-                    disabled={deleting === order.id}
-                    className="p-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 rounded-lg transition-colors disabled:opacity-50"
-                    title="Delete order"
-                  >
-                    {deleting === order.id
-                      ? <Loader2 className="w-4 h-4 text-red-400 animate-spin" />
-                      : <Trash2 className="w-4 h-4 text-red-400" />
-                    }
-                  </button>
-                </div>
-              </div>
-              {historyOrderId === order.id && (
-                <div className="mt-3">
-                  <CustomerOrdersSummary
-                    email={orderEmail(order)}
-                    orders={orders}
-                    onOpenOrder={(o) => { setHistoryOrderId(null); openOrder(o); }}
-                  />
-                </div>
-              )}
-            </div>
-            );
-          })}
-        </div>
+        filtered.length <= VIRTUALIZE_THRESHOLD ? (
+          <div className="space-y-3">
+            {filtered.map(renderOrderRow)}
+          </div>
+        ) : (
+          <VirtualizedOrdersList rows={filtered} renderRow={renderOrderRow} />
+        )
       )}
 
       {/* Order Detail Modal — portalled to body so transformed ancestors don't break `fixed` positioning */}

@@ -43,7 +43,7 @@ jobs:
     env:
       TEST_BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -64,7 +64,7 @@ jobs:
 
       - name: Cache Playwright browsers
         id: pw-cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ steps.pw-version.outputs.version }}-chromium

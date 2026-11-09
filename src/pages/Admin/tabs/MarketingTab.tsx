@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Plus, Tag, Percent, DollarSign, Trash2,
   Wand2, Copy, Check, RefreshCw, X
@@ -110,6 +110,15 @@ export default function MarketingTab() {
       setGenerating(false);
     }, 1200);
   };
+
+  const couponStats = useMemo(() => {
+    let active = 0, redemptions = 0;
+    for (const c of coupons) {
+      if (c.isActive) active++;
+      redemptions += c.usageCount || 0;
+    }
+    return { active, redemptions };
+  }, [coupons]);
 
   return (
     <div className="space-y-8">
@@ -349,11 +358,11 @@ export default function MarketingTab() {
             <p className="text-[#9cb8d9] text-xs font-medium mb-3 uppercase tracking-wide">Quick Stats</p>
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 bg-[#04101f]/40 rounded-xl text-center">
-                <p className="text-2xl font-bold text-white">{coupons.filter(c => c.isActive).length}</p>
+                <p className="text-2xl font-bold text-white">{couponStats.active}</p>
                 <p className="text-[#2a4a7a] text-xs mt-0.5">Active Coupons</p>
               </div>
               <div className="p-3 bg-[#04101f]/40 rounded-xl text-center">
-                <p className="text-2xl font-bold text-white">{coupons.reduce((s, c) => s + (c.usageCount || 0), 0)}</p>
+                <p className="text-2xl font-bold text-white">{couponStats.redemptions}</p>
                 <p className="text-[#2a4a7a] text-xs mt-0.5">Total Redemptions</p>
               </div>
             </div>
