@@ -8,7 +8,7 @@ const SubscribeInput = z.object({
 
 /** Public: mirror a newsletter sign-up into Klaviyo. Never throws to the client. */
 export const subscribeNewsletterToKlaviyo = createServerFn({ method: "POST" })
-  .validator((d) => SubscribeInput.parse(d))
+  .inputValidator((d) => SubscribeInput.parse(d))
   .handler(async ({ data }) => {
     try {
       const { subscribeEmails } = await import("./klaviyo.server");
@@ -29,7 +29,7 @@ const UnsubscribeInput = z.object({
  * never re-subscribes anyone). Never throws to the client.
  */
 export const unsubscribeNewsletterFromKlaviyo = createServerFn({ method: "POST" })
-  .validator((d) => UnsubscribeInput.parse(d))
+  .inputValidator((d) => UnsubscribeInput.parse(d))
   .handler(async ({ data }) => {
     try {
       const { unsubscribeEmails } = await import("./klaviyo.server");
@@ -44,7 +44,7 @@ export const unsubscribeNewsletterFromKlaviyo = createServerFn({ method: "POST" 
 const TokenInput = z.object({ idToken: z.string().min(10).max(4096) });
 
 export const getKlaviyoStatus = createServerFn({ method: "POST" })
-  .validator((d) => TokenInput.parse(d))
+  .inputValidator((d) => TokenInput.parse(d))
   .handler(async ({ data }) => {
     const { requireFirebaseAdmin } = await import("./server/firebase-auth-admin");
     await requireFirebaseAdmin(data.idToken);
@@ -55,7 +55,7 @@ export const getKlaviyoStatus = createServerFn({ method: "POST" })
   });
 
 export const syncSubscribersToKlaviyo = createServerFn({ method: "POST" })
-  .validator((d) => TokenInput.parse(d))
+  .inputValidator((d) => TokenInput.parse(d))
   .handler(async ({ data }) => {
     const { requireFirebaseAdmin } = await import("./server/firebase-auth-admin");
     const admin = await requireFirebaseAdmin(data.idToken);
