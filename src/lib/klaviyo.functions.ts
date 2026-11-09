@@ -20,6 +20,27 @@ export const subscribeNewsletterToKlaviyo = createServerFn({ method: "POST" })
     }
   });
 
+const UnsubscribeInput = z.object({
+  email: z.string().trim().toLowerCase().email().max(254),
+});
+
+/**
+ * Public: mirror a newsletter opt-out into Klaviyo (suppression only —
+ * never re-subscribes anyone). Never throws to the client.
+ */
+export const unsubscribeNewsletterFromKlaviyo = createServerFn({ method: "POST" })
+  .inputValidator((d) => UnsubscribeInput.parse(d))
+  .handler(async ({ data }) => {
+    try {
+      const { unsubscribeEmails } = await import("./klaviyo.server");
+      await unsubscribeEmails([data.email]);
+      return { ok: true };
+    } catch (err) {
+      console.error("[klaviyo] unsubscribe failed:", err);
+      return { ok: false };
+    }
+  });
+
 const TokenInput = z.object({ idToken: z.string().min(10).max(4096) });
 
 export const getKlaviyoStatus = createServerFn({ method: "POST" })
