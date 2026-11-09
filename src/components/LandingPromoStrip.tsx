@@ -122,7 +122,7 @@ export function LandingPromoStrip({ theme = "dark" }: Props) {
               }
               className={`inline-flex items-center gap-2 rounded-md border px-2.5 py-1 font-mono text-[12px] tracking-[0.18em] uppercase transition-colors ${codeBox}`}
             >
-              {code}
+              {code}{" "}
               <span className="text-[10px] opacity-80">{copiedCode === code ? "Copied" : "Copy"}</span>
             </button>
             <span className="opacity-70 text-[11px] sm:text-[12px] text-white">{label}</span>
