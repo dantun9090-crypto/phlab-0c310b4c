@@ -59,7 +59,7 @@
     "@ai-sdk/openai-compatible": "^2.0.48",
     "@cloudflare/vite-plugin": "^1.66.0",
     "@fontsource-variable/space-grotesk": "^5.2.10",
-    "@hookform/resolvers": "^5.2.2",
+    "@hookform/resolvers": "^7.0.3",
     "@lovable.dev/cloud-auth-js": "^1.2.0",
     "@lovable.dev/email-js": "^0.1.2",
     "@lovable.dev/mcp-js": "^0.20.0",
