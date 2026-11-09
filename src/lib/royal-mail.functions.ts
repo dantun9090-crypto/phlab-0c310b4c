@@ -9,7 +9,7 @@
  */
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
-import { requireFirebaseAdmin } from './server/firebase-auth-admin';
+import { requireFirebaseOrdersAccess as requireFirebaseAdmin } from './server/firebase-auth-admin';
 
 const WORKER_URL = 'https://royal-mail-order.dantun9090.workers.dev';
 

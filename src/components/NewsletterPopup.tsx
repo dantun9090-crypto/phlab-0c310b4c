@@ -212,11 +212,23 @@ export default function NewsletterPopup() {
         if (cancelled || already) return;
       }
 
-      timer = setTimeout(() => {
+      // Don't stack the popup on top of the cookie-consent banner — wait
+      // until the visitor has made a consent choice. Poll every 5s; after
+      // ~30s open anyway so consent-disabled setups still get the popup.
+      let consentWaits = 0;
+      const tryOpen = () => {
         if (cancelled) return;
+        let consentDecided = false;
+        try { consentDecided = !!window.localStorage.getItem('php_cookie_consent'); } catch { /* ignore */ }
+        if (!consentDecided && consentWaits < 6) {
+          consentWaits += 1;
+          timer = setTimeout(tryOpen, 5_000);
+          return;
+        }
         setOpen(true);
         requestAnimationFrame(() => setVisible(true));
-      }, Math.max(0, cfg.delaySeconds) * 1000);
+      };
+      timer = setTimeout(tryOpen, Math.max(0, cfg.delaySeconds) * 1000);
     })();
 
     return () => {

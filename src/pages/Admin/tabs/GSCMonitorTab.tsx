@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useServerFn } from '@tanstack/react-start';
 import {
   Search, RefreshCw, Loader2, CheckCircle2, XCircle, AlertTriangle,
@@ -130,11 +130,15 @@ export default function GSCMonitorTab() {
     }
   };
 
-  const totalClicks = perf.reduce((s, r) => s + r.clicks, 0);
-  const totalImpressions = perf.reduce((s, r) => s + r.impressions, 0);
-  const avgPos = perf.length
-    ? perf.reduce((s, r) => s + r.position, 0) / perf.length
-    : 0;
+  const { totalClicks, totalImpressions, avgPos } = useMemo(() => {
+    let clicks = 0, impressions = 0, posSum = 0;
+    for (const r of perf) { clicks += r.clicks; impressions += r.impressions; posSum += r.position; }
+    return {
+      totalClicks: clicks,
+      totalImpressions: impressions,
+      avgPos: perf.length ? posSum / perf.length : 0,
+    };
+  }, [perf]);
 
   return (
     <div className="space-y-6 p-1">

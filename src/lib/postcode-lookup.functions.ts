@@ -24,10 +24,28 @@ export const lookupPostcode = createServerFn({ method: 'POST' })
       windowMs: 10 * 60 * 1000,
       retryAfterSec: 600,
     });
-    if (blocked) {
+    // Daily per-IP ceiling on top of the 10-minute window, so one caller
+    // can't drain paid credits slowly over a day.
+    const blockedDaily = blocked
+      ? null
+      : await enforceRateLimit(getRequest(), 'checkout.postcode-lookup.daily', {
+          limit: 60,
+          windowMs: 24 * 60 * 60 * 1000,
+          retryAfterSec: 3600,
+        });
+    if (blocked || blockedDaily) {
       return {
         ok: false, mode: 'outcode', postcode: data.postcode, city: '', county: '', addresses: [],
         message: 'Too many lookups — please enter your address manually.',
+      };
+    }
+    // Only valid UK postcode shapes reach the paid provider; junk input is
+    // rejected for free.
+    const normalised = data.postcode.toUpperCase().replace(/\s+/g, '');
+    if (!/^(GIR0AA|[A-Z]{1,2}[0-9][A-Z0-9]?[0-9][A-Z]{2})$/.test(normalised)) {
+      return {
+        ok: false, mode: 'outcode', postcode: data.postcode, city: '', county: '', addresses: [],
+        message: 'Please enter a valid UK postcode.',
       };
     }
     const { runPostcodeLookup } = await import('./postcode-lookup.server');

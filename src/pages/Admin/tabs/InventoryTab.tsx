@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Plus, Search, Edit2, Trash2, AlertTriangle,
   Loader2, X, Check,
@@ -201,6 +201,12 @@ export default function InventoryTab() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  // Debounced value drives the list filter so each keystroke stays cheap.
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 250);
+    return () => clearTimeout(t);
+  }, [search]);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorProduct, setEditorProduct] = useState<Product | null>(null);
   const [saving, setSaving] = useState(false);
@@ -320,12 +326,15 @@ export default function InventoryTab() {
 
 
 
-  const filtered = products.filter(
-    (p) =>
-      p.name?.toLowerCase().includes(search.toLowerCase()) ||
-      p.sku?.toLowerCase().includes(search.toLowerCase()) ||
-      p.category?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = useMemo(() => {
+    const s = debouncedSearch.toLowerCase();
+    return products.filter(
+      (p) =>
+        p.name?.toLowerCase().includes(s) ||
+        p.sku?.toLowerCase().includes(s) ||
+        p.category?.toLowerCase().includes(s)
+    );
+  }, [products, debouncedSearch]);
 
   const toggleBulk = (id: string) => {
     setBulkSelected((prev) =>

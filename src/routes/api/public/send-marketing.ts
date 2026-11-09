@@ -12,7 +12,7 @@ import { z } from "zod";
 
 import { addDocAdmin, getDocAdmin, listDocsAdmin, updateDocAdmin } from "@/lib/server/firestore-admin";
 import { requireFirebaseAdmin } from "@/lib/server/firebase-auth-admin";
-import { enqueueMailOnce } from "@/lib/server/enqueue-mail";
+import { queueMarketingMail, releaseMarketingBatch, MARKETING_HOURLY_CAP } from "@/lib/server/marketing-drip";
 import { wrapCampaignHtml, wrapCampaignText } from "@/lib/email-templates/wrap-campaign";
 import { DEFAULT_EMAIL_BRAND, withDefaults, type EmailBrandConfig } from "@/lib/email-templates/brand-config";
 
@@ -158,12 +158,23 @@ async function enqueueMarketingMail(input: {
   text: string;
   campaignId: string;
 }) {
-  return enqueueMailOnce(safeMailId(input.campaignId, input.to), {
+  // Throttled: goes to marketingOutbox, released ≤90/hour by marketing-drip.
+  return queueMarketingMail(safeMailId(input.campaignId, input.to), {
     to: input.to,
     message: { subject: input.subject, html: input.html, text: input.text },
     source: "admin:marketing",
     campaignId: input.campaignId,
   });
+}
+
+async function releaseNow(): Promise<{ released: number; pending: number }> {
+  try {
+    const r = await releaseMarketingBatch();
+    return { released: r.released, pending: r.pending };
+  } catch (err) {
+    console.error("[send-marketing] immediate release failed", err);
+    return { released: 0, pending: -1 };
+  }
 }
 
 export const Route = createFileRoute("/api/public/send-marketing")({
@@ -238,7 +249,8 @@ export const Route = createFileRoute("/api/public/send-marketing")({
             }
           }
 
-          return json({ ok: true, requeued: enqueued, duplicates, matched: rows.length, failed: failures.length, failures: failures.slice(0, 10) });
+          const drip = await releaseNow();
+          return json({ ok: true, requeued: enqueued, duplicates, matched: rows.length, failed: failures.length, failures: failures.slice(0, 10), sentNow: drip.released, waiting: drip.pending, hourlyCap: MARKETING_HOURLY_CAP });
         }
 
         const { subject, html: rawHtml, recipients, dryRun, strict } = parsed.data;
@@ -355,7 +367,7 @@ export const Route = createFileRoute("/api/public/send-marketing")({
           }
         }
 
-
+        const drip = await releaseNow();
 
         return json({
           ok: true,
@@ -365,6 +377,9 @@ export const Route = createFileRoute("/api/public/send-marketing")({
           campaignId,
           failures: failures.slice(0, 10),
           validation,
+          sentNow: drip.released,
+          waiting: drip.pending,
+          hourlyCap: MARKETING_HOURLY_CAP,
         });
       },
     },

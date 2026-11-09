@@ -1,6 +1,8 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
+import "@lovable.dev/cloud-auth-js/styles.css";
 
 type OAuthResult = { redirect_url?: string; redirect_to?: string; client?: { name?: string } | null };
 
@@ -72,6 +74,25 @@ function SignIn() {
     else setSent(true);
   }
 
+  async function lovableSignIn() {
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await lovable.auth.signInWithOAuth("lovable", {
+        redirect_uri: window.location.href,
+      });
+      if (result.error) {
+        setBusy(false);
+        setError(String((result.error as Error).message ?? result.error));
+        return;
+      }
+      if (!result.redirected) window.location.reload();
+    } catch (e) {
+      setBusy(false);
+      setError(e instanceof Error ? e.message : "Sign-in failed");
+    }
+  }
+
   async function google() {
     setBusy(true);
     setError(null);
@@ -96,6 +117,9 @@ function SignIn() {
           {error}
         </p>
       )}
+      <button type="button" className="lovable-auth-button" onClick={lovableSignIn} disabled={busy}>
+        Sign in with Lovable
+      </button>
       <button
         type="button"
         onClick={google}

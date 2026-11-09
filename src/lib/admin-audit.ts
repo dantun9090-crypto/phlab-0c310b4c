@@ -52,7 +52,13 @@ export type AdminAuditAction =
   | 'lab_test.delete'
   | 'lab_test.publish.toggle'
   | 'lab_test.import'
-  | 'lab_test.feature.toggle';
+  | 'lab_test.feature.toggle'
+  | 'theme.template.create'
+  | 'theme.template.update'
+  | 'theme.template.duplicate'
+  | 'theme.template.delete'
+  | 'theme.apply'
+  | 'theme.undo';
 
 interface LogPayload {
   action: AdminAuditAction;

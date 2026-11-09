@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   FileText, Send, RefreshCw, Download, Eye, Search,
   CheckCircle2, AlertCircle, Loader2, X, User, Mail,
@@ -211,25 +211,34 @@ export default function InvoicesTab() {
     setCustomerSearch('');
   };
 
-  const filteredInvoices = invoices.filter(inv => {
+  const filteredInvoices = useMemo(() => {
     const q = search.toLowerCase();
-    return (
+    return invoices.filter(inv =>
       inv.email?.toLowerCase().includes(q) ||
       inv.customerName?.toLowerCase().includes(q) ||
       inv.number?.toLowerCase().includes(q) ||
       inv.description?.toLowerCase().includes(q) ||
       inv.status?.toLowerCase().includes(q)
     );
-  });
+  }, [invoices, search]);
 
-  const filteredCustomers = customers.filter(c => {
+  const filteredCustomers = useMemo(() => {
     const q = customerSearch.toLowerCase();
-    return (
+    return customers.filter(c =>
       c.email.toLowerCase().includes(q) ||
       c.firstName.toLowerCase().includes(q) ||
       c.lastName.toLowerCase().includes(q)
-    );
-  }).slice(0, 8);
+    ).slice(0, 8);
+  }, [customers, customerSearch]);
+
+  const invoiceStats = useMemo(() => {
+    let paid = 0, pending = 0, revenuePence = 0;
+    for (const i of invoices) {
+      if (i.status === 'paid') { paid++; revenuePence += i.amount_paid || 0; }
+      else if (i.status === 'pending' || i.status === 'open') pending++;
+    }
+    return { total: invoices.length, paid, pending, revenue: (revenuePence / 100).toFixed(2) };
+  }, [invoices]);
 
   const statusColor = (s: string) => STATUS_COLOR[s] || STATUS_COLOR.default;
 
@@ -290,12 +299,12 @@ export default function InvoicesTab() {
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Total', value: invoices.length, color: 'text-white' },
-          { label: 'Paid', value: invoices.filter(i => i.status === 'paid').length, color: 'text-green-400' },
-          { label: 'Pending', value: invoices.filter(i => i.status === 'pending' || i.status === 'open').length, color: 'text-yellow-400' },
+          { label: 'Total', value: invoiceStats.total, color: 'text-white' },
+          { label: 'Paid', value: invoiceStats.paid, color: 'text-green-400' },
+          { label: 'Pending', value: invoiceStats.pending, color: 'text-yellow-400' },
           {
             label: 'Revenue',
-            value: '£' + (invoices.filter(i => i.status === 'paid').reduce((s, i) => s + (i.amount_paid || 0), 0) / 100).toFixed(2),
+            value: '£' + invoiceStats.revenue,
             color: 'text-blue-400'
           },
         ].map(stat => (

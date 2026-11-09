@@ -9,7 +9,7 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireFirebaseAdmin } from "./server/firebase-auth-admin";
+import { requireFirebaseOrdersAccess as requireFirebaseAdmin } from "./server/firebase-auth-admin";
 
 const RegisterInput = z.object({
   idToken: z.string().min(10).max(4096),

@@ -10,7 +10,9 @@ import {
   PoundSterling, RefreshCw, CalendarDays, CalendarRange, CheckCircle2,
   Truck, Clock, XCircle, TrendingUp, TrendingDown, Package,
 } from 'lucide-react';
-import { getAllOrders, type Order } from '@/lib/firebase';
+import { type Order } from '@/lib/firebase';
+import { useQueryClient } from '@tanstack/react-query';
+import { fetchAllOrders, refetchAllOrders } from '@/lib/queries/all-orders';
 import { toMillisSafe } from '@/lib/to-date';
 
 const PAID_STATUSES = new Set(['paid', 'processing', 'shipped', 'delivered', 'completed']);
@@ -163,18 +165,19 @@ export default function RevenueTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const qc = useQueryClient();
+  const load = useCallback(async (hard = false) => {
     setLoading(true);
     setError(null);
     try {
-      const all = await getAllOrders();
+      const all = await (hard ? refetchAllOrders(qc) : fetchAllOrders(qc));
       setOrders(all);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not load orders');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [qc]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -236,7 +239,7 @@ export default function RevenueTab() {
         </div>
         <button
           type="button"
-          onClick={load}
+          onClick={() => load(true)}
           disabled={loading}
           className="inline-flex items-center gap-2 px-4 min-h-[44px] rounded-lg bg-slate-800 border-2 border-slate-600 text-white text-sm font-semibold hover:bg-slate-700 transition-colors disabled:opacity-60"
         >

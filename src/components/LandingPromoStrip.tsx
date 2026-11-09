@@ -117,7 +117,9 @@ export function LandingPromoStrip({ theme = "dark" }: Props) {
             <button
               type="button"
               onClick={() => copy(code)}
-              aria-label={`Copy promo code ${code}`}
+              aria-label={
+                copiedCode === code ? `${code} Copied` : `${code} Copy promo code`
+              }
               className={`inline-flex items-center gap-2 rounded-md border px-2.5 py-1 font-mono text-[12px] tracking-[0.18em] uppercase transition-colors ${codeBox}`}
             >
               {code}

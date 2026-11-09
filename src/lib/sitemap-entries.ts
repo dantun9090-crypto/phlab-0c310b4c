@@ -69,6 +69,7 @@ export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
   }));
 
   let productEntries: SitemapEntry[] = [];
+  let categoryEntries: SitemapEntry[] = [];
   try {
     const products = await fetchAllProducts();
     productEntries = products.map((p) => {
@@ -82,8 +83,24 @@ export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
         imageLoc: p.imageUrl && /^https?:\/\//.test(p.imageUrl) ? p.imageUrl : undefined,
       };
     });
+    // Category hub pages (/products/category/<slug>) — same derivation the
+    // footer uses, so sitemap and on-site internal links advertise the same
+    // canonical category URLs. Only categories with at least one active
+    // product are listed (empty hubs self-serve noindex and must stay out
+    // of the sitemap).
+    const catSlugs = new Set<string>();
+    for (const p of products) {
+      if (p.isActive === false || !p.category) continue;
+      catSlugs.add(p.category.toLowerCase().replace(/\s+/g, "-"));
+    }
+    categoryEntries = Array.from(catSlugs).map((slug) => ({
+      path: `/products/category/${slug}`,
+      changefreq: "weekly" as const,
+      priority: "0.7",
+    }));
   } catch {
     productEntries = [];
+    categoryEntries = [];
   }
 
   // Hard exclusion — these paths were decommissioned (410 Gone) and must
@@ -103,6 +120,7 @@ export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
   return [
     ...staticEntries,
     ...productEntries,
+    ...categoryEntries,
     ...articleEntries,
     ...programmaticEntries,
   ].filter((e) => {
