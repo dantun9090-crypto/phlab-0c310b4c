@@ -536,9 +536,9 @@ export default function OrdersTab() {
   // Mirror local edits into the shared cache so other admin tabs
   // (Customers, Revenue, Compliance, Invoices) don't serve stale orders.
   useEffect(() => {
-    if (loading) return;
+    if (loading || loadError) return;
     qc.setQueryData(ALL_ORDERS_QUERY_KEY, orders);
-  }, [orders, loading, qc]);
+  }, [orders, loading, loadError, qc]);
 
   const handleStatusChange = async (orderId: string, status: Order['status']) => {
     setUpdating(orderId);
