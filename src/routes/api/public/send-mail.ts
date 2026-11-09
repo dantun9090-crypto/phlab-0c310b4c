@@ -14,7 +14,6 @@ import { z } from "zod";
 
 import { addDocAdmin, findDocByFieldAdmin, getDocAdmin } from "@/lib/server/firestore-admin";
 import { buildContactFormEmail } from "@/templates/contactFormEmail";
-import { protocolLibraryEmail } from "@/templates/protocolLibraryEmail";
 import { buildProfessionalInvoiceEmail } from "@/templates/professionalInvoiceEmail";
 
 const INTERNAL_RECIPIENT = "info@phlabs.co.uk";
@@ -245,14 +244,29 @@ export const Route = createFileRoute("/api/public/send-mail")({
               if (alreadySent) {
                 return json({ ok: true, deduped: true });
               }
+              // Double opt-in: the first email only asks the recipient to
+              // confirm. The library + discount code are sent from
+              // /api/public/protocol-confirm after they click the link, so a
+              // third party can never deliver the offer to someone else's inbox.
+              const token = (crypto.randomUUID() + crypto.randomUUID()).replace(/-/g, "");
+              await addDocAdmin("protocolConfirmations", {
+                email: input.email,
+                discountCode: upper,
+                pdfUrl: input.pdfUrl,
+                createdAt: new Date(),
+                used: false,
+              }, token);
               protocolRecipient = recipient;
               to = input.email;
-              subject = "Your Free Research Protocol Library — PH Labs";
-              html = protocolLibraryEmail({
-                recipientEmail: input.email,
-                discountCode: upper,
-                pdfDownloadUrl: input.pdfUrl,
-              });
+              subject = "Confirm your email — PH Labs";
+              const link = `https://phlabs.co.uk/api/public/protocol-confirm?t=${token}`;
+              html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a">
+<h2 style="margin:0 0 12px">Please confirm your email</h2>
+<p>Someone asked for the PH Labs Research Protocol Library to be sent to this address. If it was you, confirm below and we'll email the download link.</p>
+<p style="margin:24px 0"><a href="${link}" style="background:#10b981;color:#ffffff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold">Confirm email</a></p>
+<p style="font-size:13px;color:#475569">If you didn't request this, ignore this email — nothing else will be sent.</p>
+<p style="font-size:12px;color:#64748b">For Research Use Only. Not for Human Consumption.</p>
+</div>`;
               break;
             }
             case "order-confirmation": {
@@ -260,22 +274,23 @@ export const Route = createFileRoute("/api/public/send-mail")({
               // recipient email matches the order's customer email. Without
               // this anyone could POST arbitrary data and have a PH Labs
               // branded invoice delivered to any inbox.
+              // Missing order and wrong email return the SAME response so
+              // callers cannot probe which order references exist.
               const order = await getDocAdmin("orders", input.orderId);
-              if (!order) {
-                return json({ error: "order_not_found" }, 404);
-              }
-              const orderEmail =
-                typeof order.email === "string"
+              const orderEmail = !order
+                ? null
+                : typeof order.email === "string"
                   ? order.email
                   : typeof (order.customer as { email?: string } | undefined)
                         ?.email === "string"
                     ? (order.customer as { email: string }).email
                     : null;
               if (
+                !order ||
                 !orderEmail ||
                 orderEmail.toLowerCase() !== input.email.toLowerCase()
               ) {
-                return json({ error: "email_mismatch" }, 403);
+                return json({ error: "order_not_verified" }, 403);
               }
               // Public resend is one-shot per order and only for fresh orders
               // (24 h), so a known order id + email can't be used to flood the

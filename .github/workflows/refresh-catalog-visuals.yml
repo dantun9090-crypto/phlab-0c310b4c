@@ -1,0 +1,124 @@
+name: Refresh catalog visual baselines
+
+# Manual-only: regenerates the checked-in page/component screenshot baselines
+# for the catalog e2e specs and commits them to the target branch. Mirrors
+# refresh-payment-visuals.yml so baselines are captured from the same local
+# dev-server environment the CI gates compare against.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: Branch to refresh baselines on
+        required: true
+        default: main
+
+permissions:
+  contents: write
+
+jobs:
+  snapshots:
+    name: Regenerate + commit catalog visual baselines
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.target_branch }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.2.21"
+
+      - name: Cache Bun install store
+        uses: actions/cache@v6
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock', 'package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install deps
+        run: bash scripts/ci-bun-install.sh
+
+      - name: Install Playwright Chromium
+        run: |
+          bunx playwright install --with-deps chromium
+          bunx playwright install --with-deps chromium --only-shell
+
+      - name: Start local dev server
+        run: |
+          (bun run dev --host 127.0.0.1 --port 8080 > server.log 2>&1 &)
+          for i in $(seq 1 120); do
+            ok1=$(curl -fsS -o /dev/null -w "%{http_code}" "http://127.0.0.1:8080/resources/peptide-categories-uk-research" || true)
+            ok2=$(curl -fsS -o /dev/null -w "%{http_code}" "http://127.0.0.1:8080/compound" || true)
+            if [ "$ok1" = "200" ] && [ "$ok2" = "200" ]; then echo "server up after ${i}s"; exit 0; fi
+            sleep 1
+          done
+          tail -n 200 server.log; exit 1
+
+      - name: Regenerate baselines
+        env:
+          TEST_BASE_URL: http://127.0.0.1:8080
+          RESOURCES_BASE_URL: http://127.0.0.1:8080
+          COMPOUND_BASE_URL: http://127.0.0.1:8080
+        run: |
+          bunx playwright test \
+            e2e/resources-peptide-categories-visual.spec.ts \
+            e2e/compound-catalog-visual.spec.ts \
+            --project=chromium --update-snapshots --reporter=list 2>&1 | tee pw-attempt-1.log
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" -ne 0 ]; then
+            echo "==== first attempt failed (rc=$rc); server.log tail: ===="
+            tail -n 60 server.log || true
+            echo "==== PLAYWRIGHT output (attempt 1, last 80 lines): ===="
+            tail -n 80 pw-attempt-1.log || true
+            echo "==== retrying once ===="
+            sleep 3
+            bunx playwright test \
+              e2e/resources-peptide-categories-visual.spec.ts \
+              e2e/compound-catalog-visual.spec.ts \
+              --project=chromium --update-snapshots --reporter=list 2>&1 | tee pw-attempt-2.log
+            rc=${PIPESTATUS[0]}
+          fi
+          if [ "$rc" -ne 0 ]; then
+            echo "==== second attempt failed (rc=$rc); server.log tail: ===="
+            tail -n 60 server.log || true
+            tail -n 120 pw-attempt-2.log || true
+            exit 1
+          fi
+
+      - name: Upload Playwright diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: catalog-visual-diagnostics
+          path: |
+            pw-attempt-*.log
+            server.log
+            playwright-report/**
+            test-results/**
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Verify baselines pass as-is
+        env:
+          TEST_BASE_URL: http://127.0.0.1:8080
+          RESOURCES_BASE_URL: http://127.0.0.1:8080
+          COMPOUND_BASE_URL: http://127.0.0.1:8080
+        run: |
+          bunx playwright test \
+            e2e/resources-peptide-categories-visual.spec.ts \
+            e2e/compound-catalog-visual.spec.ts \
+            --project=chromium
+
+      - name: Commit refreshed baselines
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -z "$(git status --porcelain -- e2e/resources-peptide-categories-visual.spec.ts-snapshots e2e/compound-catalog-visual.spec.ts-snapshots)" ]; then
+            echo "no baseline changes"; exit 0
+          fi
+          git add e2e/resources-peptide-categories-visual.spec.ts-snapshots e2e/compound-catalog-visual.spec.ts-snapshots
+          git commit -m "test(e2e): refresh catalog visual baselines (current main rendering)"
+          git push origin "HEAD:${{ inputs.target_branch }}" || git push origin "HEAD:chore/catalog-visual-baselines-auto"

@@ -119,6 +119,7 @@ import { Route as ApiPublicNowpaymentsWebhookRouteImport } from './routes/api/pu
 import { Route as ApiPublicPeptidepayWebhookRouteImport } from './routes/api/public/peptidepay-webhook'
 import { Route as ApiPublicPostPublishCheckRouteImport } from './routes/api/public/post-publish-check'
 import { Route as ApiPublicPostPublishStatusRouteImport } from './routes/api/public/post-publish-status'
+import { Route as ApiPublicProtocolConfirmRouteImport } from './routes/api/public/protocol-confirm'
 import { Route as ApiPublicPublishHoldRouteImport } from './routes/api/public/publish-hold'
 import { Route as ApiPublicPublishStatusRouteImport } from './routes/api/public/publish-status'
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
@@ -138,7 +139,9 @@ import { Route as ApiPublicHooksFenaRouteImport } from './routes/api/public/hook
 import { Route as ApiPublicHooksFenaProcessRetriesRouteImport } from './routes/api/public/hooks/fena-process-retries'
 import { Route as ApiPublicHooksFirestoreBackupRouteImport } from './routes/api/public/hooks/firestore-backup'
 import { Route as ApiPublicHooksHealthCheckRouteImport } from './routes/api/public/hooks/health-check'
+import { Route as ApiPublicHooksKlaviyoSyncRouteImport } from './routes/api/public/hooks/klaviyo-sync'
 import { Route as ApiPublicHooksLighthousePsiRouteImport } from './routes/api/public/hooks/lighthouse-psi'
+import { Route as ApiPublicHooksMarketingDripRouteImport } from './routes/api/public/hooks/marketing-drip'
 import { Route as ApiPublicHooksMonitorProductUrlsRouteImport } from './routes/api/public/hooks/monitor-product-urls'
 import { Route as ApiPublicHooksOfflineConversionsRouteImport } from './routes/api/public/hooks/offline-conversions'
 import { Route as ApiPublicHooksOfflineConversionsDotcsvRouteImport } from './routes/api/public/hooks/offline-conversions[.]csv'
@@ -731,6 +734,12 @@ const ApiPublicPostPublishStatusRoute =
     path: '/api/public/post-publish-status',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicProtocolConfirmRoute =
+  ApiPublicProtocolConfirmRouteImport.update({
+    id: '/api/public/protocol-confirm',
+    path: '/api/public/protocol-confirm',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPublishHoldRoute = ApiPublicPublishHoldRouteImport.update({
   id: '/api/public/publish-hold',
   path: '/api/public/publish-hold',
@@ -833,10 +842,22 @@ const ApiPublicHooksHealthCheckRoute =
     path: '/api/public/hooks/health-check',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksKlaviyoSyncRoute =
+  ApiPublicHooksKlaviyoSyncRouteImport.update({
+    id: '/api/public/hooks/klaviyo-sync',
+    path: '/api/public/hooks/klaviyo-sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksLighthousePsiRoute =
   ApiPublicHooksLighthousePsiRouteImport.update({
     id: '/api/public/hooks/lighthouse-psi',
     path: '/api/public/hooks/lighthouse-psi',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksMarketingDripRoute =
+  ApiPublicHooksMarketingDripRouteImport.update({
+    id: '/api/public/hooks/marketing-drip',
+    path: '/api/public/hooks/marketing-drip',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksMonitorProductUrlsRoute =
@@ -1048,6 +1069,7 @@ export interface FileRoutesByFullPath {
   '/api/public/peptidepay-webhook': typeof ApiPublicPeptidepayWebhookRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/post-publish-status': typeof ApiPublicPostPublishStatusRoute
+  '/api/public/protocol-confirm': typeof ApiPublicProtocolConfirmRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
   '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -1067,7 +1089,9 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
   '/api/public/hooks/firestore-backup': typeof ApiPublicHooksFirestoreBackupRoute
   '/api/public/hooks/health-check': typeof ApiPublicHooksHealthCheckRoute
+  '/api/public/hooks/klaviyo-sync': typeof ApiPublicHooksKlaviyoSyncRoute
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
+  '/api/public/hooks/marketing-drip': typeof ApiPublicHooksMarketingDripRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/offline-conversions': typeof ApiPublicHooksOfflineConversionsRoute
   '/api/public/hooks/offline-conversions.csv': typeof ApiPublicHooksOfflineConversionsDotcsvRoute
@@ -1195,6 +1219,7 @@ export interface FileRoutesByTo {
   '/api/public/peptidepay-webhook': typeof ApiPublicPeptidepayWebhookRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/post-publish-status': typeof ApiPublicPostPublishStatusRoute
+  '/api/public/protocol-confirm': typeof ApiPublicProtocolConfirmRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
   '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -1214,7 +1239,9 @@ export interface FileRoutesByTo {
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
   '/api/public/hooks/firestore-backup': typeof ApiPublicHooksFirestoreBackupRoute
   '/api/public/hooks/health-check': typeof ApiPublicHooksHealthCheckRoute
+  '/api/public/hooks/klaviyo-sync': typeof ApiPublicHooksKlaviyoSyncRoute
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
+  '/api/public/hooks/marketing-drip': typeof ApiPublicHooksMarketingDripRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/offline-conversions': typeof ApiPublicHooksOfflineConversionsRoute
   '/api/public/hooks/offline-conversions.csv': typeof ApiPublicHooksOfflineConversionsDotcsvRoute
@@ -1345,6 +1372,7 @@ export interface FileRoutesById {
   '/api/public/peptidepay-webhook': typeof ApiPublicPeptidepayWebhookRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/post-publish-status': typeof ApiPublicPostPublishStatusRoute
+  '/api/public/protocol-confirm': typeof ApiPublicProtocolConfirmRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
   '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -1364,7 +1392,9 @@ export interface FileRoutesById {
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
   '/api/public/hooks/firestore-backup': typeof ApiPublicHooksFirestoreBackupRoute
   '/api/public/hooks/health-check': typeof ApiPublicHooksHealthCheckRoute
+  '/api/public/hooks/klaviyo-sync': typeof ApiPublicHooksKlaviyoSyncRoute
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
+  '/api/public/hooks/marketing-drip': typeof ApiPublicHooksMarketingDripRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/offline-conversions': typeof ApiPublicHooksOfflineConversionsRoute
   '/api/public/hooks/offline-conversions.csv': typeof ApiPublicHooksOfflineConversionsDotcsvRoute
@@ -1495,6 +1525,7 @@ export interface FileRouteTypes {
     | '/api/public/peptidepay-webhook'
     | '/api/public/post-publish-check'
     | '/api/public/post-publish-status'
+    | '/api/public/protocol-confirm'
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
@@ -1514,7 +1545,9 @@ export interface FileRouteTypes {
     | '/api/public/hooks/fena-process-retries'
     | '/api/public/hooks/firestore-backup'
     | '/api/public/hooks/health-check'
+    | '/api/public/hooks/klaviyo-sync'
     | '/api/public/hooks/lighthouse-psi'
+    | '/api/public/hooks/marketing-drip'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/offline-conversions'
     | '/api/public/hooks/offline-conversions.csv'
@@ -1642,6 +1675,7 @@ export interface FileRouteTypes {
     | '/api/public/peptidepay-webhook'
     | '/api/public/post-publish-check'
     | '/api/public/post-publish-status'
+    | '/api/public/protocol-confirm'
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
@@ -1661,7 +1695,9 @@ export interface FileRouteTypes {
     | '/api/public/hooks/fena-process-retries'
     | '/api/public/hooks/firestore-backup'
     | '/api/public/hooks/health-check'
+    | '/api/public/hooks/klaviyo-sync'
     | '/api/public/hooks/lighthouse-psi'
+    | '/api/public/hooks/marketing-drip'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/offline-conversions'
     | '/api/public/hooks/offline-conversions.csv'
@@ -1791,6 +1827,7 @@ export interface FileRouteTypes {
     | '/api/public/peptidepay-webhook'
     | '/api/public/post-publish-check'
     | '/api/public/post-publish-status'
+    | '/api/public/protocol-confirm'
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
@@ -1810,7 +1847,9 @@ export interface FileRouteTypes {
     | '/api/public/hooks/fena-process-retries'
     | '/api/public/hooks/firestore-backup'
     | '/api/public/hooks/health-check'
+    | '/api/public/hooks/klaviyo-sync'
     | '/api/public/hooks/lighthouse-psi'
+    | '/api/public/hooks/marketing-drip'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/offline-conversions'
     | '/api/public/hooks/offline-conversions.csv'
@@ -1923,6 +1962,7 @@ export interface RootRouteChildren {
   ApiPublicPeptidepayWebhookRoute: typeof ApiPublicPeptidepayWebhookRoute
   ApiPublicPostPublishCheckRoute: typeof ApiPublicPostPublishCheckRoute
   ApiPublicPostPublishStatusRoute: typeof ApiPublicPostPublishStatusRoute
+  ApiPublicProtocolConfirmRoute: typeof ApiPublicProtocolConfirmRoute
   ApiPublicPublishHoldRoute: typeof ApiPublicPublishHoldRoute
   ApiPublicPublishStatusRoute: typeof ApiPublicPublishStatusRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
@@ -1940,7 +1980,9 @@ export interface RootRouteChildren {
   ApiPublicHooksFenaProcessRetriesRoute: typeof ApiPublicHooksFenaProcessRetriesRoute
   ApiPublicHooksFirestoreBackupRoute: typeof ApiPublicHooksFirestoreBackupRoute
   ApiPublicHooksHealthCheckRoute: typeof ApiPublicHooksHealthCheckRoute
+  ApiPublicHooksKlaviyoSyncRoute: typeof ApiPublicHooksKlaviyoSyncRoute
   ApiPublicHooksLighthousePsiRoute: typeof ApiPublicHooksLighthousePsiRoute
+  ApiPublicHooksMarketingDripRoute: typeof ApiPublicHooksMarketingDripRoute
   ApiPublicHooksMonitorProductUrlsRoute: typeof ApiPublicHooksMonitorProductUrlsRoute
   ApiPublicHooksOfflineConversionsRoute: typeof ApiPublicHooksOfflineConversionsRoute
   ApiPublicHooksOfflineConversionsDotcsvRoute: typeof ApiPublicHooksOfflineConversionsDotcsvRoute
@@ -2732,6 +2774,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPostPublishStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/protocol-confirm': {
+      id: '/api/public/protocol-confirm'
+      path: '/api/public/protocol-confirm'
+      fullPath: '/api/public/protocol-confirm'
+      preLoaderRoute: typeof ApiPublicProtocolConfirmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/publish-hold': {
       id: '/api/public/publish-hold'
       path: '/api/public/publish-hold'
@@ -2865,11 +2914,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksHealthCheckRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/klaviyo-sync': {
+      id: '/api/public/hooks/klaviyo-sync'
+      path: '/api/public/hooks/klaviyo-sync'
+      fullPath: '/api/public/hooks/klaviyo-sync'
+      preLoaderRoute: typeof ApiPublicHooksKlaviyoSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/lighthouse-psi': {
       id: '/api/public/hooks/lighthouse-psi'
       path: '/api/public/hooks/lighthouse-psi'
       fullPath: '/api/public/hooks/lighthouse-psi'
       preLoaderRoute: typeof ApiPublicHooksLighthousePsiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/marketing-drip': {
+      id: '/api/public/hooks/marketing-drip'
+      path: '/api/public/hooks/marketing-drip'
+      fullPath: '/api/public/hooks/marketing-drip'
+      preLoaderRoute: typeof ApiPublicHooksMarketingDripRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/monitor-product-urls': {
@@ -3178,6 +3241,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicPeptidepayWebhookRoute: ApiPublicPeptidepayWebhookRoute,
   ApiPublicPostPublishCheckRoute: ApiPublicPostPublishCheckRoute,
   ApiPublicPostPublishStatusRoute: ApiPublicPostPublishStatusRoute,
+  ApiPublicProtocolConfirmRoute: ApiPublicProtocolConfirmRoute,
   ApiPublicPublishHoldRoute: ApiPublicPublishHoldRoute,
   ApiPublicPublishStatusRoute: ApiPublicPublishStatusRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
@@ -3196,7 +3260,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksFenaProcessRetriesRoute: ApiPublicHooksFenaProcessRetriesRoute,
   ApiPublicHooksFirestoreBackupRoute: ApiPublicHooksFirestoreBackupRoute,
   ApiPublicHooksHealthCheckRoute: ApiPublicHooksHealthCheckRoute,
+  ApiPublicHooksKlaviyoSyncRoute: ApiPublicHooksKlaviyoSyncRoute,
   ApiPublicHooksLighthousePsiRoute: ApiPublicHooksLighthousePsiRoute,
+  ApiPublicHooksMarketingDripRoute: ApiPublicHooksMarketingDripRoute,
   ApiPublicHooksMonitorProductUrlsRoute: ApiPublicHooksMonitorProductUrlsRoute,
   ApiPublicHooksOfflineConversionsRoute: ApiPublicHooksOfflineConversionsRoute,
   ApiPublicHooksOfflineConversionsDotcsvRoute:

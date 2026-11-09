@@ -160,3 +160,17 @@ export async function requireFirebaseAdmin(idToken: string): Promise<VerifiedUse
   }
   return user;
 }
+
+/**
+ * Verify an ID token and allow either a full admin or packing staff
+ * (`customers/{uid}.staffRole === 'orders'`). Use ONLY for order/shipping
+ * actions (labels, tracking). Throws on any failure.
+ */
+export async function requireFirebaseOrdersAccess(idToken: string): Promise<VerifiedUser> {
+  const user = await verifyFirebaseIdToken(idToken);
+  const doc = await getDocAdmin("customers", user.uid);
+  if (!doc || (doc.isAdmin !== true && doc.staffRole !== "orders")) {
+    throw new Error("not_admin");
+  }
+  return user;
+}

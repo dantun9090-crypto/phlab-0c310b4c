@@ -1,0 +1,40 @@
+name: Klaviyo Newsletter Sync
+
+# Runs once a day (04:15 UTC). Copies all active newsletter subscribers to
+# the Klaviyo "PH Labs Newsletter" list. Auth via CRON_SECRET.
+
+on:
+  schedule:
+    - cron: "15 4 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: klaviyo-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: POST klaviyo-sync
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "CRON_SECRET is not configured — cannot run sync." >&2
+            exit 1
+          fi
+          resp=$(curl -sS -o /tmp/resp.json -w "%{http_code}" \
+            -X POST "https://phlabs.co.uk/api/public/hooks/klaviyo-sync" \
+            -H "content-type: application/json" \
+            -H "x-cron-secret: ${CRON_SECRET}" \
+            --max-time 120 \
+            --data '{}') || resp="000"
+          echo "HTTP $resp"
+          cat /tmp/resp.json || true
+          test "$resp" = "200"

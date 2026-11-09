@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { db, collection, getDocs, doc, setDoc, getDoc } from '@/lib/firebase';
 import { Star, Check, Trash2, FlaskConical, Save, Loader2, AlertCircle } from 'lucide-react';
 import { getProductImage } from '@/lib/productImages';
@@ -112,6 +112,11 @@ export function FeaturedProductsTab() {
     }
   };
 
+  const selectedProducts = useMemo(
+    () => selectedIds.map(id => allProducts.find(p => p.id === id)).filter(Boolean) as RawProduct[],
+    [selectedIds, allProducts]
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24 gap-3 text-[#9cb8d9]">
@@ -120,8 +125,6 @@ export function FeaturedProductsTab() {
       </div>
     );
   }
-
-  const selectedProducts = selectedIds.map(id => allProducts.find(p => p.id === id)).filter(Boolean) as RawProduct[];
 
   return (
     <div className="space-y-6">

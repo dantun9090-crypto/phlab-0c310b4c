@@ -27,13 +27,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v5
         with: { node-version: "24" }
 
       - name: Restore canary state
         id: state-restore
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: .canary-state
           key: canary-state-v2
@@ -61,7 +61,7 @@ jobs:
 
       - name: Save canary state
         if: always()
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: .canary-state
           key: canary-state-v2-${{ github.run_id }}

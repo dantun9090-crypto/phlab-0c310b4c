@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { RefreshCw, Loader2, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, XCircle, Clock, ExternalLink, Copy } from 'lucide-react';
 import { getAdminIdToken } from '@/lib/auth-ready';
 import {
@@ -115,12 +115,15 @@ export default function PaymentTriageTab() {
     }
   }
 
-  const counts = {
-    total: rows.length,
-    needs: rows.filter((r) => r.needsAttention).length,
-    reconciled: rows.filter((r) => r.reconciledByCron || r.reconciledManually).length,
-    noWebhook: rows.filter((r) => r.webhookCount === 0 && r.providerStatus.toUpperCase() !== 'NEW').length,
-  };
+  const counts = useMemo(() => {
+    let needs = 0, reconciled = 0, noWebhook = 0;
+    for (const r of rows) {
+      if (r.needsAttention) needs++;
+      if (r.reconciledByCron || r.reconciledManually) reconciled++;
+      if (r.webhookCount === 0 && r.providerStatus.toUpperCase() !== 'NEW') noWebhook++;
+    }
+    return { total: rows.length, needs, reconciled, noWebhook };
+  }, [rows]);
 
   return (
     <div className="p-6 space-y-6">

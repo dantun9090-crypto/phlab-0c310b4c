@@ -156,6 +156,7 @@ function KlaviyoPanel() {
             )}
           </p>
         )}
+        <p className="text-slate-400 text-xs mt-1">Automatic sync runs every day at about 05:15 (London). Only new subscribers are sent.</p>
       </div>
       <button
         onClick={sync}

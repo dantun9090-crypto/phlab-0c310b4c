@@ -324,8 +324,12 @@ export default function ProductDetail() {
 
   // Touch swipe support
   const touchStartX = useRef<number | null>(null);
+  // Set when a horizontal swipe (>=40px) just changed the image — the synthetic
+  // click mobile browsers fire right after touchend must NOT open the lightbox.
+  const touchSwipedRef = useRef(false);
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
+    touchSwipedRef.current = false;
   }, []);
 
   const refetchAdverts = useCallback(() => {
@@ -348,6 +352,7 @@ export default function ProductDetail() {
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     touchStartX.current = null;
     if (Math.abs(dx) < 40) return;
+    touchSwipedRef.current = true;
     if (dx < 0) setSelectedImageIdx(i => Math.min(i + 1, imgCount - 1));
     else setSelectedImageIdx(i => Math.max(i - 1, 0));
   }, []);
@@ -1288,7 +1293,15 @@ export default function ProductDetail() {
                       aria-label={`View ${product.name} image enlarged`}
                       onTouchStart={handleTouchStart}
                       onTouchEnd={(e) => handleTouchEnd(e, count)}
-                      onClick={() => setLightboxOpen(true)}
+                      onClick={() => {
+                        // A horizontal swipe also fires a synthetic click on mobile —
+                        // swallow it so swiping between photos doesn't pop the lightbox.
+                        if (touchSwipedRef.current) {
+                          touchSwipedRef.current = false;
+                          return;
+                        }
+                        setLightboxOpen(true);
+                      }}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setLightboxOpen(true); } }}
                     >
                       <AnimatePresence mode="wait">
@@ -1630,9 +1643,9 @@ export default function ProductDetail() {
 
               {/* "Also known as" — captures organic long-tail misspellings
                   (Semrush UK: ~1.3k/mo combined, near-zero competition).
-                  Subtle styling so it reads as a helpful synonym list, not SEO spam. */}
+                  sr-only: visible to crawlers and screen readers, hidden visually. */}
               {!merchantAliasInfo && product.slug && PRODUCT_SEO_OVERRIDES[product.slug]?.misspellings?.length ? (
-                <p className="text-xs text-[#6b829e] mb-3 leading-relaxed">
+                <p className="sr-only">
                   <span className="font-semibold text-[#8aa3c0]">Also searched as:</span>{' '}
                   {PRODUCT_SEO_OVERRIDES[product.slug]!.misspellings!.join(', ')}.
                 </p>
@@ -1807,7 +1820,7 @@ export default function ProductDetail() {
               {/* ── Trust signals row ── */}
               <div className="flex flex-wrap gap-1.5 mb-3">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-[11px] font-semibold">
-                  <Microscope className="w-3 h-3" /> HPLC-verified ≥98%
+                  <Microscope className="w-3 h-3" /> HPLC-verified ≥99%
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/25 text-blue-300 text-[11px] font-semibold">
                   <FileText className="w-3 h-3" /> COA per batch

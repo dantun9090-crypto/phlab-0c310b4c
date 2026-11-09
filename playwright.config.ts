@@ -41,7 +41,12 @@ export default defineConfig({
     },
   },
   fullyParallel: false,
-  retries: 0,
+  // Live-site monitoring specs (live-smoke, cache-headers-regression, e2e
+  // nightly) fail the whole run on a single transient hiccup with retries:0
+  // — a deploy-window 5xx, a mid-purge edge state, or one slow chunk. Retry
+  // twice on CI so a run only goes red on persistent failures; genuine
+  // outages still fail (all attempts red), transient noise reports "flaky".
+  retries: process.env.CI ? 2 : 0,
   reporter: [["list"], ["html", { open: "never", outputFolder: "playwright-report" }]],
   use: {
     baseURL:

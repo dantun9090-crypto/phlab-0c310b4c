@@ -580,3 +580,132 @@ export async function transitionDocStatusAdmin(
   }
   return { transitioned: true, prior };
 }
+
+interface StockAdjustResult {
+  slug: string | null;
+  category: string | null;
+  adjusted: boolean;
+}
+
+/**
+ * One attempt at the atomic stock decrement. Returns the result, null when
+ * the product does not exist, or the string 'aborted' when the transaction
+ * lost a concurrency race and should be retried.
+ */
+async function adjustProductStockOnce(
+  productId: string,
+  opts: { variantId: string | null; quantity: number },
+): Promise<StockAdjustResult | null | 'aborted'> {
+  const acct = getServiceAccount();
+  const token = await getAccessToken();
+  const base = `https://firestore.googleapis.com/v1/projects/${acct.project_id}/databases/(default)/documents`;
+  const docPath = `${base}/products/${encodeURIComponent(productId)}`;
+  const fullName = `projects/${acct.project_id}/databases/(default)/documents/products/${productId}`;
+
+  const beginRes = await fetch(`${base}:beginTransaction`, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+    body: JSON.stringify({ options: { readWrite: {} } }),
+  });
+  if (!beginRes.ok) {
+    throw new Error(`Firestore beginTransaction failed: ${beginRes.status} ${await beginRes.text()}`);
+  }
+  const { transaction } = (await beginRes.json()) as { transaction: string };
+
+  const rollback = async () => {
+    try {
+      await fetch(`${base}:rollback`, {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+        body: JSON.stringify({ transaction }),
+      });
+    } catch { /* best effort */ }
+  };
+
+  const readRes = await fetch(`${docPath}?transaction=${encodeURIComponent(transaction)}`, {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (readRes.status === 404) {
+    await rollback();
+    return null;
+  }
+  if (!readRes.ok) {
+    await rollback();
+    throw new Error(`Firestore tx read failed: ${readRes.status} ${await readRes.text()}`);
+  }
+  const docJson = (await readRes.json()) as { fields?: Record<string, any> };
+  const doc: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(docJson.fields || {})) doc[k] = fromFirestoreValue(v);
+
+  const meta: StockAdjustResult = {
+    slug: typeof doc.slug === 'string' ? doc.slug : null,
+    category: typeof doc.category === 'string' ? doc.category : null,
+    adjusted: false,
+  };
+
+  let updates: Record<string, unknown> | null = null;
+  if (Array.isArray(doc.variants) && doc.variants.length > 0 && opts.variantId) {
+    const variants = (doc.variants as Array<Record<string, any>>).map((v) =>
+      v?.id === opts.variantId
+        ? { ...v, stock: Math.max(0, Number(v?.stock ?? 0) - opts.quantity) }
+        : v,
+    );
+    updates = { variants };
+  } else if (typeof doc.stock === 'number') {
+    updates = { stock: Math.max(0, doc.stock - opts.quantity) };
+  }
+
+  if (!updates) {
+    // No numeric stock tracked on this product — nothing to decrement.
+    await rollback();
+    return meta;
+  }
+
+  const commitRes = await fetch(`${base}:commit`, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+    body: JSON.stringify({
+      transaction,
+      writes: [
+        {
+          update: { name: fullName, fields: objectToFields(updates) },
+          updateMask: { fieldPaths: Object.keys(updates) },
+          currentDocument: { exists: true },
+        },
+      ],
+    }),
+  });
+  if (!commitRes.ok) {
+    const text = await commitRes.text();
+    if (commitRes.status === 409 || /ABORTED|FAILED_PRECONDITION/i.test(text)) {
+      return 'aborted';
+    }
+    throw new Error(`Firestore tx commit failed: ${commitRes.status} ${text}`);
+  }
+  meta.adjusted = true;
+  return meta;
+}
+
+/**
+ * Atomically decrement product stock inside a Firestore read-write
+ * transaction (begin → read → commit), retrying on contention. Two
+ * simultaneous orders for the same variant can no longer lose a decrement
+ * (previously a plain read-modify-write with a lost-update race).
+ *
+ * Returns the product's cache-relevant fields plus whether the decrement
+ * was applied, or null when the product does not exist / all retries were
+ * aborted. Never throws on contention — order placement must not fail
+ * because of stock accounting.
+ */
+export async function adjustProductStockAdmin(
+  productId: string,
+  opts: { variantId: string | null; quantity: number },
+): Promise<StockAdjustResult | null> {
+  const MAX_TX_RETRIES = 3;
+  for (let attempt = 1; attempt <= MAX_TX_RETRIES; attempt++) {
+    const result = await adjustProductStockOnce(productId, opts);
+    if (result !== 'aborted') return result;
+  }
+  console.warn(`[firestore-admin] stock adjust for product ${productId} aborted after ${MAX_TX_RETRIES} attempts`);
+  return null;
+}
