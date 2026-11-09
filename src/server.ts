@@ -5,6 +5,21 @@ import { renderErrorPage } from "./lib/error-page";
 import { notifySsrError } from "./lib/ssr-alert";
 import { isGoneLegacyPath, resolveFinalRedirect } from "./lib/legacy-redirects";
 
+// Firestore quota alert writer used by src/lib/firestore-rest.ts (kept here so
+// that shared module never imports ./server/*).
+(globalThis as { __phlQuotaAlert?: (status: number, now: number) => Promise<void> }).__phlQuotaAlert =
+  async (status, now) => {
+    const { addDocAdmin } = await import("./lib/server/firestore-admin");
+    await addDocAdmin("admin_alerts", {
+      severity: "critical",
+      message: `Firestore read limit hit (HTTP ${status}) — product pages served from cache.`,
+      source: "firestore-quota",
+      acknowledged: false,
+      timestamp: now,
+      createdAt: new Date(now).toISOString(),
+    });
+  };
+
 import { extractClientIp, log, maskIpForLog, redactQueryForLog, truncate } from "./lib/worker-log";
 
 
@@ -1048,6 +1063,19 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
         element(el) { el.setAttribute("nonce", nonceAttrValue); },
       }).on("style", {
         element(el) { el.setAttribute("nonce", nonceAttrValue); },
+      }).on("body", {
+        // The hosting layer injects its visit-analytics script
+        // (/__l5e/events.*.js) AFTER this rewriter runs, so it carries no
+        // nonce and the strict CSP blocks it — analytics read 0 visits.
+        // This nonce'd loader re-creates that tag at runtime; under
+        // 'strict-dynamic' a script inserted by a trusted script is allowed.
+        // Same-origin path only, no new hosts, CSP unchanged.
+        element(el) {
+          el.append(
+            `<script nonce="${nonceAttrValue}" data-phl-l5e>(function(){function f(){try{var s=document.querySelectorAll('script[src^="/__l5e/"]:not([data-phl-l5e-ok])');for(var i=0;i<s.length;i++){var o=s[i];if(o.nonce)continue;var n=document.createElement('script');for(var j=0;j<o.attributes.length;j++){var a=o.attributes[j];n.setAttribute(a.name,a.value)}n.setAttribute('data-phl-l5e-ok','1');n.defer=true;o.parentNode.replaceChild(n,o)}}catch(e){}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',f);else f()})()</script>`,
+            { html: true },
+          );
+        },
       });
     }
     rewritten = r.transform(htmlResponse);

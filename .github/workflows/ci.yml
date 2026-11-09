@@ -11,7 +11,7 @@ permissions:
 jobs:
   worker-build-and-check:
     name: Production build + Worker import guard
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
       contents: read
@@ -19,7 +19,7 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -323,6 +323,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: sbom-${{ github.sha }}
+          overwrite: true
           path: |
             dist/sbom.cdx.json
             dist/sbom.cdx.json.sha256
@@ -373,14 +374,14 @@ jobs:
   # failing cosign output rendered on the Check page.
   attestation-verify:
     name: Attestation verify (SLSA + CycloneDX)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: worker-build-and-check
     if: always() && needs.worker-build-and-check.result == 'success'
     timeout-minutes: 5
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Install cosign
         uses: sigstore/cosign-installer@v4.1.2
@@ -388,7 +389,7 @@ jobs:
           cosign-release: v2.6.0
 
       - name: Download SBOM bundle artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: sbom-${{ github.sha }}
           path: sbom-bundle
@@ -422,11 +423,11 @@ jobs:
   # Keeps PR feedback under a minute for touch-and-go UI tweaks.
   checkout-orders-regression:
     name: Checkout + Admin Orders regression (fast)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 2
 

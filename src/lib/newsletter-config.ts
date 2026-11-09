@@ -29,7 +29,7 @@ export const DEFAULT_POPUP_CONFIG: PopupConfig = {
     'Get exclusive updates on new compounds, restocks, and lab insights — delivered to your inbox.',
   finePrint: 'No spam. Unsubscribe anytime.',
   imageUrl: null,
-  delaySeconds: 4,
+  delaySeconds: 20,
   cooldownDays: 7,
   isEnabled: true,
   buttonText: 'Subscribe',

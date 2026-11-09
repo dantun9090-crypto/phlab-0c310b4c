@@ -998,13 +998,37 @@ export const listFenaWebhookEventsPaged = createServerFn({ method: "POST" })
     const wantFilter = Boolean(data.search || data.outcome);
     const pageSize = data.pageSize ?? 25;
     const fetchSize = wantFilter ? 200 : Math.min(pageSize + 1, 100);
-    const rawRows = await listDocsAdmin("fena_webhook_events", {
-      orderBy: "createdAt",
-      direction: "DESCENDING",
-      limit: fetchSize,
-      startAfter: data.cursorCreatedAt,
-      where: data.level ? { field: "level", value: data.level } : undefined,
-    });
+    // where(level)+orderBy(createdAt) needs a composite index that may not
+    // be deployed yet; fall back to an unindexed fetch + in-memory filter.
+    let rawRows: Array<Record<string, unknown> & { id: string }>;
+    if (data.level) {
+      try {
+        rawRows = await listDocsAdmin("fena_webhook_events", {
+          orderBy: "createdAt",
+          direction: "DESCENDING",
+          limit: fetchSize,
+          startAfter: data.cursorCreatedAt,
+          where: { field: "level", value: data.level },
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (!/FAILED_PRECONDITION|index/i.test(msg)) throw e;
+        rawRows = (
+          await listDocsAdmin("fena_webhook_events", {
+            orderBy: "createdAt",
+            direction: "DESCENDING",
+            limit: 500,
+          })
+        ).filter((r) => String(r.level ?? "") === data.level);
+      }
+    } else {
+      rawRows = await listDocsAdmin("fena_webhook_events", {
+        orderBy: "createdAt",
+        direction: "DESCENDING",
+        limit: fetchSize,
+        startAfter: data.cursorCreatedAt,
+      });
+    }
     const search = data.search?.trim().toLowerCase() ?? "";
     const mapped = rawRows.map((row): FenaWebhookEventRow => {
       const ctxObj =

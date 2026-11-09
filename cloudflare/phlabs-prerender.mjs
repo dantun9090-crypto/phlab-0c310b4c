@@ -712,6 +712,22 @@ export default {
     const startTime = Date.now();
     const ua = request.headers.get("User-Agent") || "";
 
+    // ── Junk URL guard (2026-10-20) ──────────────────────────────────────
+    // Spam backlinks like /products/[https://competitor.example/... were
+    // burning ~70% of Prerender.io renders (307 → 404 at 5-7s each).
+    // Answer a fast, cacheable 404 at the edge — never prerender/origin.
+    if (/^\/products\/(?:\[|%5B|.*(?:https?:|https?%3A|www\.))/i.test(path)) {
+      return new Response("Not Found", {
+        status: 404,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "public, max-age=86400",
+          "X-Robots-Tag": "noindex",
+          "Server-Timing": `junk-404;dur=${Date.now() - startTime}`,
+        },
+      });
+    }
+
     // ── Trailing-slash canonicalization (SEO) ────────────────────────────
     // /x and /x/ both served the same document — duplicate content. 301 to
     // the canonical non-slash form (keep "/" itself and file-like paths).

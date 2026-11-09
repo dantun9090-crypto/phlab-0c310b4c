@@ -24,7 +24,7 @@ permissions:
 jobs:
   security-scan:
     name: Dependency vulnerability scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # 8 min was too tight: cosign attest-blob (Rekor) intermittently hangs
     # ~7 min, so runs died at the timeout during cleanup even when the
     # audit gate itself passed. 15 min matches the real p95 of this job.
@@ -39,7 +39,7 @@ jobs:
       # transparency log so the SBOM signature is publicly auditable.
       id-token: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
 
       - uses: oven-sh/setup-bun@v2
@@ -85,7 +85,7 @@ jobs:
 
       - name: Cache Bun install store
         id: bun_cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.bun/install/cache
@@ -101,7 +101,7 @@ jobs:
 
       - name: Cache SBOM (CycloneDX)
         id: sbom_cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: dist/sbom.cdx.json
           key: ${{ steps.keys.outputs.sbom_key }}
@@ -351,6 +351,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: sbom-${{ github.sha }}
+          overwrite: true
           path: |
             dist/sbom.cdx.json
             dist/sbom.cdx.json.sha256
@@ -387,20 +388,20 @@ jobs:
   # rendered on the Check page.
   attestation-verify:
     name: Attestation verify (SLSA + CycloneDX)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: security-scan
     if: always() && needs.security-scan.result == 'success'
     timeout-minutes: 5
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Install cosign
         run: bash scripts/install-cosign.sh
 
       - name: Download SBOM bundle artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: sbom-${{ github.sha }}
           path: sbom-bundle
@@ -432,14 +433,14 @@ jobs:
   # unstable map ordering, network response ordering).
   determinism-check:
     name: Determinism check (cached vs fresh)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: security-scan
     if: always() && needs.security-scan.result == 'success'
     timeout-minutes: 10
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -464,7 +465,7 @@ jobs:
           cp dist/sbom.cdx.json dist/security-audit.json fresh/
 
       - name: Download cached-run determinism inputs
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: determinism-cached-${{ github.sha }}
           path: cached
