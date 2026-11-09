@@ -28,7 +28,7 @@ import { toDateSafe, toMillisSafe } from '@/lib/to-date';
 import { hasHouseNumber } from '@/lib/uk-address';
 import { canRetryPayment } from '@/lib/order-payment-retry';
 import { useQueryClient } from '@tanstack/react-query';
-import { fetchAllOrders, refetchAllOrders } from '@/lib/queries/all-orders';
+import { ALL_ORDERS_QUERY_KEY, fetchAllOrders, refetchAllOrders } from '@/lib/queries/all-orders';
 import ConfirmDialog from '@/components/admin/ConfirmDialog';
 import OrdersListSkeleton from '@/components/admin/OrdersListSkeleton';
 import EmptyState from '@/components/admin/EmptyState';
@@ -527,9 +527,18 @@ export default function OrdersTab() {
     }
   }, [qc]);
 
+  // Orders tab performs writes (status, dispatch emails, deletes), so it must
+  // never start from a cached snapshot — always read Firestore on mount.
   useEffect(() => {
-    void loadOrders();
+    void loadOrders(true);
   }, [loadOrders]);
+
+  // Mirror local edits into the shared cache so other admin tabs
+  // (Customers, Revenue, Compliance, Invoices) don't serve stale orders.
+  useEffect(() => {
+    if (loading || loadError) return;
+    qc.setQueryData(ALL_ORDERS_QUERY_KEY, orders);
+  }, [orders, loading, loadError, qc]);
 
   const handleStatusChange = async (orderId: string, status: Order['status']) => {
     setUpdating(orderId);

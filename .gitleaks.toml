@@ -30,6 +30,10 @@ paths = [
   '''^src/test/fixtures/''',
   '''^e2e/.*\.spec\.ts$''',
   '''^src/lib/redact-sensitive\.test\.ts$''',
+  # Webhook-signature tests use fake whsec_ fixtures to exercise HMAC
+  # verification paths — not real gateway secrets.
+  '''^tests/brokkrpay-signature\.test\.ts$''',
+  '''^tests/peptidepay-signature\.test\.ts$''',
   # Firebase Web API keys are PUBLIC by design (like Google Maps keys) —
   # they identify the project, they don't authorise privileged access.
   # Security is enforced by Firebase Auth + Firestore rules, not by
@@ -40,6 +44,8 @@ paths = [
   '''^src/lib/edge-monitor\.functions\.ts$''',
   '''^src/lib/revoke-refresh-tokens\.functions\.ts$''',
   '''^src/lib/server/firebase-auth-admin\.ts$''',
+  '''^src/lib/server/firebase-auth-password\.ts$''',
+  '''^src/lib/account-orders\.functions\.ts$''',
   # .env holds the Supabase VITE_ publishable (anon) key — public by
   # design, embedded in the client bundle. Service-role keys never live
   # here and are still caught by the custom rule below.
