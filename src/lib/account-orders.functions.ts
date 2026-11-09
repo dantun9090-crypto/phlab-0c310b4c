@@ -26,7 +26,7 @@ export interface GuestOrdersResult {
 }
 
 export const getOrdersForVerifiedEmail = createServerFn({ method: 'POST' })
-  .inputValidator((data: { idToken: string }) => {
+  .validator((data: { idToken: string }) => {
     if (!data?.idToken || typeof data.idToken !== 'string' || data.idToken.length > 4096) {
       throw new Error('idToken required');
     }
