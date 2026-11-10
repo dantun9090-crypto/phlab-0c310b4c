@@ -375,17 +375,23 @@ function isHydrationCrash(error: unknown): boolean {
 }
 
 function markHydrationCrash(error: unknown): void {
+  const text = errorText(error);
+  if (/SSR hydration disabled by flag/i.test(text)) {
+    // Intentional CSR boot (route not in SSR_HYDRATION_ROUTES), NOT a real
+    // hydration crash. Do NOT set the flag on this path: the stale-asset
+    // self-heal guard in __root.tsx (sweepAssetFailures + recover) and
+    // chunk-reload.ts both bail out while the flag is set, which silently
+    // disabled CSS/asset 404 recovery for every CSR visitor
+    // (e2e-stale-assets css-link-error regression).
+    console.info("[HYDRATION FALLBACK] CSR boot enabled by config");
+    return;
+  }
   try {
     sessionStorage.setItem(HYDRATION_ERROR_FLAG, String(Date.now()));
   } catch {
     /* ignore */
   }
-  const text = errorText(error);
-  if (/SSR hydration disabled by flag/i.test(text)) {
-    console.info("[HYDRATION FALLBACK] CSR boot enabled by config");
-  } else {
-    console.error("[HYDRATION FALLBACK] Switched to CSR due to:", error);
-  }
+  console.error("[HYDRATION FALLBACK] Switched to CSR due to:", error);
 }
 
 function capturePreHydrationDom(): void {
