@@ -73,7 +73,7 @@ jobs:
 
       - name: Publish JUnit results
         if: always()
-        uses: mikepenz/action-junit-report@v4
+        uses: mikepenz/action-junit-report@v6
         with:
           report_paths: ${{ env.E2E_REPORT_DIR }}/junit.xml
           check_name: e2e-stale-assets
