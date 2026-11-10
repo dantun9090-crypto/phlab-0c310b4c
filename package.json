@@ -123,7 +123,7 @@
     "react-dom": "^19.2.0",
     "react-helmet-async": "^3.0.0",
     "react-hook-form": "^7.71.2",
-    "react-resizable-panels": "^4.12.1",
+    "react-resizable-panels": "^4.19.1",
     "react-router-dom": "^7.18.2",
     "recharts": "^2.15.4",
     "sonner": "^2.0.8",
