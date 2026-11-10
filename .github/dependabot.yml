@@ -24,6 +24,14 @@ updates:
     allow:
       - dependency-type: direct
       - dependency-type: indirect
+    ignore:
+      # react-start 1.169.x removed ServerFnBuilder.inputValidator AND broke
+      # vite entry resolution with @lovable.dev/vite-tanstack-config
+      # ("Could not resolve entry module index.html") — see #898/#910.
+      # Stay on 1.168.x until the Lovable wrapper supports the 1.169 entry
+      # contract; 1.170+ proposals are still allowed through.
+      - dependency-name: "@tanstack/react-start"
+        versions: ["1.169.x"]
     groups:
       security-patches:
         applies-to: security-updates
