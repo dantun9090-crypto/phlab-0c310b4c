@@ -26,6 +26,12 @@ const UA = "phlabs-category-regression/1.0";
 const PROBE_TIMEOUT_MS = 10_000;
 const CONCURRENCY = 6;
 
+// Same flake guard as tests/sitemap-live-200.test.ts: one retry for
+// transient outcomes (0 timeout / -1 network / 5xx cold prerender) before
+// a URL counts as failed. 4xx stays a hard fail.
+const PROBE_RETRIES = 1;
+const PROBE_RETRY_DELAY_MS = 3_000;
+
 // Baseline: every category slug the site is currently expected to serve.
 // Sourced from a live crawl of https://phlabs.co.uk (2026-07-13).
 // Add new slugs here when categories launch so they're locked in as regression coverage.
@@ -79,7 +85,18 @@ async function probeAll(
   for (let i = 0; i < urls.length; i += CONCURRENCY) {
     const batch = urls.slice(i, i + CONCURRENCY);
     const results = await Promise.all(
-      batch.map(async (url) => ({ url, status: await probeStatus(url) })),
+      batch.map(async (url) => {
+        let status = await probeStatus(url);
+        for (
+          let retry = 0;
+          retry < PROBE_RETRIES && (status <= 0 || status >= 500);
+          retry++
+        ) {
+          await new Promise((r) => setTimeout(r, PROBE_RETRY_DELAY_MS));
+          status = await probeStatus(url);
+        }
+        return { url, status };
+      }),
     );
     out.push(...results);
   }

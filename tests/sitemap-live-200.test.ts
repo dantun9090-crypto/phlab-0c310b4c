@@ -16,6 +16,13 @@ const SITEMAP_URL =
   process.env.SITEMAP_URL ?? "https://phlabs.co.uk/sitemap.xml";
 const PROBE_TIMEOUT_MS = 10_000;
 const PROBE_CONCURRENCY = 8;
+// Transient probe outcomes worth one retry before failing the build:
+// 0 (timeout), -1 (network error) and 5xx (origin/prerender cold start).
+// 4xx stays a hard fail — a broken slug must block the release.
+// (Cold prerender caused 4 flaky TIMEOUTs on 2026-11-09, blocking a
+// green build for ~30 min; one retry absorbs it.)
+const PROBE_RETRIES = 1;
+const PROBE_RETRY_DELAY_MS = 3_000;
 const UA = "phlabs-sitemap-test/1.0";
 
 async function fetchSitemapLocs(url: string): Promise<string[]> {
@@ -64,7 +71,18 @@ async function probeAll(
   for (let i = 0; i < urls.length; i += PROBE_CONCURRENCY) {
     const batch = urls.slice(i, i + PROBE_CONCURRENCY);
     const results = await Promise.all(
-      batch.map(async (url) => ({ url, status: await probeStatus(url) })),
+      batch.map(async (url) => {
+        let status = await probeStatus(url);
+        for (
+          let retry = 0;
+          retry < PROBE_RETRIES && (status <= 0 || status >= 500);
+          retry++
+        ) {
+          await new Promise((r) => setTimeout(r, PROBE_RETRY_DELAY_MS));
+          status = await probeStatus(url);
+        }
+        return { url, status };
+      }),
     );
     out.push(...results);
   }
