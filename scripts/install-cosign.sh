@@ -22,15 +22,18 @@ trap 'rm -rf "$tmp"' EXIT
 
 fetch() { # fetch <url> <out> — up to 5 attempts, linear backoff
   local url="$1" out="$2" attempt
-  for attempt in 1 2 3 4 5; do
+  for attempt in 1 2 3 4 5 6 7 8; do
     if curl -fsSL \
          --connect-timeout 15 \
          --retry 3 --retry-delay 2 --retry-all-errors \
          -o "$out" "$url"; then
       return 0
     fi
-    echo "download failed (attempt ${attempt}/5): $url" >&2
-    sleep $((attempt * 3))
+    echo "download failed (attempt ${attempt}/8): $url" >&2
+    # GitHub release-CDN 504 storms were observed lasting several minutes
+    # (2026-11-09, twice in one day; 2026-11-10). Back off 10s..60s so the
+    # total window is ~5 minutes instead of ~45s.
+    sleep $(( attempt * 10 > 60 ? 60 : attempt * 10 ))
   done
   echo "giving up on $url" >&2
   return 1
