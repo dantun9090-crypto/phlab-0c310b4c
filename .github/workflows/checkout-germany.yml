@@ -91,6 +91,7 @@ jobs:
       # On cache miss: download the browser binary and its OS deps.
       - name: Install Playwright browser (${{ matrix.browser }})
         run: |
+          bash scripts/ci-apt-mirror-fix.sh
           if [ "${{ steps.pw-cache.outputs.cache-hit }}" = "true" ]; then
             bunx playwright install-deps ${{ matrix.browser }}
           else

@@ -58,7 +58,9 @@ jobs:
       #   - axe-core WCAG 2.1 AA audit (fails on critical/serious)
       #   - /research axe-core WCAG 2.1 AA audit (fails on critical/serious)
       - name: Install Playwright browser
-        run: bunx playwright install --with-deps chromium
+        run: |
+          bash scripts/ci-apt-mirror-fix.sh
+          bunx playwright install --with-deps chromium
 
       - name: Start local dev server for Playwright
         run: |

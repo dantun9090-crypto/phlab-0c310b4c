@@ -34,7 +34,9 @@ jobs:
       - run: bash scripts/ci-bun-install.sh
       # The suite runs all three browser projects — chromium alone leaves
       # firefox/webkit failing with "Executable doesn't exist".
-      - run: bunx playwright install --with-deps chromium firefox webkit
+      - run: |
+          bash scripts/ci-apt-mirror-fix.sh
+          bunx playwright install --with-deps chromium firefox webkit
 
       - name: Start local dev server for Playwright
         # bun run preview looks for dist/server/server.js, which this nitro

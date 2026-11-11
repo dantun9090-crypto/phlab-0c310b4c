@@ -43,6 +43,7 @@ jobs:
 
       - name: Install Playwright Chromium
         run: |
+          bash scripts/ci-apt-mirror-fix.sh
           bunx playwright install --with-deps chromium
           bunx playwright install --with-deps chromium --only-shell
 

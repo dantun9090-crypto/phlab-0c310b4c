@@ -58,6 +58,7 @@ jobs:
 
       - name: Install Playwright browser (${{ matrix.browser }})
         run: |
+          bash scripts/ci-apt-mirror-fix.sh
           bunx playwright install --with-deps ${{ matrix.browser }}
           # The dev server + some specs drive chromium via the headless shell,
           # which `install chromium` no longer guarantees — install it explicitly.

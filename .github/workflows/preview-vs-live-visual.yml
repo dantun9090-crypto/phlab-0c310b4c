@@ -51,7 +51,9 @@ jobs:
         run: bash scripts/ci-bun-install.sh
 
       - name: Install Playwright browsers
-        run: bunx playwright install --with-deps chromium
+        run: |
+          bash scripts/ci-apt-mirror-fix.sh
+          bunx playwright install --with-deps chromium
 
       - name: Run preview-vs-live visual spec
         run: bunx playwright test e2e/preview-vs-live-visual.spec.ts --project=chromium --reporter=line,html --output=test-results

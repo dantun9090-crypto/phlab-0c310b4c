@@ -62,6 +62,7 @@ jobs:
 
       - name: Install Playwright (Python + Chromium)
         run: |
+          bash scripts/ci-apt-mirror-fix.sh
           python -m pip install --upgrade pip
           python -m pip install playwright
           python -m playwright install --with-deps chromium

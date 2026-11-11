@@ -56,7 +56,9 @@ jobs:
         run: bash scripts/ci-bun-install.sh
 
       - name: Install Playwright (Node + Chromium)
-        run: bunx playwright install --with-deps chromium
+        run: |
+          bash scripts/ci-apt-mirror-fix.sh
+          bunx playwright install --with-deps chromium
 
 
 

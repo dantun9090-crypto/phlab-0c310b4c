@@ -51,6 +51,7 @@ jobs:
 
       - name: Install Playwright Chromium
         run: |
+          bash scripts/ci-apt-mirror-fix.sh
           if [ "${{ steps.pw-cache.outputs.cache-hit }}" = "true" ]; then
             bunx playwright install-deps chromium
           else
