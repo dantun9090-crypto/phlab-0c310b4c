@@ -68,3 +68,23 @@ jobs:
             exit 1
           fi
           echo "✅ Edge cache purged (scoped)"
+
+      - name: Trigger post-publish invalidation (worker edge + prerender recache)
+        if: success()
+        run: |
+          set -euo pipefail
+          # The public post-publish endpoint compares the live server build id
+          # with Firestore _meta/build_state and, on change, purges CF edge,
+          # refreshes the worker edge-html cache and recaches prerender.io.
+          # Without an explicit call the HTML flip lagged the server deploy by
+          # >2h (observed 2026-11-10) — stale HTML pointing at deleted chunks.
+          for i in 1 2 3 4 5 6; do
+            resp=$(curl -sS --max-time 60 "https://phlabs.co.uk/api/public/post-publish-check" || true)
+            echo "attempt $i: $resp"
+            if echo "$resp" | grep -q '"ok":true'; then
+              echo "post-publish endpoint acknowledged (see changed/invalidated flags above)"
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "::warning::post-publish-check unreachable — HTML may stay stale until the worker build-id probe evicts it"
