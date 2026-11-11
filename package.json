@@ -164,7 +164,7 @@
     "firebase-admin": "^14.5.0",
     "globals": "^15.15.0",
     "happy-dom": "^21.0.4",
-    "jsdom": "^29.1.1",
+    "jsdom": "^31.0.0",
     "pdf-parse": "^2.4.5",
     "pixelmatch": "^7.2.0",
     "pngjs": "^7.0.0",
