@@ -932,6 +932,12 @@ async function run() {
     ? [ONLY]
     : (DETERMINISTIC ? [...Object.keys(scenarios)].sort() : Object.keys(scenarios));
   if (DETERMINISTIC) console.log(`[deterministic] scenario order: ${toRun.join(', ')}`);
+  // WAF-blocked scenarios are recorded as skips so the report stays readable —
+  // but a run that could not measure production must NOT be green (11-07→11-10
+  // a WAF 403 masked a real css-link-error regression for 3 days). Counted here
+  // and converted to a non-zero exit after the loop. Manual dispatches may
+  // tolerate skips with E2E_ALLOW_WAF_SKIP=1.
+  let wafSkipped = 0;
   for (const name of toRun) {
     let lastErr = null;
     for (let attempt = 0; attempt <= RETRIES; attempt++) {
@@ -955,6 +961,7 @@ async function run() {
           console.warn(`[skip] [${name}] ${err.message}`);
           console.log(`::warning::stale-assets [${name}] skipped — Cloudflare WAF/rate-limit blocked the CI runner (environment, not app code)`);
           record('runner reachable (edge not blocking CI)', true, `SKIPPED: ${err.message}`);
+          wafSkipped++;
           lastErr = null;
           break;
         }
@@ -992,6 +999,12 @@ async function run() {
 
   }
   await browser.close();
+  // A WAF-blocked run measured nothing — fail the job instead of reporting a
+  // false green. Opt out per-run with E2E_ALLOW_WAF_SKIP=1 (manual dispatch).
+  if (wafSkipped > 0 && !process.env.E2E_ALLOW_WAF_SKIP) {
+    console.error(`[fail] ${wafSkipped} scenario(s) skipped by WAF — run measured nothing; failing instead of reporting a false green (set E2E_ALLOW_WAF_SKIP=1 to tolerate)`);
+    process.exitCode = 1;
+  }
   const dbAfter = await readBuildState();
   const lockTimeline = buildLockTimeline(dbSnapshots);
   writeFileSync(join(REPORT_DIR, 'db-diff.json'),
