@@ -1213,7 +1213,9 @@ const STALE_ASSET_RECOVERY = `
               if(!purgeAt||Date.now()-purgeAt>5*60*1000){
                 sessionStorage.setItem(PURGE_FIRED,String(Date.now()));
                 try{ console.warn('%c[auto-purge] %cstale asset 404 confirmed — requesting purge%c build='+getCurrentBuildId(),'color:#10b981;font-weight:700','color:#f0f6ff','color:#8ca3c7'); }catch(e){}
-                fetch('/api/public/post-publish-check',{method:'GET',cache:'no-store',credentials:'omit',keepalive:true}).catch(function(){});
+                fetch('/api/public/post-publish-check',{method:'GET',cache:'no-store',credentials:'omit',keepalive:true}).catch(function(){
+                  try{ sessionStorage.removeItem(PURGE_FIRED); }catch(e){}
+                });
               }
             }catch(e){}
             try{
