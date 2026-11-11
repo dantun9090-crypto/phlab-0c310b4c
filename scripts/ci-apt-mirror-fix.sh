@@ -26,5 +26,4 @@ if [ -d /etc/apt/sources.list.d ]; then
   sudo find /etc/apt/sources.list.d -type f \( -name '*.list' -o -name '*.sources' \) \
     -exec sed -i 's|azure\.archive\.ubuntu\.com|archive.ubuntu.com|g' {} + 2>/dev/null || true
 fi
-sudo apt-get update -o Acquire::Retries=3
-echo "[ci-apt-mirror-fix] apt mirror switched and index refreshed"
+echo "[ci-apt-mirror-fix] apt sources switched; playwright's own apt-get update will use archive.ubuntu.com"
