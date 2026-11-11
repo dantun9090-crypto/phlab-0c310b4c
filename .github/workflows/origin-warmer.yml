@@ -25,3 +25,11 @@ jobs:
             echo "warm ${p} -> ${code}"
             test "$code" = "200"
           done
+
+      - name: Nudge post-publish invalidation
+        run: |
+          # Cheap and idempotent: the endpoint self-dedupes via Firestore and
+          # only purges/recaches when it detects a NEW server build. Running
+          # it on the 5-minute warmer closes the deploy→fresh-HTML window
+          # without a dedicated scheduler. Never fail the warmer on this probe.
+          curl -sS --max-time 45 "https://phlabs.co.uk/api/public/post-publish-check" || true
