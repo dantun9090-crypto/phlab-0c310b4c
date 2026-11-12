@@ -542,6 +542,48 @@ async function gotoGuarded(page, url) {
   return resp;
 }
 
+// ---------- WAF pre-flight ----------
+// When the edge is already rate-limiting this runner's IP, every scenario
+// would skip at gotoGuarded and the run would fail having measured nothing.
+// WAF rate-limit windows are usually short — probe the initial document a few
+// times with backoff before starting the scenario loop. A reachable edge here
+// means the run measures the app; a persistently blocked edge still fails via
+// the wafSkipped guard below (never a false green). Override attempts with
+// E2E_WAF_PREFLIGHT_ATTEMPTS=1 to restore the previous fail-fast behaviour.
+async function wafPreflight(browser) {
+  const attempts = Math.max(1, Number(process.env.E2E_WAF_PREFLIGHT_ATTEMPTS || 4));
+  const waitsMs = [0, 90_000, 210_000, 330_000];
+  for (let i = 0; i < attempts; i++) {
+    if (i > 0) {
+      const wait = waitsMs[Math.min(i, waitsMs.length - 1)];
+      console.warn(`[waf-preflight] waiting ${Math.round(wait / 1000)}s for the WAF window to clear before attempt ${i + 1}/${attempts}`);
+      await sleep(wait);
+    }
+    const context = await browser.newContext({
+      viewport: { width: 1280, height: 800 },
+      ...(E2E_BYPASS_TOKEN ? { extraHTTPHeaders: { 'x-phl-e2e': E2E_BYPASS_TOKEN } } : {}),
+    });
+    try {
+      const page = await context.newPage();
+      const resp = await page.goto(TARGET, { waitUntil: 'domcontentloaded', timeout: 30_000 }).catch(() => null);
+      const status = resp ? resp.status() : 0;
+      if (resp && [401, 403, 503].includes(status)) {
+        const h = resp.headers();
+        if (h['cf-ray'] || h['cf-mitigated'] || (h['server'] || '').includes('cloudflare')) {
+          console.warn(`[waf-preflight] attempt ${i + 1}/${attempts}: edge returned HTTP ${status} — WAF/rate-limit active`);
+          continue;
+        }
+      }
+      console.log(`[waf-preflight] edge reachable (HTTP ${status || 'unknown'}) — starting scenarios`);
+      return true;
+    } finally {
+      await context.close().catch(() => {});
+    }
+  }
+  console.error(`[waf-preflight] edge still blocked after ${attempts} attempt(s) — scenarios will skip and the run will fail visibly (not a false green)`);
+  return false;
+}
+
 // Fixed bypass token (GitHub secret E2E_BYPASS_TOKEN) sent on every request;
 // a Cloudflare WAF "skip" custom rule matching this header lets CI traffic
 // through the rate limiter. Falls back to no header when the secret is unset.
@@ -927,6 +969,9 @@ async function run() {
   const dbBefore = await readBuildState();
   const dbSnapshots = [{ at: Date.now(), label: 'run-start', data: dbBefore || {} }];
   const browser = await chromium.launch({ headless: true });
+  // Ride out short WAF/rate-limit windows before the scenario loop so a
+  // transient 403 at run start does not sink an otherwise healthy run.
+  await wafPreflight(browser);
   // Deterministic mode: stable scenario ordering so CI runs are comparable.
   const toRun = ONLY
     ? [ONLY]
