@@ -409,7 +409,7 @@ export default function VisitorsTab() {
                   if (r.from && r.to) setPickerOpen(false);
                 }}
                 numberOfMonths={2}
-                initialFocus
+                autoFocus
                 className={cn('p-3 pointer-events-auto')}
               />
             </PopoverContent>
