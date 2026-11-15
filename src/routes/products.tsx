@@ -22,7 +22,15 @@ export const Route = createFileRoute("/products")({
       return { products: [] as SeoProduct[] };
     }
   },
-  head: ({ loaderData }) => {
+  head: ({ loaderData, matches }) => {
+    // This route is BOTH the /products page and the layout parent of
+    // /products/category/$slug (dot-nesting). TanStack concatenates
+    // parent + child head() links without dedupe, so the canonical below
+    // must only be emitted when /products is the LEAF match — otherwise
+    // /products/category/* ships two canonicals (parent's first) and
+    // Google reads it as a canonical conflict. Same reason research.tsx
+    // is a head-less layout.
+    const isLeaf = matches[matches.length - 1]?.routeId === "/products";
     const itemList = {
       "@context": "https://schema.org",
       "@type": "ItemList",
@@ -50,11 +58,11 @@ export const Route = createFileRoute("/products")({
         { name: "twitter:image", content: OG_IMAGE },
         { name: "twitter:url", content: URL },
       ],
-      // Safe to set canonical here: /products/$slug now uses the escaped
-      // filename products_.$slug.tsx, so it's a sibling — not a child — and
-      // TanStack does not concat this <link> into the product detail page.
       links: [
-        { rel: "canonical", href: URL },
+        // /products/$slug uses the escaped filename products_.$slug.tsx
+        // (a sibling, not a child), but products.category.$slug.tsx IS a
+        // child — hence the leaf guard above.
+        ...(isLeaf ? [{ rel: "canonical", href: URL }] : []),
         // The /products hero is text-only (no hero image), so the LCP
         // candidate is the first product card image. No fixed URL exists to
         // preload here (grid order is decided client-side), so instead warm
