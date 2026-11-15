@@ -19,7 +19,13 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 
 const BASE = (process.env.BASE ?? "https://phlabs.co.uk").replace(/\/$/, "");
-const CONCURRENCY = Number(process.env.CONCURRENCY ?? 6);
+// 2026-11-15: default concurrency 6 → 12. The post-deploy-regression job has
+// a 6-minute budget for install + vitest + ~500 route probes + ~500 canonical
+// probes; at 6 the two probe stages alone could eat ~3 min on slow edge
+// evenings and the job was killed mid-step (run 43521898595). 12 keeps the
+// burst short (~40s per stage) — well inside Cloudflare tolerance for simple
+// GETs with an identifying UA. Override with CONCURRENCY=<n>.
+const CONCURRENCY = Number(process.env.CONCURRENCY ?? 12);
 const LIMIT = Number(process.env.LIMIT ?? 500);
 const REPORT_PATH =
   process.env.CANONICAL_REPORT_PATH ?? "/tmp/canonicals-report.json";

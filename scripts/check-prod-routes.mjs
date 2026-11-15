@@ -22,7 +22,10 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 
 const BASE = (process.env.BASE ?? "https://phlabs.co.uk").replace(/\/$/, "");
-const CONCURRENCY = Number(process.env.CONCURRENCY ?? 6);
+// 2026-11-15: default concurrency 6 → 12 (see check-canonicals.mjs note) —
+// halves the probe stage wall-time so the post-deploy-regression job fits its
+// 6-minute budget on slow edge evenings instead of being killed mid-run.
+const CONCURRENCY = Number(process.env.CONCURRENCY ?? 12);
 const LIMIT = Number(process.env.LIMIT ?? 500);
 const REPORT_PATH = process.env.REPORT_PATH ?? "/tmp/prod-routes-report.json";
 
