@@ -1,122 +1,632 @@
 #!/usr/bin/env node
 /**
- * e2e-stale-assets.mjs — full site crawl + Playwright browser audit.
+ * E2E: stale-asset recovery for phlabs.co.uk.
  *
- * Crawls phlabs.co.uk (same-origin links, depth-limited), and for every HTML
- * page collects every asset URL the page references (scripts, styles, images,
- * fonts, icons, media, srcset, inline <link>s). Then requests each asset like
- * a browser would (real UA, Referer, Accept) and flags any non-2xx response —
- * those are the "stale assets" a real visitor would hit.
+ * Scenarios (each isolated in its own BrowserContext):
+ *   1. js-chunk-404         — classic stale lazy import
+ *   2. sourcemap-404        — silent .map miss; must NOT reload
+ *   3. css-link-error       — stale stylesheet referenced by HTML
+ *   4. cross-tab-lock       — two tabs same build id, ONE purge
+ *   5. network-fail-fallback — purge endpoint aborts, NO reload loop
  *
- * Phase 2 (default on): Playwright loads each crawled page in a real Chromium
- * with request/failed-response listeners — catches JS-injected assets the
- * static crawl can't see. Disable with --no-browser or E2E_NO_BROWSER=1.
+ * CLI:
+ *   node scripts/e2e-stale-assets.mjs                       # run all
+ *   --scenario=<name>                                       # run one
+ *   --record                                                # write fixtures
+ *   --replay                                                # fail-fast on missing/invalid fixtures
+ *   --fixture-dir=./fixtures/stale-assets                   # fixture root
+ *   --retries=N           (env E2E_RETRIES, default 1)      # retry transient browser/network errors only
+ *   --retry-delay=MS      (default 1500)                    # backoff between retries
+ *   E2E_BLOCK_BUDGET_S=N  (default 480)                     # shared seconds budget for riding out mid-run
+ *                                                           # edge blocks (origin-side 403 windows); 0 = old
+ *                                                           # instant-skip behaviour
+ *   E2E_BLOCK_PROBE_INTERVAL_S=N (default 60)               # re-probe cadence while riding out a block
+ *   --deterministic       (env E2E_DETERMINISTIC=1)         # stable scenario order + fixed retry timing for comparable CI runs
+ *   --list                                                  # list scenario names and exit
  *
- * Modes:
- *   default                          crawl the live site + audit found assets (+ optional browser pass)
- *   REPLAY=1|true                    replay the last run's requests.ndjson (no network crawl, no browser)
- *   --prune                          after a successful crawl, delete run artifact dirs older than N days
- *   --prune-dry-run / --dry-run      (with --prune) only report what would be deleted
+ *   Live-vs-replay thresholds (REPLAY only — fail only on meaningful regressions):
+ *   --max-mismatches=N            (default 0)  total mismatch budget per scenario
+ *   --max-status-mismatches=N     (default 0)  HTTP status differences allowed
+ *   --max-body-byte-delta=N       (default 0)  per-response body byte delta allowed
  *
- * Key env (all optional, sane defaults):
- *   TARGET                           site origin (default https://phlabs.co.uk)
- *   MAX_PAGES                        max HTML pages to crawl (default 400)
- *   CONCURRENCY                      concurrent fetches (default 6)
- *   TIMEOUT_MS                       per-request timeout (default 20000)
- *   RETRIES                          retries for flaky statuses (default 1; browser-page retries = PLAYWRIGHT_RETRIES)
- *   RETRY_BACKOFF_MS                 base backoff, doubles per attempt (default 400)
- *   ASSET_EXTENSIONS                 comma list that marks a URL as an asset even w/o a tag reference
- *   IGNORE_URL_PATTERNS              comma list of regexes; matching asset URLs are skipped
- *   SKIP_PATH_PREFIXES               comma list of path prefixes the crawler won't follow
- *   INCLUDE_CROSS_ORIGIN_ASSETS      1/true to also audit non-phlabs asset URLs (default off, still recorded)
- *   USER_AGENT / ASSET_USER_AGENT    override UAs
- *   E2E_NO_BROWSER                   1/true disables the Playwright pass
- *   PLAYWRIGHT_PAGE_TIMEOUT_MS       page.goto timeout (default 30000)
- *   PLAYWRIGHT_SETTLE_MS             extra wait after load for lazy assets (default 1500)
- *   PLAYWRIGHT_MAX_PAGES             cap browser pages (default = crawled pages, hard-capped 100)
- *   PLAYWRIGHT_MAX_ASSETS_PER_PAGE   cap per-page asset waiting (default 200)
- *   PLAYWRIGHT_RETRIES               page-level retries for flaky browser failures (default 1)
- *   PLAYWRIGHT_BLOCKLIST             comma regexes for requests to abort in the browser (analytics etc.)
- *   SITEMAP_SEED=1                   seed the crawl frontier from /sitemap.xml (plus loc-derived sitemaps)
- *   E2E_MANIFEST_SEED                1/true to seed assets from HTML-parsed asset-manifest.json (default on)
- *   REPLAY                           replay mode (default off)
- *   ARTIFACT_DIR                     where to write artifacts (default tests/artifacts/e2e-stale-assets/<ts>)
- *   KEEP_ARTIFACT_DAYS               for --prune (default 14)
- *   GITHUB_STEP_SUMMARY              if set, a markdown summary is appended (CI)
- *   E2E_BYPASS_TOKEN                 if set, sent as x-phl-e2e header on every HTML request (Worker lets it through)
- *   E2E_BLOCK_BUDGET_S               mid-run ride-out budget for edge-block windows, seconds (default 480)
- *   E2E_BLOCK_PROBE_INTERVAL_S       seconds between cheap re-probes while riding out a block (default 60)
- *   --prune / --prune-dry-run        CLI flags for artifact retention
- *   --max-pages N --concurrency N --timeout-ms N --no-browser --no-sitemap-seed   CLI overrides
+ *   Redaction (applies to fixtures, HAR trace, ndjson logs, and HTML report):
+ *   --redact-bodies                   strip all captured request/response bodies
+ *   --hash-bodies                     replace redacted/truncated bodies with `sha256:<hex>` so equality is preserved without exposing data
+ *   --max-body-bytes=N (default 4000) truncate captured bodies to N bytes (replaced with hash when --hash-bodies)
+ *   --redact-headers=a,b,c            comma list of header NAMES to mask (default: authorization,cookie,set-cookie,x-api-key,x-auth-token)
+ *   --redact-url-params=a,b,c         comma list of query param NAMES to mask (default: token,key,api_key,access_token,id_token)
  *
- * Exit code: 0 when no stale assets / browser failures; 2 otherwise (1 = unexpected crash).
- * In REPLAY mode, HTML fetches are replayed as recorded; live revalidation still runs for assets.
+ *   Header normalization for live-vs-replay diff:
+ *   --normalize-headers                       compare headers case-insensitively, order-independently (and surface as a "headers" mismatch kind)
+ *   --normalize-ignore-headers=a,b,c          comma list of header names to ignore in diffs (default volatile set: date,age,server-timing,x-request-id,cf-ray,...)
+ *
+ *   Artifact persistence:
+ *   --artifacts-on-failure-only / --skip-artifacts-on-success
+ *                                             only persist HAR, fixtures (non-RECORD), HTML report, ndjson logs, and screenshots when
+ *                                             an assertion fails or a live-vs-replay threshold is breached. report.{json,txt} + junit.xml + db-diff.json always written.
+ *   --prune-dry-run / --dry-run               log which artifact paths WOULD be kept vs deleted for the current outcome without touching the filesystem.
+ *
+ * HTML report features (rendered into report.html):
+ *   - Global "Download mismatch bundle (all scenarios)" button in the header (respects each scenario's current filter).
+ *   - Per-scenario filter selections persist in localStorage so refreshing the report restores the same view.
+
+
+
+ *
+ * Outputs in $E2E_REPORT_DIR (default ./e2e-stale-report/):
+ *   report.html   self-contained dashboard with clickable per-request drilldown
+ *   report.json   machine-readable summary
+ *   report.txt    plain-text CI log
+ *   junit.xml     CI test reporter
+ *   db-diff.json  Firestore _meta/build_state before/after (when admin SDK present)
+ *   har-<scenario>.json  compact HAR-like trace (timings, redirect chain, headers, body)
+ *   requests.ndjson / responses.ndjson / console.ndjson
+ *   screenshots/<scenario>.png
+ *
+ * Replay mode validates each fixture against a JSON schema (required fields +
+ * post-publish-check body contract) and aborts with a clear error on mismatch.
+ * Retries fire ONLY for transient errors (net::ERR_, navigation timeouts,
+ * closed browser); assertion failures are deterministic and never retried.
  */
+import { chromium } from 'playwright';
+import { mkdirSync, writeFileSync, appendFileSync, existsSync, readFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import {
+  sha256,
+  normalizeHeadersForDiff as _normalizeHeadersForDiff,
+  headersEqualNormalized as _headersEqualNormalized,
+  redactBody as _redactBody,
+  BUNDLE_SCHEMA_VERSION,
+  validateMismatchBundle,
+  validateGlobalMismatchBundle,
+} from './lib/e2e-diff-helpers.mjs';
+import { REPORT_CLIENT_SCRIPT } from './lib/e2e-report-client.mjs';
 
-import fs from 'node:fs';
-import fsp from 'node:fs/promises';
-import path from 'node:path';
-import { setTimeout as sleep } from 'node:timers/promises';
 
-// ---------- env & CLI ----------
 
-const REPLAY = /^1|true$/i.test(process.env.REPLAY || '');
+
+// ---------- CLI parsing ----------
 const argv = process.argv.slice(2);
-const hasFlag = (name) => argv.includes(name);
-const flagValue = (name) => {
-  const i = argv.indexOf(name);
-  return i >= 0 && i + 1 < argv.length ? argv[i + 1] : undefined;
+const flag = (name, fallback = undefined) => {
+  const hit = argv.find((a) => a === `--${name}` || a.startsWith(`--${name}=`));
+  if (!hit) return fallback;
+  const eq = hit.indexOf('=');
+  return eq === -1 ? true : hit.slice(eq + 1);
 };
+const ONLY = flag('scenario', null);
+const RECORD = !!flag('record', false);
+const REPLAY = !!flag('replay', false);
+const LIST = !!flag('list', false);
+const FIXTURE_DIR = flag('fixture-dir', join(process.cwd(), 'fixtures', 'stale-assets'));
+const DETERMINISTIC = !!flag('deterministic', process.env.E2E_DETERMINISTIC === '1');
+// Deterministic mode forces stable retry timing AND removes RNG jitter so two CI runs
+// produce byte-comparable summaries (modulo wall-clock timestamps, which we normalize in the diff).
+const RETRIES = DETERMINISTIC
+  ? Math.max(0, parseInt(flag('retries', process.env.E2E_RETRIES ?? '0'), 10) || 0)
+  : Math.max(0, parseInt(flag('retries', process.env.E2E_RETRIES ?? '1'), 10) || 0);
+const RETRY_DELAY_MS = DETERMINISTIC
+  ? 1000 // fixed backoff, no jitter
+  : Math.max(0, parseInt(flag('retry-delay', '1500'), 10) || 0);
+if (RECORD && REPLAY) {
+  console.error('--record and --replay are mutually exclusive');
+  process.exit(2);
+}
 
-const TARGET = (process.env.TARGET || 'https://phlabs.co.uk').replace(/\/+$/, '');
-const MAX_PAGES = Number(flagValue('--max-pages') ?? process.env.MAX_PAGES ?? 400);
-const CONCURRENCY = Math.max(1, Number(flagValue('--concurrency') ?? process.env.CONCURRENCY ?? 6));
-const TIMEOUT_MS = Math.max(1000, Number(flagValue('--timeout-ms') ?? process.env.TIMEOUT_MS ?? 20000));
-const RETRIES = Math.max(0, Number(process.env.RETRIES ?? 1));
-const RETRY_BACKOFF_MS = Math.max(0, Number(process.env.RETRY_BACKOFF_MS ?? 400));
-const INCLUDE_CROSS_ORIGIN_ASSETS = /^1|true$/i.test(process.env.INCLUDE_CROSS_ORIGIN_ASSETS || '');
-const SITEMAP_SEED = /^1|true$/i.test(process.env.SITEMAP_SEED || '') || (!REPLAY && !hasFlag('--no-sitemap-seed') && process.env.SITEMAP_SEED !== '0' && !/^0|false$/i.test(process.env.SITEMAP_SEED || '1'));
-const E2E_MANIFEST_SEED = !/^0|false$/i.test(process.env.E2E_MANIFEST_SEED || '1');
-const USER_AGENT = process.env.USER_AGENT || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
-const ASSET_USER_AGENT = process.env.ASSET_USER_AGENT || USER_AGENT;
-const E2E_BYPASS_TOKEN = (process.env.E2E_BYPASS_TOKEN || '').trim();
-const NO_BROWSER = hasFlag('--no-browser') || /^1|true$/i.test(process.env.E2E_NO_BROWSER || '');
-const PLAYWRIGHT_PAGE_TIMEOUT_MS = Math.max(5000, Number(process.env.PLAYWRIGHT_PAGE_TIMEOUT_MS ?? 30000));
-const PLAYWRIGHT_SETTLE_MS = Math.max(0, Number(process.env.PLAYWRIGHT_SETTLE_MS ?? 1500));
-const PLAYWRIGHT_MAX_PAGES = Math.max(1, Number(process.env.PLAYWRIGHT_MAX_PAGES ?? 100));
-const PLAYWRIGHT_MAX_ASSETS_PER_PAGE = Math.max(10, Number(process.env.PLAYWRIGHT_MAX_ASSETS_PER_PAGE ?? 200));
-const PLAYWRIGHT_RETRIES = Math.max(0, Number(process.env.PLAYWRIGHT_RETRIES ?? 1));
-const PLAYWRIGHT_BLOCKLIST = (process.env.PLAYWRIGHT_BLOCKLIST || 'googletagmanager\\.com|google-analytics\\.com|analytics\\.google|/api/public/hooks/prerender-recache|posthog|sentry')
-  .split(',').map((s) => s.trim()).filter(Boolean).map((s) => { try { return new RegExp(s, 'i'); } catch { return null; } }).filter(Boolean);
-const ASSET_EXTENSIONS = new Set((process.env.ASSET_EXTENSIONS || '.js,.mjs,.css,.png,.jpg,.jpeg,.webp,.avif,.gif,.svg,.ico,.woff,.woff2,.ttf,.otf,.mp4,.webm,.json,.xml,.txt,.pdf,.wasm')
-  .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean));
-const IGNORE_URL_PATTERNS = (process.env.IGNORE_URL_PATTERNS || '')
-  .split(',').map((s) => s.trim()).filter(Boolean).map((s) => { try { return new RegExp(s); } catch { console.warn(`[warn] bad IGNORE_URL_PATTERNS regex ignored: ${s}`); return null; } }).filter(Boolean);
-const SKIP_PATH_PREFIXES = (process.env.SKIP_PATH_PREFIXES || '/cdn-cgi,/api/,/go/,/r/')
-  .split(',').map((s) => s.trim()).filter(Boolean);
-const PRUNE = hasFlag('--prune');
-const PRUNE_DRY_RUN = hasFlag('--prune-dry-run') || hasFlag('--dry-run');
-const KEEP_ARTIFACT_DAYS = Math.max(1, Number(process.env.KEEP_ARTIFACT_DAYS ?? 14));
+// ---------- mismatch thresholds (REPLAY) ----------
+const MAX_MISMATCHES = Math.max(0, parseInt(flag('max-mismatches', '0'), 10) || 0);
+const MAX_STATUS_MISMATCHES = Math.max(0, parseInt(flag('max-status-mismatches', '0'), 10) || 0);
+const MAX_BODY_BYTE_DELTA = Math.max(0, parseInt(flag('max-body-byte-delta', '0'), 10) || 0);
 
-const ARTIFACT_ROOT = path.resolve('tests/artifacts/e2e-stale-assets');
-const RUN_ID = new Date().toISOString().replace(/[:.]/g, '-');
-const ARTIFACT_DIR = path.resolve(process.env.ARTIFACT_DIR || path.join(ARTIFACT_ROOT, RUN_ID));
-const LATEST_LINK = path.join(ARTIFACT_ROOT, 'latest');
+// ---------- redaction config ----------
+const REDACT_BODIES = !!flag('redact-bodies', false);
+const MAX_BODY_BYTES = Math.max(0, parseInt(flag('max-body-bytes', '4000'), 10) || 0);
+// When --hash-bodies is set, redacted/truncated bodies are replaced with a stable
+// sha256 hash of the ORIGINAL body so equality comparisons survive redaction.
+const HASH_BODIES = !!flag('hash-bodies', false);
+const REDACT_HEADERS = new Set(
+  String(flag('redact-headers', 'authorization,cookie,set-cookie,x-api-key,x-auth-token'))
+    .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+);
+const REDACT_URL_PARAMS = new Set(
+  String(flag('redact-url-params', 'token,key,api_key,access_token,id_token'))
+    .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+);
+const REDACTED = '[REDACTED]';
+
+// ---------- header normalization for live-vs-replay diff ----------
+// Case-insensitive header names + order-independent comparison.
+const NORMALIZE_HEADERS = !!flag('normalize-headers', false);
+const NORMALIZE_IGNORE_HEADERS = new Set(
+  String(flag('normalize-ignore-headers', 'date,age,server-timing,x-request-id,cf-ray,x-amz-cf-id,x-served-by,etag,last-modified'))
+    .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+);
+
+// ---------- artifact persistence ----------
+// When set, fixtures/HAR/HTML/ndjson are ONLY persisted on a meaningful failure
+// (assertion failure or threshold breach). Successful runs leave only report.{json,txt} + junit.xml.
+const ARTIFACTS_ON_FAILURE_ONLY = !!flag('artifacts-on-failure-only', false)
+  || !!flag('skip-artifacts-on-success', false);
+// Dry-run for the pruning step: report which paths WOULD be kept/deleted
+// for the current run outcome, without actually touching the filesystem.
+const PRUNE_DRY_RUN = !!flag('prune-dry-run', false) || !!flag('dry-run', false);
+
+function redactHeaders(h) {
+  if (!h || typeof h !== 'object') return h;
+  const out = {};
+  for (const [k, v] of Object.entries(h)) {
+    out[k] = REDACT_HEADERS.has(k.toLowerCase()) ? REDACTED : v;
+  }
+  return out;
+}
+function redactUrl(u) {
+  if (!u || REDACT_URL_PARAMS.size === 0) return u;
+  try {
+    const url = new URL(u);
+    let touched = false;
+    for (const key of [...url.searchParams.keys()]) {
+      if (REDACT_URL_PARAMS.has(key.toLowerCase())) { url.searchParams.set(key, REDACTED); touched = true; }
+    }
+    return touched ? url.toString() : u;
+  } catch { return u; }
+}
+// Bind the pure helper to this run's CLI-driven redaction config.
+function redactBody(body) {
+  return _redactBody(body, {
+    redactBodies: REDACT_BODIES,
+    hashBodies: HASH_BODIES,
+    maxBodyBytes: MAX_BODY_BYTES,
+    redactedMarker: REDACTED,
+  });
+}
+
+// Bind the pure helpers to this run's normalize-ignore set.
+function normalizeHeadersForDiff(h) { return _normalizeHeadersForDiff(h, NORMALIZE_IGNORE_HEADERS); }
+function headersEqualNormalized(a, b) { return _headersEqualNormalized(a, b, NORMALIZE_IGNORE_HEADERS); }
+
+
+
+// Transient errors we retry; assertion failures (record()) NEVER trigger retry.
+const TRANSIENT_RE = /(net::ERR_|ECONNRESET|ECONNREFUSED|ETIMEDOUT|Target page, context or browser has been closed|Navigation timeout|browserContext\.|Protocol error|Connection closed|socket hang up|EAI_AGAIN)/i;
+function isTransient(err) { return !!err && TRANSIENT_RE.test(String(err?.message || err)); }
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+
+const TARGET = process.env.TARGET_URL || 'http://localhost:8080';
+const REPORT_DIR = process.env.E2E_REPORT_DIR || join(process.cwd(), 'e2e-stale-report');
+const ASSET_RE = /\/(?:assets|_build)\/[^?#]+\.(?:js|mjs|css|map)(?:[?#]|$)/i;
+const HASHED_JS_RE = /\/(?:assets|_build)\/[^?#]+\.(?:js|mjs)(?:[?#]|$)/i;
+const SHOTS = join(REPORT_DIR, 'screenshots');
+mkdirSync(SHOTS, { recursive: true });
+mkdirSync(FIXTURE_DIR, { recursive: true });
+
+const reqLog = join(REPORT_DIR, 'requests.ndjson');
+const resLog = join(REPORT_DIR, 'responses.ndjson');
+const conLog = join(REPORT_DIR, 'console.ndjson');
+for (const p of [reqLog, resLog, conLog]) writeFileSync(p, '');
+
+const results = []; // { scenario, stage, ok, extra, diagnostics }
+const perScenario = new Map(); // name -> { failures, purgeCalls, buildIds, topRequests, reloads, hashedJsUrls }
+let currentScenario = '(setup)';
+
+function ensureScenario(name) {
+  if (!perScenario.has(name)) {
+    perScenario.set(name, {
+      failures: [], purgeCalls: [], buildIds: new Set(), topRequests: [],
+      reloads: [], hashedJsUrls: new Set(),
+      har: [], // compact HAR-like entries
+      attempts: 0,
+      transientErrors: [],
+      dbSnapshots: [], // [{ at, label, data }]
+      replayDiff: null, // populated only in REPLAY mode
+      liveResponses: [], // captured this run (for replay diff)
+      liveRequests: [],
+    });
+  }
+  return perScenario.get(name);
+}
+
+function record(stage, ok, extra = '', diagnostics = null) {
+  const icon = ok ? '✅' : '❌';
+  console.log(`${icon} [${currentScenario}] ${stage}${extra ? ' — ' + extra : ''}`);
+  results.push({ scenario: currentScenario, stage, ok, extra, diagnostics: ok ? null : diagnostics });
+  if (!ok) {
+    ensureScenario(currentScenario).failures.push({ stage, extra });
+    process.exitCode = 1;
+  }
+}
+function appendNd(path, obj) {
+  try { appendFileSync(path, JSON.stringify(obj) + '\n'); } catch { /* ignore */ }
+}
+
+// ---------- optional Firebase DB diff ----------
+async function readBuildState() {
+  if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) return null;
+  try {
+    const admin = await import('firebase-admin');
+    if (!admin.apps?.length) {
+      admin.initializeApp({
+        credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)),
+      });
+    }
+    const snap = await admin.firestore().collection('_meta').doc('build_state').get();
+    return snap.exists ? snap.data() : null;
+  } catch (e) { return { error: String(e) }; }
+}
+
+// Fields that MUST stay byte-identical when purge is deduped for the same build id.
+const LOCK_FIELDS = ['lockBuildId', 'lockHolder', 'inFlightBuildId', 'inFlightStartedAt', 'lockAcquiredAt'];
+function assertLockStateUnchanged(before, after) {
+  const b = before || {}, a = after || {};
+  const diffs = [];
+  for (const k of LOCK_FIELDS) {
+    const bv = JSON.stringify(b[k] ?? null);
+    const av = JSON.stringify(a[k] ?? null);
+    if (bv !== av) diffs.push({ field: k, before: b[k] ?? null, after: a[k] ?? null });
+  }
+  return diffs;
+}
+
+// Build a chronological lock-field timeline across all snapshots taken during the run.
+function buildLockTimeline(snapshots) {
+  // snapshots: [{ at, label, data }]
+  const events = []; // { at, label, field, from, to }
+  let prev = null;
+  for (const snap of snapshots) {
+    const d = snap.data || {};
+    if (prev) {
+      for (const f of LOCK_FIELDS) {
+        const a = JSON.stringify((prev.data || {})[f] ?? null);
+        const b = JSON.stringify(d[f] ?? null);
+        if (a !== b) {
+          events.push({ at: snap.at, label: snap.label, field: f, from: (prev.data || {})[f] ?? null, to: d[f] ?? null });
+        }
+      }
+    } else {
+      // initial state
+      for (const f of LOCK_FIELDS) {
+        if (d[f] != null) events.push({ at: snap.at, label: snap.label + ' (initial)', field: f, from: null, to: d[f] });
+      }
+    }
+    prev = snap;
+  }
+  return events;
+}
+
+// ---------- live vs replay diff ----------
+function diffLiveVsReplay(scenarioName) {
+  if (!REPLAY) return null;
+  const sc = perScenario.get(scenarioName);
+  if (!sc) return null;
+  const fixtureResp = loadFixture(scenarioName, 'responses') || [];
+  const fixtureReq = loadFixture(scenarioName, 'requests') || [];
+  const liveResp = sc.liveResponses;
+  const liveReq = sc.liveRequests;
+  const byUrl = (arr) => {
+    const m = new Map();
+    for (const r of arr) {
+      const key = (r.url || '').split('?')[0];
+      if (!m.has(key)) m.set(key, []);
+      m.get(key).push(r);
+    }
+    return m;
+  };
+  const fMap = byUrl(fixtureResp), lMap = byUrl(liveResp);
+  const allUrls = new Set([...fMap.keys(), ...lMap.keys()]);
+  // Build per-item pairs (both matched and mismatched) so the HTML report can drill down into every one.
+  const items = [];
+  const mismatches = [];
+  let statusMismatchCount = 0;
+  let maxBodyDelta = 0;
+  // Use the matching scenario's HAR (when available) to enrich each item with headers/body/redirect chain.
+  const harByUrlStatus = (() => {
+    const m = new Map();
+    for (const h of sc.har || []) {
+      const k = (h.url || '').split('?')[0] + '|' + (h.status ?? '');
+      if (!m.has(k)) m.set(k, []);
+      m.get(k).push(h);
+    }
+    return m;
+  })();
+  const popHar = (url, status) => {
+    const k = (url || '').split('?')[0] + '|' + (status ?? '');
+    const arr = harByUrlStatus.get(k);
+    if (arr && arr.length) return arr.shift();
+    return null;
+  };
+  for (const u of allUrls) {
+    const f = fMap.get(u) || [];
+    const l = lMap.get(u) || [];
+    if (f.length !== l.length) {
+      const m = { url: u, kind: 'count', fixture: f.length, live: l.length };
+      mismatches.push(m); items.push({ match: false, ...m });
+    }
+    const n = Math.max(f.length, l.length);
+    for (let i = 0; i < n; i++) {
+      const fr = f[i], lr = l[i];
+      const reasons = [];
+      const kinds = []; // structured kinds for HTML filter: status | body | headers | only-live | only-fixture
+      if (!fr) { reasons.push('only-live'); kinds.push('only-live'); }
+      if (!lr) { reasons.push('only-fixture'); kinds.push('only-fixture'); }
+      if (fr && lr) {
+        if (fr.status !== lr.status) { reasons.push('status'); kinds.push('status'); statusMismatchCount++; }
+        const fb = (fr.body || ''), lb = (lr.body || '');
+        if (fb !== lb) {
+          const delta = Math.abs(fb.length - lb.length);
+          if (delta > maxBodyDelta) maxBodyDelta = delta;
+          reasons.push(`body(Δ${delta}B)`); kinds.push('body');
+        }
+        if (NORMALIZE_HEADERS && !headersEqualNormalized(fr.headers, lr.headers)) {
+          reasons.push('headers'); kinds.push('headers');
+        }
+      }
+      const liveHar = lr ? popHar(lr.url, lr.status) : null;
+      const resourceType = liveHar?.resourceType
+        || (/\.(?:js|mjs)(?:[?#]|$)/.test(u) ? 'script'
+          : /\.css(?:[?#]|$)/.test(u) ? 'stylesheet'
+          : /\.map(?:[?#]|$)/.test(u) ? 'sourcemap'
+          : /post-publish-check/.test(u) ? 'fetch'
+          : 'other');
+      const bodyRedacted = REDACT_BODIES
+        || (HASH_BODIES && (typeof fr?.body === 'string' && fr.body.startsWith('sha256:')
+          || typeof lr?.body === 'string' && lr.body.startsWith('sha256:')));
+      const isMatch = reasons.length === 0;
+      // Always-present fixture-side enrichment (fixtures may not capture redirects/timing —
+      // we still expose stable shapes so consumers never have to null-check the schema).
+      const fixtureRedirect = Array.isArray(fr?.redirectChain) ? fr.redirectChain : [];
+      const fixtureTiming = {
+        startedAt: fr?.startedAt ?? fr?.at ?? null,
+        durationMs: fr?.durationMs ?? null,
+        recordedAt: fr?.at ?? null,
+      };
+      const liveRedirect = Array.isArray(liveHar?.redirectChain) ? liveHar.redirectChain
+        : (Array.isArray(lr?.redirectChain) ? lr.redirectChain : []);
+      const liveTiming = {
+        startedAt: liveHar?.startedAt ?? lr?.startedAt ?? null,
+        durationMs: liveHar?.durationMs ?? lr?.durationMs ?? null,
+        recordedAt: lr?.at ?? null,
+      };
+      const item = {
+        match: isMatch, url: u, index: i, reasons, kinds, resourceType, bodyRedacted,
+        // Top-level convenience: union of both sides' redirect chains (live preferred when both present).
+        redirectChain: liveRedirect.length ? liveRedirect : fixtureRedirect,
+        timing: { fixture: fixtureTiming, live: liveTiming },
+        fixture: fr ? {
+          status: fr.status, headers: fr.headers || null, body: fr.body ?? null,
+          bodyBytes: fr.bodyBytes ?? (fr.body ? String(fr.body).length : null),
+          redirectChain: fixtureRedirect, timing: fixtureTiming,
+        } : null,
+        live: lr ? {
+          status: lr.status, headers: lr.headers || null, body: lr.body ?? null,
+          bodyBytes: lr.bodyBytes ?? (lr.body ? String(lr.body).length : null),
+          har: liveHar, redirectChain: liveRedirect, timing: liveTiming,
+        } : null,
+      };
+
+
+      items.push(item);
+      if (!isMatch) {
+        if (!fr) mismatches.push({ url: u, kind: 'only-live', index: i, status: lr.status });
+        else if (!lr) mismatches.push({ url: u, kind: 'only-fixture', index: i, status: fr.status });
+        else {
+          if (fr.status !== lr.status) mismatches.push({ url: u, kind: 'status', index: i, fixture: fr.status, live: lr.status });
+          const fb = (fr.body || ''), lb = (lr.body || '');
+          if (fb !== lb) mismatches.push({ url: u, kind: 'body', index: i, fixtureBytes: fb.length, liveBytes: lb.length });
+        }
+      }
+    }
+  }
+  // Purge call timing comparison (relative to first purge per side).
+  const fPurge = fixtureResp.filter((r) => /post-publish-check/.test(r.url || ''));
+  const lPurge = liveResp.filter((r) => /post-publish-check/.test(r.url || ''));
+  const relTimes = (arr) => {
+    if (!arr.length) return [];
+    const t0 = arr[0].at;
+    return arr.map((r) => r.at - t0);
+  };
+  const fRel = relTimes(fPurge), lRel = relTimes(lPurge);
+  const purgeTiming = {
+    fixtureCount: fPurge.length,
+    liveCount: lPurge.length,
+    fixtureRelMs: fRel,
+    liveRelMs: lRel,
+    deltaMs: lRel.map((t, i) => (fRel[i] != null ? t - fRel[i] : null)),
+  };
+  // Evaluate thresholds — exceedance is a meaningful regression.
+  const thresholds = {
+    maxMismatches: MAX_MISMATCHES, maxStatusMismatches: MAX_STATUS_MISMATCHES, maxBodyByteDelta: MAX_BODY_BYTE_DELTA,
+    observed: { mismatchCount: mismatches.length, statusMismatchCount, maxBodyDelta },
+    breached: [],
+  };
+  if (mismatches.length > MAX_MISMATCHES) thresholds.breached.push(`mismatches ${mismatches.length} > ${MAX_MISMATCHES}`);
+  if (statusMismatchCount > MAX_STATUS_MISMATCHES) thresholds.breached.push(`statusMismatches ${statusMismatchCount} > ${MAX_STATUS_MISMATCHES}`);
+  if (maxBodyDelta > MAX_BODY_BYTE_DELTA) thresholds.breached.push(`maxBodyDelta ${maxBodyDelta}B > ${MAX_BODY_BYTE_DELTA}B`);
+  return {
+    summary: {
+      requestsFixture: fixtureReq.length,
+      requestsLive: liveReq.length,
+      responsesFixture: fixtureResp.length,
+      responsesLive: liveResp.length,
+      mismatchCount: mismatches.length,
+      statusMismatchCount,
+      maxBodyDelta,
+      matchCount: items.filter((x) => x.match).length,
+    },
+    purgeTiming,
+    thresholds,
+    items, // full pair list — used by the HTML drilldown
+    mismatches: mismatches.slice(0, 40),
+    truncated: mismatches.length > 40,
+  };
+}
+
+
+// ---------- fixture helpers ----------
+function fixturePath(scenario, kind) {
+  return join(FIXTURE_DIR, scenario, `${kind}.json`);
+}
+function loadFixture(scenario, kind) {
+  const p = fixturePath(scenario, kind);
+  return existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : null;
+}
+function saveFixture(scenario, kind, data) {
+  mkdirSync(join(FIXTURE_DIR, scenario), { recursive: true });
+  writeFileSync(fixturePath(scenario, kind), JSON.stringify(data, null, 2));
+}
+
+// ---------- fixture schema validation (replay-mode fail-fast) ----------
+const FIXTURE_SCHEMAS = {
+  requests: {
+    arrayOf: { required: ['scenario', 'at', 'method', 'url', 'headers'], optional: ['postData'] },
+  },
+  responses: {
+    arrayOf: { required: ['scenario', 'at', 'url', 'status', 'body'] },
+    // Replay rewrites /api/public/post-publish-check; body MUST be JSON describing a purge result.
+    bodyContract: {
+      match: /post-publish-check/,
+      contentType: 'application/json',
+      requiredJsonKeys: ['ok', 'buildId'],
+    },
+  },
+};
+function validateFixture(scenario, kind, data) {
+  const schema = FIXTURE_SCHEMAS[kind];
+  if (!schema) return { ok: true };
+  if (!Array.isArray(data)) {
+    return { ok: false, error: `${kind} fixture must be a JSON array, got ${typeof data}` };
+  }
+  const missing = [];
+  data.forEach((row, i) => {
+    if (!row || typeof row !== 'object') {
+      missing.push(`row[${i}] is not an object`); return;
+    }
+    for (const k of schema.arrayOf.required) {
+      if (!(k in row)) missing.push(`row[${i}] missing required field "${k}"`);
+    }
+  });
+  if (schema.bodyContract) {
+    const matches = data.filter((r) => r && schema.bodyContract.match.test(r.url || ''));
+    if (matches.length === 0) {
+      missing.push(`no response matched ${schema.bodyContract.match} — replay would have nothing to serve`);
+    }
+    for (const r of matches) {
+      let parsed;
+      try { parsed = JSON.parse(r.body ?? ''); }
+      catch { missing.push(`response ${r.url} body is not JSON (expected ${schema.bodyContract.contentType})`); continue; }
+      for (const k of schema.bodyContract.requiredJsonKeys) {
+        if (!(k in parsed)) missing.push(`response ${r.url} JSON missing key "${k}"`);
+      }
+    }
+  }
+  if (missing.length) {
+    return { ok: false, error: `fixture validation failed for ${scenario}/${kind}.json:\n  - ${missing.slice(0, 12).join('\n  - ')}${missing.length > 12 ? `\n  - …and ${missing.length - 12} more` : ''}` };
+  }
+  return { ok: true };
+}
+
+// ---------- one scenario harness ----------
+class WafBlockedError extends Error {
+  constructor(msg) { super(msg); this.wafBlocked = true; }
+}
+
+// The suite hammers production with headless traffic from GitHub Actions
+// IPs; Cloudflare rate limiting / bot rules periodically answer the initial
+// document with 403, which is an ENVIRONMENT block, not an app regression.
+// Detect it at goto time so the scenario can be marked skipped instead of
+// failing with misleading "no chunk observed" assertions.
+async function gotoGuarded(page, url) {
+  const resp = await page.goto(url, { waitUntil: 'domcontentloaded' }).catch(() => null);
+  if (resp && [401, 403, 503].includes(resp.status())) {
+    const h = resp.headers();
+    if (h['cf-ray'] || h['cf-mitigated'] || (h['server'] || '').includes('cloudflare')) {
+      // cf-mitigated is set by Cloudflare when a zone security product acts on
+      // the request. A bare 401/403/503 with only cf-ray came from UPSTREAM
+      // (origin / SaaS edge in front of the origin) — no zone WAF event exists
+      // for it (verified 2026-11-15/16: origin 403 windows at UK midday).
+      const via = h['cf-mitigated']
+        ? 'zone WAF action (cf-mitigated present)'
+        : 'upstream/origin block (no cf-mitigated — not a zone WAF rule)';
+      throw new WafBlockedError(`edge returned HTTP ${resp.status()} for the initial document [${via}] — environment block on the CI runner (not app code)`);
+    }
+  }
+  return resp;
+}
+
+// ---------- WAF pre-flight ----------
+// When the edge is already rate-limiting this runner's IP, every scenario
+// would skip at gotoGuarded and the run would fail having measured nothing.
+// WAF rate-limit windows are usually short — probe the initial document a few
+// times with backoff before starting the scenario loop. A reachable edge here
+// means the run measures the app; a persistently blocked edge still fails via
+// the wafSkipped guard below (never a false green). Override attempts with
+// E2E_WAF_PREFLIGHT_ATTEMPTS=1 to restore the previous fail-fast behaviour.
+async function wafPreflight(browser) {
+  const attempts = Math.max(1, Number(process.env.E2E_WAF_PREFLIGHT_ATTEMPTS || 4));
+  // Waits rebalanced 2026-11-16: [0,90,210,330]s spent the whole 10.5-min
+  // tolerance up-front and left NOTHING for blocks that START mid-run (the
+  // failure mode that sank the 11-15/11-16 noon runs). 6 min here + a shared
+  // mid-run budget (E2E_BLOCK_BUDGET_S, default 8 min) covers both phases.
+  const waitsMs = [0, 60_000, 120_000, 180_000];
+  for (let i = 0; i < attempts; i++) {
+    if (i > 0) {
+      const wait = waitsMs[Math.min(i, waitsMs.length - 1)];
+      console.warn(`[waf-preflight] waiting ${Math.round(wait / 1000)}s for the WAF window to clear before attempt ${i + 1}/${attempts}`);
+      await sleep(wait);
+    }
+    const context = await browser.newContext({
+      viewport: { width: 1280, height: 800 },
+      ...(E2E_BYPASS_TOKEN ? { extraHTTPHeaders: { 'x-phl-e2e': E2E_BYPASS_TOKEN } } : {}),
+    });
+    try {
+      const page = await context.newPage();
+      const resp = await page.goto(TARGET, { waitUntil: 'domcontentloaded', timeout: 30_000 }).catch(() => null);
+      const status = resp ? resp.status() : 0;
+      if (resp && [401, 403, 503].includes(status)) {
+        const h = resp.headers();
+        if (h['cf-ray'] || h['cf-mitigated'] || (h['server'] || '').includes('cloudflare')) {
+          console.warn(`[waf-preflight] attempt ${i + 1}/${attempts}: edge returned HTTP ${status} — WAF/rate-limit active`);
+          continue;
+        }
+      }
+      console.log(`[waf-preflight] edge reachable (HTTP ${status || 'unknown'}) — starting scenarios`);
+      return true;
+    } finally {
+      await context.close().catch(() => {});
+    }
+  }
+  console.error(`[waf-preflight] edge still blocked after ${attempts} attempt(s) — scenarios will skip and the run will fail visibly (not a false green)`);
+  return false;
+}
+
+// Fixed bypass token (GitHub secret E2E_BYPASS_TOKEN) sent on every request;
+// a Cloudflare WAF "skip" custom rule matching this header lets CI traffic
+// through the rate limiter. Falls back to no header when the secret is unset.
+// Secret values pasted into the GitHub UI often pick up a trailing newline —
+// Chromium rejects such header values ("Invalid header value") and every
+// scenario crashes at newPage. Trim, and drop anything not header-safe.
+const E2E_BYPASS_TOKEN = (() => {
+  const raw = (process.env.E2E_BYPASS_TOKEN || '').trim();
+  if (!raw) return null;
+  if (!/^[\x21-\x7E]+$/.test(raw)) {
+    console.warn('[warn] E2E_BYPASS_TOKEN has non-header-safe characters — ignoring it (WAF bypass disabled for this run)');
+    return null;
+  }
+  return raw;
+})();
 
 // ---------- mid-run edge-block budget ----------
-// When the origin/Lovable edge starts answering 401/403/503 mid-run (credential
-// scanning storms, origin WAF), a browser reload just re-hits the same wall and
-// the scenario skips — which is exactly the noon flake this budget exists to
-// absorb. Instead of skipping immediately, we wait and re-probe with cheap
-// node-side fetches (no browser) until the edge clears or the shared budget is
-// gone. The budget is shared across ALL scenarios in the run: it is a property
-// of the edge window, not of any one scenario. Budget only ever decreases, so
-// this always terminates. If it runs out we fall back to the old behaviour —
-// skip with a visible ::warning and fail the run. Never a false green.
+// 2026-11-15/16: the noon (UTC) scheduled runs died with ALL scenarios skipped
+// — upstream/origin answers the runner IP with 403 for 10–25 min while UK
+// midday scan storms are underway (no zone WAF event; bypass header already
+// applied). The old code skipped instantly; the preflight only covers the run
+// START. This shared budget lets the run ride out a mid-run block: on a
+// WafBlockedError we re-probe the document once a minute (cheap fetch, no
+// browser) until it clears or the budget is gone. One budget for the whole
+// run — a persistent block burns it once instead of 5× (5 scenarios).
+// E2E_BLOCK_BUDGET_S=0 restores instant-skip behaviour.
 const BLOCK_BUDGET_MS = Math.max(0, Number(process.env.E2E_BLOCK_BUDGET_S ?? 480) * 1000);
+// Probe cadence while riding out a block (default 60s; lower only for tests).
 const BLOCK_PROBE_INTERVAL_MS = Math.max(250, Number(process.env.E2E_BLOCK_PROBE_INTERVAL_S ?? 60) * 1000);
 let blockBudgetLeftMs = BLOCK_BUDGET_MS;
-
 async function waitForEdgeUnblock() {
   if (blockBudgetLeftMs <= 0) return false;
   console.warn(`[block-wait] mid-run edge block — riding it out (budget: ${Math.round(blockBudgetLeftMs / 1000)}s, probe every ≤60s)`);
@@ -129,6 +639,8 @@ async function waitForEdgeUnblock() {
         redirect: 'manual',
         signal: AbortSignal.timeout(20_000),
         headers: {
+          // Mirror what the browser scenarios send so the probe verdict
+          // matches what page.goto would see.
           'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
           'accept': 'text/html,application/xhtml+xml',
           ...(E2E_BYPASS_TOKEN ? { 'x-phl-e2e': E2E_BYPASS_TOKEN } : {}),
@@ -149,787 +661,780 @@ async function waitForEdgeUnblock() {
   return false;
 }
 
-const nowIso = () => new Date().toISOString();
-const rel = (p) => path.relative(process.cwd(), p);
-
-function ensureDirSync(dir) {
-  fs.mkdirSync(dir, { recursive: true });
-}
-
-function appendJsonLine(file, obj) {
-  fs.appendFileSync(file, JSON.stringify(obj) + '\n');
-}
-
-function xmlEscape(s) {
-  return String(s).replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c]));
-}
-
-// ---------- URL helpers ----------
-
-const ASSET_EXT_RE = /\.(js|mjs|css|png|jpe?g|webp|avif|gif|svg|ico|woff2?|ttf|otf|mp4|webm|json|xml|txt|pdf|wasm)([?#].*)?$/i;
-
-function isAssetUrl(u) {
-  try {
-    const p = new URL(u).pathname.toLowerCase();
-    if (ASSET_EXT_RE.test(p)) return true;
-    for (const ext of ASSET_EXTENSIONS) if (p.endsWith(ext)) return true;
-    return false;
-  } catch {
-    return false;
-  }
-}
-
-function isProbablyHtml(url, contentType) {
-  if (contentType && /text\/html/i.test(contentType)) return true;
-  if (contentType && !/text\/html/i.test(contentType)) return false;
-  try {
-    const p = new URL(url).pathname;
-    if (isAssetUrl(url)) return false;
-    return !/\.[a-z0-9]{2,5}$/i.test(p) || /\.(html?|php)$/i.test(p);
-  } catch {
-    return false;
-  }
-}
-
-function normalizeUrl(raw, base) {
-  try {
-    const u = new URL(raw, base);
-    u.hash = '';
-    // drop tracking noise so the frontier doesn't explode
-    for (const key of [...u.searchParams.keys()]) {
-      if (/^(utm_|fbclid$|gclid$|mc_cid$|mc_eid$|_hsenc$|_hsmi$|ref$)/i.test(key)) u.searchParams.delete(key);
-    }
-    if (u.pathname !== '/' && u.pathname.endsWith('/')) u.pathname = u.pathname.replace(/\/+$/, '');
-    return u.toString();
-  } catch {
-    return null;
-  }
-}
-
-function isSkippablePath(u) {
-  try {
-    const p = new URL(u).pathname;
-    return SKIP_PATH_PREFIXES.some((prefix) => p.startsWith(prefix));
-  } catch {
-    return true;
-  }
-}
-
-function isSameOrigin(u) {
-  try {
-    return new URL(u).origin === new URL(TARGET).origin;
-  } catch {
-    return false;
-  }
-}
-
-// ---------- extraction ----------
-
-const HREF_SRC_RE = /\b(?:href|src)\s*=\s*("([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/gi;
-const SRCSET_RE = /\bsrcset\s*=\s*("([^"]*)"|'([^']*)')/gi;
-const META_REFRESH_RE = /<meta[^>]+http-equiv\s*=\s*["']?refresh["']?[^>]*content\s*=\s*["'][^"']*url\s*=\s*([^"'>]+)["']/gi;
-const IMPORT_RE = /\b(?:import|export)\s+(?:[^'"]*?\sfrom\s+)?['"]([^'"]+)['"]/g;
-const DYNAMIC_IMPORT_RE = /\bimport\(\s*['"]([^'"]+)['"]\s*\)/g;
-const CSS_URL_RE = /\burl\(\s*(['"]?)([^'")]+)\1\s*\)/g;
-
-function extractUrlsFromHtml(html, pageUrl) {
-  const links = new Set();
-  const assets = new Set();
-  let m;
-  HREF_SRC_RE.lastIndex = 0;
-  while ((m = HREF_SRC_RE.exec(html))) {
-    const raw = m[2] ?? m[3] ?? m[4];
-    if (!raw || raw.startsWith('data:') || raw.startsWith('mailto:') || raw.startsWith('tel:') || raw.startsWith('javascript:')) continue;
-    const abs = normalizeUrl(raw, pageUrl);
-    if (!abs) continue;
-    if (isAssetUrl(abs)) assets.add(abs);
-    else if (isSameOrigin(abs)) links.add(abs);
-  }
-  SRCSET_RE.lastIndex = 0;
-  while ((m = SRCSET_RE.exec(html))) {
-    const raw = m[2] ?? m[3];
-    if (!raw) continue;
-    for (const candidate of raw.split(',')) {
-      const urlPart = candidate.trim().split(/\s+/)[0];
-      if (!urlPart || urlPart.startsWith('data:')) continue;
-      const abs = normalizeUrl(urlPart, pageUrl);
-      if (abs) assets.add(abs);
-    }
-  }
-  META_REFRESH_RE.lastIndex = 0;
-  while ((m = META_REFRESH_RE.exec(html))) {
-    const abs = normalizeUrl(m[1].trim(), pageUrl);
-    if (abs && isSameOrigin(abs)) links.add(abs);
-  }
-  return { links: [...links], assets: [...assets] };
-}
-
-function extractUrlsFromJs(jsText, baseUrl) {
-  const out = new Set();
-  let m;
-  IMPORT_RE.lastIndex = 0;
-  while ((m = IMPORT_RE.exec(jsText))) {
-    const abs = normalizeUrl(m[1], baseUrl);
-    if (abs && isSameOrigin(abs)) out.add(abs);
-  }
-  DYNAMIC_IMPORT_RE.lastIndex = 0;
-  while ((m = DYNAMIC_IMPORT_RE.exec(jsText))) {
-    const abs = normalizeUrl(m[1], baseUrl);
-    if (abs && isSameOrigin(abs)) out.add(abs);
-  }
-  return [...out];
-}
-
-function extractUrlsFromCss(cssText, baseUrl) {
-  const out = new Set();
-  let m;
-  CSS_URL_RE.lastIndex = 0;
-  while ((m = CSS_URL_RE.exec(cssText))) {
-    const raw = m[2];
-    if (!raw || raw.startsWith('data:') || raw.startsWith('#')) continue;
-    const abs = normalizeUrl(raw, baseUrl);
-    if (abs) out.add(abs);
-  }
-  return [...out];
-}
-
-// ---------- asset-manifest.json seeding ----------
-// Lovable/Vite builds emit asset-manifest.json mapping logical names → built
-// files. HTML <script>/<link> extraction already catches the entry points, but
-// lazy chunks only appear via dynamic import(). Parsing those out of minified
-// JS is brittle; the manifest lists them directly. Best-effort: any failure
-// just skips the seed.
-
-async function seedFromManifest() {
-  if (!E2E_MANIFEST_SEED || REPLAY) return [];
-  const candidates = [`${TARGET}/asset-manifest.json`, `${TARGET}/assets/asset-manifest.json`];
-  for (const url of candidates) {
+async function withContext(browser, name, fn) {
+  currentScenario = name;
+  const sc = ensureScenario(name);
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 800 },
+    ...(E2E_BYPASS_TOKEN ? { extraHTTPHeaders: { 'x-phl-e2e': E2E_BYPASS_TOKEN } } : {}),
+  });
+  // Same-document navigation filter. Playwright's `framenavigated` also fires
+  // for history.replaceState/pushState — the SPA router emits one during CSR
+  // boot — which is NOT a reload. Stamp every real document via init script
+  // (runs per document, not per same-document nav) so the handler below can
+  // count only genuine document swaps.
+  await context.addInitScript(() => {
     try {
-      const resp = await fetchWithRetry(url, {
-        headers: { 'user-agent': ASSET_USER_AGENT, accept: 'application/json' },
-      });
-      if (!resp.ok) continue;
-      const json = await resp.json().catch(() => null);
-      const files = json && typeof json === 'object' ? (json.files || json) : null;
-      if (!files || typeof files !== 'object') continue;
-      const found = [];
-      for (const v of Object.values(files)) {
-        if (typeof v !== 'string') continue;
-        const abs = normalizeUrl(v, url);
-        if (abs && isSameOrigin(abs) && isAssetUrl(abs)) found.push(abs);
-      }
-      if (found.length) {
-        console.log(`[seed] asset-manifest ${url} → ${found.length} assets`);
-        return found;
-      }
-    } catch (e) {
-      console.warn(`[seed] asset-manifest ${url} failed: ${e?.message || e}`);
+      const n = Number(sessionStorage.getItem('__phlE2eDocSeq') || '0') + 1;
+      sessionStorage.setItem('__phlE2eDocSeq', String(n));
+      window.__phlE2eDocSeq = n;
+    } catch {
+      window.__phlE2eDocSeq = Math.random();
     }
+  });
+  const purgeCalls = [];
+  const purgeResponses = [];
+  const autoPurgeLogs = [];
+  const reloads = [];
+  const allConsole = [];
+  const assetReqs = []; // hashed JS asset request URLs (ordered)
+  const requestRecording = [];
+  const responseRecording = [];
+
+  let replayResponses = null;
+  if (REPLAY) {
+    const raw = loadFixture(name, 'responses');
+    if (!raw) {
+      throw new Error(`[replay] missing fixture ${fixturePath(name, 'responses')} — run with --record first`);
+    }
+    const v = validateFixture(name, 'responses', raw);
+    if (!v.ok) throw new Error(`[replay] ${v.error}`);
+    const reqRaw = loadFixture(name, 'requests');
+    if (reqRaw) {
+      const vr = validateFixture(name, 'requests', reqRaw);
+      if (!vr.ok) throw new Error(`[replay] ${vr.error}`);
+    }
+    replayResponses = raw;
   }
-  return [];
-}
 
-// ---------- fetch wrapper with retry ----------
+  // HAR-like trace: keep per-request timing/redirect chain + (redacted) headers/body.
+  const harByReq = new WeakMap();
+  context.on('request', (req) => {
+    const url = redactUrl(req.url());
+    const startedAt = Date.now();
+    const reqHeaders = redactHeaders(req.headers());
+    const postData = redactBody(req.postData() || null);
+    // Walk redirect chain back to origin (also used for the HAR entry below).
+    const redirectChain = [];
+    let rPrev = req.redirectedFrom();
+    while (rPrev) { redirectChain.push(redactUrl(rPrev.url())); rPrev = rPrev.redirectedFrom(); }
+    const entry = { scenario: name, at: startedAt, startedAt, method: req.method(), url, headers: reqHeaders, postData, redirectChain };
+    appendNd(reqLog, entry);
+    if (RECORD) requestRecording.push(entry);
+    sc.liveRequests.push(entry);
+    if (HASHED_JS_RE.test(url)) { assetReqs.push({ url, at: startedAt }); sc.hashedJsUrls.add(url.split('?')[0]); }
+    if (sc.topRequests.length < 25) sc.topRequests.push({ method: req.method(), url });
+    const har = {
+      startedAt,
+      method: req.method(),
+      url,
+      resourceType: req.resourceType(),
+      redirectedFrom: redirectChain[0] || null,
+      redirectChain,
+      requestHeaders: reqHeaders,
+      requestBody: postData,
+      status: null,
+      mimeType: null,
+      responseHeaders: null,
+      responseBody: null,
+      responseBodyBytes: null,
+      durationMs: null,
+      fromCache: false,
+      failed: null,
+    };
+    harByReq.set(req, har);
+    sc.har.push(har);
+  });
 
-const FLAKY_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
+  context.on('response', async (res) => {
+    const u = redactUrl(res.url());
+    const har = harByReq.get(res.request());
+    let rawBody = null;
+    try { rawBody = await res.text(); } catch { /* ignore */ }
+    const bodyBytes = rawBody == null ? null : rawBody.length;
+    const redacted = redactBody(rawBody);
+    if (har) {
+      har.status = res.status();
+      har.mimeType = res.headers()['content-type'] || null;
+      har.responseHeaders = redactHeaders(res.headers());
+      har.responseBody = redacted;
+      har.responseBodyBytes = bodyBytes;
+      har.durationMs = Date.now() - har.startedAt;
+      har.fromCache = !!res.fromServiceWorker?.();
+    }
+    if (!/\/api\/public\//.test(u)) return;
+    const entry = {
+      scenario: name, at: Date.now(), url: u, status: res.status(),
+      headers: redactHeaders(res.headers()),
+      body: redacted,
+      bodyBytes,
+      // Always-present timing + redirect fields so the live-vs-replay items
+      // and downloadable bundles never need to null-check the schema.
+      startedAt: har?.startedAt ?? null,
+      durationMs: har?.durationMs ?? null,
+      redirectChain: har?.redirectChain || [],
+    };
 
-class WafBlockedError extends Error {
-  constructor(url, status) {
-    super(`edge/WAF blocked (${status}) ${url}`);
-    this.name = 'WafBlockedError';
-    this.status = status;
-    this.url = url;
-    this.wafBlocked = true;
-  }
-}
+    appendNd(resLog, entry);
+    if (RECORD) responseRecording.push(entry);
+    sc.liveResponses.push(entry);
+    if (/post-publish-check/.test(u)) {
+      purgeResponses.push(entry);
+      try {
+        const j = JSON.parse((REDACT_BODIES ? rawBody : redacted) || '{}');
+        if (j.buildId) sc.buildIds.add(j.buildId);
+        if (j.previous) sc.buildIds.add(j.previous);
+      } catch { /* ignore */ }
+    }
+  });
+  context.on('requestfailed', (req) => {
+    const har = harByReq.get(req);
+    if (har) { har.failed = req.failure()?.errorText || 'failed'; har.durationMs = Date.now() - har.startedAt; }
+  });
 
-async function fetchOnce(url, opts = {}) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), opts.timeout ?? TIMEOUT_MS);
-  const startedAt = Date.now();
-  try {
-    const resp = await fetch(url, {
-      redirect: 'follow',
-      signal: controller.signal,
-      ...opts,
-      headers: {
-        'user-agent': opts.asset ? ASSET_USER_AGENT : USER_AGENT,
-        accept: opts.asset ? '*/*' : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        ...(opts.referer ? { referer: opts.referer } : {}),
-        ...(E2E_BYPASS_TOKEN && !opts.asset ? { 'x-phl-e2e': E2E_BYPASS_TOKEN } : {}),
-        ...(opts.headers || {}),
-      },
+
+  // Stub purge endpoint (or replay).
+  await context.route('**/api/public/post-publish-check*', async (route) => {
+    purgeCalls.push({ at: Date.now(), url: route.request().url() });
+    sc.purgeCalls.push({ at: Date.now(), url: route.request().url() });
+    let fixtureBody = null;
+    if (REPLAY && replayResponses) {
+      const m = replayResponses.find((r) => /post-publish-check/.test(r.url));
+      if (m) fixtureBody = m.body;
+    }
+    // Recovery navigation now goes THROUGH this endpoint (?next=/), so the
+    // stub must mimic production: 302 home after the "purge". A JSON 200
+    // would strand the page on an API response instead of completing the
+    // recovery.
+    if ((route.request().url()).includes('next=')) {
+      await route.fulfill({ status: 302, headers: { Location: '/' }, body: '' });
+      return;
+    }
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: fixtureBody || JSON.stringify({ ok: true, changed: true, buildId: 'E2E-NEW', previous: 'E2E-OLD' }),
     });
-    return { resp, durationMs: Date.now() - startedAt };
+  });
+
+  const page = await context.newPage();
+  let lastDocSeq = null;
+  page.on('framenavigated', (f) => {
+    if (f !== page.mainFrame()) return;
+    const countIt = () => {
+      const entry = { at: Date.now(), url: f.url() };
+      reloads.push(entry); sc.reloads.push(entry);
+    };
+    page.evaluate(() => window.__phlE2eDocSeq ?? null)
+      .then((seq) => {
+        if (seq !== null && seq === lastDocSeq) return; // same-document router nav — not a reload
+        lastDocSeq = seq;
+        countIt();
+      })
+      .catch(countIt); // context mid-swap ⇒ genuine navigation — count it
+  });
+  page.on('console', (msg) => {
+    const entry = { scenario: name, at: Date.now(), type: msg.type(), text: msg.text() };
+    allConsole.push(entry); appendNd(conLog, entry);
+    if (msg.text().includes('[auto-purge]')) autoPurgeLogs.push(msg.text());
+  });
+
+  try {
+    await fn({ context, page, purgeCalls, purgeResponses, autoPurgeLogs, reloads, allConsole, assetReqs, sc });
   } finally {
-    clearTimeout(timer);
-  }
-}
-
-async function fetchWithRetry(url, opts = {}) {
-  const maxAttempts = 1 + (opts.retries ?? RETRIES);
-  let last;
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try { await page.screenshot({ path: join(SHOTS, `${name}.png`) }); } catch { /* ignore */ }
+    // Write compact HAR-like trace for this scenario (overwritten on retry — only final attempt kept).
     try {
-      const { resp, durationMs } = await fetchOnce(url, opts);
-      // Never retry a hard WAF block — waiting won't help within one request
-      // and the scenario-level handler needs to see it immediately.
-      if (resp.status === 401 || resp.status === 403) throw new WafBlockedError(url, resp.status);
-      if (FLAKY_STATUSES.has(resp.status) && attempt < maxAttempts - 1) {
-        last = { status: resp.status, durationMs };
-        await sleep(RETRY_BACKOFF_MS * 2 ** attempt);
-        continue;
-      }
-      return { resp, durationMs, attempts: attempt + 1 };
-    } catch (e) {
-      if (e instanceof WafBlockedError) throw e;
-      last = { error: e };
-      if (attempt < maxAttempts - 1) {
-        await sleep(RETRY_BACKOFF_MS * 2 ** attempt);
-        continue;
-      }
-      throw e;
-    }
-  }
-  // unreachable in practice, keeps TS-style linters calm
-  throw last?.error || new Error(`fetch failed for ${url} (status ${last?.status ?? 'n/a'})`);
-}
-
-// ---------- crawler ----------
-
-async function readSitemaps() {
-  const seeds = new Set();
-  const queue = [`${TARGET}/sitemap.xml`];
-  const seen = new Set();
-  while (queue.length && seen.size < 25) {
-    const sm = queue.shift();
-    if (!sm || seen.has(sm)) continue;
-    seen.add(sm);
-    try {
-      const { resp } = await fetchWithRetry(sm, { headers: { accept: 'application/xml,text/xml,*/*' } });
-      if (!resp.ok) continue;
-      const xml = await resp.text();
-      const locs = [...xml.matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/gi)].map((m) => m[1].trim());
-      for (const loc of locs) {
-        if (loc.endsWith('.xml')) {
-          if (!seen.has(loc)) queue.push(loc);
-          continue;
-        }
-        const abs = normalizeUrl(loc, TARGET);
-        if (abs && isSameOrigin(abs) && !isSkippablePath(abs)) seeds.add(abs);
-      }
-    } catch (e) {
-      console.warn(`[sitemap] ${sm} failed: ${e?.message || e}`);
-    }
-  }
-  return [...seeds];
-}
-
-async function crawl() {
-  const frontier = [];
-  const queued = new Set();
-  const pages = new Map(); // url -> { status, contentType, durationMs, assets[], links[] }
-
-  const seed = (u) => {
-    const abs = normalizeUrl(u, TARGET);
-    if (!abs || !isSameOrigin(abs) || isSkippablePath(abs) || queued.has(abs)) return;
-    queued.add(abs);
-    frontier.push(abs);
-  };
-
-  seed(TARGET);
-  if (SITEMAP_SEED) {
-    const smSeeds = await readSitemaps();
-    console.log(`[sitemap] seeded ${smSeeds.length} URLs`);
-    smSeeds.forEach(seed);
-  }
-
-  const requestsLog = path.join(ARTIFACT_DIR, 'requests.ndjson');
-  const responsesLog = path.join(ARTIFACT_DIR, 'responses.ndjson');
-
-  async function worker() {
-    while (frontier.length && pages.size < MAX_PAGES) {
-      const url = frontier.shift();
-      if (!url || pages.has(url)) continue;
-      appendJsonLine(requestsLog, { ts: nowIso(), type: 'page', url });
-      let entry;
-      try {
-        const { resp, durationMs, attempts } = await fetchWithRetry(url, { retries: RETRIES });
-        const contentType = resp.headers.get('content-type') || '';
-        entry = { url, status: resp.status, contentType, durationMs, attempts, assets: [], links: [] };
-        if (resp.ok && isProbablyHtml(url, contentType)) {
-          const html = await resp.text();
-          const { links, assets } = extractUrlsFromHtml(html, url);
-          entry.assets = assets;
-          entry.links = links;
-          for (const link of links) seed(link);
-        } else {
-          await resp.arrayBuffer().catch(() => {});
-        }
-      } catch (e) {
-        entry = { url, status: 0, error: String(e?.message || e), assets: [], links: [] };
-      }
-      pages.set(url, entry);
-      appendJsonLine(responsesLog, { ts: nowIso(), type: 'page', ...entry, links: entry.links.length, assets: entry.assets.length });
-      if (pages.size % 25 === 0) console.log(`[crawl] ${pages.size}/${MAX_PAGES} pages, frontier ${frontier.length}`);
-    }
-  }
-
-  await Promise.all(Array.from({ length: CONCURRENCY }, () => worker()));
-  return pages;
-}
-
-// ---------- asset audit ----------
-
-function collectAssets(pages, extraSeeds = []) {
-  const assetMap = new Map(); // url -> { referers: Set, crossOrigin: bool }
-  const addAsset = (rawUrl, referer) => {
-    const abs = normalizeUrl(rawUrl, referer);
-    if (!abs || !isAssetUrl(abs)) return;
-    if (IGNORE_URL_PATTERNS.some((re) => re.test(abs))) return;
-    const sameOrigin = isSameOrigin(abs);
-    if (!sameOrigin && !INCLUDE_CROSS_ORIGIN_ASSETS) {
-      // recorded for visibility, not audited
-    }
-    if (!assetMap.has(abs)) assetMap.set(abs, { referers: new Set(), crossOrigin: !sameOrigin });
-    assetMap.get(abs).referers.add(referer);
-  };
-  for (const [pageUrl, entry] of pages) {
-    for (const a of entry.assets || []) addAsset(a, pageUrl);
-  }
-  for (const a of extraSeeds) addAsset(a, TARGET);
-  return assetMap;
-}
-
-async function auditAssets(assetMap, pagesOk) {
-  const results = [];
-  const requestsLog = path.join(ARTIFACT_DIR, 'requests.ndjson');
-  const responsesLog = path.join(ARTIFACT_DIR, 'responses.ndjson');
-  const urls = [...assetMap.keys()];
-  let idx = 0;
-  let audited = 0;
-  let skippedCross = 0;
-
-  async function worker() {
-    while (idx < urls.length) {
-      const url = urls[idx++];
-      const meta = assetMap.get(url);
-      if (meta.crossOrigin && !INCLUDE_CROSS_ORIGIN_ASSETS) {
-        skippedCross++;
-        results.push({ url, status: 'skipped-cross-origin', referers: [...meta.referers].slice(0, 5) });
-        continue;
-      }
-      const referer = [...meta.referers][0] || TARGET;
-      appendJsonLine(requestsLog, { ts: nowIso(), type: 'asset', url, referer });
-      let row;
-      try {
-        const { resp, durationMs, attempts } = await fetchWithRetry(url, {
-          asset: true,
-          referer,
-          retries: RETRIES,
-          headers: {
-            accept: url.match(/\.css(\?|$)/i) ? 'text/css,*/*;q=0.1'
-              : url.match(/\.(png|jpe?g|webp|avif|gif|svg|ico)(\?|$)/i) ? 'image/avif,image/webp,image/*,*/*;q=0.8'
-              : url.match(/\.(woff2?|ttf|otf)(\?|$)/i) ? 'font/woff2,font/*,*/*;q=0.8'
-              : '*/*',
-          },
-        });
-        row = {
-          url,
-          status: resp.status,
-          ok: resp.ok,
-          contentType: resp.headers.get('content-type') || '',
-          contentLength: Number(resp.headers.get('content-length') || 0) || undefined,
-          durationMs,
-          attempts,
-          referers: [...meta.referers].slice(0, 5),
-        };
-        await resp.arrayBuffer().catch(() => {});
-      } catch (e) {
-        row = { url, status: 0, ok: false, error: String(e?.message || e), referers: [...meta.referers].slice(0, 5) };
-      }
-      results.push(row);
-      appendJsonLine(responsesLog, { ts: nowIso(), type: 'asset', ...row });
-      if (++audited % 50 === 0) console.log(`[assets] ${audited}/${urls.length}`);
-    }
-  }
-
-  await Promise.all(Array.from({ length: CONCURRENCY }, () => worker()));
-  const stale = results.filter((r) => r.status !== 'skipped-cross-origin' && !r.ok);
-  return { results, stale, skippedCross, total: urls.length, pagesOk };
-}
-
-// ---------- CSS deep-dive (url() references) ----------
-
-async function auditCssInternals(assetRows) {
-  const cssRows = assetRows.filter((r) => r.ok && /text\/css/i.test(r.contentType || '') || (r.ok && /\.css(\?|$)/i.test(r.url)));
-  const nested = new Map();
-  for (const row of cssRows) {
-    try {
-      const { resp } = await fetchWithRetry(row.url, { asset: true, referer: TARGET });
-      if (!resp.ok) continue;
-      const css = await resp.text();
-      for (const u of extractUrlsFromCss(css, row.url)) {
-        if (IGNORE_URL_PATTERNS.some((re) => re.test(u))) continue;
-        if (!nested.has(u)) nested.set(u, { referers: new Set([row.url]), crossOrigin: !isSameOrigin(u) });
-      }
-    } catch (e) {
-      console.warn(`[css] ${row.url}: ${e?.message || e}`);
-    }
-  }
-  if (!nested.size) return { results: [], stale: [] };
-  const fakeMap = new Map([...nested.entries()].map(([u, m]) => [u, m]));
-  const { results, stale } = await auditAssets(fakeMap, true);
-  return { results, stale };
-}
-
-// ---------- replay mode ----------
-
-async function replay() {
-  // Find the most recent run dir (or ARTIFACT_DIR if it has requests.ndjson)
-  let srcDir = ARTIFACT_DIR;
-  if (!fs.existsSync(path.join(srcDir, 'requests.ndjson'))) {
-    const dirs = fs.readdirSync(ARTIFACT_ROOT, { withFileTypes: true })
-      .filter((d) => d.isDirectory() && /^\d{4}-/.test(d.name))
-      .map((d) => d.name).sort().reverse();
-    const found = dirs.find((d) => fs.existsSync(path.join(ARTIFACT_ROOT, d, 'requests.ndjson')));
-    if (!found) throw new Error(`REPLAY: no requests.ndjson found under ${rel(ARTIFACT_ROOT)}`);
-    srcDir = path.join(ARTIFACT_ROOT, found);
-  }
-  console.log(`[replay] source: ${rel(srcDir)}`);
-  const lines = fs.readFileSync(path.join(srcDir, 'requests.ndjson'), 'utf8').split('\n').filter(Boolean);
-  const recorded = lines.map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
-  const assetUrls = recorded.filter((r) => r.type === 'asset').map((r) => ({ url: r.url, referer: r.referer }));
-  console.log(`[replay] ${assetUrls.length} recorded asset requests`);
-
-  const assetMap = new Map();
-  for (const { url, referer } of assetUrls) {
-    if (IGNORE_URL_PATTERNS.some((re) => re.test(url))) continue;
-    if (!assetMap.has(url)) assetMap.set(url, { referers: new Set([referer || TARGET]), crossOrigin: !isSameOrigin(url) });
-  }
-  return auditAssets(assetMap, true);
-}
-
-// ---------- artifact pruning ----------
-
-async function pruneArtifacts() {
-  if (!PRUNE) return;
-  const cutoff = Date.now() - KEEP_ARTIFACT_DAYS * 24 * 3600 * 1000;
-  const dirs = fs.readdirSync(ARTIFACT_ROOT, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && /^\d{4}-/.test(d.name));
-  let removed = 0;
-  for (const d of dirs) {
-    const dir = path.join(ARTIFACT_ROOT, d.name);
-    const ts = Date.parse(d.name.replace(/-/g, (m, off) => (off === 10 || off === 13 ? ':' : off > 16 ? '' : m)));
-    const stat = fs.statSync(dir);
-    const ageMs = Date.now() - stat.mtimeMs;
-    const oldEnough = !Number.isNaN(ts) ? ts < cutoff : ageMs > KEEP_ARTIFACT_DAYS * 24 * 3600 * 1000;
-    if (oldEnough) {
-      if (PRUNE_DRY_RUN) {
-        console.log(`[prune-dry-run] would remove ${rel(dir)}`);
-      } else {
-        await fsp.rm(dir, { recursive: true, force: true });
-        console.log(`[prune] removed ${rel(dir)}`);
-      }
-      removed++;
-    }
-  }
-  console.log(`[prune] ${PRUNE_DRY_RUN ? 'would remove' : 'removed'} ${removed} run dirs (keep ${KEEP_ARTIFACT_DAYS}d)`);
-}
-
-// ---------- reporting ----------
-
-function writeReports({ pages, assetResults, staleAssets, browserReport, startedAt, extra = {} }) {
-  const summary = {
-    target: TARGET,
-    mode: REPLAY ? 'replay' : 'live',
-    startedAt,
-    finishedAt: nowIso(),
-    pages: pages ? pages.size : extra.pagesCount ?? 0,
-    pagesOk: pages ? [...pages.values()].filter((p) => p.status >= 200 && p.status < 400).length : undefined,
-    assetsTotal: assetResults.length,
-    assetsStale: staleAssets.length,
-    browser: browserReport ? {
-      pagesVisited: browserReport.pagesVisited,
-      failures: browserReport.failures.length,
-      consoleErrors: browserReport.consoleErrors.length,
-    } : undefined,
-    ...extra,
-  };
-
-  const reportJson = { summary, staleAssets, browser: browserReport || undefined };
-  fs.writeFileSync(path.join(ARTIFACT_DIR, 'report.json'), JSON.stringify(reportJson, null, 2));
-
-  const lines = [];
-  lines.push(`# e2e-stale-assets — ${summary.finishedAt}`);
-  lines.push(`target: ${TARGET} | mode: ${summary.mode}`);
-  lines.push(`pages: ${summary.pages}${summary.pagesOk != null ? ` (${summary.pagesOk} ok)` : ''} | assets: ${summary.assetsTotal} | stale: ${summary.assetsStale}`);
-  if (browserReport) lines.push(`browser pages: ${browserReport.pagesVisited} | browser failures: ${browserReport.failures.length} | console errors: ${browserReport.consoleErrors.length}`);
-  lines.push('');
-  if (staleAssets.length) {
-    lines.push('## Stale assets (what a real visitor would hit as broken)');
-    for (const s of staleAssets) {
-      lines.push(`- [${s.status || 'ERR'}] ${s.url}`);
-      if (s.error) lines.push(`  error: ${s.error}`);
-      if (s.referers?.length) lines.push(`  referenced from: ${s.referers.join(', ')}`);
-    }
-    lines.push('');
-  }
-  if (browserReport?.failures?.length) {
-    lines.push('## Browser-detected failures (JS-injected / runtime requests)');
-    for (const f of browserReport.failures) {
-      lines.push(`- [${f.status || 'ERR'}] ${f.url}  (page: ${f.page})`);
-      if (f.errorText) lines.push(`  ${f.errorText}`);
-    }
-    lines.push('');
-  }
-  fs.writeFileSync(path.join(ARTIFACT_DIR, 'report.txt'), lines.join('\n'));
-
-  // JUnit for CI annotations
-  const testcaseFail = staleAssets.map((s, i) => `  <testcase classname="stale-assets" name="asset ${i + 1}: ${xmlEscape(s.url)}"><failure message="status ${s.status || 'ERR'}">${xmlEscape(s.error || `HTTP ${s.status}`)}</failure></testcase>`);
-  const browserFails = (browserReport?.failures || []).map((f, i) => `  <testcase classname="browser-assets" name="browser ${i + 1}: ${xmlEscape(f.url)}"><failure message="status ${f.status || 'ERR'}">${xmlEscape(f.errorText || `HTTP ${f.status}`)} (page ${xmlEscape(f.page)})</failure></testcase>`);
-  const totalTests = 1 + staleAssets.length + browserFails.length;
-  const junit = `<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="e2e-stale-assets" tests="${totalTests}" failures="${staleAssets.length + browserFails.length}" time="${((Date.now() - Date.parse(startedAt)) / 1000).toFixed(1)}">
-  <testcase classname="crawl" name="site crawl + asset inventory"/>
-${testcaseFail.join('\n')}
-${browserFails.join('\n')}
-</testsuite>
-`;
-  fs.writeFileSync(path.join(ARTIFACT_DIR, 'junit.xml'), junit);
-
-  // console.ndjson placeholder so all artifact sets have the same shape
-  if (!fs.existsSync(path.join(ARTIFACT_DIR, 'console.ndjson'))) fs.writeFileSync(path.join(ARTIFACT_DIR, 'console.ndjson'), '');
-
-  // latest symlink (best-effort; Windows checkouts just skip)
-  try {
-    fs.rmSync(LATEST_LINK, { force: true, recursive: true });
-    fs.symlinkSync(path.basename(ARTIFACT_DIR), LATEST_LINK, 'dir');
-  } catch { /* optional */ }
-
-  return summary;
-}
-
-function writeGithubSummary(summary, staleAssets, browserReport) {
-  const file = process.env.GITHUB_STEP_SUMMARY;
-  if (!file) return;
-  const md = [];
-  md.push(`## e2e-stale-assets`);
-  md.push('');
-  md.push(`| metric | value |`);
-  md.push(`|---|---|`);
-  md.push(`| target | ${TARGET} |`);
-  md.push(`| mode | ${summary.mode} |`);
-  md.push(`| pages crawled | ${summary.pages} |`);
-  md.push(`| assets audited | ${summary.assetsTotal} |`);
-  md.push(`| stale assets | **${summary.assetsStale}** |`);
-  if (browserReport) {
-    md.push(`| browser pages | ${browserReport.pagesVisited} |`);
-    md.push(`| browser failures | **${browserReport.failures.length}** |`);
-  }
-  if (staleAssets.length) {
-    md.push('');
-    md.push(`<details><summary>stale assets (${staleAssets.length})</summary>`);
-    md.push('');
-    for (const s of staleAssets.slice(0, 50)) md.push(`- \`${s.status || 'ERR'}\` ${s.url}`);
-    if (staleAssets.length > 50) md.push(`- …and ${staleAssets.length - 50} more (see report.txt)`);
-    md.push('');
-    md.push(`</details>`);
-  }
-  md.push('');
-  md.push(`Artifacts: \`${rel(ARTIFACT_DIR)}\``);
-  fs.appendFileSync(file, md.join('\n') + '\n');
-}
-
-// ---------- playwright browser pass ----------
-
-async function playwrightPass(pageUrls) {
-  if (NO_BROWSER || REPLAY) return null;
-  let chromium;
-  try {
-    ({ chromium } = await import('playwright'));
-  } catch {
-    console.warn('[browser] playwright not available — skipping browser pass');
-    return null;
-  }
-
-  const urls = pageUrls.slice(0, PLAYWRIGHT_MAX_PAGES);
-  const failures = [];
-  const consoleErrors = [];
-  const seenRequests = new Set();
-  let pagesVisited = 0;
-
-  const browser = await chromium.launch({ headless: true });
-  try {
-    const context = await browser.newContext({
-      userAgent: USER_AGENT,
-      ignoreHTTPSErrors: true,
-      extraHTTPHeaders: E2E_BYPASS_TOKEN ? { 'x-phl-e2e': E2E_BYPASS_TOKEN } : {},
-    });
-    // Abort analytics/monitoring noise so it can't flake the run.
-    await context.route('**/*', (route) => {
-      const u = route.request().url();
-      if (PLAYWRIGHT_BLOCKLIST.some((re) => re.test(u))) return route.abort().catch(() => {});
-      return route.continue().catch(() => {});
-    });
-
-    for (const pageUrl of urls) {
-      let attempt = 0;
-      let pageFailed = false;
-      while (attempt <= PLAYWRIGHT_RETRIES) {
-        attempt++;
-        const page = await context.newPage();
-        const pageFailures = [];
-        page.on('requestfailed', (req) => {
-          const u = req.url();
-          if (PLAYWRIGHT_BLOCKLIST.some((re) => re.test(u))) return;
-          if (seenRequests.has(`fail:${u}`)) return;
-          seenRequests.add(`fail:${u}`);
-          pageFailures.push({ page: pageUrl, url: u, status: 0, errorText: req.failure()?.errorText || 'request failed' });
-        });
-        page.on('response', (resp) => {
-          const u = resp.url();
-          if (PLAYWRIGHT_BLOCKLIST.some((re) => re.test(u))) return;
-          if (resp.status() < 400) return;
-          if (!isAssetUrl(u) && resp.request().resourceType() !== 'document') return;
-          if (seenRequests.has(`resp:${u}:${resp.status()}`)) return;
-          seenRequests.add(`resp:${u}:${resp.status()}`);
-          pageFailures.push({ page: pageUrl, url: u, status: resp.status(), errorText: `${resp.status()} ${resp.statusText()}` });
-        });
-        page.on('console', (msg) => {
-          if (msg.type() === 'error') consoleErrors.push({ page: pageUrl, text: msg.text().slice(0, 500) });
-        });
-        try {
-          const resp = await page.goto(pageUrl, { timeout: PLAYWRIGHT_PAGE_TIMEOUT_MS, waitUntil: 'load' });
-          if (resp && (resp.status() === 401 || resp.status() === 403)) {
-            throw new WafBlockedError(pageUrl, resp.status());
-          }
-          if (PLAYWRIGHT_SETTLE_MS > 0) await page.waitForTimeout(PLAYWRIGHT_SETTLE_MS);
-          // cap: stop waiting for stragglers
-          await page.close();
-          pagesVisited++;
-          failures.push(...pageFailures.slice(0, PLAYWRIGHT_MAX_ASSETS_PER_PAGE));
-          pageFailed = false;
-          break;
-        } catch (e) {
-          await page.close().catch(() => {});
-          if (e instanceof WafBlockedError) {
-            // ride out the edge block, then retry the page via the normal loop
-            if (await waitForEdgeUnblock()) {
-              console.warn(`[retry] browser pass: edge block cleared — retrying ${pageUrl}`);
-              attempt--;
-              continue;
-            }
-            failures.push({ page: pageUrl, url: pageUrl, status: e.status, errorText: `edge block outlasted ride-out budget: ${e.message}` });
-            pageFailed = true;
-            break;
-          }
-          pageFailed = true;
-          if (attempt <= PLAYWRIGHT_RETRIES) {
-            await sleep(RETRY_BACKOFF_MS * 2 ** (attempt - 1));
-            continue;
-          }
-          failures.push({ page: pageUrl, url: pageUrl, status: 0, errorText: `page load failed after ${attempt} attempt(s): ${e?.message || e}` });
-        }
-      }
-      if (pageFailed) console.warn(`[browser] page failed: ${pageUrl}`);
+      writeFileSync(join(REPORT_DIR, `har-${name}.json`), JSON.stringify({
+        scenario: name, target: TARGET, mode: REPLAY ? 'replay' : (RECORD ? 'record' : 'live'),
+        capturedAt: new Date().toISOString(), entryCount: sc.har.length, entries: sc.har,
+      }, null, 2));
+    } catch { /* ignore */ }
+    if (RECORD) {
+      saveFixture(name, 'requests', requestRecording);
+      saveFixture(name, 'responses', responseRecording);
+      console.log(`[record] wrote fixtures for ${name} → ${join(FIXTURE_DIR, name)}`);
     }
     await context.close();
-  } finally {
-    await browser.close().catch(() => {});
   }
-  return { pagesVisited, failures, consoleErrors };
 }
+function diag(extra) {
+  return { target: TARGET, scenario: currentScenario, hint: 'See requests.ndjson / responses.ndjson / console.ndjson / db-diff.json.', ...extra };
+}
+
+// Shared stronger no-loop / single-swap assertions used by JS+CSS scenarios.
+function assertNoLoop(reloads, assetReqs, sc, label) {
+  // The recovery now navigates THROUGH /api/public/post-publish-check?next=/
+  // (the endpoint purges, then 302s home). That hop is the purge itself,
+  // not a content reload — exclude it from the navigation budget.
+  const contentReloads = reloads.filter((r) => !/post-publish-check/.test(r.url));
+  record(`${label}: navigation count ≤ 2 (initial + at most one recovery)`, contentReloads.length <= 2,
+    `navigations=${contentReloads.length} (+${reloads.length - contentReloads.length} purge hop)`, diag({ reloads }));
+  // Build-mixing check: the ENTRY chunk (index-*.js) is the build
+  // fingerprint. The page legitimately loads several DIFFERENT index-*.js
+  // chunks per view (entry + preloaded + lazy LegacyApp), so per-name
+  // grouping false-positives. Instead, take the FIRST index-*.js request
+  // after each navigation as that document's fingerprint and require at
+  // most 2 distinct fingerprints across the scenario (old build + at most
+  // one swap to the fresh build). 3+ means the cache ping-pongs builds.
+  const navAts = reloads.map((r) => r.at).sort((a, b) => a - b);
+  const fingerprints = [];
+  for (let i = 0; i < navAts.length; i++) {
+    const from = navAts[i];
+    const to = navAts[i + 1] ?? Infinity;
+    const firstEntry = assetReqs.find((r) =>
+      r.at >= from && r.at < to && /\/assets\/index-[^?#]+\.js(?:[?#]|$)/i.test(r.url));
+    if (firstEntry) fingerprints.push(firstEntry.url.split('?')[0]);
+  }
+  const uniqueFingerprints = [...new Set(fingerprints)];
+  record(`${label}: hashed chunk URL set changes at most once`, uniqueFingerprints.length <= 2,
+    `builds=${uniqueFingerprints.length} navigations=${navAts.length} total=${assetReqs.length}`,
+    diag({ fingerprints: uniqueFingerprints }));
+  // No third navigation arrives in a follow-up window.
+  const lastAt = reloads[reloads.length - 1]?.at ?? 0;
+  const trailing = reloads.filter((r) => r.at > lastAt - 1).length;
+  record(`${label}: no trailing reload after recovery`, trailing <= 1,
+    `trailing=${trailing}`, diag({ reloads }));
+}
+
+// ---------- scenarios registry ----------
+const scenarios = {
+  'js-chunk-404': async (browser) => withContext(browser, 'js-chunk-404',
+    async ({ context, page, purgeCalls, autoPurgeLogs, reloads, assetReqs, sc }) => {
+    let armed = true, seen = null;
+    await context.route('**/*', async (route) => {
+      const url = route.request().url();
+      if (/post-publish-check/.test(url)) return route.fallback();
+      if (armed && ASSET_RE.test(url) && /\.(?:js|mjs)(?:[?#]|$)/.test(url)) {
+        seen = url; armed = false;
+        return route.fulfill({ status: 404, body: 'Not Found' });
+      }
+      return route.continue();
+    });
+    await gotoGuarded(page, TARGET);
+    await page.waitForTimeout(8000);
+    record('forced stale chunk observed', !!seen, seen || '', diag({ seen }));
+    record('post-publish-check called BEFORE reload',
+      purgeCalls.length >= 1 && purgeCalls[0].at <= (reloads[1]?.at ?? Infinity),
+      `calls=${purgeCalls.length} reloads=${reloads.length}`, diag({ purgeCalls, reloads }));
+    assertNoLoop(reloads, assetReqs, sc, 'js');
+    record('visible [auto-purge] console log', autoPurgeLogs.length >= 1,
+      autoPurgeLogs[0]?.slice(0, 120) ?? '', diag({ autoPurgeLogs }));
+  }),
+
+  'sourcemap-404': async (browser) => withContext(browser, 'sourcemap-404',
+    async ({ context, page, reloads, allConsole, assetReqs, sc }) => {
+    await context.route('**/*', async (route) => {
+      const url = route.request().url();
+      if (/post-publish-check/.test(url)) return route.fallback();
+      if (/\.map(?:[?#]|$)/.test(url)) return route.fulfill({ status: 404, body: 'Not Found' });
+      return route.continue();
+    });
+    await gotoGuarded(page, TARGET);
+    await page.waitForTimeout(5000);
+    record('sourcemap 404 does NOT cause reload', reloads.length === 1, `n=${reloads.length}`,
+      diag({ reloads, lastConsole: allConsole.slice(-20) }));
+    assertNoLoop(reloads, assetReqs, sc, 'sourcemap');
+  }),
+
+  'css-link-error': async (browser) => withContext(browser, 'css-link-error',
+    async ({ context, page, purgeCalls, autoPurgeLogs, reloads, assetReqs, sc }) => {
+    let armed = true, seen = null;
+    await context.route('**/*', async (route) => {
+      const url = route.request().url();
+      if (/post-publish-check/.test(url)) return route.fallback();
+      if (armed && ASSET_RE.test(url) && /\.css(?:[?#]|$)/.test(url)) {
+        seen = url; armed = false;
+        return route.fulfill({ status: 404, body: 'Not Found' });
+      }
+      return route.continue();
+    });
+    await gotoGuarded(page, TARGET);
+    await page.waitForTimeout(8000);
+    if (seen) {
+      record('css stale link → purge BEFORE reload',
+        purgeCalls.length >= 1 && purgeCalls[0].at <= (reloads[1]?.at ?? Infinity),
+        `calls=${purgeCalls.length} reloads=${reloads.length}`, diag({ purgeCalls, reloads, seen }));
+      assertNoLoop(reloads, assetReqs, sc, 'css');
+      record('visible [auto-purge] console log for css', autoPurgeLogs.length >= 1, '', diag({ autoPurgeLogs }));
+    } else {
+      record('css asset request observed', false, 'no CSS asset request seen', diag({}));
+    }
+  }),
+
+  'cross-tab-lock': async (browser) => withContext(browser, 'cross-tab-lock',
+    async ({ context, page, purgeCalls }) => {
+    let armed = true;
+    await context.route('**/*', async (route) => {
+      const url = route.request().url();
+      if (/post-publish-check/.test(url)) return route.fallback();
+      if (armed && ASSET_RE.test(url) && /\.(?:js|mjs)(?:[?#]|$)/.test(url)) {
+        armed = false;
+        return route.fulfill({ status: 404, body: 'Not Found' });
+      }
+      return route.continue();
+    });
+    await gotoGuarded(page, TARGET);
+    await page.waitForTimeout(6000);
+    const before = purgeCalls.length;
+    const dbMid = await readBuildState();
+    const tab2 = await context.newPage();
+    await tab2.goto(TARGET, { waitUntil: 'domcontentloaded' }).catch(() => {});
+    await tab2.waitForTimeout(4000);
+    record('cross-tab lock: ONE purge per build id across tabs',
+      purgeCalls.length === before,
+      `before=${before} after=${purgeCalls.length}`,
+      diag({ purgeCallsBefore: before, purgeCallsAfter: purgeCalls.length, allCalls: purgeCalls }));
+    // Tightened DB assertion: when dedup kicks in, lock/in-flight fields MUST NOT mutate again.
+    const dbAfter = await readBuildState();
+    if (dbMid && dbAfter) {
+      const diffs = assertLockStateUnchanged(dbMid, dbAfter);
+      record('cross-tab dedup: lock/in-flight DB fields unchanged after 2nd tab',
+        diffs.length === 0, diffs.length ? `diffs=${diffs.length}` : 'none',
+        diag({ diffs, before: dbMid, after: dbAfter, fields: LOCK_FIELDS }));
+    } else {
+      record('cross-tab dedup: DB lock-state assertion (skipped — no Firebase admin)', true, 'skipped');
+    }
+  }),
+
+  'network-fail-fallback': async (browser) => withContext(browser, 'network-fail-fallback',
+    async ({ context, page, reloads, assetReqs, sc }) => {
+    await context.unroute('**/api/public/post-publish-check*');
+    await context.route('**/api/public/post-publish-check*', (route) => route.abort('failed'));
+    let armed = true;
+    await context.route('**/*', async (route) => {
+      const url = route.request().url();
+      if (/post-publish-check/.test(url)) return route.fallback();
+      if (armed && ASSET_RE.test(url) && /\.(?:js|mjs)(?:[?#]|$)/.test(url)) {
+        armed = false;
+        return route.fulfill({ status: 404, body: 'Not Found' });
+      }
+      return route.continue();
+    });
+    await gotoGuarded(page, TARGET);
+    await page.waitForTimeout(7000);
+    record('aborted purge does NOT cause reload loop',
+      reloads.filter((r) => !/post-publish-check/.test(r.url)).length <= 2,
+      `n=${reloads.filter((r) => !/post-publish-check/.test(r.url)).length} (+${reloads.length - reloads.filter((r) => !/post-publish-check/.test(r.url)).length} purge hop)`,
+      diag({ reloads }));
+    assertNoLoop(reloads, assetReqs, sc, 'netfail');
+  }),
+};
 
 // ---------- main ----------
-
-async function main() {
-  const startedAt = nowIso();
-  ensureDirSync(ARTIFACT_DIR);
-  console.log(`[e2e-stale-assets] target=${TARGET} mode=${REPLAY ? 'replay' : 'live'} concurrency=${CONCURRENCY} browser=${NO_BROWSER ? 'off' : 'on'}`);
-  console.log(`[e2e-stale-assets] artifacts → ${rel(ARTIFACT_DIR)}`);
-
-  let pages = null;
-  let assetResults = [];
-  let staleAssets = [];
-  let browserReport = null;
-
-  if (REPLAY) {
-    const { results, stale } = await replay();
-    assetResults = results;
-    staleAssets = stale;
-  } else {
-    pages = await crawl();
-    console.log(`[crawl] done: ${pages.size} pages`);
-
-    // WAF preflight: if the origin is already blocking before we burn a
-    // browser launch, ride out the block window with the shared budget first.
-    // Historical windows last 3–9 minutes; waits at 0/60/120/180s cover the
-    // common case and defer to the shared budget for the rest.
-    const wafPreflight = async () => {
-      const waits = [0, 60_000, 120_000, 180_000];
-      for (let i = 0; i < waits.length; i++) {
-        if (waits[i]) {
-          console.warn(`[waf] preflight blocked — waiting ${waits[i] / 1000}s before retry ${i}/${waits.length - 1}`);
-          await sleep(waits[i]);
-        }
-        try {
-          await fetchWithRetry(TARGET, { retries: 0 });
-          return true;
-        } catch (e) {
-          if (!(e instanceof WafBlockedError)) throw e;
-        }
-      }
-      return false;
-    };
-    const preflightOk = await wafPreflight();
-    if (!preflightOk) {
-      console.warn('[waf] origin still blocking after preflight — running asset audit only (browser pass skipped, run still fails on stale assets)');
-    }
-
-    const manifestSeeds = await seedFromManifest();
-    const assetMap = collectAssets(pages, manifestSeeds);
-    console.log(`[assets] ${assetMap.size} unique asset URLs (${manifestSeeds.length} from manifest)`);
-    const audit = await auditAssets(assetMap, true);
-    assetResults = audit.results;
-    staleAssets = audit.stale;
-
-    // CSS deep-dive: url() references inside stylesheets (fonts/bg images)
-    const cssDeep = await auditCssInternals(assetResults);
-    if (cssDeep.results.length) {
-      assetResults = assetResults.concat(cssDeep.results);
-      staleAssets = staleAssets.concat(cssDeep.stale);
-      console.log(`[css] deep-dive audited ${cssDeep.results.length} nested refs, ${cssDeep.stale.length} stale`);
-    }
-
-    if (preflightOk) {
-      const pageUrls = [...pages.entries()]
-        .filter(([, e]) => e.status >= 200 && e.status < 400)
-        .map(([u]) => u);
-      console.log(`[browser] visiting ${Math.min(pageUrls.length, PLAYWRIGHT_MAX_PAGES)} pages with Chromium…`);
-      browserReport = await playwrightPass(pageUrls);
-      if (browserReport) {
-        console.log(`[browser] done: ${browserReport.pagesVisited} pages, ${browserReport.failures.length} failures, ${browserReport.consoleErrors.length} console errors`);
-        for (const ce of browserReport.consoleErrors.slice(0, 200)) {
-          appendJsonLine(path.join(ARTIFACT_DIR, 'console.ndjson'), { ts: nowIso(), ...ce });
-        }
-      }
-    }
-  }
-
-  const summary = writeReports({ pages, assetResults, staleAssets, browserReport, startedAt });
-  writeGithubSummary(summary, staleAssets, browserReport);
-  await pruneArtifacts();
-
-  const browserFailures = browserReport?.failures?.length || 0;
-  if (staleAssets.length || browserFailures) {
-    console.error(`\nFAIL: ${staleAssets.length} stale asset(s), ${browserFailures} browser failure(s). See ${rel(path.join(ARTIFACT_DIR, 'report.txt'))}`);
+async function run() {
+  if (LIST) { console.log(Object.keys(scenarios).join('\n')); return; }
+  if (ONLY && !scenarios[ONLY]) {
+    console.error(`unknown scenario "${ONLY}". Available: ${Object.keys(scenarios).join(', ')}`);
     process.exit(2);
   }
-  console.log(`\nOK: no stale assets (${summary.assetsTotal} audited across ${summary.pages} pages${browserReport ? `, ${browserReport.pagesVisited} browser-checked` : ''}).`);
+  const dbBefore = await readBuildState();
+  const dbSnapshots = [{ at: Date.now(), label: 'run-start', data: dbBefore || {} }];
+  const browser = await chromium.launch({ headless: true });
+  // Ride out short WAF/rate-limit windows before the scenario loop so a
+  // transient 403 at run start does not sink an otherwise healthy run.
+  await wafPreflight(browser);
+  // Deterministic mode: stable scenario ordering so CI runs are comparable.
+  const toRun = ONLY
+    ? [ONLY]
+    : (DETERMINISTIC ? [...Object.keys(scenarios)].sort() : Object.keys(scenarios));
+  if (DETERMINISTIC) console.log(`[deterministic] scenario order: ${toRun.join(', ')}`);
+  // WAF-blocked scenarios are recorded as skips so the report stays readable —
+  // but a run that could not measure production must NOT be green (11-07→11-10
+  // a WAF 403 masked a real css-link-error regression for 3 days). Counted here
+  // and converted to a non-zero exit after the loop. Manual dispatches may
+  // tolerate skips with E2E_ALLOW_WAF_SKIP=1.
+  let wafSkipped = 0;
+  for (const name of toRun) {
+    let lastErr = null;
+    for (let attempt = 0; attempt <= RETRIES; attempt++) {
+      // Reset state for this scenario before each attempt so retries are clean.
+      perScenario.delete(name);
+      for (let i = results.length - 1; i >= 0; i--) if (results[i].scenario === name) results.splice(i, 1);
+      const sc = ensureScenario(name);
+      sc.attempts = attempt + 1;
+      const hadAssertionFailureBefore = (process.exitCode === 1);
+      try {
+        await scenarios[name](browser);
+        lastErr = null;
+        const scNow = ensureScenario(name);
+        if (scNow.failures.length > 0) {
+          console.log(`[no-retry] [${name}] assertion failures present (${scNow.failures.length}) — deterministic, not retrying`);
+          break;
+        }
+        break; // success
+      } catch (err) {
+        if (err && err.wafBlocked) {
+          // Don't skip on first contact — burn the shared block budget waiting
+          // for the edge to clear, then re-run the scenario through the normal
+          // attempt loop (state reset happens at the top). Terminates because
+          // the budget only decreases; when it's gone we skip exactly as before.
+          if (await waitForEdgeUnblock()) {
+            console.warn(`[retry] [${name}] edge block cleared — re-running scenario (budget left: ${Math.round(blockBudgetLeftMs / 1000)}s)`);
+            attempt--;
+            continue;
+          }
+          console.warn(`[skip] [${name}] ${err.message}`);
+          console.log(`::warning::stale-assets [${name}] skipped — edge block outlasted the ${Math.round(BLOCK_BUDGET_MS / 1000)}s ride-out budget (environment, not app code)`);
+          record('runner reachable (edge not blocking CI)', true, `SKIPPED: ${err.message}`);
+          wafSkipped++;
+          lastErr = null;
+          break;
+        }
+        lastErr = err;
+        const transient = isTransient(err);
+        ensureScenario(name).transientErrors.push({ attempt: attempt + 1, transient, message: String(err?.message || err) });
+        if (!transient || attempt === RETRIES) {
+          console.error(`[${name}] failed${transient ? ' (transient, retries exhausted)' : ''}: ${err?.message || err}`);
+          record('scenario crashed', false, String(err?.message || err).slice(0, 200), { error: String(err?.stack || err), transient });
+          break;
+        }
+        console.warn(`[retry] [${name}] transient error on attempt ${attempt + 1}/${RETRIES + 1}: ${err?.message || err} — retrying in ${RETRY_DELAY_MS}ms`);
+        await sleep(RETRY_DELAY_MS);
+        if (!hadAssertionFailureBefore) process.exitCode = 0;
+      }
+    }
+    // Per-scenario DB snapshot for the lock timeline.
+    const snap = await readBuildState();
+    const entry = { at: Date.now(), label: `after:${name}`, data: snap || {} };
+    dbSnapshots.push(entry);
+    const sc = ensureScenario(name);
+    sc.dbSnapshots.push(entry);
+    // Build live-vs-replay diff once per scenario (REPLAY only).
+    sc.replayDiff = diffLiveVsReplay(name);
+    // Threshold-based assertion: fail only on meaningful regressions.
+    if (REPLAY && sc.replayDiff) {
+      const t = sc.replayDiff.thresholds;
+      const ok = t.breached.length === 0;
+      currentScenario = name;
+      record('live-vs-replay within configured thresholds', ok,
+        ok ? `mismatches=${t.observed.mismatchCount} statusΔ=${t.observed.statusMismatchCount} maxBodyΔ=${t.observed.maxBodyDelta}B`
+           : t.breached.join('; '),
+        ok ? null : { thresholds: t, sample: sc.replayDiff.mismatches.slice(0, 10) });
+    }
+
+  }
+  await browser.close();
+  // A WAF-blocked run measured nothing — fail the job instead of reporting a
+  // false green. Opt out per-run with E2E_ALLOW_WAF_SKIP=1 (manual dispatch).
+  if (wafSkipped > 0 && !process.env.E2E_ALLOW_WAF_SKIP) {
+    console.error(`[fail] ${wafSkipped} scenario(s) skipped by WAF — run measured nothing; failing instead of reporting a false green (set E2E_ALLOW_WAF_SKIP=1 to tolerate)`);
+    process.exitCode = 1;
+  }
+  const dbAfter = await readBuildState();
+  const lockTimeline = buildLockTimeline(dbSnapshots);
+  writeFileSync(join(REPORT_DIR, 'db-diff.json'),
+    JSON.stringify({ before: dbBefore, after: dbAfter, lockFieldsTracked: LOCK_FIELDS, snapshots: dbSnapshots, lockTimeline }, null, 2));
+
+  const failed = results.filter((r) => !r.ok);
+
+  // Concise per-scenario summary for CI logs.
+  const perScenarioSummary = [...perScenario.entries()].map(([name, s]) => ({
+    scenario: name,
+    failures: s.failures.length,
+    failureStages: s.failures.map((f) => f.stage),
+    purgeCallCount: s.purgeCalls.length,
+    buildIds: [...s.buildIds],
+    uniqueHashedJsUrls: [...s.hashedJsUrls],
+    navigations: s.reloads.length,
+    topRequests: s.topRequests,
+    replayDiff: s.replayDiff,
+  }));
+
+  const summary = {
+    target: TARGET,
+    finishedAt: new Date().toISOString(),
+    total: results.length, failed: failed.length, passed: results.length - failed.length,
+    scenarios: [...new Set(results.map((r) => r.scenario))],
+    perScenario: perScenarioSummary,
+    lockTimeline,
+    cli: { ONLY, RECORD, REPLAY, FIXTURE_DIR, RETRIES, RETRY_DELAY_MS, DETERMINISTIC,
+      MAX_MISMATCHES, MAX_STATUS_MISMATCHES, MAX_BODY_BYTE_DELTA,
+      REDACT_BODIES, HASH_BODIES, MAX_BODY_BYTES, REDACT_HEADERS: [...REDACT_HEADERS], REDACT_URL_PARAMS: [...REDACT_URL_PARAMS],
+      NORMALIZE_HEADERS, NORMALIZE_IGNORE_HEADERS: [...NORMALIZE_IGNORE_HEADERS],
+      ARTIFACTS_ON_FAILURE_ONLY },
+
+    results,
+  };
+  writeFileSync(join(REPORT_DIR, 'report.json'), JSON.stringify(summary, null, 2));
+
+  const txt = [
+    `E2E stale-assets — ${TARGET}`,
+    `finished: ${summary.finishedAt}`,
+    `total: ${summary.total}   passed: ${summary.passed}   failed: ${summary.failed}`,
+    ONLY ? `scenario filter: ${ONLY}` : '',
+    RECORD ? 'mode: RECORD' : (REPLAY ? 'mode: REPLAY' : ''),
+    '',
+    '── per-scenario summary ──',
+    ...perScenarioSummary.map((s) =>
+      `[${s.scenario}] failures=${s.failures} purgeCalls=${s.purgeCallCount} buildIds=${s.buildIds.join(',') || '-'} navs=${s.navigations} uniqueJs=${s.uniqueHashedJsUrls.length}`
+      + (s.failureStages.length ? `\n   FAIL: ${s.failureStages.join(' | ')}` : '')
+      + (s.topRequests.length ? `\n   top: ${s.topRequests.slice(0, 5).map((r) => r.method + ' ' + r.url).join('\n        ')}` : '')
+    ),
+    '',
+    '── assertions ──',
+    ...results.map((r) => `${r.ok ? 'PASS' : 'FAIL'}  [${r.scenario}]  ${r.stage}${r.extra ? '  — ' + r.extra : ''}`),
+    '',
+    failed.length ? 'See requests.ndjson, responses.ndjson, console.ndjson, db-diff.json, screenshots/.' : '',
+  ].filter(Boolean).join('\n');
+  writeFileSync(join(REPORT_DIR, 'report.txt'), txt);
+
+  const xml = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    `<testsuite name="e2e-stale-assets" tests="${summary.total}" failures="${summary.failed}" time="0">`,
+    ...results.map((r) => {
+      const cls = r.scenario.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const nm = r.stage.replace(/[^a-zA-Z0-9._ -]/g, '_');
+      if (r.ok) return `  <testcase classname="${cls}" name="${nm}"/>`;
+      const msg = (r.extra || 'failed').replace(/[<&>]/g, '');
+      const body = JSON.stringify(r.diagnostics || {}).replace(/]]>/g, ']]]]><![CDATA[>');
+      return `  <testcase classname="${cls}" name="${nm}"><failure message="${msg}"><![CDATA[${body}]]></failure></testcase>`;
+    }),
+    '</testsuite>',
+  ].join('\n');
+  writeFileSync(join(REPORT_DIR, 'junit.xml'), xml);
+
+  // ---------- self-contained HTML report ----------
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const dbHighlights = (() => {
+    if (!dbBefore && !dbAfter) return '<p class="muted">No Firestore DB diff captured (FIREBASE_SERVICE_ACCOUNT_JSON not set).</p>';
+    const keys = new Set([...Object.keys(dbBefore || {}), ...Object.keys(dbAfter || {})]);
+    const rows = [...keys].sort().map((k) => {
+      const a = JSON.stringify((dbBefore || {})[k] ?? null);
+      const b = JSON.stringify((dbAfter || {})[k] ?? null);
+      const changed = a !== b;
+      const lock = LOCK_FIELDS.includes(k);
+      return `<tr class="${changed ? 'diff' : ''}"><td>${esc(k)}${lock ? ' <span class="pill">lock</span>' : ''}</td><td><code>${esc(a)}</code></td><td><code>${esc(b)}</code></td></tr>`;
+    }).join('');
+    return `<table class="tbl"><thead><tr><th>field</th><th>before</th><th>after</th></tr></thead><tbody>${rows}</tbody></table>`;
+  })();
+  // Collected as we render each scenario so the global "all bundles" button
+  // can export every matched/mismatched pair across scenarios in one click.
+  const allBundles = [];
+  const scCards = perScenarioSummary.map((s) => {
+
+    const meta = perScenario.get(s.scenario) || {};
+    const attempts = meta.attempts || 1;
+    const transient = (meta.transientErrors || []).length;
+    const asserts = results.filter((r) => r.scenario === s.scenario);
+    const purgeRes = (meta.purgeCalls || []).slice(0, 5).map((c) => `<li><code>${esc(new Date(c.at).toISOString())}</code> → <code>${esc(c.url)}</code></li>`).join('');
+    const reloadList = (meta.reloads || []).map((r) => `<li><code>${esc(new Date(r.at).toISOString())}</code> → ${esc(r.url)}</li>`).join('');
+    const uniqueJs = s.uniqueHashedJsUrls.map((u) => `<li><code>${esc(u)}</code></li>`).join('');
+    const assertRows = asserts.map((r) => `<tr class="${r.ok ? 'pass' : 'fail'}"><td>${r.ok ? '✅' : '❌'}</td><td>${esc(r.stage)}</td><td>${esc(r.extra || '')}</td></tr>`).join('');
+    const failBadge = s.failures > 0 ? `<span class="badge bad">${s.failures} FAIL</span>` : '<span class="badge ok">PASS</span>';
+    return `<section class="card"><header><h3>${esc(s.scenario)} ${failBadge}</h3>
+      <div class="kv">attempts=${attempts} · transient=${transient} · purge=${s.purgeCallCount} · navs=${s.navigations} · uniqueJs=${s.uniqueHashedJsUrls.length} · builds=${s.buildIds.join(', ') || '—'}</div></header>
+      <details open><summary>Assertions (${asserts.length})</summary><table class="tbl"><thead><tr><th></th><th>stage</th><th>detail</th></tr></thead><tbody>${assertRows}</tbody></table></details>
+      <details><summary>Purge calls (${(meta.purgeCalls || []).length})</summary><ul>${purgeRes || '<li class="muted">none</li>'}</ul></details>
+      <details><summary>Navigations / no-loop evidence (${(meta.reloads || []).length})</summary><ul>${reloadList || '<li class="muted">none</li>'}</ul>
+        <p>Unique hashed JS URLs: ${s.uniqueHashedJsUrls.length}</p><ul>${uniqueJs}</ul></details>
+      <details><summary>HAR trace</summary><p><a href="har-${esc(s.scenario)}.json">har-${esc(s.scenario)}.json</a> · ${(meta.har || []).length} entries</p></details>
+      ${(() => {
+        const d = meta.replayDiff;
+        if (!d) return REPLAY ? '<details><summary>Live vs replay</summary><p class="muted">no diff produced</p></details>' : '';
+        const pt = d.purgeTiming;
+        const ptRows = pt.liveRelMs.map((t, i) => `<tr><td>${i}</td><td><code>${pt.fixtureRelMs[i] ?? '—'}</code> ms</td><td><code>${t}</code> ms</td><td><code>${pt.deltaMs[i] ?? '—'}</code> ms</td></tr>`).join('')
+          || '<tr><td colspan="4" class="muted">no purge calls observed</td></tr>';
+        const renderSide = (label, side) => {
+          if (!side) return `<div class="side"><b>${label}:</b> <span class="muted">— not present —</span></div>`;
+          const hdrs = side.headers ? Object.entries(side.headers).map(([k, v]) => `${esc(k)}: ${esc(v)}`).join('\n') : '(none)';
+          const body = side.body == null ? '(none)' : esc(String(side.body));
+          const chain = side.har?.redirectChain?.length
+            ? `<div><b>Redirect chain (${side.har.redirectChain.length}):</b><ol>${side.har.redirectChain.map((u) => `<li><code>${esc(u)}</code></li>`).join('')}</ol></div>` : '';
+          const reqHdrs = side.har?.requestHeaders ? Object.entries(side.har.requestHeaders).map(([k, v]) => `${esc(k)}: ${esc(v)}`).join('\n') : null;
+          const timing = side.har?.durationMs != null ? `<div class="muted">duration ${side.har.durationMs}ms · resourceType ${esc(side.har.resourceType || '')}${side.har.fromCache ? ' · from cache' : ''}${side.har.failed ? ' · failed ' + esc(side.har.failed) : ''}</div>` : '';
+          return `<div class="side"><b>${label}</b> · status <code>${esc(side.status)}</code> · ${side.bodyBytes ?? (side.body ? side.body.length : 0)}B
+            ${timing}
+            ${reqHdrs ? `<details><summary>request headers</summary><pre>${reqHdrs}</pre></details>` : ''}
+            <details><summary>response headers</summary><pre>${hdrs}</pre></details>
+            <details><summary>response body</summary><pre>${body}</pre></details>
+            ${chain}</div>`;
+        };
+        const items = d.items || [];
+        const itemRows = items.map((it) => {
+          const cls = it.match ? 'pass' : 'fail';
+          const tag = it.match ? '✅ match' : `❌ ${esc(it.reasons.join(', '))}`;
+          const dataKinds = esc((it.kinds && it.kinds.length ? it.kinds : ['match']).join(' '));
+          return `<details class="drill ${cls}" data-match="${it.match ? '1' : '0'}" data-rtype="${esc(it.resourceType || 'other')}" data-kinds="${dataKinds}" data-redacted="${it.bodyRedacted ? '1' : '0'}"><summary>${tag} · <code>${esc(it.url)}</code> [#${it.index}] <span class="pill">${esc(it.resourceType || 'other')}</span>${it.bodyRedacted ? ' <span class="pill">redacted</span>' : ''}</summary>
+            <div class="pair">${renderSide('fixture', it.fixture)}${renderSide('live', it.live)}</div>
+          </details>`;
+        }).join('') || '<p class="muted">no items captured</p>';
+        const tBadge = d.thresholds.breached.length
+          ? `<span class="badge bad">thresholds breached: ${esc(d.thresholds.breached.join('; '))}</span>`
+          : `<span class="badge ok">within thresholds (max ${d.thresholds.maxMismatches}/${d.thresholds.maxStatusMismatches}/${d.thresholds.maxBodyByteDelta}B)</span>`;
+        // Resource-type options for the filter dropdown.
+        const rtypes = [...new Set(items.map((it) => it.resourceType || 'other'))].sort();
+        const rtypeOpts = ['<option value="">all resource types</option>',
+          ...rtypes.map((r) => `<option value="${esc(r)}">${esc(r)}</option>`)].join('');
+        const scId = esc(s.scenario);
+        // Embed mismatch-bundle data so the in-page button can export without round-tripping.
+        // Validate the shape BEFORE embedding so a regression in item enrichment fails the run
+        // instead of producing a malformed download.
+        const bundleObj = {
+          schemaVersion: BUNDLE_SCHEMA_VERSION,
+          scenario: s.scenario,
+          generatedAt: new Date().toISOString(),
+          redaction: { redactBodies: REDACT_BODIES, hashBodies: HASH_BODIES, maxBodyBytes: MAX_BODY_BYTES, redactHeaders: [...REDACT_HEADERS], redactUrlParams: [...REDACT_URL_PARAMS] },
+          thresholds: d.thresholds,
+          summary: d.summary,
+          items,
+        };
+        const bv = validateMismatchBundle(bundleObj);
+        if (!bv.ok) {
+          throw new Error(`per-scenario bundle schema validation failed for "${s.scenario}":\n  - ${bv.errors.slice(0, 8).join('\n  - ')}`);
+        }
+        const bundle = JSON.stringify(bundleObj);
+        const bundleB64 = Buffer.from(bundle, 'utf8').toString('base64');
+        allBundles.push(bundleObj);
+
+
+        return `<details ${d.summary.mismatchCount ? 'open' : ''}><summary>Live vs replay (matches=${d.summary.matchCount}, mismatches=${d.summary.mismatchCount}, statusΔ=${d.summary.statusMismatchCount}, maxBodyΔ=${d.summary.maxBodyDelta}B)</summary>
+          <p>${tBadge}</p>
+          <h4>Purge call timing (relative to first purge per side)</h4>
+          <table class="tbl"><thead><tr><th>#</th><th>fixture</th><th>live</th><th>Δ</th></tr></thead><tbody>${ptRows}</tbody></table>
+          <h4>Per-request drilldown (${items.length})</h4>
+          <div class="filters" data-scope="${scId}">
+            <label>match: <select data-filter="match"><option value="">all</option><option value="0">mismatches only</option><option value="1">matches only</option></select></label>
+            <label>resource: <select data-filter="rtype">${rtypeOpts}</select></label>
+            <label>kind: <select data-filter="kind"><option value="">all kinds</option><option value="status">status</option><option value="body">body bytes</option><option value="headers">headers</option><option value="only-live">only-live</option><option value="only-fixture">only-fixture</option></select></label>
+            <label>redacted: <select data-filter="redacted"><option value="">any</option><option value="1">redacted only</option><option value="0">non-redacted only</option></select></label>
+            <button type="button" data-bundle="${scId}" data-bundle-b64="${bundleB64}">⬇ Download mismatch bundle</button>
+            <span class="muted" data-visible-count></span>
+          </div>
+          <div class="drilldown" data-drilldown="${scId}">${itemRows}</div>
+          ${d.truncated ? '<p class="muted">(mismatch summary truncated to first 40)</p>' : ''}
+        </details>`;
+      })()}
+
+
+      <details><summary>Screenshot</summary><p><a href="screenshots/${esc(s.scenario)}.png"><img src="screenshots/${esc(s.scenario)}.png" alt="${esc(s.scenario)}" loading="lazy" style="max-width:100%;border:1px solid #444"/></a></p></details>
+    </section>`;
+  }).join('\n');
+  // Build DB lock timeline HTML.
+  const lockTimelineHtml = (() => {
+    if (!lockTimeline.length) return '<p class="muted">No lock-field transitions captured (Firebase admin not available or no changes).</p>';
+    const rows = lockTimeline.map((e) => `<tr><td><code>${esc(new Date(e.at).toISOString())}</code></td><td>${esc(e.label)}</td><td><span class="pill">${esc(e.field)}</span></td><td><code>${esc(JSON.stringify(e.from))}</code></td><td><code>${esc(JSON.stringify(e.to))}</code></td></tr>`).join('');
+    return `<table class="tbl"><thead><tr><th>timestamp</th><th>checkpoint</th><th>field</th><th>from</th><th>to</th></tr></thead><tbody>${rows}</tbody></table>`;
+  })();
+  const overall = failed.length ? 'FAILED' : 'PASSED';
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>E2E stale-assets — ${esc(overall)}</title>
+<style>
+:root{color-scheme:dark light;font-family:ui-sans-serif,system-ui,sans-serif}
+body{margin:0;padding:24px;background:#0f172a;color:#e2e8f0;line-height:1.45}
+h1,h2,h3{margin:.4em 0}.muted{color:#94a3b8}
+header.top{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;border-bottom:1px solid #334155;padding-bottom:12px;margin-bottom:16px}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600}
+.badge.ok{background:#065f46;color:#a7f3d0}.badge.bad{background:#7f1d1d;color:#fecaca}
+.pill{background:#1e293b;color:#fbbf24;padding:1px 6px;border-radius:6px;font-size:11px;margin-left:4px}
+.card{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.card header h3{display:flex;gap:10px;align-items:center}
+.kv{color:#94a3b8;font-size:13px;margin-top:4px}
+details{margin-top:8px}summary{cursor:pointer;color:#cbd5e1;font-weight:600}
+table.tbl{border-collapse:collapse;width:100%;margin-top:6px;font-size:13px}
+.tbl th,.tbl td{border:1px solid #334155;padding:4px 8px;text-align:left;vertical-align:top}
+.tbl tr.pass td:first-child{color:#34d399}.tbl tr.fail td{background:#3f1d1d}
+.tbl tr.diff td{background:#3b2a16}
+code{background:#0f172a;padding:1px 4px;border-radius:4px;font-size:12px;word-break:break-all}
+pre{background:#0b1220;border:1px solid #334155;padding:8px;border-radius:6px;font-size:12px;max-height:240px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+.drilldown{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.drill{border:1px solid #334155;border-radius:6px;padding:6px 10px;background:#0b1220}
+.drill.pass{border-left:3px solid #10b981}.drill.fail{border-left:3px solid #ef4444}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.pair .side{background:#111827;border:1px solid #334155;border-radius:6px;padding:8px}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0;font-size:13px}
+.filters select,.filters button{background:#0b1220;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:4px 8px;font-size:13px}
+.filters button{cursor:pointer}.filters button:hover{background:#1e293b}
+a{color:#7dd3fc}
+</style>
+<script>${REPORT_CLIENT_SCRIPT}</script></head><body>
+
+
+<header class="top">
+  <h1>E2E stale-assets <span class="badge ${failed.length ? 'bad' : 'ok'}">${esc(overall)}</span></h1>
+  <div class="muted">target <code>${esc(TARGET)}</code> · finished ${esc(summary.finishedAt)} · ${summary.passed}/${summary.total} passed${ONLY ? ` · filter <code>${esc(ONLY)}</code>` : ''}${REPLAY ? ' · <b>REPLAY</b>' : (RECORD ? ' · <b>RECORD</b>' : '')} · retries=${RETRIES}</div>
+  ${(() => {
+    if (!allBundles.length) return '';
+    const globalBundle = {
+      schemaVersion: BUNDLE_SCHEMA_VERSION,
+      generatedAt: new Date().toISOString(),
+      redaction: { redactBodies: REDACT_BODIES, hashBodies: HASH_BODIES, maxBodyBytes: MAX_BODY_BYTES, redactHeaders: [...REDACT_HEADERS], redactUrlParams: [...REDACT_URL_PARAMS] },
+      scenarios: allBundles,
+    };
+    const gv = validateGlobalMismatchBundle(globalBundle);
+    if (!gv.ok) throw new Error(`global bundle schema validation failed:\n  - ${gv.errors.slice(0, 8).join('\n  - ')}`);
+    const b64 = Buffer.from(JSON.stringify(globalBundle), 'utf8').toString('base64');
+    const btnStyle = 'background:#0b1220;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:13px;margin-left:8px';
+    return `<div style="margin-left:auto;display:flex;gap:6px">
+      <button type="button" data-global-bundle="1" data-global-bundle-b64="${b64}" style="${btnStyle}">⬇ Download mismatch bundle (all scenarios)</button>
+      <button type="button" data-global-zip="1" data-global-bundle-b64="${b64}" style="${btnStyle}">⬇ Download as ZIP</button>
+    </div>`;
+  })()}
+</header>
+
+
+<section class="card"><h2>Per-scenario summary</h2>${scCards || '<p class="muted">No scenarios ran.</p>'}</section>
+<section class="card"><h2>DB lock timeline (Firestore <code>_meta/build_state</code>)</h2>${lockTimelineHtml}</section>
+<section class="card"><h2>DB diff (before vs after) — lock fields highlighted</h2>${dbHighlights}</section>
+<section class="card"><h2>Artifacts</h2><ul>
+  <li><a href="report.json">report.json</a></li><li><a href="report.txt">report.txt</a></li>
+  <li><a href="junit.xml">junit.xml</a></li><li><a href="db-diff.json">db-diff.json</a></li>
+  <li><a href="requests.ndjson">requests.ndjson</a></li><li><a href="responses.ndjson">responses.ndjson</a></li>
+  <li><a href="console.ndjson">console.ndjson</a></li>
+</ul></section>
+</body></html>`;
+  writeFileSync(join(REPORT_DIR, 'report.html'), html);
+
+  // --artifacts-on-failure-only: prune optional artifacts when the run is fully clean.
+  // Always-kept: report.json, report.txt, junit.xml, db-diff.json (small, CI-friendly).
+  // --prune-dry-run / --dry-run: log decisions without touching the filesystem.
+  const meaningfulFailure = failed.length > 0
+    || perScenarioSummary.some((s) => s.replayDiff && s.replayDiff.thresholds && s.replayDiff.thresholds.breached.length > 0);
+  const alwaysKept = ['report.json', 'report.txt', 'junit.xml', 'db-diff.json'].map((n) => join(REPORT_DIR, n));
+  const optional = [
+    join(REPORT_DIR, 'report.html'),
+    join(REPORT_DIR, 'requests.ndjson'),
+    join(REPORT_DIR, 'responses.ndjson'),
+    join(REPORT_DIR, 'console.ndjson'),
+    join(REPORT_DIR, 'screenshots'),
+    ...perScenarioSummary.map((s) => join(REPORT_DIR, `har-${s.scenario}.json`)),
+    // Fixtures are only "optional" in non-RECORD mode (RECORD writes them as the point of the run).
+    ...(RECORD ? [] : perScenarioSummary.map((s) => join(FIXTURE_DIR, s.scenario))),
+  ];
+  const outcome = meaningfulFailure ? 'failure' : 'success';
+  if (ARTIFACTS_ON_FAILURE_ONLY || PRUNE_DRY_RUN) {
+    const wouldDelete = (ARTIFACTS_ON_FAILURE_ONLY && !meaningfulFailure)
+      ? optional.filter((p) => existsSync(p))
+      : [];
+    const wouldKeep = [...alwaysKept, ...optional.filter((p) => existsSync(p) && !wouldDelete.includes(p))];
+    const tag = PRUNE_DRY_RUN ? '[artifacts-prune][dry-run]' : '[artifacts-on-failure-only]';
+    console.log(`${tag} outcome=${outcome} artifacts-on-failure-only=${ARTIFACTS_ON_FAILURE_ONLY} dry-run=${PRUNE_DRY_RUN}`);
+    for (const p of wouldKeep) console.log(`${tag}   keep:   ${p}`);
+    for (const p of wouldDelete) console.log(`${tag}   delete: ${p}`);
+    if (!PRUNE_DRY_RUN && wouldDelete.length) {
+      let pruned = 0;
+      for (const p of wouldDelete) {
+        try { rmSync(p, { recursive: true, force: true }); pruned++; } catch { /* ignore */ }
+      }
+      console.log(`${tag} pruned ${pruned}/${wouldDelete.length} optional artifact path(s)`);
+    } else if (PRUNE_DRY_RUN) {
+      console.log(`${tag} no filesystem changes made (dry-run); would delete ${wouldDelete.length} path(s), keep ${wouldKeep.length}`);
+    } else {
+      console.log(`[artifacts-on-failure-only] outcome=${outcome} → nothing to prune`);
+    }
+  }
+
+
+
+
+
+
+  console.log(`\nReport written to ${REPORT_DIR}`);
+  console.log(process.exitCode
+    ? `\n❌ e2e-stale-assets FAILED (${failed.length}/${results.length})`
+    : `\n✅ e2e-stale-assets PASSED (${results.length}/${results.length})`);
 }
 
-main().catch((e) => {
-  console.error(`[fatal] ${e?.stack || e}`);
+run().catch((e) => {
+  console.error(e);
+  try { writeFileSync(join(REPORT_DIR, 'crash.txt'), String(e?.stack || e)); } catch { /* ignore */ }
   process.exit(1);
 });
