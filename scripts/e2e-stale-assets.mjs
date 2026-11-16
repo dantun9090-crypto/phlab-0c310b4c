@@ -85,6 +85,7 @@ import { REPORT_CLIENT_SCRIPT } from './lib/e2e-report-client.mjs';
 
 
 
+
 // ---------- CLI parsing ----------
 const argv = process.argv.slice(2);
 const flag = (name, fallback = undefined) => {
@@ -182,6 +183,7 @@ function redactBody(body) {
 // Bind the pure helpers to this run's normalize-ignore set.
 function normalizeHeadersForDiff(h) { return _normalizeHeadersForDiff(h, NORMALIZE_IGNORE_HEADERS); }
 function headersEqualNormalized(a, b) { return _headersEqualNormalized(a, b, NORMALIZE_IGNORE_HEADERS); }
+
 
 
 
