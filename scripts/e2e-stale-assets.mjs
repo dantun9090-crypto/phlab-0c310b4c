@@ -17,6 +17,10 @@
  *   --fixture-dir=./fixtures/stale-assets                   # fixture root
  *   --retries=N           (env E2E_RETRIES, default 1)      # retry transient browser/network errors only
  *   --retry-delay=MS      (default 1500)                    # backoff between retries
+ *   E2E_BLOCK_BUDGET_S=N  (default 480)                     # shared seconds budget for riding out mid-run
+ *                                                           # edge blocks (origin-side 403 windows); 0 = old
+ *                                                           # instant-skip behaviour
+ *   E2E_BLOCK_PROBE_INTERVAL_S=N (default 60)               # re-probe cadence while riding out a block
  *   --deterministic       (env E2E_DETERMINISTIC=1)         # stable scenario order + fixed retry timing for comparable CI runs
  *   --list                                                  # list scenario names and exit
  *
@@ -40,7 +44,7 @@
  *   --artifacts-on-failure-only / --skip-artifacts-on-success
  *                                             only persist HAR, fixtures (non-RECORD), HTML report, ndjson logs, and screenshots when
  *                                             an assertion fails or a live-vs-replay threshold is breached. report.{json,txt} + junit.xml + db-diff.json always written.
- *   --prune-dry-run / --dry-run               log which artifact paths WOULD be kept vs deleted for the current outcome without touching the filesystem.
+ *   --prune-dry-run / --dry-run               log which artifact paths WOULD be kept/deleted for the current run outcome without touching the filesystem.
  *
  * HTML report features (rendered into report.html):
  *   - Global "Download mismatch bundle (all scenarios)" button in the header (respects each scenario's current filter).
@@ -109,7 +113,7 @@ if (RECORD && REPLAY) {
   process.exit(2);
 }
 
-// ---------- mismatch thresholds (REPLAY) ----------
+// ---------- mismatch thresholds (REPLAY only) ----------
 const MAX_MISMATCHES = Math.max(0, parseInt(flag('max-mismatches', '0'), 10) || 0);
 const MAX_STATUS_MISMATCHES = Math.max(0, parseInt(flag('max-status-mismatches', '0'), 10) || 0);
 const MAX_BODY_BYTE_DELTA = Math.max(0, parseInt(flag('max-body-byte-delta', '0'), 10) || 0);
@@ -276,7 +280,7 @@ function buildLockTimeline(snapshots) {
         const a = JSON.stringify((prev.data || {})[f] ?? null);
         const b = JSON.stringify(d[f] ?? null);
         if (a !== b) {
-          events.push({ at: snap.at, label: snap.label, field: f, from: (prev.data || {})[f] ?? null, to: d[f] ?? null });
+          events.push({ at: snap.at, label: snap.label, field: f, from: (prev.data || {})[f] ?? null, to: d[f] });
         }
       }
     } else {
@@ -536,7 +540,14 @@ async function gotoGuarded(page, url) {
   if (resp && [401, 403, 503].includes(resp.status())) {
     const h = resp.headers();
     if (h['cf-ray'] || h['cf-mitigated'] || (h['server'] || '').includes('cloudflare')) {
-      throw new WafBlockedError(`edge returned HTTP ${resp.status()} for the initial document — Cloudflare WAF/rate-limit on the CI runner IP (not app code)`);
+      // cf-mitigated is set by Cloudflare when a zone security product acts on
+      // the request. A bare 401/403/503 with only cf-ray came from UPSTREAM
+      // (origin / SaaS edge in front of the origin) — no zone WAF event exists
+      // for it (verified 2026-11-15/16: origin 403 windows at UK midday).
+      const via = h['cf-mitigated']
+        ? 'zone WAF action (cf-mitigated present)'
+        : 'upstream/origin block (no cf-mitigated — not a zone WAF rule)';
+      throw new WafBlockedError(`edge returned HTTP ${resp.status()} for the initial document [${via}] — environment block on the CI runner (not app code)`);
     }
   }
   return resp;
@@ -552,7 +563,11 @@ async function gotoGuarded(page, url) {
 // E2E_WAF_PREFLIGHT_ATTEMPTS=1 to restore the previous fail-fast behaviour.
 async function wafPreflight(browser) {
   const attempts = Math.max(1, Number(process.env.E2E_WAF_PREFLIGHT_ATTEMPTS || 4));
-  const waitsMs = [0, 90_000, 210_000, 330_000];
+  // Waits rebalanced 2026-11-16: [0,90,210,330]s spent the whole 10.5-min
+  // tolerance up-front and left NOTHING for blocks that START mid-run (the
+  // failure mode that sank the 11-15/11-16 noon runs). 6 min here + a shared
+  // mid-run budget (E2E_BLOCK_BUDGET_S, default 8 min) covers both phases.
+  const waitsMs = [0, 60_000, 120_000, 180_000];
   for (let i = 0; i < attempts; i++) {
     if (i > 0) {
       const wait = waitsMs[Math.min(i, waitsMs.length - 1)];
@@ -599,6 +614,54 @@ const E2E_BYPASS_TOKEN = (() => {
   }
   return raw;
 })();
+
+// ---------- mid-run edge-block budget ----------
+// 2026-11-15/16: the noon (UTC) scheduled runs died with ALL scenarios skipped
+// — upstream/origin answers the runner IP with 403 for 10–25 min while UK
+// midday scan storms are underway (no zone WAF event; bypass header already
+// applied). The old code skipped instantly; the preflight only covers the run
+// START. This shared budget lets the run ride out a mid-run block: on a
+// WafBlockedError we re-probe the document once a minute (cheap fetch, no
+// browser) until it clears or the budget is gone. One budget for the whole
+// run — a persistent block burns it once instead of 5× (5 scenarios).
+// E2E_BLOCK_BUDGET_S=0 restores instant-skip behaviour.
+const BLOCK_BUDGET_MS = Math.max(0, Number(process.env.E2E_BLOCK_BUDGET_S ?? 480) * 1000);
+// Probe cadence while riding out a block (default 60s; lower only for tests).
+const BLOCK_PROBE_INTERVAL_MS = Math.max(250, Number(process.env.E2E_BLOCK_PROBE_INTERVAL_S ?? 60) * 1000);
+let blockBudgetLeftMs = BLOCK_BUDGET_MS;
+async function waitForEdgeUnblock() {
+  if (blockBudgetLeftMs <= 0) return false;
+  console.warn(`[block-wait] mid-run edge block — riding it out (budget: ${Math.round(blockBudgetLeftMs / 1000)}s, probe every ≤60s)`);
+  while (blockBudgetLeftMs > 0) {
+    const t0 = Date.now();
+    await sleep(Math.min(BLOCK_PROBE_INTERVAL_MS, blockBudgetLeftMs));
+    let blocked = true;
+    try {
+      const resp = await fetch(TARGET, {
+        redirect: 'manual',
+        signal: AbortSignal.timeout(20_000),
+        headers: {
+          // Mirror what the browser scenarios send so the probe verdict
+          // matches what page.goto would see.
+          'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          'accept': 'text/html,application/xhtml+xml',
+          ...(E2E_BYPASS_TOKEN ? { 'x-phl-e2e': E2E_BYPASS_TOKEN } : {}),
+        },
+      });
+      blocked = [401, 403, 503].includes(resp.status);
+    } catch (e) {
+      console.warn(`[block-wait] re-probe threw: ${e?.message || e}`);
+    }
+    const spent = Date.now() - t0;
+    blockBudgetLeftMs = Math.max(0, blockBudgetLeftMs - spent);
+    if (!blocked) {
+      console.warn(`[block-wait] edge clear after spending ~${Math.round(spent / 1000)}s of budget (${Math.round(blockBudgetLeftMs / 1000)}s left) — resuming scenarios`);
+      return true;
+    }
+  }
+  console.warn('[block-wait] budget exhausted — remaining scenarios will skip (run fails visibly, never a false green)');
+  return false;
+}
 
 async function withContext(browser, name, fn) {
   currentScenario = name;
@@ -1003,8 +1066,17 @@ async function run() {
         break; // success
       } catch (err) {
         if (err && err.wafBlocked) {
+          // Don't skip on first contact — burn the shared block budget waiting
+          // for the edge to clear, then re-run the scenario through the normal
+          // attempt loop (state reset happens at the top). Terminates because
+          // the budget only decreases; when it's gone we skip exactly as before.
+          if (await waitForEdgeUnblock()) {
+            console.warn(`[retry] [${name}] edge block cleared — re-running scenario (budget left: ${Math.round(blockBudgetLeftMs / 1000)}s)`);
+            attempt--;
+            continue;
+          }
           console.warn(`[skip] [${name}] ${err.message}`);
-          console.log(`::warning::stale-assets [${name}] skipped — Cloudflare WAF/rate-limit blocked the CI runner (environment, not app code)`);
+          console.log(`::warning::stale-assets [${name}] skipped — edge block outlasted the ${Math.round(BLOCK_BUDGET_MS / 1000)}s ride-out budget (environment, not app code)`);
           record('runner reachable (edge not blocking CI)', true, `SKIPPED: ${err.message}`);
           wafSkipped++;
           lastErr = null;
@@ -1305,9 +1377,12 @@ a{color:#7dd3fc}
 <section class="card"><h2>DB lock timeline (Firestore <code>_meta/build_state</code>)</h2>${lockTimelineHtml}</section>
 <section class="card"><h2>DB diff (before vs after) — lock fields highlighted</h2>${dbHighlights}</section>
 <section class="card"><h2>Artifacts</h2><ul>
-  <li><a href="report.json">report.json</a></li><li><a href="report.txt">report.txt</a></li>
-  <li><a href="junit.xml">junit.xml</a></li><li><a href="db-diff.json">db-diff.json</a></li>
-  <li><a href="requests.ndjson">requests.ndjson</a></li><li><a href="responses.ndjson">responses.ndjson</a></li>
+  <li><a href="report.json">report.json</a></li>
+  <li><a href="report.txt">report.txt</a></li>
+  <li><a href="junit.xml">junit.xml</a></li>
+  <li><a href="db-diff.json">db-diff.json</a></li>
+  <li><a href="requests.ndjson">requests.ndjson</a></li>
+  <li><a href="responses.ndjson">responses.ndjson</a></li>
   <li><a href="console.ndjson">console.ndjson</a></li>
 </ul></section>
 </body></html>`;
