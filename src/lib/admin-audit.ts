@@ -27,6 +27,7 @@ export type AdminAuditAction =
   | 'order.refund'
   | 'order.delete'
   | 'product.update'
+  | 'product.vip.move'
   | 'product.price.update'
   | 'product.stock.update'
   | 'banner.update'

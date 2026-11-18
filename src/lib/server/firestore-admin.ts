@@ -595,12 +595,13 @@ interface StockAdjustResult {
 async function adjustProductStockOnce(
   productId: string,
   opts: { variantId: string | null; quantity: number },
+  collection = 'products',
 ): Promise<StockAdjustResult | null | 'aborted'> {
   const acct = getServiceAccount();
   const token = await getAccessToken();
   const base = `https://firestore.googleapis.com/v1/projects/${acct.project_id}/databases/(default)/documents`;
-  const docPath = `${base}/products/${encodeURIComponent(productId)}`;
-  const fullName = `projects/${acct.project_id}/databases/(default)/documents/products/${productId}`;
+  const docPath = `${base}/${collection}/${encodeURIComponent(productId)}`;
+  const fullName = `projects/${acct.project_id}/databases/(default)/documents/${collection}/${productId}`;
 
   const beginRes = await fetch(`${base}:beginTransaction`, {
     method: "POST",
@@ -703,7 +704,9 @@ export async function adjustProductStockAdmin(
 ): Promise<StockAdjustResult | null> {
   const MAX_TX_RETRIES = 3;
   for (let attempt = 1; attempt <= MAX_TX_RETRIES; attempt++) {
-    const result = await adjustProductStockOnce(productId, opts);
+    let result = await adjustProductStockOnce(productId, opts);
+    // VIP products live in their own collection — fall back when not found.
+    if (result === null) result = await adjustProductStockOnce(productId, opts, 'product_stock_vip');
     if (result !== 'aborted') return result;
   }
   console.warn(`[firestore-admin] stock adjust for product ${productId} aborted after ${MAX_TX_RETRIES} attempts`);

@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast, Toaster as SonnerToaster } from 'sonner';
 import {
   Product,
-  getAllProducts, updateProduct, deleteProduct,
+  getAllProductsAdmin, updateProduct, deleteProduct,
 } from '@/lib/firebase';
 
 import { ProductEditor } from '@/components/ProductEditor';
@@ -221,7 +221,7 @@ export default function InventoryTab() {
   const loadProducts = async () => {
     setLoading(true);
     try {
-      const data = await getAllProducts();
+      const data = await getAllProductsAdmin();
       setProducts(data);
       const low = data.filter((p) => (p.stock || 0) <= LOW_STOCK_THRESHOLD);
       if (low.length > 0) {
@@ -451,7 +451,12 @@ export default function InventoryTab() {
                       />
                     </td>
                     <td className="px-3 sm:px-4 py-3">
-                      <div className="font-medium text-white text-xs sm:text-sm">{product.name}</div>
+                      <div className="font-medium text-white text-xs sm:text-sm">
+                        {product.name}
+                        {(product as any).isVip === true && (
+                          <span className="ml-1.5 inline-block rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-amber-400 align-middle">VIP</span>
+                        )}
+                      </div>
                       {product.variants && product.variants.length > 0 && (
                         <div className="text-[#3a5a82] text-xs mt-0.5">
                           {product.variants.length} variant{product.variants.length !== 1 ? 's' : ''}

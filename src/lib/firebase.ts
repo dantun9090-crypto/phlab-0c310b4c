@@ -1009,6 +1009,9 @@ export const subscribeToUsers = (callback: (users: User[]) => void) => {
 
 // The real Firestore collection is 'product_stock'
 export const PRODUCTS_COL = 'product_stock';
+// VIP-only products. Firestore rules allow reads only for VIP customers and
+// admins, so VIP names/prices are never exposed via the public REST API.
+export const VIP_PRODUCTS_COL = 'product_stock_vip';
 
 function productNameToSlug(name: string): string {
   return name
@@ -1140,6 +1143,49 @@ export const getAllProducts = async (): Promise<Product[]> => {
   return cachedFallback ?? [];
 };
 
+/**
+ * Which collection currently holds a product. Public `product_stock` first,
+ * then the VIP collection (readable only by VIP/admin).
+ */
+export const resolveProductCol = async (id: string): Promise<string> => {
+  try {
+    const snap = await getDoc(doc(db, PRODUCTS_COL, id));
+    if (snap.exists()) return PRODUCTS_COL;
+  } catch { /* fall through */ }
+  try {
+    const snap = await getDoc(doc(db, VIP_PRODUCTS_COL, id));
+    if (snap.exists()) return VIP_PRODUCTS_COL;
+  } catch { /* not permitted / missing */ }
+  return PRODUCTS_COL;
+};
+
+/** Live VIP products (VIP members + admins only, enforced by Firestore rules). */
+export const subscribeToVipProducts = (
+  callback: (products: Product[]) => void,
+  onError?: (err: Error) => void
+) => {
+  return onSnapshot(collection(db, VIP_PRODUCTS_COL), (snap) => {
+    callback(snap.docs.map((d) => ({ ...normaliseProduct(d.id, d.data()), isVip: true })));
+  }, (err) => {
+    console.warn('subscribeToVipProducts error:', err);
+    callback([]);
+    onError?.(err);
+  });
+};
+
+/** Admin list: public + VIP products merged (VIP flagged for the badge). */
+export const getAllProductsAdmin = async (): Promise<Product[]> => {
+  const pub = await getAllProducts();
+  let vip: Product[] = [];
+  try {
+    const snap = await getDocsFromServer(query(collection(db, VIP_PRODUCTS_COL), limit(300)));
+    vip = snap.docs.map((d) => ({ ...normaliseProduct(d.id, d.data()), isVip: true }));
+  } catch (e) {
+    console.warn('getAllProductsAdmin VIP read failed:', e);
+  }
+  return [...pub, ...vip];
+};
+
 export const subscribeToProducts = (
   callback: (products: Product[]) => void,
   onError?: (err: Error) => void
@@ -1186,7 +1232,7 @@ export const addProduct = async (product: Omit<Product, 'id'>) => {
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
   };
-  const ref = await addDoc(collection(db, PRODUCTS_COL), data);
+  const ref = await addDoc(collection(db, data.isVip ? VIP_PRODUCTS_COL : PRODUCTS_COL), data);
   invalidateProductsCache();
   triggerCdnInvalidation({ slug: data.slug, category: data.category });
 
@@ -1267,8 +1313,9 @@ export function bumpMarketingVersion() {
 
 export const updateProduct = async (id: string, updates: Partial<Product>) => {
   let existing: Product | null = null;
+  const sourceCol = await resolveProductCol(id);
   try {
-    const snap = await getDoc(doc(db, PRODUCTS_COL, id));
+    const snap = await getDoc(doc(db, sourceCol, id));
     if (snap.exists()) existing = normaliseProduct(id, snap.data());
   } catch { /* best-effort cache targeting */ }
 
@@ -1316,7 +1363,30 @@ export const updateProduct = async (id: string, updates: Partial<Product>) => {
   };
   const cleanData = stripUndefined(data) ?? {};
 
-  await updateDoc(doc(db, PRODUCTS_COL, id), cleanData);
+  const wantVip = (updates as any).isVip;
+  const targetCol = wantVip === true ? VIP_PRODUCTS_COL : wantVip === false ? PRODUCTS_COL : sourceCol;
+  if (targetCol !== sourceCol) {
+    // Move between public and VIP collections atomically (same document ID).
+    await runTransaction(db, async (tx) => {
+      const srcRef = doc(db, sourceCol, id);
+      const srcSnap = await tx.get(srcRef);
+      if (!srcSnap.exists()) throw new Error('Product not found');
+      tx.set(doc(db, targetCol, id), { ...srcSnap.data(), ...cleanData, isVip: targetCol === VIP_PRODUCTS_COL });
+      tx.delete(srcRef);
+    });
+    try {
+      const { logAdminAction } = await import('@/lib/admin-audit');
+      await logAdminAction({
+        action: 'product.vip.move',
+        target: `${targetCol}/${id}`,
+        before: { collection: sourceCol },
+        after: { collection: targetCol },
+        meta: { name: existing?.name ?? (updates as any).name ?? null },
+      });
+    } catch { /* audit must never block */ }
+  } else {
+    await updateDoc(doc(db, sourceCol, id), cleanData);
+  }
   invalidateProductsCache();
   const nextSlug = (updates as any).slug || existing?.slug || (updates.name ? productNameToSlug(updates.name) : undefined);
   const nextCategory = (updates as any).category || existing?.category;
@@ -1334,7 +1404,7 @@ export const deleteProduct = async (id: string) => {
     const snap = await getDoc(doc(db, PRODUCTS_COL, id));
     if (snap.exists()) existing = normaliseProduct(id, snap.data());
   } catch { /* best-effort cache targeting */ }
-  await deleteDoc(doc(db, PRODUCTS_COL, id));
+  await deleteDoc(doc(db, await resolveProductCol(id), id));
   invalidateProductsCache();
   triggerCdnInvalidation({ slug: existing?.slug, category: existing?.category });
 };

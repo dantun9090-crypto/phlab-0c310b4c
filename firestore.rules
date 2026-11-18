@@ -182,6 +182,14 @@ service cloud.firestore {
     // ---------- public-read, admin-write collections ----------
     match /products/{id}        { allow read: if true; allow write: if isAdmin(); }
     match /product_stock/{id}   { allow read: if true; allow write: if isAdmin(); }
+    // VIP-only products. Not publicly readable — only VIP customers or admins.
+    // Missing customer doc → exists() false → clean deny.
+    match /product_stock_vip/{id} {
+      allow read: if isAdmin() || (isSignedIn()
+        && exists(/databases/$(database)/documents/customers/$(request.auth.uid))
+        && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.get('isVip', false) == true);
+      allow write: if isAdmin();
+    }
     match /inventory/{id}       { allow read: if true; allow write: if isAdmin(); }
     match /adverts/{id}         { allow read: if true; allow write: if isAdmin(); }
     match /settings/{id}        { allow read: if true; allow write: if isAdmin(); }

@@ -54,6 +54,21 @@ type FsValue =
   | { mapValue: { fields?: Record<string, FsValue> } }
   | { arrayValue: { values?: FsValue[] } };
 
+function encodeValue(v: unknown): FsValue {
+  if (v === null || v === undefined) return { nullValue: null };
+  if (typeof v === 'string') return { stringValue: v };
+  if (typeof v === 'number') return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+  if (typeof v === 'boolean') return { booleanValue: v };
+  if (Array.isArray(v)) return { arrayValue: { values: v.map(encodeValue) } };
+  if (typeof v === 'object') return { mapValue: { fields: encodeFields(v as Record<string, unknown>) } };
+  return { nullValue: null };
+}
+function encodeFields(o: Record<string, unknown>): Record<string, FsValue> {
+  const out: Record<string, FsValue> = {};
+  for (const [k, val] of Object.entries(o)) out[k] = encodeValue(val);
+  return out;
+}
+
 function decode(v: FsValue | undefined): unknown {
   if (!v) return undefined;
   if ('stringValue' in v) return v.stringValue;
@@ -214,26 +229,47 @@ export async function runValidateCart(data: ValidateInput): Promise<ValidateCart
         });
       };
 
-      if (!res) {
+      // VIP products live in `product_stock_vip` (not publicly readable).
+      // Only looked up for VIP/admin callers — everyone else gets the same
+      // "no longer exists" rejection as before (fail-closed).
+      let vipFields: Record<string, FsValue> | null = null;
+      if (res && res.status === 404 && isVipCaller) {
+        const candidates = [productId, ...(fallbackProductId ? [fallbackProductId] : [])];
+        for (const cid of candidates) {
+          try {
+            const vipDoc = await getDocAdmin('product_stock_vip', cid);
+            if (vipDoc) {
+              if (cid !== productId) {
+                productId = cid;
+                variantId = variantId || fallbackVariantId;
+              }
+              vipFields = encodeFields({ ...vipDoc, isVip: true });
+              break;
+            }
+          } catch { /* treat as not found */ }
+        }
+      }
+
+      if (!vipFields && !res) {
         logLookup('error', { reason: 'fetch_threw' });
         errors.push(`Could not verify price for "${productId}"`);
         return;
       }
-      if (res.status === 404) {
+      if (!vipFields && res!.status === 404) {
         logLookup('not_found');
         errors.push(`Product "${productId}" no longer exists`);
         return;
       }
-      if (!res.ok) {
+      if (!vipFields && !res!.ok) {
         logLookup('error', { reason: 'http_error' });
-        errors.push(`Could not verify price for "${productId}" (status ${res.status})`);
+        errors.push(`Could not verify price for "${productId}" (status ${res!.status})`);
         return;
       }
 
       if (fallbackSucceeded) logLookup('ok', { note: 'resolved_via_fallback' });
 
-      const doc = (await res.json()) as { fields?: Record<string, FsValue> };
-      const fields = doc.fields ?? {};
+      const fields: Record<string, FsValue> = vipFields
+        ?? (((await res!.json()) as { fields?: Record<string, FsValue> }).fields ?? {});
       const productName = (decode(fields.name) as string) || productId;
 
       const isVipProduct = decode(fields.isVip) === true;

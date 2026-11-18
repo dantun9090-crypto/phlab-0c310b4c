@@ -467,6 +467,23 @@ export default function ProductDetail() {
             if (legacyDirectDoc.exists()) productDoc = legacyDirectDoc;
           }
         }
+
+        // VIP-only products (same URL/slug). Firestore rules deny this read for
+        // anyone who isn't a VIP or admin, so they get the normal not-found page.
+        if (!productDoc) {
+          try { await auth.authStateReady(); } catch { /* ignore */ }
+        }
+        if (!productDoc && auth.currentUser) {
+          try {
+            const vipSlugSnap = await getDocsFromServer(query(collection(db, 'product_stock_vip'), where('slug', '==', id), limit(1)));
+            if (!vipSlugSnap.empty) {
+              productDoc = vipSlugSnap.docs[0];
+            } else {
+              const vipDirect = await getDocFromServer(doc(db, 'product_stock_vip', id));
+              if (vipDirect.exists()) productDoc = vipDirect;
+            }
+          } catch { /* not VIP — permission denied */ }
+        }
         return productDoc;
     };
 

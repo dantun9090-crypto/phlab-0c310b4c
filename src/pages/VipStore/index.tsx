@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Crown, Lock, ShieldCheck, Loader2, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { auth, db, subscribeToProducts, doc, getDoc, onAuthStateChanged } from '@/lib/firebase';
+import { auth, db, subscribeToVipProducts, doc, getDoc, onAuthStateChanged } from '@/lib/firebase';
 
 import { ProductCard } from '@/components/ProductCard';
 import type { Product } from '@/lib/firebase';
@@ -38,11 +38,11 @@ export default function VipStore() {
     return () => unsub();
   }, []);
 
-  // Load VIP products (tagged isVip: true)
+  // Load VIP products from the VIP-only collection (rules enforce access)
   useEffect(() => {
     if (!isVip) return;
-    const unsub = subscribeToProducts((all) => {
-      const vipProducts = all.filter(p => (p as any).isVip === true && p.isActive !== false);
+    const unsub = subscribeToVipProducts((all) => {
+      const vipProducts = all.filter(p => p.isActive !== false);
       setProducts(vipProducts);
       setSelectedVariants(prev => {
         const d = { ...prev };
