@@ -3,6 +3,10 @@
     {
       "id": "GHSA-2v37-7h3g-55p8",
       "reason": "nanoid@3.3.17 (CVE-2026-67213) is a build-time-only transitive dependency of postcss, used for source-map ID generation during `vite build`. The advisory requires calling customAlphabet/customRandom with size <= 0, which postcss never does and which is not reachable from runtime code or user input in this app. Accepted temporarily; permanent fix is pinning nanoid ^3.3.18 in overrides + regenerating bun.lock on the next dependency-update PR."
+    },
+    {
+      "id": "GHSA-fc5q-39xc-vjpf",
+      "reason": "picomatch@4.0.7 ReDoS needs attacker-controlled glob input. Reachable only via build tooling (@tanstack/start-plugin-core, tinyglobby, @tanstack/devtools-vite) where patterns are static repo config; zero runtime usage in src/ or cloudflare/ (verified via grep 2026-11-18). No patched release exists yet (npm latest 4.0.7 == last_affected). Remove this entry as soon as a fixed picomatch ships."
     }
   ]
 }

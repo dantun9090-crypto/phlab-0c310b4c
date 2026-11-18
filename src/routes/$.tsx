@@ -94,6 +94,9 @@ export const Route = createFileRoute("/$")({
       "account", "login", "register", "signup",
       "auth", "reset-password", "forgot-password", "verify",
       "order", "orders", "thank-you", "success", "cancel",
+      // VIP members store — login-gated, must never be indexed. robots.txt
+      // blocks crawl; this meta covers URLs discovered via external links.
+      "vip", "vip-store",
     ]);
     const shouldNoindex =
       firstSeg === "search" ||

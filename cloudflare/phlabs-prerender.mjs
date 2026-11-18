@@ -246,6 +246,21 @@ const SCANNER_PATH_PREFIXES = [
 // every one of those burned a paid render.
 const SCANNER_EXT_RX = /\.(php\d?|phtml|asp|aspx|jsp|cgi|pl|sql|bak|old|swp|ini|zip|tar|tgz|gz|rar|7z|ya?ml|rb|py|sh|log|enc|pem|key|sqlite|orig|dist|lock|conf|properties)$/i;
 
+// ── Delisted VIP-only products (2026-11-18) ─────────────────────────────
+// Retatrutide/Tirzepatide moved to the VIP store; origin now 404s these
+// slugs, but Prerender.io still held pre-delist snapshots and kept serving
+// Googlebot a full 200 product page (name, price, Product JSON-LD) — see
+// x-prerendered responses on /products/retatrutide-research-peptide. Every
+// known slug variant gets a fast edge 404 below, before legacy redirects
+// and before any prerender hop. Keep in sync with Admin → Products isVip.
+const DELISTED_PRODUCT_PATHS = new Set([
+  "/products/retatrutide-research-peptide",
+  "/products/retatrutide",
+  "/products/tirzepatide-research-peptide",
+  "/products/tirzepatide",
+  "/products/r3tatrutid3",
+]);
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // PRERENDER ROUTE ALLOWLIST (2026-08-07)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -724,6 +739,21 @@ export default {
           "Cache-Control": "public, max-age=86400",
           "X-Robots-Tag": "noindex",
           "Server-Timing": `junk-404;dur=${Date.now() - startTime}`,
+        },
+      });
+    }
+
+    // ── Delisted VIP products — instant edge 404 (2026-11-18) ───────────
+    // Runs before legacy redirects and the prerender proxy so stale
+    // Prerender.io snapshots can never serve these to crawlers again.
+    if (DELISTED_PRODUCT_PATHS.has(path.toLowerCase())) {
+      return new Response("Not Found", {
+        status: 404,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "public, max-age=86400",
+          "X-Robots-Tag": "noindex",
+          "Server-Timing": `delisted-404;dur=${Date.now() - startTime}`,
         },
       });
     }

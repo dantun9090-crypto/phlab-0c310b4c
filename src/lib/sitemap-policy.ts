@@ -38,6 +38,7 @@ export const TRANSACTIONAL_PREFIXES = [
   "/.mcp",
   "/.well-known",
   "/.lovable",           // Lovable OAuth consent/callback internals — never index
+  "/vip",                // VIP members store — login-gated, never indexable
   "/vip-store",
 ] as const;
 
