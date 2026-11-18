@@ -247,12 +247,15 @@ const SCANNER_PATH_PREFIXES = [
 const SCANNER_EXT_RX = /\.(php\d?|phtml|asp|aspx|jsp|cgi|pl|sql|bak|old|swp|ini|zip|tar|tgz|gz|rar|7z|ya?ml|rb|py|sh|log|enc|pem|key|sqlite|orig|dist|lock|conf|properties)$/i;
 
 // ── Delisted VIP-only products (2026-11-18) ─────────────────────────────
-// Retatrutide/Tirzepatide moved to the VIP store; origin now 404s these
-// slugs, but Prerender.io still held pre-delist snapshots and kept serving
-// Googlebot a full 200 product page (name, price, Product JSON-LD) — see
-// x-prerendered responses on /products/retatrutide-research-peptide. Every
-// known slug variant gets a fast edge 404 below, before legacy redirects
-// and before any prerender hop. Keep in sync with Admin → Products isVip.
+// Retatrutide/Tirzepatide moved to the VIP store (Firestore collection
+// product_stock_vip, data-level access rules). Origin 404s these slugs for
+// anonymous visitors but serves them to signed-in VIP members, so the edge
+// 404 below fires for CRAWLERS ONLY — humans pass through to origin. This
+// kills the stale Prerender.io snapshot that kept serving Googlebot a full
+// 200 product page (name, price, Product JSON-LD) after delisting — see
+// x-prerendered responses on /products/retatrutide-research-peptide. Runs
+// before legacy redirects and before any prerender hop. Keep in sync with
+// Admin → Products VIP state.
 const DELISTED_PRODUCT_PATHS = new Set([
   "/products/retatrutide-research-peptide",
   "/products/retatrutide",
@@ -743,10 +746,11 @@ export default {
       });
     }
 
-    // ── Delisted VIP products — instant edge 404 (2026-11-18) ───────────
-    // Runs before legacy redirects and the prerender proxy so stale
-    // Prerender.io snapshots can never serve these to crawlers again.
-    if (DELISTED_PRODUCT_PATHS.has(path.toLowerCase())) {
+    // ── Delisted VIP products — instant edge 404, crawlers only ────────
+    // Bots get the 404 here so stale Prerender.io snapshots can never
+    // serve them again; humans continue to origin, where the app renders
+    // the page for signed-in VIPs and its own 404 for everyone else.
+    if (DELISTED_PRODUCT_PATHS.has(path.toLowerCase()) && isCrawler(request)) {
       return new Response("Not Found", {
         status: 404,
         headers: {
