@@ -1,17 +1,28 @@
-# Niedochodzące maile na info@phlabs.co.uk
+# Przeniesienie produktów VIP do osobnej kolekcji (poprawka bezpieczeństwa)
 
-## Co znalazłem (tylko odczyt, nic nie zmieniono)
-- Skrzynka jest zajęta w 18% (192 MB z 1 GB), więc nie jest pełna i nic nie jest odrzucane z braku miejsca.
-- Na skrzynce nie ma żadnych filtrów, a maile do innych adresów @phlabs.co.uk nie trafiają do innej skrzynki.
-- **Folder spamu na serwerze zawiera 53 nieprzeczytane i 156 starszych maili.** Maile z oceną spamu powyżej 5 trafiają tam z dopiskiem „***SPAM***” w temacie. Outlook często nie pokazuje tego folderu, więc wyglądają, jakby w ogóle nie doszły.
-- 15 najnowszych maili ze spamu to w większości prawdziwy spam (oferty peptydów, „Good morning”, pozycjonowanie stron). Jest tam jednak jedna przydatna wiadomość: zwrotka Outlooka z 10 XI („Undeliverable: FW: Confirm your email — PH Labs”).
-- Linki: cPanel https://eldborg.orangewebsite.com:2083, Webmail https://eldborg.orangewebsite.com:2096. Folder spamu widać w Webmailu jako „spam”.
+## Problem
+`product_stock` ma regułę `allow read: if true`, a klucz Firebase jest publiczny. Każdy może więc odczytać nazwy, ceny i flagę `isVip` produktów VIP przez API Firestore. Ukrywanie działa tylko w wyglądzie strony, a nie na poziomie danych.
 
-## Proponowane poprawki (po zatwierdzeniu)
-1. Dodam do listy zaufanych nadawców ważne adresy, żeby nigdy nie trafiały do spamu: brokkrpay.com, royalmail.com, storefeeder.com, wallid, google.com, trustpilot.com, postmaster@outlook.com oraz własną domenę phlabs.co.uk.
-2. Przejrzę wszystkie 209 maili ze spamu. Prawdziwe wiadomości, np. od klientów, przeniosę do skrzynki odbiorczej, a spam zostawię.
-3. Folder „spam” na serwerze ustawię jako widoczny, żeby pojawił się w Outlooku przy koncie IMAP.
-4. Próg spamu (5) zostawię bez zmian, bo wyłapuje on dużo prawdziwego spamu.
+## Co zrobię
+1. **Nowa kolekcja `product_stock_vip`** z regułą w `firestore.rules`:
+   - odczyt: tylko zalogowany klient z `customers/{uid}.isVip == true` (oraz admin, żeby edytor działał),
+   - zapis: `isAdmin()`.
+   - Reguła `product_stock` zostaje bez zmian (publiczny odczyt produktów nie-VIP).
+2. **Migracja (jednorazowy skrypt Admin SDK):**
+   - najpierw tryb próbny: lista produktów `isVip: true` i kopia zapasowa JSON w /tmp,
+   - kopiuję każdy dokument do `product_stock_vip` z tym samym ID i wszystkimi polami (`isVip: true` zostaje tylko do wyświetlania w adminie),
+   - sprawdzam, czy kopia się zgadza, i dopiero wtedy usuwam oryginał z `product_stock`.
+3. **Strona VIP Store** czyta z `product_stock_vip`. Odczyt z `product_stock` z filtrem znika.
+4. **Admin ProductEditor:** przełącznik VIP przenosi produkt między kolekcjami w jednej transakcji (zapis w docelowej i usunięcie ze źródłowej), z wpisem w `auditLogs`. Lista produktów w adminie łączy obie kolekcje i pokazuje plakietkę VIP.
+5. **Serwer (koszyk i zamówienie):** `cart-validation.server.ts` i `create-order.server.ts` szukają produktu w `product_stock`, a jeśli go tam nie ma, w `product_stock_vip` (przez konto serwisowe). Produkt z kolekcji VIP przechodzi tylko wtedy, gdy kupujący jest VIP lub adminem. Inaczej koszyk zostanie odrzucony tak jak dziś.
+6. **Strona produktu VIP (ten sam adres i slug):** gdy produktu nie ma w `product_stock`, a widz jest VIP lub adminem, strona dociąga go z `product_stock_vip`. Pozostali dostają ten sam ekran co dziś. Adresy URL i slugi zostają bez zmian.
+7. **Bez zmian:** feed Google Merchant, sitemap i prerender czytają tylko `product_stock`, więc produkty VIP i tak z nich wypadają. Wygląd strony, kasa i płatności zostają nietknięte.
 
-## Uwaga
-Maile odrzucone przez serwer już przy odbiorze (np. przez czarne listy) nie trafiają nawet do spamu. Jeśli brakuje konkretnej wiadomości, podaj nadawcę i godzinę, a sprawdzę ją w cPanel → Track Delivery.
+## Weryfikacja
+- Testy: koszyk z produktem VIP odrzucony dla kupującego bez VIP, przyjęty dla VIP (aktualizacja `cart-validation.test.ts`).
+- Anonimowe zapytanie REST do `product_stock_vip` zwraca 403, a `product_stock` nie zawiera już żadnego `isVip: true`.
+- Deploy reguł (`firebase deploy --only firestore:rules`) dopiero po migracji. Build i typecheck.
+- Zgodnie z Twoją wcześniejszą prośbą pokażę diff przed publikacją. Po publikacji wyczyszczę cache Cloudflare.
+
+## Ryzyko
+Krótkie okno między migracją a publikacją kodu: VIP Store może przez chwilę być pusty. Dlatego najpierw publikuję kod, który czyta obie kolekcje, a dopiero potem migruję dane i wdrażam reguły.
