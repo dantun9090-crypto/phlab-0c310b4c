@@ -38,6 +38,7 @@ export const TRANSACTIONAL_PREFIXES = [
   "/.mcp",
   "/.well-known",
   "/.lovable",           // Lovable OAuth consent/callback internals — never index
+  "/vip",                // VIP members store — login-gated, never indexable
   "/vip-store",
 ] as const;
 
@@ -63,7 +64,7 @@ export const NEVER_INDEX_EXACT = new Set<string>([
 ]);
 
 export interface RobotsRule {
-  /** Disallow pattern as written in robots.txt (e.g. "/admin/", "/*?utm_*"). */
+  /** Disallow pattern as written in robots.txt (e.g. "/admin/foo", "/*?utm_*"). */
   pattern: string;
   /** Source line for debugging. */
   raw: string;
