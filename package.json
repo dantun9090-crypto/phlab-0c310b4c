@@ -1,1 +1,17 @@
-PLACEHOLDER_PACKAGE
+{
+  "name": "tanstack_start_ts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev --port 3000",
+    "build": "vite build",
+    "serve": "vite preview",
+    "start": "node .output/server/index.mjs",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "postinstall": "node scripts/sync-firebase-env.mjs"
+  }
+}
