@@ -1,4 +1,4 @@
-import { createServerFn } from '@tanstack/react-start';
+import { createServerFn, createServerOnlyFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { requireFirebaseAdmin } from './server/firebase-auth-admin';
 
@@ -57,7 +57,8 @@ function check(id: string, title: string, ok: boolean, detail: string, soft = fa
   return { id, title, status: ok ? 'pass' : soft ? 'warn' : 'fail', detail };
 }
 
-export async function runSecurityRegression(): Promise<ProbeReport> {
+/** Server-only: reads Firestore via the admin SDK, so it must never ship to the browser. */
+export const runSecurityRegression = createServerOnlyFn(async (): Promise<ProbeReport> => {
   const checks: ProbeCheck[] = [];
 
   // 1) Root HTML — must be 200, must carry security headers
@@ -213,7 +214,7 @@ export async function runSecurityRegression(): Promise<ProbeReport> {
     checks,
     failed,
   };
-}
+});
 
 export const probeSecurityRegression = createServerFn({ method: 'POST' })
   .validator((input: unknown) => InputSchema.parse(input))
