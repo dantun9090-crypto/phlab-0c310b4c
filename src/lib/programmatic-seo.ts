@@ -720,10 +720,10 @@ export const COMPARE_CONSOLIDATION: Record<string, string> = {
 /** Contextual in-body links added to specific comparison pages. */
 const BODY_LINKS: Record<string, NonNullable<ProgrammaticPage["bodyLinks"]>> = {
   "tirzepatide-vs-mots-c": [
-    { before: "Batch documentation for the incretin arm of this comparison is on the ", href: "/products/tirzepatide-research-peptide", anchor: "tirzepatide research peptide", after: " page." },
+    { before: "Batch documentation for the incretin arm of this comparison is on the ", href: "/vip", anchor: "tirzepatide research peptide", after: " page." },
   ],
   "tirzepatide-vs-glow": [
-    { before: "Laboratories sourcing the single-agent arm can review the ", href: "/products/tirzepatide-research-peptide", anchor: "UK tirzepatide research peptide", after: " with its batch CoA." },
+    { before: "Laboratories sourcing the single-agent arm can review the ", href: "/vip", anchor: "UK tirzepatide research peptide", after: " with its batch CoA." },
   ],
   "klow-vs-glow": [
     { before: "Composition and batch CoA for the four-peptide arm are listed on the ", href: "/products/klow-blend", anchor: "KLOW Blend research peptide mix", after: " page." },

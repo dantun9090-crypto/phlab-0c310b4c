@@ -286,10 +286,10 @@ function TirzepatideVsRetatrutidePage() {
             LC-MS identity, residual solvents, water content, endotoxin).
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
-            <a href="/products/tirzepatide-research-peptide" className="rounded-lg bg-emerald-600 px-5 py-3 font-semibold text-white hover:bg-emerald-500">
+            <a href="/vip" className="rounded-lg bg-emerald-600 px-5 py-3 font-semibold text-white hover:bg-emerald-500">
               Tirzepatide reference vials →
             </a>
-            <a href="/products/retatrutide-research-peptide" className="rounded-lg bg-emerald-600 px-5 py-3 font-semibold text-white hover:bg-emerald-500">
+            <a href="/vip" className="rounded-lg bg-emerald-600 px-5 py-3 font-semibold text-white hover:bg-emerald-500">
               Retatrutide reference vials →
             </a>
             <a href="/research/retatrutide-uk" className="rounded-lg border border-slate-700 px-5 py-3 font-semibold text-slate-200 hover:border-emerald-500 hover:text-emerald-400">
@@ -302,9 +302,7 @@ function TirzepatideVsRetatrutidePage() {
           <h2 className="mb-4 text-2xl font-semibold">Related comparisons</h2>
           <ul className="grid gap-3 sm:grid-cols-2">
             <li><a href="/compare/retatrutide-vs-tirzepatide" className="block rounded-lg border border-slate-800 bg-slate-900 p-4 hover:border-emerald-500">Retatrutide vs Tirzepatide (programmatic compare)</a></li>
-            <li><a href="/compare/retatrutide-vs-semaglutide" className="block rounded-lg border border-slate-800 bg-slate-900 p-4 hover:border-emerald-500">Retatrutide vs Semaglutide</a></li>
-            <li><a href="/compare/tirzepatide-vs-semaglutide" className="block rounded-lg border border-slate-800 bg-slate-900 p-4 hover:border-emerald-500">Tirzepatide vs Semaglutide</a></li>
-            <li><a href="/products/category/metabolic-research" className="block rounded-lg border border-slate-800 bg-slate-900 p-4 hover:border-emerald-500">Metabolic research peptides</a></li>
+            <li><a href="/vip" className="block rounded-lg border border-slate-800 bg-slate-900 p-4 hover:border-emerald-500">Metabolic research peptides</a></li>
           </ul>
         </section>
 
