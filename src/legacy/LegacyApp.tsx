@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { createLegacyRouter } from "./AppRouter";
 import { SSRDataProvider, type SSRBanner } from "./SSRDataContext";
 import { LegacySsrShell } from "./LegacySsrShell";
+import { ProductsSsrShell } from "./ProductsSsrShell";
 import "@/legacy-styles.css";
 
 // Kick off the Home chunk download at module-eval time (parallel with
@@ -80,7 +81,9 @@ export default function LegacyApp({
 
 
   if (!mounted) {
-    return <LegacySsrShell />;
+    // /products gets a shell that mirrors its own hero (mobile LCP element);
+    // every other path keeps the generic home shell.
+    return initialPath === "/products" ? <ProductsSsrShell /> : <LegacySsrShell />;
   }
 
   const router = getLegacyRouter(initialPath);

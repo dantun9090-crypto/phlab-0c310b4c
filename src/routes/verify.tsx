@@ -17,7 +17,10 @@ import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 
-import { supabase } from "@/integrations/supabase/client";
+// Lazy: this route module is in the eager route tree (VerifyPage is also
+// exported for the legacy router), so a static client import shipped the
+// whole Supabase SDK to every page. Load it only when a lookup runs.
+const loadSupabase = () => import("@/integrations/supabase/client").then((m) => m.supabase);
 import { useVerifyBatchEnabled } from "@/lib/verify-feature";
 import { safeJsonLd } from "@/lib/safe-json-ld";
 import {
@@ -184,6 +187,7 @@ export function VerifyPage() {
   const batchQuery = useLabTestQuery(
     hydrated && verifyEnabled && !!batch,
     async () => {
+      const supabase = await loadSupabase();
       const { data, error } = await supabase
         .from("lab_tests")
         .select(SELECT_COLUMNS)
@@ -198,6 +202,7 @@ export function VerifyPage() {
   const productQuery = useLabTestQuery(
     hydrated && verifyEnabled && !!productKey && !batch,
     async () => {
+      const supabase = await loadSupabase();
       const { data, error } = await supabase
         .from("lab_tests")
         .select(SELECT_COLUMNS)
@@ -461,6 +466,7 @@ function SearchView() {
       // Escape PostgREST `or()` separators so a stray comma/paren cannot
       // rewrite the filter expression.
       const safe = term.replace(/[,()]/g, " ").trim();
+      const supabase = await loadSupabase();
       const { data, error } = await supabase
         .from("lab_tests")
         .select(SELECT_COLUMNS)

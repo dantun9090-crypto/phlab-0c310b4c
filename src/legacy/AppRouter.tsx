@@ -1,7 +1,6 @@
 import { createBrowserRouter, createMemoryRouter, Outlet, Navigate, useLocation } from 'react-router-dom';
 import React, { useEffect, useState, Suspense } from 'react';
 import { Layout } from '@/components/Layout';
-import { PremiumLanding } from '@/components/PremiumLanding';
 import ScrollToTop from '@/components/ScrollToTop';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
@@ -20,6 +19,15 @@ import { lazyWithRetry } from '@/lib/lazyWithRetry';
 // `vitePrefetch: true` asks the browser to prefetch the chunk after the main
 // bundle finishes so the tab-back navigation is instant.
 const Home = lazyWithRetry(() => import(/* vitePrefetch: true */ '@/pages/Home'));
+// Lazy: only the /compound and /landingad emergency CSR fallbacks use it —
+// their TanStack routes render PremiumLanding directly from SSR.
+const PremiumLandingLazy = lazyWithRetry(() =>
+  import('@/components/PremiumLanding').then((m) => ({
+    default: function PremiumLandingLab() {
+      return <m.PremiumLanding eyebrow="UK Laboratory Supply" />;
+    },
+  })),
+);
 import NotFound from '@/pages/NotFound';
 const UkResearchStoreLazy = lazyWithRetry(() =>
   import('@/routes/uk-research-store').then((m) => ({ default: m.UkResearchStore })),
@@ -151,10 +159,10 @@ const routes = [
   // /compound is a dedicated marketing route. Keep it outside the legacy
   // shop Layout during emergency CSR boot so it never falls through to 404
   // or renders a duplicate storefront header.
-  { path: '/compound', element: <PremiumLanding eyebrow="UK Laboratory Supply" /> },
+  { path: '/compound', element: <Suspense fallback={<PageLoader />}><PremiumLandingLazy /></Suspense> },
   // /landingad (Google Ads copy of /compound) — same deal: without this entry
   // the legacy router falls through to <NotFound /> during emergency CSR boot.
-  { path: '/landingad', element: <PremiumLanding eyebrow="UK Laboratory Supply" /> },
+  { path: '/landingad', element: <Suspense fallback={<PageLoader />}><PremiumLandingLazy /></Suspense> },
   // /uk-research-store is an SSR-first landing page (own <main>, own SEO
   // head). Registered here too so the legacy client-side router does NOT
   // fall through to <NotFound /> after hydration on that path.

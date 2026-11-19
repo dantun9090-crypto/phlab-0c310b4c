@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { CheckCircle2, ShoppingCart, Edit2, FlaskConical, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getProductImage } from '@/lib/productImages';
@@ -6,12 +6,15 @@ import type { Product } from '@/lib/firebase';
 import { nameToSlug } from '@/lib/seedProducts';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
 import { cfImgProps } from '@/lib/cf-image';
-import { CoaModal } from './CoaModal';
 import PuritySignature from './PuritySignature';
 import { StarRating } from './StarRating';
 import { ReviewPreview } from './ReviewPreview';
 import { ReviewsModal } from './ReviewsModal';
 import { useDeterministicReviews } from '@/hooks/useDeterministicReviews';
+
+// Lazy: CoaModal pulls framer-motion (~50 KB). It only matters once a
+// visitor clicks "View COA", so keep it out of the catalogue's first load.
+const CoaModal = lazy(() => import('./CoaModal').then((m) => ({ default: m.CoaModal })));
 
 
 interface ProductCardProps {
@@ -86,6 +89,9 @@ export function ProductCard({
   // First 3 cards are likely above-fold — reveal immediately to avoid LCP/CLS penalty
   const isAboveFold = (index ?? 0) < 3;
   const [coaOpen, setCoaOpen] = useState(false);
+  // Mount the modal only after the first open, then keep it mounted so its
+  // exit animation still plays on close.
+  const [coaMounted, setCoaMounted] = useState(false);
   const [reviewsOpen, setReviewsOpen] = useState(false);
   const { previewReviews, allReviews, averageRating, totalCount } = useDeterministicReviews(
     product.id || slug || index,
@@ -346,7 +352,7 @@ export function ProductCard({
         {hasCoa && (
           <button
             type="button"
-            onClick={(e) => { e.preventDefault(); setCoaOpen(true); }}
+            onClick={(e) => { e.preventDefault(); setCoaMounted(true); setCoaOpen(true); }}
             aria-label={`View Certificate of Analysis for ${name}`}
             aria-haspopup="dialog"
             className="mt-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all duration-200"
@@ -363,16 +369,18 @@ export function ProductCard({
           </button>
         )}
 
-        {hasCoa && product.coaPdfUrl && (
-          <CoaModal
-            open={coaOpen}
-            onClose={() => setCoaOpen(false)}
-            pdfUrl={product.coaPdfUrl}
-            productName={name}
-            filename={product.coaPdfName}
-            batch={product.coaBatch}
-            uploadedAt={product.coaUploadedAt}
-          />
+        {hasCoa && product.coaPdfUrl && coaMounted && (
+          <Suspense fallback={null}>
+            <CoaModal
+              open={coaOpen}
+              onClose={() => setCoaOpen(false)}
+              pdfUrl={product.coaPdfUrl}
+              productName={name}
+              filename={product.coaPdfName}
+              batch={product.coaBatch}
+              uploadedAt={product.coaUploadedAt}
+            />
+          </Suspense>
         )}
 
         {/* Admin quick edit */}

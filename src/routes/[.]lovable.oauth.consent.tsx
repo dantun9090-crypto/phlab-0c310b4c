@@ -26,10 +26,13 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
     const authorizationId = new URLSearchParams(location.search).get("authorization_id");
     if (!authorizationId) throw new Error("Missing authorization_id");
 
-    const { data: sessionData } = await supabase.auth.getSession();
+    // Dynamic import: the loader is part of the eager route bundle, so a
+    // static Supabase reference here shipped the whole SDK to every page.
+    const { supabase: client } = await import("@/integrations/supabase/client");
+    const { data: sessionData } = await client.auth.getSession();
     if (!sessionData.session) return { needsSignIn: true as const, details: null };
 
-    const { data, error } = await oauth().getAuthorizationDetails(authorizationId);
+    const { data, error } = await (client.auth as unknown as { oauth: OAuthNamespace }).oauth.getAuthorizationDetails(authorizationId);
     if (error) throw new Error(error.message);
 
     const immediate = data?.redirect_url ?? data?.redirect_to;

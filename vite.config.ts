@@ -83,6 +83,9 @@ export default defineConfig({
             // load per CDP coverage). Let icons tree-shake into the per-route
             // chunks that actually use them instead.
             if (id.includes("/react-dom/") || id.includes("/react/") || id.includes("/scheduler/")) return "vendor-react";
+            // Virtual lists are admin-only (orders table); keep them with
+            // their lazy importer instead of the eager vendor-tanstack chunk.
+            if (id.includes("/@tanstack/virtual-core/") || id.includes("/@tanstack/react-virtual/")) return;
             if (id.includes("/@tanstack/")) return "vendor-tanstack";
             // Everything else stays in the default vendor chunk.
           },
