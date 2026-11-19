@@ -486,7 +486,7 @@ service cloud.firestore {
                             && request.resource.data.visitorId.size() < 80))
                     && (!('firstSeen' in request.resource.data)
                         || request.resource.data.firstSeen == null
-                        || request.resource.data.firstSeen is timestamp;
+                        || request.resource.data.firstSeen is timestamp);
       allow update, delete: if false;
 
     }
