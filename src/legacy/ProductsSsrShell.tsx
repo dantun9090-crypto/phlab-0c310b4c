@@ -11,8 +11,17 @@ import { FlaskConical, Microscope, ShieldCheck, Truck } from "lucide-react";
  * waiting for the full app boot (~9s on throttled mobile).
  *
  * Keep the copy below in sync with CATEGORY_INTROS.all in the Products page.
+ * The main stylesheet loads asynchronously, so the hero text paints BEFORE
+ * it applies. PRE_CSS gives the hero its final mobile metrics for that first
+ * paint; every rule is wrapped in :where() (zero specificity) so the real
+ * stylesheet wins the moment it loads — no visual change once styled.
  * Pure markup only: no router, no browser APIs (safe for the SSR worker).
  */
+const PRE_CSS =
+  ":where([data-phl-boot-keep]) :where(.phl-psh-c){padding-left:24px;padding-right:24px}" +
+  ":where([data-phl-boot-keep]) :where(.phl-psh-h1){font-weight:900;line-height:1.08;margin:0}" +
+  ":where([data-phl-boot-keep]) :where(.phl-psh-p){font-size:1rem;line-height:1.6;margin:0}";
+
 export function ProductsSsrShell() {
   return (
     <div
@@ -25,6 +34,7 @@ export function ProductsSsrShell() {
       // hero paragraph wraps identically before and after the React swap.
       style={{ background: "#060f1e", fontFamily: 'var(--theme-font-body, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif)' }}
     >
+      <style dangerouslySetInnerHTML={{ __html: PRE_CSS }} />
       <section
         className="relative overflow-hidden"
         style={{ background: "#030812", paddingTop: "calc(var(--nav-h, 80px) + 2rem)", paddingBottom: "4rem" }}
@@ -35,7 +45,7 @@ export function ProductsSsrShell() {
           style={{ background: "linear-gradient(to bottom, transparent, #060f1e)" }}
         />
 
-        <div className="container mx-auto px-6 relative z-10">
+        <div className="phl-psh-c container mx-auto px-6 relative z-10">
           <nav className="flex items-center gap-2 mb-6 text-xs" style={{ color: "#3a5a82" }} aria-label="Breadcrumb">
             <a href="/" className="hover:text-blue-400 transition-colors">Home</a>
             <span>/</span>
@@ -55,12 +65,12 @@ export function ProductsSsrShell() {
               </div>
 
               <h1
-                className="font-black leading-tight mb-3"
+                className="phl-psh-h1 font-black leading-tight mb-3"
                 style={{ fontSize: "clamp(2rem, 4.5vw, 3.25rem)", color: "#eef4ff", letterSpacing: "-0.025em" }}
               >
                 Research Peptides UK — Third-Party Tested, UK Stock
               </h1>
-              <p className="leading-relaxed text-base" style={{ color: "#9cb8d9", maxWidth: 560 }}>
+              <p className="phl-psh-p leading-relaxed text-base" style={{ color: "#9cb8d9", maxWidth: 560 }}>
                 HPLC-tested, research-grade lyophilised peptides. Every batch analytically verified to ≥99% purity by reverse-phase HPLC and confirmed by mass spectrometry. Certificate of Analysis included. For laboratory research use only.
               </p>
             </div>
@@ -110,7 +120,7 @@ export function ProductsSsrShell() {
         </div>
       </section>
 
-      <span className="sr-only" aria-live="polite">Loading PH Labs…</span>
+      <span className="sr-only" aria-live="polite" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>Loading PH Labs…</span>
     </div>
   );
 }
