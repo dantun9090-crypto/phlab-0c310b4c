@@ -250,8 +250,8 @@ function DesktopNavItem({ link, isActive }: { link: NavLink; isActive: (href: st
 }
 
 export function Navigation({
-  user, isAdmin, isMobileMenuOpen, onMobileMenuToggle,
-}: { user: any; isAdmin?: boolean; isMobileMenuOpen: boolean; onMobileMenuToggle: () => void; }) {
+  user, isAdmin, isVip, isMobileMenuOpen, onMobileMenuToggle,
+}: { user: any; isAdmin?: boolean; isVip?: boolean; isMobileMenuOpen: boolean; onMobileMenuToggle: () => void; }) {
   const location = useLocation();
   const navLinks = useNavLinks();
   const mobileMenuTop = '0px';
@@ -283,6 +283,14 @@ export function Navigation({
         {navLinks.map(link => (
           <DesktopNavItem key={link.name} link={link} isActive={isActive} />
         ))}
+        {user && isVip && (
+          <Link to="/vip"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-semibold"
+            style={{ background: 'rgba(245,158,11,0.1)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.25)' }}>
+            <Crown className="w-3.5 h-3.5" />
+            VIP
+          </Link>
+        )}
         {user && isAdmin && (
           <Link to="/admin"
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-semibold"
@@ -341,6 +349,15 @@ export function Navigation({
             <MobileNavItem key={`${link.name}-${isMobileMenuOpen}`}
               link={link} index={i} isActive={isActive} onClose={onMobileMenuToggle} />
           ))}
+
+          {user && isVip && (
+            <TransactionalLink to="/vip" onClick={onMobileMenuToggle}
+              className="flex items-center gap-3 px-4 py-3.5 rounded-2xl font-semibold min-h-[52px]"
+              style={{ background: 'rgba(245,158,11,0.1)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.25)' }}>
+              <Crown className="w-5 h-5 opacity-70" />
+              <span className="text-[15px]">VIP Store</span>
+            </TransactionalLink>
+          )}
 
           <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '8px 0' }} />
 

@@ -735,6 +735,7 @@ export function Layout({ children }: LayoutProps) {
             <Navigation
               user={firebaseUser}
               isAdmin={isAdmin || isOrdersStaff}
+              isVip={isVip}
               isMobileMenuOpen={isMobileMenuOpen}
               onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             />
