@@ -186,7 +186,7 @@ export function LegacySsrShell({ banner }: { banner?: PromoBannerLite | null } =
               margin: 0,
             }}
           >
-            PH Labs supplies tested research peptides and analytical-grade laboratory reagents to qualified UK researchers — including retatrutide, MOTS-C, GHK-Cu and bacteriostatic water, held in UK stock. Every batch is HPLC and mass-spectrometry verified with a Certificate of Analysis.{' '}
+            PH Labs supplies tested research peptides and analytical-grade laboratory reagents to qualified UK researchers — including BPC-157, TB-500, GHK-Cu and bacteriostatic water, held in UK stock. Every batch is HPLC and mass-spectrometry verified with a Certificate of Analysis.{' '}
             <strong style={{ color: '#f0a0a0' }}>
               Research Use Only — Not For Human Consumption.
             </strong>

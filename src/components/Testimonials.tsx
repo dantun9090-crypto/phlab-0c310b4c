@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react';
 import { Star, Quote } from 'lucide-react';
 import { listApprovedReviews, averageRating, type Review } from '@/lib/reviews';
+import { publicReviewProductLabel, publicReviewText } from '@/lib/review-display';
 
 export default function Testimonials() {
   const [rows, setRows] = useState<Review[]>([]);
@@ -62,11 +63,11 @@ export default function Testimonials() {
                   />
                 ))}
               </div>
-              {r.title && <p className="mt-2 text-sm font-semibold text-white">{r.title}</p>}
-              <p className="mt-1.5 text-sm text-slate-300 leading-relaxed flex-1">{r.body}</p>
+              {r.title && <p className="mt-2 text-sm font-semibold text-white">{publicReviewText(r.title)}</p>}
+              <p className="mt-1.5 text-sm text-slate-300 leading-relaxed flex-1">{publicReviewText(r.body)}</p>
               <p className="mt-3 text-xs text-slate-500">
                 {r.name}
-                {r.productName ? ` — ${r.productName}` : ''}
+                {publicReviewProductLabel(r.productName) ? ` — ${publicReviewProductLabel(r.productName)}` : ''}
               </p>
             </li>
           ))}

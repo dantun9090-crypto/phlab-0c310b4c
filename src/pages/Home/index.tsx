@@ -64,7 +64,7 @@ const benefits = [
     icon: Flame,
     label: 'Incretin & Metabolic Research',
     title: 'GLP-1 Compounds',
-    desc: 'Semaglutide, Tirzepatide and Retatrutide are studied in preclinical models for GLP-1/GIP receptor agonism and metabolic pathway effects. Supplied for laboratory research use only.',
+    desc: 'Incretin research peptides are studied in preclinical models for GLP-1/GIP receptor agonism and metabolic pathway effects. Supplied for laboratory research use only.',
     tag: 'Active Research',
     color: '#3b82f6',
     slug: '/products',
@@ -745,7 +745,7 @@ export default function HomePage() {
 
               {/* Sub-copy */}
               <p style={{ fontSize: '1.05rem', lineHeight: 1.75, color: '#9cb8d9', maxWidth: '480px' }}>
-                PH Labs supplies tested research peptides and analytical-grade laboratory reagents to qualified UK researchers — including retatrutide, MOTS-C, GHK-Cu and bacteriostatic water, held in UK stock. Every batch is HPLC and mass-spectrometry verified with a Certificate of Analysis. <strong style={{ color: '#f0a0a0' }}>Research Use Only — Not For Human Consumption.</strong>
+                PH Labs supplies tested research peptides and analytical-grade laboratory reagents to qualified UK researchers — including BPC-157, TB-500, GHK-Cu and bacteriostatic water, held in UK stock. Every batch is HPLC and mass-spectrometry verified with a Certificate of Analysis. <strong style={{ color: '#f0a0a0' }}>Research Use Only — Not For Human Consumption.</strong>
               </p>
 
 

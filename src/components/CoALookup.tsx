@@ -127,7 +127,7 @@ export default function CoALookup() {
               type="text"
               value={q}
               onChange={(e) => { setQ(e.target.value); setSubmitted(false); }}
-              placeholder="e.g. BPC-157, Retatrutide, tb-500"
+              placeholder="e.g. BPC-157, GHK-Cu, tb-500"
               autoComplete="off"
               className="w-full pl-10 pr-3 py-3 rounded-xl text-sm"
               style={{
