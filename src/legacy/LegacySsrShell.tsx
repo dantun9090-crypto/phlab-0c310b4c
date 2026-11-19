@@ -164,7 +164,7 @@ export function LegacySsrShell({ banner }: { banner?: PromoBannerLite | null } =
             }}
           >
             <span style={{ display: 'block' }}>Research Peptides UK</span>
-            <span style={{ display: 'block', color: '#10b981' }}>Third-Party Tested · UK Stock</span>
+            <span style={{ display: 'block', color: '#10b981' }}>Third-Party Tested</span>
             <span
               style={{
                 display: 'block',
@@ -173,7 +173,7 @@ export function LegacySsrShell({ banner }: { banner?: PromoBannerLite | null } =
                 fontSize: '0.72em',
               }}
             >
-              ≥99% HPLC · CoA Per Batch
+              UK Stock · ≥99% HPLC · CoA Per Batch
             </span>
           </h1>
 
