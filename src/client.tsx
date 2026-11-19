@@ -534,6 +534,11 @@ function prepareDocumentForCsr(): void {
     // injections race React's reconciler and trigger
     //   NotFoundError: Failed to execute 'removeChild' on 'Node'
     // during hydration/unmount. Isolate React inside a dedicated container.
+    // A route-specific SSR shell (currently /products) can opt in to staying
+    // on screen as the boot placeholder. Its hero paragraph is the mobile LCP
+    // element; wiping it for the grey skeleton below forced LCP to wait for
+    // the full React boot. Grab it before the body is cleared.
+    const keepShell = document.querySelector<HTMLElement>("[data-phl-boot-keep]");
     let container = document.getElementById("phl-csr-root");
     if (!container) {
       // Clear the pre-rendered body before CSR takes ownership. Do NOT preserve
@@ -546,7 +551,18 @@ function prepareDocumentForCsr(): void {
       container.id = "phl-csr-root";
       document.body.appendChild(container);
     }
-    container.innerHTML =
+    if (keepShell) {
+      // Same .phl-boot marker as the skeleton so mount telemetry still sees
+      // "boot visible" until React's first commit replaces it. Inline styles
+      // neutralise the critical-css .phl-boot flex centring / 14px font.
+      const boot = document.createElement("div");
+      boot.className = "phl-boot";
+      boot.setAttribute("aria-busy", "true");
+      boot.setAttribute("aria-label", "Loading PH Labs");
+      boot.style.cssText = "display:block;min-height:100vh;background:#060f1e;font-size:16px";
+      boot.appendChild(keepShell);
+      container.replaceChildren(boot);
+    } else container.innerHTML =
       '<style>@keyframes phl-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}.phl-sk{background:linear-gradient(90deg,#0f1a2e 25%,#1a2540 50%,#0f1a2e 75%);background-size:200% 100%;animation:phl-shimmer 1.4s infinite;border-radius:8px}</style>' +
       '<div class="phl-boot" aria-live="polite" aria-busy="true" aria-label="Loading PH Labs" style="min-height:100vh;background:#060f1e;color:#9fb0c8;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif">' +
         '<div class="phl-sk" style="height:56px;border-radius:0"></div>' +

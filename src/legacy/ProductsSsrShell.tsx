@@ -18,6 +18,9 @@ export function ProductsSsrShell() {
     <div
       className="phl-ssr-shell min-h-screen"
       data-keep-dark
+      // Read by prepareDocumentForCsr in src/client.tsx: keep this shell on
+      // screen (instead of the grey boot skeleton) until React mounts.
+      data-phl-boot-keep=""
       // Same font stack ThemeContext applies to <body> after mount, so the
       // hero paragraph wraps identically before and after the React swap.
       style={{ background: "#060f1e", fontFamily: 'var(--theme-font-body, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif)' }}
