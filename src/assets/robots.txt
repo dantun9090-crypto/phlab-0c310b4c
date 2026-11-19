@@ -9,8 +9,6 @@ Disallow: /account
 Disallow: /login
 Disallow: /register
 Disallow: /search
-Disallow: /vip-store
-Disallow: /vip
 
 # Vulnerability-scanner noise — never crawlable, never prerendered
 Disallow: /*.php$
