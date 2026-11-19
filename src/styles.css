@@ -1121,3 +1121,8 @@ html.light .phl-glass-card::after {
 @media (prefers-reduced-transparency: reduce) {
   .phl-glass-card { backdrop-filter: none; }
 }
+
+/* /products first-paint shell (src/legacy/ProductsSsrShell.tsx) stays hidden
+   via a zero-specificity inline rule until this stylesheet has loaded, so its
+   hero paints once, already at its final size (mobile LCP). */
+[data-phl-boot-keep] { visibility: visible; }

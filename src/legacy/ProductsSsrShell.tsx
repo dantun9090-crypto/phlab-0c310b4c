@@ -18,6 +18,11 @@ import { FlaskConical, Microscope, ShieldCheck, Truck } from "lucide-react";
  * Pure markup only: no router, no browser APIs (safe for the SSR worker).
  */
 const PRE_CSS =
+  // Hidden until the main stylesheet loads (it re-shows [data-phl-boot-keep]
+  // — see src/styles.css). An unstyled first paint would register the hero
+  // paragraph as LCP at a slightly different size, and the live page's
+  // identical paragraph would then count as a new, later LCP.
+  ":where([data-phl-boot-keep]){visibility:hidden}" +
   ":where([data-phl-boot-keep]) :where(.phl-psh-c){padding-left:24px;padding-right:24px}" +
   ":where([data-phl-boot-keep]) :where(.phl-psh-h1){font-weight:900;line-height:1.08;margin:0}" +
   ":where([data-phl-boot-keep]) :where(.phl-psh-p){font-size:1rem;line-height:1.6;margin:0;letter-spacing:-0.01em;" +
