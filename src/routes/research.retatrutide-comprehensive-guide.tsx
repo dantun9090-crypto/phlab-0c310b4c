@@ -244,7 +244,7 @@ function RetatrutideComprehensiveGuidePage() {
         <section id="vs-tirzepatide" className="mb-10">
           <h2 className="mb-3 text-2xl font-semibold">4. Retatrutide vs tirzepatide — technical comparison</h2>
           <p className="text-slate-300">
-            Retatrutide and <a className="text-emerald-400 hover:underline" href="/products/tirzepatide-research-peptide">tirzepatide</a> are frequently benchmarked side-by-side because both are lipid-modified incretin-family peptides from the same discovery programme. The mechanistic difference reduces to one axis: glucagon-receptor engagement.
+            Retatrutide and tirzepatide are frequently benchmarked side-by-side because both are lipid-modified incretin-family peptides from the same discovery programme. The mechanistic difference reduces to one axis: glucagon-receptor engagement.
           </p>
           <div className="mt-4 overflow-x-auto rounded-xl border border-slate-800">
             <table className="w-full text-left text-sm">
@@ -299,7 +299,7 @@ function RetatrutideComprehensiveGuidePage() {
             PH Labs is a UK-based supplier of research peptides for in-vitro work. Every retatrutide lot is QC'd in-house using the release protocols above and each vial ships with a batch-specific Certificate of Analysis to a UK laboratory or institutional address.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
-            <a href="/products/retatrutide-research-peptide" className="rounded-lg bg-emerald-600 px-5 py-3 font-semibold text-white hover:bg-emerald-500">
+            <a href="/vip" className="rounded-lg bg-emerald-600 px-5 py-3 font-semibold text-white hover:bg-emerald-500">
               View Retatrutide reference vials →
             </a>
             <a href="/research/retatrutide-uk" className="rounded-lg border border-slate-700 px-5 py-3 font-semibold text-slate-200 hover:border-emerald-500 hover:text-emerald-400">
