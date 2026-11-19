@@ -167,7 +167,7 @@ function RetatrutidePillarPage() {
             Retatrutide is a 39-residue synthetic acylated peptide engineered as a balanced triple agonist at the human GIP, GLP-1, and glucagon receptors. The chemistry was first disclosed by Coskun et al. in <em>Nature Metabolism</em> (2022). A C20 fatty-diacid pendant at Lys17 mediates non-covalent serum-albumin association, extending in-vitro half-life in plasma-stability assays. Non-canonical residues α-methyl-Lys at position 13 and 2-aminoisobutyric acid (Aib) at position 2 suppress dipeptidyl-peptidase-4 (DPP-4) cleavage.
           </p>
           <p className="mt-3 text-slate-300">
-            Within UK research laboratories retatrutide is used as the reference triagonist in comparative incretin-receptor assay panels alongside <a className="text-emerald-400 hover:underline" href="/products/tirzepatide-research-peptide">tirzepatide</a> (GIP/GLP-1 dual agonist), semaglutide (selective GLP-1R), and native glucagon. The retained glucagon-receptor activity is what differentiates it from tirzepatide in mechanistic in-vitro experiments.
+            Within UK research laboratories retatrutide is used as the reference triagonist in comparative incretin-receptor assay panels alongside tirzepatide (GIP/GLP-1 dual agonist), semaglutide (selective GLP-1R), and native glucagon. The retained glucagon-receptor activity is what differentiates it from tirzepatide in mechanistic in-vitro experiments.
           </p>
         </section>
 
@@ -211,11 +211,8 @@ function RetatrutidePillarPage() {
             PH Labs is a UK-based supplier of research peptides for in-vitro work. Every retatrutide lot is QC'd in-house with the protocols above, and each vial ships with a batch-specific Certificate of Analysis.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
-            <a href="/products/retatrutide-research-peptide" className="rounded-lg bg-emerald-600 px-5 py-3 font-semibold text-white hover:bg-emerald-500">
+            <a href="/vip" className="rounded-lg bg-emerald-600 px-5 py-3 font-semibold text-white hover:bg-emerald-500">
               View Retatrutide reference vials →
-            </a>
-            <a href="/products/category/retatrutide" className="rounded-lg border border-slate-700 px-5 py-3 font-semibold text-slate-200 hover:border-emerald-500 hover:text-emerald-400">
-              Browse the retatrutide hub
             </a>
           </div>
         </section>
@@ -224,9 +221,6 @@ function RetatrutidePillarPage() {
           <h2 className="mb-4 text-2xl font-semibold">Related comparisons</h2>
           <ul className="grid gap-3 sm:grid-cols-2">
             <li><a href="/compare/retatrutide-vs-tirzepatide" className="block rounded-lg border border-slate-800 bg-slate-900 p-4 hover:border-emerald-500">Retatrutide vs Tirzepatide</a></li>
-            <li><a href="/compare/retatrutide-vs-semaglutide" className="block rounded-lg border border-slate-800 bg-slate-900 p-4 hover:border-emerald-500">Retatrutide vs Semaglutide</a></li>
-            <li><a href="/compare/retatrutide-vs-cagrilintide" className="block rounded-lg border border-slate-800 bg-slate-900 p-4 hover:border-emerald-500">Retatrutide vs Cagrilintide</a></li>
-            <li><a href="/compare/retatrutide-vs-survodutide" className="block rounded-lg border border-slate-800 bg-slate-900 p-4 hover:border-emerald-500">Retatrutide vs Survodutide</a></li>
             <li><a href="/products/tb-500-thymosin-beta-4" className="block rounded-lg border border-slate-800 bg-slate-900 p-4 hover:border-emerald-500">Related orthogonal reference: TB-500 (Thymosin Beta-4)</a></li>
           </ul>
           <p className="mt-3 text-sm text-slate-400">
