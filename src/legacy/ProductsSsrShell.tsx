@@ -69,7 +69,10 @@ export function ProductsSsrShell() {
 
               <h1
                 className="phl-psh-h1 font-black leading-tight mb-3"
-                style={{ fontSize: "clamp(2rem, 4.5vw, 3.25rem)", color: "#eef4ff", letterSpacing: "-0.025em" }}
+                // lineHeight 1.08 = computed value in the live page (a Layout-scoped
+                // rule overrides leading-tight there); keeps the paragraph at the
+                // same sub-pixel offset so its LCP size matches exactly.
+                style={{ fontSize: "clamp(2rem, 4.5vw, 3.25rem)", color: "#eef4ff", letterSpacing: "-0.025em", lineHeight: 1.08 }}
               >
                 Research Peptides UK — Third-Party Tested, UK Stock
               </h1>

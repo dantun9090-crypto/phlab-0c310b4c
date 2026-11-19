@@ -140,6 +140,7 @@ try {
 
 import { Component, StrictMode, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
+import { ProductsSsrShell } from "@/legacy/ProductsSsrShell";
 import LegacyClientApp from "./legacy/LegacyClientApp";
 import { installClientErrorReporter, reportClientError } from "./lib/client-error-reporter";
 import { initSwTelemetry } from "./lib/swTelemetry";
@@ -600,7 +601,18 @@ function CsrBootFallback() {
 
 function CsrLegacyApp() {
   const initialPath = typeof window !== "undefined" ? window.location.pathname : "/";
-  return <LegacyClientApp initialPath={initialPath} fallback={<CsrBootFallback />} />;
+  // /products: keep painting its hero shell (mobile LCP element) while the
+  // LegacyApp chunk loads, instead of the "Loading PH Labs…" placeholder.
+  // The .phl-boot wrapper keeps mount telemetry ("boot still visible") intact.
+  const fallback =
+    initialPath === "/products" ? (
+      <div className="phl-boot" aria-busy="true" style={{ display: "block", minHeight: "100vh", background: "#060f1e", fontSize: 16 }}>
+        <ProductsSsrShell />
+      </div>
+    ) : (
+      <CsrBootFallback />
+    );
+  return <LegacyClientApp initialPath={initialPath} fallback={fallback} />;
 }
 
 function attemptCacheBustReload(): boolean {
