@@ -20,7 +20,10 @@ import { FlaskConical, Microscope, ShieldCheck, Truck } from "lucide-react";
 const PRE_CSS =
   ":where([data-phl-boot-keep]) :where(.phl-psh-c){padding-left:24px;padding-right:24px}" +
   ":where([data-phl-boot-keep]) :where(.phl-psh-h1){font-weight:900;line-height:1.08;margin:0}" +
-  ":where([data-phl-boot-keep]) :where(.phl-psh-p){font-size:1rem;line-height:1.6;margin:0}";
+  ":where([data-phl-boot-keep]) :where(.phl-psh-p){font-size:1rem;line-height:1.6;margin:0;letter-spacing:-0.01em;" +
+  // Inherited from the live Layout wrapper; without it the shell's glyph
+  // run is a hair narrower and the live paragraph re-registers as LCP.
+  "font-feature-settings:\"calt\",\"kern\",\"liga\"}";
 
 export function ProductsSsrShell() {
   return (
