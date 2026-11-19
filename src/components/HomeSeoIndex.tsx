@@ -1,6 +1,12 @@
 import { Link } from 'react-router-dom';
 import { FlaskConical, BookOpen, Microscope } from 'lucide-react';
-import { ARTICLE_INDEX as articles } from '@/pages/Resources/data/articles-index';
+import { ARTICLE_INDEX } from '@/pages/Resources/data/articles-index';
+import { isDelistedProductName } from '@/lib/review-display';
+
+// VIP-only products must not be named on the public homepage. The articles
+// themselves stay live at /resources/<slug> (and in the sitemap); only their
+// links are left out of this homepage list.
+const articles = ARTICLE_INDEX.filter((a) => !isDelistedProductName(a.title));
 
 // Static, SSR-rendered link hub. Exists to give Googlebot direct anchors to
 // every product slug + every resource article from the homepage — fixes
