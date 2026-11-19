@@ -11,6 +11,15 @@ name: Deploy Firebase rules (Storage + Firestore)
 #      secret: name FIREBASE_SERVICE_ACCOUNT, value = full JSON contents.
 # Until the secret exists, the push trigger exits early with a notice and
 # stays green; the workflow can always be run manually afterwards.
+#
+# 2026-11-19 hardening (after the 2026-11-18 outage):
+#   - firebase-tools installs into an isolated /tmp prefix, so dependency
+#     conflicts in the repo's own package.json (e.g. an eslint peer bump)
+#     can never break this deploy again.
+#   - an auth preflight exchanges the service-account key for an access
+#     token before deploying, so a rotated/disabled key fails with a clear
+#     message instead of an opaque deploy error.
+#   - on failure the workflow opens a GitHub issue with the log tail.
 
 on:
   push:
@@ -23,6 +32,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   deploy-rules:
@@ -51,18 +61,79 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      - name: Deploy storage + firestore rules
+      - name: Install firebase-tools (isolated prefix)
         if: steps.secret_check.outputs.present == 'true'
         run: |
           set -euo pipefail
-          npm install --no-save firebase-tools@14
-          PROJECT_ID=$(python3 -c "import json;print(json.load(open('${GITHUB_WORKSPACE}/.sa.json'))['project_id'])")
-          npx firebase-tools deploy \
-            --only storage,firestore:rules \
-            --project "$PROJECT_ID" \
-            --non-interactive --force
+          rm -rf /tmp/fbtools
+          npm install --prefix /tmp/fbtools --no-save --no-audit --no-fund firebase-tools@14
+          /tmp/fbtools/node_modules/.bin/firebase --version
+
+      - name: Verify service-account key (auth preflight)
+        if: steps.secret_check.outputs.present == 'true'
+        run: |
+          set -o pipefail
+          {
+            PROJECT_ID=$(python3 -c "import json;print(json.load(open('${GITHUB_WORKSPACE}/.sa.json'))['project_id'])")
+            echo "Service account project_id: $PROJECT_ID"
+            printf '%s' "$PROJECT_ID" > /tmp/project_id.txt
+            node -e '
+              const { GoogleAuth } = require("/tmp/fbtools/node_modules/google-auth-library");
+              (async () => {
+                try {
+                  const auth = new GoogleAuth({ keyFile: process.argv[1], scopes: ["https://www.googleapis.com/auth/cloud-platform"] });
+                  const client = await auth.getClient();
+                  await client.getAccessToken();
+                  console.log("AUTH PREFLIGHT OK — service-account key is valid (access token issued).");
+                } catch (e) {
+                  console.error("AUTH PREFLIGHT FAILED:", e && e.message ? e.message : e);
+                  console.error("The key in the FIREBASE_SERVICE_ACCOUNT secret is invalid, rotated or disabled.");
+                  console.error("Fix: Firebase Console → Project settings → Service accounts → Generate new private key, then update the FIREBASE_SERVICE_ACCOUNT GitHub secret.");
+                  process.exit(1);
+                }
+              })();
+            ' "${GITHUB_WORKSPACE}/.sa.json"
+          } 2>&1 | tee /tmp/preflight.log
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/.sa.json
+
+      - name: Deploy storage + firestore rules
+        if: steps.secret_check.outputs.present == 'true'
+        run: |
+          set -o pipefail
+          PROJECT_ID=$(cat /tmp/project_id.txt)
+          /tmp/fbtools/node_modules/.bin/firebase deploy \
+            --only storage,firestore:rules \
+            --project "$PROJECT_ID" \
+            --non-interactive --force 2>&1 | tee /tmp/deploy.log
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/.sa.json
+
+      - name: Report failure to a GitHub issue
+        if: failure() && steps.secret_check.outputs.present == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          {
+            echo "## Firebase rules deploy failed"
+            echo
+            echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} (attempt ${GITHUB_RUN_ATTEMPT})"
+            echo "Commit: ${GITHUB_SHA}"
+            echo
+            echo "### Auth preflight (last lines)"
+            echo '```'
+            tail -n 40 /tmp/preflight.log 2>/dev/null || echo "(no preflight log — the run failed before it)"
+            echo '```'
+            echo
+            echo "### firebase deploy (last lines)"
+            echo '```'
+            tail -n 60 /tmp/deploy.log 2>/dev/null || echo "(no deploy log — the run failed before it)"
+            echo '```'
+          } > /tmp/report.md
+          gh issue create \
+            --title "Firebase rules deploy failed (run ${GITHUB_RUN_ID})" \
+            --body-file /tmp/report.md \
+          || echo "::warning::could not create the failure-report issue (check Actions token permissions: issues write)"
 
       - name: Remove service account file
         if: always()
