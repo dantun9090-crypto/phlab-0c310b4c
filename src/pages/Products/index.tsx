@@ -59,7 +59,7 @@ const SORT_OPTIONS = [
 const CATEGORY_INTROS: Record<string, { h1: string; h1Display?: string; intro: string }> = {
   all: {
     h1: 'Research Peptides UK | Full Catalogue',
-    h1Display: 'Tested Research Peptides UK — Retatrutide, MOTS-C, GHK-Cu',
+    h1Display: 'Research Peptides UK — Third-Party Tested, UK Stock',
     intro: 'HPLC-tested, research-grade lyophilised peptides. Every batch analytically verified to ≥99% purity by reverse-phase HPLC and confirmed by mass spectrometry. Certificate of Analysis included. For laboratory research use only.',
   },
   'tissue-repair': {

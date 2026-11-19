@@ -737,9 +737,9 @@ export default function HomePage() {
                   maxWidth: '100%',
                   overflowWrap: 'break-word',
                 }}>
-                  <span style={{ display: 'block', textWrap: 'balance' }}>Tested Research Peptides UK</span>
-                  <span className="phl-gradient-text" style={{ display: 'block' }}>Retatrutide · MOTS-C · GHK-Cu</span>
-                  <span style={{ display: 'block', color: '#c9d8f0', fontWeight: 400, fontSize: '0.72em', overflowWrap: 'break-word' }}>HPLC-Verified ≥99% Purity · CoA Per Batch</span>
+                  <span style={{ display: 'block', textWrap: 'balance' }}>Research Peptides UK</span>
+                  <span className="phl-gradient-text" style={{ display: 'block' }}>Third-Party Tested · UK Stock</span>
+                  <span style={{ display: 'block', color: '#c9d8f0', fontWeight: 400, fontSize: '0.72em', overflowWrap: 'break-word' }}>≥99% HPLC · CoA Per Batch</span>
                 </h1>
               </div>
 

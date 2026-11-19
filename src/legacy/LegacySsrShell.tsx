@@ -163,8 +163,8 @@ export function LegacySsrShell({ banner }: { banner?: PromoBannerLite | null } =
               margin: 0,
             }}
           >
-            <span style={{ display: 'block' }}>Tested Research Peptides UK</span>
-            <span style={{ display: 'block', color: '#10b981' }}>Retatrutide · MOTS-C · GHK-Cu</span>
+            <span style={{ display: 'block' }}>Research Peptides UK</span>
+            <span style={{ display: 'block', color: '#10b981' }}>Third-Party Tested · UK Stock</span>
             <span
               style={{
                 display: 'block',
@@ -173,7 +173,7 @@ export function LegacySsrShell({ banner }: { banner?: PromoBannerLite | null } =
                 fontSize: '0.72em',
               }}
             >
-              HPLC-Verified ≥99% Purity · CoA Per Batch
+              ≥99% HPLC · CoA Per Batch
             </span>
           </h1>
 
