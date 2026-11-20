@@ -46,14 +46,25 @@ function isFirstParty(url: string): boolean {
 export const SCANNER_PROBE_RE =
   /\.php|\/\.well-known\/|\/\.[A-Za-z]|~$|\.(?:save|bak|old|swp)$|^\/(config\.(?:yaml|yml|json)|service-account\.json|sa\.json|gcp-[^/]*\.json|credentials\.json|phpinfo|server-status|server-info|_profiler|_environment|webroot\/|bootstrap\/|function\/|wk\/)/i;
 
+const ANALYTICS_HOSTS = ['google-analytics.com', 'googletagmanager.com'];
+
+/** Host-suffix match (not substring) so lookalike hosts can't bypass the filter. */
+function isAnalyticsBeacon(path: string): boolean {
+  try {
+    const host = new URL(path).hostname.toLowerCase();
+    return ANALYTICS_HOSTS.some((d) => host === d || host.endsWith(`.${d}`));
+  } catch {
+    return false; // relative paths are never analytics beacons
+  }
+}
+
 function shouldIgnorePath(path: string): boolean {
   // The monitor endpoint itself + GA / analytics beacons must never be reported
   // (would create an infinite loop).
   if (
     path.startsWith("/api/public/error-monitor") ||
     path.startsWith("/api/public/csp-report") ||
-    path.includes("google-analytics.com") ||
-    path.includes("googletagmanager.com")
+    isAnalyticsBeacon(path)
   ) {
     return true;
   }

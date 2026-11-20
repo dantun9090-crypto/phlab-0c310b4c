@@ -40,10 +40,10 @@ const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
   },
   'metabolic-signaling': {
     label: 'Metabolic / GLP-1',
-    description: 'GLP-1, GIP, and glucagon receptor agonists for metabolic signalling research. Semaglutide, Tirzepatide, and Retatrutide supplied for laboratory research use only.',
+    description: 'GLP-1, GIP, and glucagon receptor agonists for metabolic signalling research. Supplied for laboratory research use only.',
     seoTitle: 'GLP-1 Research Peptides UK | PH Labs',
-    seoDescription: 'HPLC-verified GLP-1 and metabolic research peptides — Semaglutide, Tirzepatide, Retatrutide. ≥99% purity, CoA included. UK delivery. Lab use only.',
-    seoKeywords: 'GLP-1 peptides UK, Semaglutide research UK, Tirzepatide buy UK, metabolic peptides research',
+    seoDescription: 'HPLC-verified GLP-1 and metabolic research peptides. ≥99% purity, CoA included. UK delivery. Lab use only.',
+    seoKeywords: 'GLP-1 peptides UK, GLP-1 research UK, metabolic peptides research, incretin research compounds',
     color: '#3b82f6',
     icon: '⚗️',
   },

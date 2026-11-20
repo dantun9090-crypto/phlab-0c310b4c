@@ -525,7 +525,8 @@ export default {
       });
 
     } catch (err) {
-      return jsonResponse(request, { error: err.message }, 500);
+      console.error('royal-mail-order-worker: unhandled error', err);
+      return jsonResponse(request, { error: 'Internal error' }, 500);
     }
   }
 };
