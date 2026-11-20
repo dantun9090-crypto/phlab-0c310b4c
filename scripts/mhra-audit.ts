@@ -93,12 +93,29 @@ function suggestionFor(reason: string): string {
   return "Reword so the text describes laboratory research context only, with no outcome, health or medical framing.";
 }
 
+/**
+ * Remove every <tag>…</tag> block via index scanning — regex-based tag
+ * filtering is bypassable on malformed input (CodeQL js/bad-tag-filter).
+ */
+function stripTagBlocks(html: string, tag: string): string {
+  let out = html;
+  const openNeedle = `<${tag}`;
+  const closeNeedle = `</${tag}>`;
+  for (;;) {
+    const lo = out.toLowerCase();
+    const start = lo.indexOf(openNeedle);
+    if (start === -1) return out;
+    const openEnd = lo.indexOf(">", start);
+    if (openEnd === -1) return out.slice(0, start);
+    const close = lo.indexOf(closeNeedle, openEnd);
+    if (close === -1) return out.slice(0, start);
+    out = `${out.slice(0, start)} ${out.slice(close + closeNeedle.length)}`;
+  }
+}
+
 /** Strip scripts, styles, tags → visible text. */
 function visibleText(html: string): string {
-  return html
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ")
-    .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, " ")
+  return stripTagBlocks(stripTagBlocks(stripTagBlocks(html, "script"), "style"), "noscript")
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")

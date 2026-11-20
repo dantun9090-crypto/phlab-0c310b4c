@@ -213,7 +213,7 @@ export function formatTestSummary(test: LabTest): string {
 /** Parse "99.369%" / "99,369" / 99.369 → 99.369, rejecting out-of-range values. */
 export function parsePurity(raw: unknown): number | null {
   if (raw == null || raw === '') return null;
-  const n = Number(String(raw).replace('%', '').replace(',', '.').trim());
+  const n = Number(String(raw).replace(/%/g, '').replace(',', '.').trim());
   if (!Number.isFinite(n) || n < 0 || n > 100) return null;
   return n;
 }

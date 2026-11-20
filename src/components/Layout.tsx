@@ -35,6 +35,7 @@ const RecentlyViewedProducts = lazy(() =>
 );
 import { getRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { migrateStoredCart } from '@/lib/cart-migration';
+import { safeImageSrc } from '@/lib/safe-image';
 import { initAnalytics, trackPageView, trackAddToCart, trackBeginCheckout, renderGoogleMerchantBadge } from '@/lib/analytics';
 import { merchantItemId } from '@/lib/merchant-item-id';
 import { logCartEvent, safeCartWrite, safeCartRead } from '@/lib/cart-telemetry';
@@ -1066,14 +1067,15 @@ export function Layout({ children }: LayoutProps) {
                     </div>
                     {cart.map(item => {
                       const cartKey = item.variantId ? `${item.id}-${item.variantId}` : String(item.id);
+                      const cartImgSrc = safeImageSrc(item.image);
                       const isLowStock = item.stock !== undefined && item.stock > 0 && item.stock <= 5;
                       const isOutOfStock = item.stock !== undefined && item.stock === 0;
                       return (
                         <div key={cartKey} className="flex gap-3 bg-gray-800/50 rounded-xl p-3 border border-white/10">
                           {/* Product Image */}
                           <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center bg-[#030a14] border border-white/5">
-                            {item.image ? (
-                              <img src={item.image} alt={item.name} width="64" height="64" className="w-full h-full object-contain" loading="lazy" />
+                            {cartImgSrc ? (
+                              <img src={cartImgSrc} alt={item.name} width="64" height="64" className="w-full h-full object-contain" loading="lazy" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center bg-gray-900">
                                 <Package className="w-6 h-6 text-gray-600" />
