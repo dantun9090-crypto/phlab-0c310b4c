@@ -68,7 +68,7 @@ const CATEGORY_INTROS: Record<string, { h1: string; h1Display?: string; intro: s
   },
   'metabolic-signaling': {
     h1: 'Metabolic & GLP-1 Research Peptides UK',
-    intro: 'GLP-1, GIP, and glucagon receptor agonists for metabolic signalling research. Semaglutide, Tirzepatide, and Retatrutide supplied for laboratory research use only.',
+    intro: 'GLP-1, GIP, and glucagon receptor agonists for metabolic signalling research. Supplied for laboratory research use only.',
   },
   'cellular-aging': {
     h1: 'Longevity Research Peptides UK',

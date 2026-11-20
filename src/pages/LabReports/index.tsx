@@ -157,7 +157,7 @@ export default function LabReports() {
       }
       el.setAttribute('content', content);
     };
-    const metaDesc = 'HPLC & mass spec lab reports for every batch. Certificates of Analysis (CoA) for UK research peptides — BPC-157, Tirzepatide, TB-500.';
+    const metaDesc = 'HPLC & mass spec lab reports for every batch. Certificates of Analysis (CoA) for UK research peptides — BPC-157, TB-500, GHK-Cu.';
     setMeta('description', metaDesc);
     setMeta('keywords', 'HPLC tested peptides UK, peptide CoA, certificate of analysis research peptides, lab reports peptides UK, mass spectrometry peptide verification');
     setMeta('og:title', 'Lab Reports & CoA | HPLC-Tested Research Peptides | PH Labs UK', true);
