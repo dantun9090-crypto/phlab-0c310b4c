@@ -4,7 +4,7 @@ import {
   ShoppingCart, Search, Clock, Package, Truck, CheckCircle, XCircle,
   Eye, Printer, RefreshCw, ChevronDown, X, Send, Hash, Copy,
   Banknote, CheckCheck, AlertCircle, Loader2, CreditCard, ExternalLink,
-  Trash2, ChevronRight, RotateCcw, ArrowRight, BarChart3
+  Trash2, ChevronRight, RotateCcw, ArrowRight, BarChart3, Crown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CustomerOrdersSummary, { orderEmail } from '@/components/admin/CustomerOrdersSummary';
@@ -280,6 +280,27 @@ export default function OrdersTab() {
     const t = setTimeout(() => setDebouncedSearch(search), 250);
     return () => clearTimeout(t);
   }, [search]);
+  // VIP badge: the flag lives on customers/$uid.isVip while orders only carry
+  // denormalized customer data — match row to VIP by lowercase email.
+  const [vipEmails, setVipEmails] = useState<Set<string>>(new Set<string>());
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const snap = await getDocs(query(collection(db, 'customers'), where('isVip', '==', true)));
+        if (cancelled) return;
+        const emails = new Set<string>();
+        snap.forEach(d => {
+          const em = (d.data() as any)?.email;
+          if (typeof em === 'string' && em) emails.add(em.toLowerCase());
+        });
+        setVipEmails(emails);
+      } catch {
+        // Non-critical: the badge just stays hidden.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
   const [statusFilter, setStatusFilter] = useState<string>('new');
   const [selected, setSelected] = useState<Order | null>(null);
   // Per-row "customer history" toggle — one click shows paid/failed stats
@@ -1882,6 +1903,7 @@ export default function OrdersTab() {
     const c = (order as any).customer;
     const customerName = c ? `${c.firstName || ''} ${c.lastName || ''}`.trim() : (order.userName || 'Guest');
     const customerEmail = c?.email || order.userEmail || '';
+    const isVipCustomer = customerEmail ? vipEmails.has(customerEmail.toLowerCase()) : false;
     const addressLine = c ? [c.address, c.city, c.postcode].filter(Boolean).join(', ') : (order.shippingAddress || '');
     const orderRef = (order as any).orderId || `#${order.id?.slice(-8).toUpperCase()}`;
     const wallidApiRef = (order as any).apiPaymentId || (order as any).wallidApiPaymentId || '';
@@ -1917,7 +1939,7 @@ export default function OrdersTab() {
               </span>
             )}
           </div>
-          <p className="text-white text-xs mt-1 font-medium">{customerName}{customerEmail ? <span className="text-[#9cb8d9] font-normal"> · {customerEmail}</span> : ''}</p>
+          <p className="text-white text-xs mt-1 font-medium">{customerName}{isVipCustomer && <span className="ml-1 text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-full border border-amber-500/30 inline-flex items-center gap-0.5"><Crown className="w-2.5 h-2.5" />VIP</span>}{customerEmail ? <span className="text-[#9cb8d9] font-normal"> · {customerEmail}</span> : ''}</p>
           <p className="text-[#9cb8d9] text-xs mt-0.5 truncate">{addressLine || 'No address'}</p>
           <p className="text-[#2a4a7a] text-xs mt-0.5">
             {order.items?.length || 0} item(s) ·{' '}
@@ -2688,6 +2710,7 @@ export default function OrdersTab() {
                   const c = (selected as any).customer;
                   const name = c ? `${c.firstName || ''} ${c.lastName || ''}`.trim() : (selected.userName || 'Guest');
                   const email = c?.email || selected.userEmail || '';
+                  const isVipCustomer = email ? vipEmails.has(email.toLowerCase()) : false;
                   const phone = c?.phone || '';
                   const address = c ? [c.address, c.city, c.postcode, c.country].filter(Boolean).join(', ') : (selected.shippingAddress || '');
                   const shipping = (selected as any).shippingLabel || '';
@@ -2697,7 +2720,7 @@ export default function OrdersTab() {
                         <p className="text-[#9cb8d9] text-[10px] font-medium uppercase tracking-wide">Customer</p>
                         <span className="text-green-400 font-bold text-base">£{(((selected as any).total || selected.totalAmount || 0)).toFixed(2)} · {selected.items?.length || 0} item{(selected.items?.length || 0) === 1 ? '' : 's'}</span>
                       </div>
-                      <p className="text-white text-sm font-medium">{name}</p>
+                      <p className="text-white text-sm font-medium">{name}{isVipCustomer && <span className="ml-1.5 text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-full border border-amber-500/30 inline-flex items-center gap-0.5 align-middle"><Crown className="w-2.5 h-2.5" />VIP</span>}</p>
                       {email && <p className="text-[#9cb8d9] text-sm">{email}</p>}
                       {phone && <p className="text-[#9cb8d9] text-sm">{phone}</p>}
                       {address && <p className="text-[#9cb8d9] text-sm">{address}</p>}
