@@ -42,10 +42,16 @@ const LOGO_SLUG: Record<string, string> = {
   'skipton-bs': 'skipton',
 };
 
-/** Resolve the local high-quality wordmark SVG for a bank. */
+/** Banks with real brand-mark PNGs (transparent, 128px) in /public/bank-logos/. */
+const PNG_LOGOS = new Set([
+  'hsbc', 'barclays', 'natwest', 'lloyds', 'monzo', 'starling',
+  'revolut', 'santander', 'rbs', 'nationwide', 'halifax',
+]);
+
+/** Resolve the local logo for a bank (real brand PNG where available, else wordmark SVG). */
 export function bankLogoUrl(bank: WallidBankDef, _size = 128): string | null {
   const slug = LOGO_SLUG[bank.id] ?? bank.id;
-  return `/bank-logos/${slug}.svg`;
+  return `/bank-logos/${slug}.${PNG_LOGOS.has(slug) ? 'png' : 'svg'}`;
 }
 
 export const WALLID_BANK_CATALOG: WallidBankDef[] = [

@@ -7,14 +7,14 @@ interface UkBankBadgesProps {
 }
 
 const BANKS: { name: string; src: string }[] = [
-  { name: 'HSBC', src: '/bank-logos/hsbc.svg' },
-  { name: 'Barclays', src: '/bank-logos/barclays.svg' },
-  { name: 'NatWest', src: '/bank-logos/natwest.svg' },
-  { name: 'Lloyds', src: '/bank-logos/lloyds.svg' },
-  { name: 'Monzo', src: '/bank-logos/monzo.svg' },
-  { name: 'Starling', src: '/bank-logos/starling.svg' },
-  { name: 'Revolut', src: '/bank-logos/revolut.svg' },
-  { name: 'Santander', src: '/bank-logos/santander.svg' },
+  { name: 'HSBC', src: '/bank-logos/hsbc.png' },
+  { name: 'Barclays', src: '/bank-logos/barclays.png' },
+  { name: 'NatWest', src: '/bank-logos/natwest.png' },
+  { name: 'Lloyds', src: '/bank-logos/lloyds.png' },
+  { name: 'Monzo', src: '/bank-logos/monzo.png' },
+  { name: 'Starling', src: '/bank-logos/starling.png' },
+  { name: 'Revolut', src: '/bank-logos/revolut.png' },
+  { name: 'Santander', src: '/bank-logos/santander.png' },
 ];
 
 export default function UkBankBadges({ className = '' }: UkBankBadgesProps) {
@@ -34,7 +34,7 @@ export default function UkBankBadges({ className = '' }: UkBankBadgesProps) {
             alt={name}
             loading="lazy"
             decoding="async"
-            className="max-h-4 max-w-full object-contain"
+            className="max-h-5 max-w-full object-contain"
           />
         </span>
       ))}
