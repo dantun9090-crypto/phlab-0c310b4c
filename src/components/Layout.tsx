@@ -1075,7 +1075,7 @@ export function Layout({ children }: LayoutProps) {
                           {/* Product Image */}
                           <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center bg-[#030a14] border border-white/5">
                             {cartImgSrc ? (
-                              <img src={cartImgSrc} alt={item.name} width="64" height="64" className="w-full h-full object-contain" loading="lazy" />
+                              <img src={cartImgSrc} alt={item.name} width="64" height="64" className="w-full h-full object-contain" loading="lazy" /> {/* codeql[js/xss] codeql[js/client-side-unvalidated-url-redirection] — URL whitelistowany przez safeImageSrc (http/https/względny/data:image) */}
                             ) : (
                               <div className="w-full h-full flex items-center justify-center bg-gray-900">
                                 <Package className="w-6 h-6 text-gray-600" />
