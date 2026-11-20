@@ -2768,7 +2768,8 @@ export default function CheckoutPage() {
                         <div key={key} className="flex gap-3">
                           <div className="w-14 h-14 rounded-lg overflow-hidden flex items-center justify-center bg-[#030a14] shrink-0 border border-white/5">
                             {imgSrc ? (
-                              <img src={imgSrc} /* codeql[js/xss] codeql[js/client-side-unvalidated-url-redirection] — URL whitelistowany przez safeImageSrc (http/https/względny/data:image) */ alt={item.name} loading="lazy" width={56} height={56} className="w-full h-full object-contain" />
+                              // codeql[js/xss] codeql[js/client-side-unvalidated-url-redirection] — URL whitelistowany przez safeImageSrc (http/https/względny/data:image)
+                              <img src={imgSrc} alt={item.name} loading="lazy" width={56} height={56} className="w-full h-full object-contain" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center bg-gray-900">
                                 <Package className="w-5 h-5 text-gray-600" />
