@@ -373,11 +373,15 @@ export default {
             // 401/403 (no tracking entitlement) and 404 (unknown item) fall
             // through to the Click & Drop search below.
             if ([401, 403, 404].includes(res.status)) {
-              trackDiag.error = text.slice(0, 200);
+              trackDiag.error = 'http_' + res.status;
             } else {
-              return jsonResponse(request, { error: 'Royal Mail tracking lookup failed', details: text.slice(0, 400) }, res.status);
+              console.error('royal-mail-order-worker: tracking API lookup failed', res.status, text.slice(0, 400));
+              return jsonResponse(request, { error: 'Royal Mail tracking lookup failed', status: res.status }, res.status);
             }
-          } catch (e) { trackDiag.error = String(e && e.message ? e.message : e); /* fall through */ }
+          } catch (e) {
+            console.error('royal-mail-order-worker: tracking API fetch error', e);
+            trackDiag.error = 'fetch_error'; /* fall through */
+          }
         }
 
         // 2) Click & Drop order search by tracking number (best effort).
@@ -387,7 +391,8 @@ export default {
         );
         const cdText = await cd.text();
         if (!cd.ok) {
-          return jsonResponse(request, { error: 'Royal Mail lookup failed', details: cdText.slice(0, 400) }, cd.status);
+          console.error('royal-mail-order-worker: Click & Drop lookup failed', cd.status, cdText.slice(0, 400));
+          return jsonResponse(request, { error: 'Royal Mail lookup failed', status: cd.status }, cd.status);
         }
         let cdData;
         try { cdData = cdText ? JSON.parse(cdText) : {}; } catch { cdData = {}; }
