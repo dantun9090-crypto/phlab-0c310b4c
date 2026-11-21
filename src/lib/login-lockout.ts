@@ -1,25 +1,17 @@
 /**
- * Login rate-limit / lockout tracker.
+ * Client facade for the server-side login lockout.
  *
- * Records failed login attempts per email in Firestore `loginAttempts`.
- * After MAX_FAILURES within the WINDOW_MS, the email is locked for COOLDOWN_MS.
- *
- * Client-side write — Firestore rules must allow create+update on `loginAttempts`
- * for unauthenticated users (writes are tightly shaped). This is a usability
- * gate, not a single source of truth — server-side enforcement still relies on
- * Firebase Auth's own brute-force protection.
+ * 2026-11-21: Firestore `loginAttempts` is no longer touched from the
+ * browser (rules: read admin-only, write denied) — everything goes through
+ * POST /api/public/login-lockout, which owns the counter via the service
+ * account. Fail-open by design: any network/endpoint error is treated as
+ * "not locked", because Firebase Auth's native throttling is the
+ * authoritative brute-force protection underneath this UX gate.
  */
-import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 export const MAX_FAILURES = 5;
 export const COOLDOWN_MS = 15 * 60 * 1000; // 15 min
 export const WINDOW_MS = 15 * 60 * 1000;
-
-function emailKey(email: string): string {
-  // Deterministic, lower-cased, no @/. for Firestore doc id safety
-  return 'email_' + email.trim().toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 200);
-}
 
 export interface LockoutState {
   locked: boolean;
@@ -27,70 +19,37 @@ export interface LockoutState {
   failures: number;
 }
 
-export async function checkLockout(email: string): Promise<LockoutState> {
+const OPEN: LockoutState = { locked: false, remainingMs: 0, failures: 0 };
+
+async function callEndpoint(action: 'check' | 'fail' | 'clear', email: string): Promise<LockoutState> {
   try {
-    const ref = doc(db, 'loginAttempts', emailKey(email));
-    const snap = await getDoc(ref);
-    if (!snap.exists()) return { locked: false, remainingMs: 0, failures: 0 };
-    const data = snap.data() as { failures?: number; lockedUntil?: Timestamp };
-    const lockedUntilMs = data.lockedUntil?.toMillis() ?? 0;
-    const now = Date.now();
-    if (lockedUntilMs > now) {
-      return { locked: true, remainingMs: lockedUntilMs - now, failures: data.failures ?? 0 };
-    }
-    return { locked: false, remainingMs: 0, failures: data.failures ?? 0 };
+    const res = await fetch('/api/public/login-lockout', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action, email }),
+    });
+    if (!res.ok) return OPEN;
+    const d = (await res.json()) as Partial<LockoutState>;
+    return {
+      locked: d.locked === true,
+      remainingMs: typeof d.remainingMs === 'number' ? d.remainingMs : 0,
+      failures: typeof d.failures === 'number' ? d.failures : 0,
+    };
   } catch {
-    return { locked: false, remainingMs: 0, failures: 0 };
+    return OPEN;
   }
 }
 
-export async function recordFailure(email: string): Promise<LockoutState> {
-  try {
-    const ref = doc(db, 'loginAttempts', emailKey(email));
-    const snap = await getDoc(ref);
-    const now = Date.now();
-    const prevFailures = snap.exists() ? ((snap.data() as any).failures ?? 0) : 0;
-    const prevFirstMs = snap.exists() ? ((snap.data() as any).firstFailureAt?.toMillis?.() ?? now) : now;
+export function checkLockout(email: string): Promise<LockoutState> {
+  return callEndpoint('check', email);
+}
 
-    // Reset window if oldest failure is older than WINDOW_MS
-    const windowExpired = now - prevFirstMs > WINDOW_MS;
-    const failures = windowExpired ? 1 : prevFailures + 1;
-    const lockedUntilMs = failures >= MAX_FAILURES ? now + COOLDOWN_MS : 0;
-
-    await setDoc(
-      ref,
-      {
-        emailHash: emailKey(email),
-        failures,
-        lastFailureAt: serverTimestamp(),
-        firstFailureAt: windowExpired ? serverTimestamp() : (snap.data() as any)?.firstFailureAt ?? serverTimestamp(),
-        ...(lockedUntilMs ? { lockedUntil: Timestamp.fromMillis(lockedUntilMs) } : {}),
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true },
-    );
-
-    return {
-      locked: lockedUntilMs > 0,
-      remainingMs: lockedUntilMs > 0 ? lockedUntilMs - now : 0,
-      failures,
-    };
-  } catch {
-    return { locked: false, remainingMs: 0, failures: 0 };
-  }
+export function recordFailure(email: string): Promise<LockoutState> {
+  return callEndpoint('fail', email);
 }
 
 export async function clearFailures(email: string): Promise<void> {
-  try {
-    const ref = doc(db, 'loginAttempts', emailKey(email));
-    await setDoc(
-      ref,
-      { failures: 0, lockedUntil: null, updatedAt: serverTimestamp() },
-      { merge: true },
-    );
-  } catch {
-    /* ignore */
-  }
+  await callEndpoint('clear', email);
 }
 
 export function formatRemaining(ms: number): string {
