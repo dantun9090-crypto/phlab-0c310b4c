@@ -113,6 +113,7 @@ import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicHealthDeepRouteImport } from './routes/api/public/health-deep'
 import { Route as ApiPublicImgRouteImport } from './routes/api/public/img'
 import { Route as ApiPublicLiveOrdersRouteImport } from './routes/api/public/live-orders'
+import { Route as ApiPublicLoginLockoutRouteImport } from './routes/api/public/login-lockout'
 import { Route as ApiPublicMonitorHeadGetRouteImport } from './routes/api/public/monitor-head-get'
 import { Route as ApiPublicMonitorLogRouteImport } from './routes/api/public/monitor-log'
 import { Route as ApiPublicNowpaymentsWebhookRouteImport } from './routes/api/public/nowpayments-webhook'
@@ -700,6 +701,11 @@ const ApiPublicLiveOrdersRoute = ApiPublicLiveOrdersRouteImport.update({
   path: '/api/public/live-orders',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicLoginLockoutRoute = ApiPublicLoginLockoutRouteImport.update({
+  id: '/api/public/login-lockout',
+  path: '/api/public/login-lockout',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicMonitorHeadGetRoute = ApiPublicMonitorHeadGetRouteImport.update({
   id: '/api/public/monitor-head-get',
   path: '/api/public/monitor-head-get',
@@ -1063,6 +1069,7 @@ export interface FileRoutesByFullPath {
   '/api/public/health-deep': typeof ApiPublicHealthDeepRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/api/public/live-orders': typeof ApiPublicLiveOrdersRoute
+  '/api/public/login-lockout': typeof ApiPublicLoginLockoutRoute
   '/api/public/monitor-head-get': typeof ApiPublicMonitorHeadGetRoute
   '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
   '/api/public/nowpayments-webhook': typeof ApiPublicNowpaymentsWebhookRoute
@@ -1213,6 +1220,7 @@ export interface FileRoutesByTo {
   '/api/public/health-deep': typeof ApiPublicHealthDeepRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/api/public/live-orders': typeof ApiPublicLiveOrdersRoute
+  '/api/public/login-lockout': typeof ApiPublicLoginLockoutRoute
   '/api/public/monitor-head-get': typeof ApiPublicMonitorHeadGetRoute
   '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
   '/api/public/nowpayments-webhook': typeof ApiPublicNowpaymentsWebhookRoute
@@ -1366,6 +1374,7 @@ export interface FileRoutesById {
   '/api/public/health-deep': typeof ApiPublicHealthDeepRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/api/public/live-orders': typeof ApiPublicLiveOrdersRoute
+  '/api/public/login-lockout': typeof ApiPublicLoginLockoutRoute
   '/api/public/monitor-head-get': typeof ApiPublicMonitorHeadGetRoute
   '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
   '/api/public/nowpayments-webhook': typeof ApiPublicNowpaymentsWebhookRoute
@@ -1519,6 +1528,7 @@ export interface FileRouteTypes {
     | '/api/public/health-deep'
     | '/api/public/img'
     | '/api/public/live-orders'
+    | '/api/public/login-lockout'
     | '/api/public/monitor-head-get'
     | '/api/public/monitor-log'
     | '/api/public/nowpayments-webhook'
@@ -1669,6 +1679,7 @@ export interface FileRouteTypes {
     | '/api/public/health-deep'
     | '/api/public/img'
     | '/api/public/live-orders'
+    | '/api/public/login-lockout'
     | '/api/public/monitor-head-get'
     | '/api/public/monitor-log'
     | '/api/public/nowpayments-webhook'
@@ -1821,6 +1832,7 @@ export interface FileRouteTypes {
     | '/api/public/health-deep'
     | '/api/public/img'
     | '/api/public/live-orders'
+    | '/api/public/login-lockout'
     | '/api/public/monitor-head-get'
     | '/api/public/monitor-log'
     | '/api/public/nowpayments-webhook'
@@ -1956,6 +1968,7 @@ export interface RootRouteChildren {
   ApiPublicHealthDeepRoute: typeof ApiPublicHealthDeepRoute
   ApiPublicImgRoute: typeof ApiPublicImgRoute
   ApiPublicLiveOrdersRoute: typeof ApiPublicLiveOrdersRoute
+  ApiPublicLoginLockoutRoute: typeof ApiPublicLoginLockoutRoute
   ApiPublicMonitorHeadGetRoute: typeof ApiPublicMonitorHeadGetRoute
   ApiPublicMonitorLogRoute: typeof ApiPublicMonitorLogRoute
   ApiPublicNowpaymentsWebhookRoute: typeof ApiPublicNowpaymentsWebhookRoute
@@ -2732,6 +2745,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicLiveOrdersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/login-lockout': {
+      id: '/api/public/login-lockout'
+      path: '/api/public/login-lockout'
+      fullPath: '/api/public/login-lockout'
+      preLoaderRoute: typeof ApiPublicLoginLockoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/monitor-head-get': {
       id: '/api/public/monitor-head-get'
       path: '/api/public/monitor-head-get'
@@ -3235,6 +3255,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHealthDeepRoute: ApiPublicHealthDeepRoute,
   ApiPublicImgRoute: ApiPublicImgRoute,
   ApiPublicLiveOrdersRoute: ApiPublicLiveOrdersRoute,
+  ApiPublicLoginLockoutRoute: ApiPublicLoginLockoutRoute,
   ApiPublicMonitorHeadGetRoute: ApiPublicMonitorHeadGetRoute,
   ApiPublicMonitorLogRoute: ApiPublicMonitorLogRoute,
   ApiPublicNowpaymentsWebhookRoute: ApiPublicNowpaymentsWebhookRoute,
