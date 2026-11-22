@@ -19,7 +19,7 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.isAdmin == true;
     }
     // Packing staff: customers/{uid}.staffRole == 'orders'. Server-set only.
-    // May read/update orders (no delete) and send order emails. Nothing else.
+    // May read/update orders (no delete) and send order emails. Read-only access to customers list. Nothing else.
     function isOrdersStaff() {
       return isSignedIn()
         && exists(/databases/$(database)/documents/customers/$(request.auth.uid))
@@ -39,7 +39,7 @@ service cloud.firestore {
     // Users can read & update their OWN profile (without changing isAdmin/role/isVip).
     // Admins can read & write any.
     match /customers/{uid} {
-      allow read:   if isSelf(uid) || isAdmin();
+      allow read:   if isSelf(uid) || isAdmin() || isOrdersStaff();
       allow create: if isSelf(uid)
                     && !('isAdmin' in request.resource.data)
                     && !('role'    in request.resource.data)

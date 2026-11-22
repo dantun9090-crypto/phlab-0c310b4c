@@ -38,7 +38,12 @@ const ROLE_COLORS: Record<string, string> = {
   customer: 'bg-gray-500/20 text-[#9cb8d9] border-gray-500/30',
 };
 
-export default function CustomersTab() {
+interface CustomersTabProps {
+  /** Hides every edit/delete/role action (packing staff view). */
+  readOnly?: boolean;
+}
+
+export default function CustomersTab({ readOnly = false }: CustomersTabProps = {}) {
   /** Admin confirms a customer's email when their emailed link expired. */
   const handleMarkVerified = async (c: CustomerProfile) => {
     if (!window.confirm(`Confirm email for ${c.email}? Only do this if you trust this is their address.`)) return;
@@ -489,7 +494,7 @@ export default function CustomersTab() {
                       <td className="px-3 sm:px-4 py-3 text-center hidden md:table-cell">
                         <button
                           onClick={() => handleVipToggle(c.uid, !!c.isVip)}
-                          disabled={saving === c.uid}
+                          disabled={readOnly || saving === c.uid}
                           title={c.isVip ? 'Remove VIP' : 'Grant VIP Access'}
                           className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border disabled:opacity-50 ${
                             c.isVip
@@ -521,6 +526,7 @@ export default function CustomersTab() {
                       <td className="px-3 sm:px-4 py-3 text-right text-[#8caad4] text-xs hidden lg:table-cell">£{c.avgOrderValue.toFixed(2)}</td>
                       <td className="px-3 sm:px-4 py-3 text-right text-[#9cb8d9] text-xs hidden lg:table-cell">{c.lastPurchase || '—'}</td>
                       <td className="px-3 sm:px-4 py-3">
+                        {!readOnly && (
                         <div className="flex items-center justify-end gap-1 sm:gap-2">
                           <select
                             value={c.role || 'customer'}
@@ -570,6 +576,7 @@ export default function CustomersTab() {
                           </button>
 
                         </div>
+                        )}
                       </td>
                     </motion.tr>
                   ))}
