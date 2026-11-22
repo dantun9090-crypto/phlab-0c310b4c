@@ -498,7 +498,7 @@ export default function AdminPage() {
 
   const renderTab = () => {
     const tab = (() => {
-      if (ordersOnly) return activeTab === 'customers' ? <CustomersTab readOnly /> : <OrdersTab />;
+      if (ordersOnly) return activeTab === 'customers' ? <CustomersTab readOnly canToggleVip /> : <OrdersTab />;
       switch (activeTab) {
 
         case 'dashboard': return <DashboardTab />;

@@ -41,9 +41,11 @@ const ROLE_COLORS: Record<string, string> = {
 interface CustomersTabProps {
   /** Hides every edit/delete/role action (packing staff view). */
   readOnly?: boolean;
+  /** Allows the VIP switch even when readOnly is set. */
+  canToggleVip?: boolean;
 }
 
-export default function CustomersTab({ readOnly = false }: CustomersTabProps = {}) {
+export default function CustomersTab({ readOnly = false, canToggleVip = !readOnly }: CustomersTabProps = {}) {
   /** Admin confirms a customer's email when their emailed link expired. */
   const handleMarkVerified = async (c: CustomerProfile) => {
     if (!window.confirm(`Confirm email for ${c.email}? Only do this if you trust this is their address.`)) return;
@@ -494,7 +496,7 @@ export default function CustomersTab({ readOnly = false }: CustomersTabProps = {
                       <td className="px-3 sm:px-4 py-3 text-center hidden md:table-cell">
                         <button
                           onClick={() => handleVipToggle(c.uid, !!c.isVip)}
-                          disabled={readOnly || saving === c.uid}
+                          disabled={!canToggleVip || saving === c.uid}
                           title={c.isVip ? 'Remove VIP' : 'Grant VIP Access'}
                           className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border disabled:opacity-50 ${
                             c.isVip

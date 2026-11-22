@@ -19,7 +19,7 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.isAdmin == true;
     }
     // Packing staff: customers/{uid}.staffRole == 'orders'. Server-set only.
-    // May read/update orders (no delete) and send order emails. Read-only access to customers list. Nothing else.
+    // May read/update orders (no delete) and send order emails. Read customers list and toggle isVip only. Nothing else.
     function isOrdersStaff() {
       return isSignedIn()
         && exists(/databases/$(database)/documents/customers/$(request.auth.uid))
@@ -45,7 +45,11 @@ service cloud.firestore {
                     && !('role'    in request.resource.data)
                     && !('isVip'   in request.resource.data)
                     && !('staffRole' in request.resource.data);
-      allow update: if (isSelf(uid) && notTouchingPrivilegedFields()) || isAdmin();
+      // Orders staff may flip ONLY isVip (boolean) on other customers' docs.
+      allow update: if (isSelf(uid) && notTouchingPrivilegedFields()) || isAdmin()
+                    || (isOrdersStaff() && !isSelf(uid)
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isVip'])
+                        && request.resource.data.isVip is bool);
       allow delete: if isAdmin();
     }
 
@@ -274,7 +278,8 @@ service cloud.firestore {
     // accounts (firebase-admin) bypass rules entirely for back-fills.
     match /auditLogs/{id} {
       allow read:   if isAdmin();
-      allow create: if isAdmin()
+      allow create: if (isAdmin()
+                        || (isOrdersStaff() && request.resource.data.action == 'customer.vip.toggle'))
                     && request.resource.data.adminUid == request.auth.uid
                     && request.resource.data.action is string
                     && request.resource.data.action.size() > 0
