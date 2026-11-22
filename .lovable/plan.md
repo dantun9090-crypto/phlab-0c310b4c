@@ -1,7 +1,14 @@
-# Lista gości bez konta (zamówienia powyżej £150)
+# Zakładka Customers dla Pawła Osmańskiego
 
-Znaleziono 18 osób: zamówienie złożone jako gość, opłacone, ponad £150, a e-maila nie ma wśród kont klientów. Pełną listę wysłano w czacie.
+Paweł (szalony242@wp.pl) jest jedyną osobą z dostępem "tylko zamówienia". Dostanie też zakładkę **Customers**, tylko do podglądu.
 
-Po zatwierdzeniu: zapisać tę listę jako plik CSV w Twoich Plikach (e-mail, numer zamówienia, kwota, data). Tylko odczyt, sklep i baza zostają bez zmian.
+## Co zobaczy
+- W panelu admina: Orders + Customers. Nic więcej.
+- W Customers może przeglądać i wyszukiwać klientów (imię, e-mail, adres, zamówienia).
+- Nie może edytować, usuwać ani nadawać VIP/admina. Te przyciski są dla niego ukryte, a baza i tak je zablokuje.
 
-Uwaga: zgodnie z prawem UK maile marketingowe można wysyłać tylko osobom, które się na nie zgodziły.
+## Zmiany techniczne
+- `src/pages/Admin/index.tsx`: lista `ORDERS_ONLY_TABS` = ['orders','customers']; renderTab dla roli orders pokazuje Orders albo Customers zamiast zawsze Orders.
+- `CustomersTab`: prop `readOnly`, który ukrywa akcje edycji, usuwania i zmiany ról.
+- `firestore.rules`: `customers` read dla `isOrdersStaff()`; zapis bez zmian (tylko admin). Rules wdrożone na żywo, wpis w logu admina.
+- Build, publikacja, purge Cloudflare, sprawdzenie na koncie testowym z tą samą rolą.
