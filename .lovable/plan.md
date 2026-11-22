@@ -1,7 +1,7 @@
-# Eksport maili gości
+# Lista gości bez konta (zamówienia powyżej £150)
 
-Stan (odczyt z bazy): 753 z 1335 zamówień złożono jako gość. 750 ma e-mail, 3 nie mają. To 632 różne adresy, a 664 zamówienia gości są opłacone.
+Znaleziono 18 osób: zamówienie złożone jako gość, opłacone, ponad £150, a e-maila nie ma wśród kont klientów. Pełną listę wysłano w czacie.
 
-Do zrobienia po zatwierdzeniu: zapisać plik CSV w Twoich Plikach z kolumnami: e-mail, imię i nazwisko, liczba zamówień, łączna kwota, data ostatniego zamówienia. Tylko odczyt, sklep i baza bez zmian.
+Po zatwierdzeniu: zapisać tę listę jako plik CSV w Twoich Plikach (e-mail, numer zamówienia, kwota, data). Tylko odczyt, sklep i baza zostają bez zmian.
 
-Uwaga: mailing marketingowy możesz wysłać tylko osobom, które się na niego zgodziły (zasady UK).
+Uwaga: zgodnie z prawem UK maile marketingowe można wysyłać tylko osobom, które się na nie zgodziły.
