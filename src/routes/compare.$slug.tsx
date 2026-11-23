@@ -39,12 +39,17 @@ export const Route = createFileRoute("/compare/$slug")({
     const p = loaderData.page;
     const title = titleFor(p);
     const url = `${SITE_URL}/compare/${p.slug}`;
+    // Canonical consolidation: near-duplicate variants (canonicalSlug) point
+    // at the main comparison so Google folds ranking signals into one URL.
+    const canonicalUrl = p.canonicalSlug
+      ? `${SITE_URL}/compare/${p.canonicalSlug}`
+      : url;
     const articleLd = {
       "@context": "https://schema.org",
       "@type": "Article",
       headline: `${p.left.name} vs ${p.right.name} — research comparison`,
       description: p.metaDescription,
-      mainEntityOfPage: url,
+      mainEntityOfPage: canonicalUrl,
       author: { "@type": "Organization", name: "PH Labs UK" },
       publisher: { "@type": "Organization", name: "PH Labs UK" },
       datePublished: p.updated,
@@ -67,12 +72,12 @@ export const Route = createFileRoute("/compare/$slug")({
         { property: "og:title", content: title },
         { property: "og:description", content: p.metaDescription },
         { property: "og:type", content: "article" },
-        { property: "og:url", content: url },
+        { property: "og:url", content: canonicalUrl },
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: title },
         { name: "twitter:description", content: p.metaDescription },
       ],
-      links: [{ rel: "canonical", href: url }],
+      links: [{ rel: "canonical", href: canonicalUrl }],
       scripts: [
         { type: "application/ld+json", children: JSON.stringify(articleLd) },
         { type: "application/ld+json", children: JSON.stringify(faqLd) },

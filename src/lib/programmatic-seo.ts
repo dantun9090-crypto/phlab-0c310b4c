@@ -13,6 +13,11 @@
 
 export interface ProgrammaticPage {
   slug: string;            // /compare/{slug}
+  /** Optional canonical consolidation target: when set, this page emits
+   *  rel=canonical (and matching og:url / mainEntityOfPage) pointing at
+   *  /compare/{canonicalSlug} so Google folds near-duplicate variants
+   *  into the main comparison. Page content stays live and crawlable. */
+  canonicalSlug?: string;
   left: PeptideRef;
   right: PeptideRef;
   /** 150-160 char meta description; compliance-safe. */
@@ -312,6 +317,7 @@ function pair(slug: string, leftKey: string, rightKey: string, opts: {
   extraRows?: ProgrammaticPage["extraRows"];
   goals?: ProgrammaticPage["goals"];
   bodyLinks?: ProgrammaticPage["bodyLinks"];
+  canonicalSlug?: ProgrammaticPage["canonicalSlug"];
 }): ProgrammaticPage {
   return {
     slug,
@@ -533,6 +539,7 @@ const RAW_PAGES: ProgrammaticPage[] = [
   }),
   pair("retatrutide-vs-tirzepatide-research-mass", "retatrutide", "tirzepatide", {
     slug: "retatrutide-vs-tirzepatide-research-mass",
+    canonicalSlug: "retatrutide-vs-tirzepatide",
     metaDescription:
       "Retatrutide vs Tirzepatide research masses — incretin research peptide variants compared. UK research-use-only catalogue.",
     intro:
@@ -606,6 +613,7 @@ const RAW_PAGES: ProgrammaticPage[] = [
   } as Omit<ProgrammaticPage, "slug"> & { slug: string }),
   pair("bpc-157-research-mass", "bpc-157", "bacteriostatic-water", {
     slug: "bpc-157-research-mass",
+    canonicalSlug: "bpc-157-vs-bacteriostatic-water",
     metaDescription:
       "BPC-157 research mass and reconstitution guide — molecular weight, vial mass and bacteriostatic water pairing.",
     intro:
