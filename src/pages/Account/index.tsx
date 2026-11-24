@@ -26,6 +26,7 @@ import { revokeMyRefreshTokens } from '@/lib/revoke-refresh-tokens.functions';
 import { getOrdersForVerifiedEmail, type GuestOrdersResult } from '@/lib/account-orders.functions';
 import { logSecurityEvent } from '@/lib/security-events';
 import { OrderTrackingBar } from '@/components/OrderTrackingBar';
+import VipStore from '@/pages/VipStore';
 import { PayAgainCTA } from '@/components/PayAgainCTA';
 import TidePayPanel from '@/components/TidePayPanel';
 import { getDisplayStatus } from '@/lib/order-payment-retry';
@@ -244,7 +245,8 @@ export default function AccountPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'invoices' | 'lab-report' | 'referral' | 'profile' | 'security'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'invoices' | 'lab-report' | 'referral' | 'profile' | 'security' | 'vip'>('overview');
+  const [isVip, setIsVip] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -370,6 +372,8 @@ export default function AccountPage() {
       }
     } else if (tabParam === 'orders') {
       setActiveTab('orders');
+    } else if (tabParam === 'vip') {
+      setActiveTab('vip');
     }
   }, [searchParams, setSearchParams]);
 
@@ -392,6 +396,7 @@ export default function AccountPage() {
           if (snap.exists()) {
             const data = snap.data() as UserProfile;
             setProfile(data);
+            setIsVip(Boolean((data as any).isVip));
             setEditFirstName(data.firstName || '');
             setEditLastName(data.lastName || '');
             setEditPhone(data.phone || '');
@@ -719,6 +724,7 @@ export default function AccountPage() {
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Crown },
+    ...(isVip ? [{ id: 'vip', label: 'VIP Store', icon: Crown }] : []),
     { id: 'orders', label: 'Orders', icon: Package, count: orders.length },
     { id: 'invoices', label: 'Receipts', icon: FileText },
     { id: 'lab-report', label: 'Lab Reports', icon: FlaskConical, count: savedReports.length + pendingReports.length },
@@ -853,12 +859,16 @@ export default function AccountPage() {
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id as any)}
                       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${
-                        isActive
-                          ? 'bg-gradient-to-r from-blue-600/20 to-violet-600/10 text-white border border-blue-500/20'
-                          : 'text-[#9cb8d9] hover:text-white hover:bg-white/[0.04]'
+                        tab.id === 'vip'
+                          ? isActive
+                            ? 'bg-gradient-to-r from-amber-600/25 to-amber-500/10 text-amber-100 border border-amber-500/40'
+                            : 'text-amber-400/90 border border-amber-500/25 hover:text-amber-200 hover:bg-amber-500/[0.08]'
+                          : isActive
+                            ? 'bg-gradient-to-r from-blue-600/20 to-violet-600/10 text-white border border-blue-500/20'
+                            : 'text-[#9cb8d9] hover:text-white hover:bg-white/[0.04]'
                       }`}
                     >
-                      <Icon className={`w-4 h-4 flex-shrink-0 transition-colors ${isActive ? 'text-blue-400' : 'text-[#3a5a82] group-hover:text-[#9cb8d9]'}`} />
+                      <Icon className={`w-4 h-4 flex-shrink-0 transition-colors ${tab.id === 'vip' ? (isActive ? 'text-amber-300' : 'text-amber-400/70 group-hover:text-amber-300') : isActive ? 'text-blue-400' : 'text-[#3a5a82] group-hover:text-[#9cb8d9]'}`} />
                       <span className="flex-1 text-left">{tab.label}</span>
                       {'count' in tab && typeof tab.count === 'number' && tab.count > 0 && (
                         <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isActive ? 'bg-blue-500/20 text-blue-300' : 'bg-white/[0.06] text-[#9cb8d9]'}`}>
@@ -1016,6 +1026,13 @@ export default function AccountPage() {
                     </div>
                   </div>
 
+                </motion.div>
+              )}
+
+              {/* ── VIP STORE ── */}
+              {activeTab === 'vip' && isVip && (
+                <motion.div key="vip" initial={{ y: 10 }} animate={{ y: 0 }} exit={{ y: -10 }} transition={{ duration: 0.25 }}>
+                  <VipStore embedded />
                 </motion.div>
               )}
 
