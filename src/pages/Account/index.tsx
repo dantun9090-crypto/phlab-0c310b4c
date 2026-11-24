@@ -916,6 +916,22 @@ export default function AccountPage() {
                     </div>
                   )}
 
+                  {/* VIP membership banner — VIP customers land here and immediately
+                      see they have VIP access (many don't know). Tap → VIP Store tab. */}
+                  {isVip && (
+                    <button
+                      onClick={() => setActiveTab('vip')}
+                      className="w-full flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-amber-600/20 to-amber-500/5 border border-amber-500/30 hover:border-amber-400/50 transition-colors text-left"
+                    >
+                      <Crown className="w-5 h-5 text-amber-400 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-amber-200 text-sm font-semibold">VIP membership active</p>
+                        <p className="text-amber-400/70 text-xs mt-0.5">Your account has VIP access — tap to browse member-only products in the VIP Store.</p>
+                      </div>
+                      <span className="flex-shrink-0 text-xs px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/25 font-semibold">Open VIP Store →</span>
+                    </button>
+                  )}
+
                   {/* Stats grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {[
