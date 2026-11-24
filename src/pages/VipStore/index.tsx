@@ -7,7 +7,7 @@ import { ProductCard } from '@/components/ProductCard';
 import type { Product } from '@/lib/firebase';
 import { dispatchAddToCart } from '@/components/Layout';
 
-export default function VipStore() {
+function VipStoreView({ embedded }: { embedded: boolean }) {
   const [authLoading, setAuthLoading] = useState(true);
   const [isVip, setIsVip] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
@@ -15,10 +15,10 @@ export default function VipStore() {
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
   const [userEmail, setUserEmail] = useState('');
 
-  // Set page meta
+  // Set page meta (standalone route only — embedded mode lives inside Account)
   useEffect(() => {
-    document.title = 'VIP Members Store | PH Labs';
-  }, []);
+    if (!embedded) document.title = 'VIP Members Store | PH Labs';
+  }, [embedded]);
 
   // Auth + VIP check
   useEffect(() => {
@@ -79,7 +79,7 @@ export default function VipStore() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#060f1e] flex items-center justify-center">
+      <div className={embedded ? "py-16 flex items-center justify-center" : "min-h-screen bg-[#060f1e] flex items-center justify-center"}>
         <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
       </div>
     );
@@ -88,7 +88,7 @@ export default function VipStore() {
   // Not logged in
   if (!userEmail) {
     return (
-      <div className="min-h-screen bg-[#060f1e] flex items-center justify-center px-6">
+      <div className={embedded ? "py-12 flex items-center justify-center" : "min-h-screen bg-[#060f1e] flex items-center justify-center px-6"}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -113,7 +113,7 @@ export default function VipStore() {
   // Logged in but not VIP
   if (!isVip) {
     return (
-      <div className="min-h-screen bg-[#060f1e] flex items-center justify-center px-6">
+      <div className={embedded ? "py-12 flex items-center justify-center" : "min-h-screen bg-[#060f1e] flex items-center justify-center px-6"}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -146,8 +146,20 @@ export default function VipStore() {
 
   // VIP Access granted
   return (
-    <div className="min-h-screen bg-[#060f1e]">
+    <div className={embedded ? "" : "min-h-screen bg-[#060f1e]"}>
+      {embedded && (
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center flex-shrink-0">
+            <Crown className="w-5 h-5 text-amber-400" />
+          </div>
+          <div>
+            <p className="text-white font-semibold text-sm">VIP Members Store</p>
+            <p className="text-[#9cb8d9] text-xs">Exclusive research compounds — only visible to verified VIP members.</p>
+          </div>
+        </div>
+      )}
       {/* VIP Header */}
+      {!embedded && (
       <div className="relative pt-24 pb-12 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-amber-900/20 via-[#060f1e] to-[#060f1e]" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-amber-500/5 rounded-full" />
@@ -187,9 +199,10 @@ export default function VipStore() {
           </motion.div>
         </div>
       </div>
+      )}
 
       {/* Products */}
-      <div className="container mx-auto px-6 pb-20">
+      <div className={embedded ? "" : "container mx-auto px-6 pb-20"}>
         {products.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
@@ -226,4 +239,13 @@ export default function VipStore() {
       </div>
     </div>
   );
+}
+
+export default function VipStore() {
+  return <VipStoreView embedded={false} />;
+}
+
+/** Dashboard-embedded variant (no page chrome, no document.title) — used by the Account VIP tab. */
+export function VipStoreEmbedded() {
+  return <VipStoreView embedded />;
 }
