@@ -7,7 +7,7 @@ import { ProductCard } from '@/components/ProductCard';
 import type { Product } from '@/lib/firebase';
 import { dispatchAddToCart } from '@/components/Layout';
 
-export default function VipStore({ embedded = false }: { embedded?: boolean }) {
+function VipStoreView({ embedded }: { embedded: boolean }) {
   const [authLoading, setAuthLoading] = useState(true);
   const [isVip, setIsVip] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
@@ -239,4 +239,13 @@ export default function VipStore({ embedded = false }: { embedded?: boolean }) {
       </div>
     </div>
   );
+}
+
+export default function VipStore() {
+  return <VipStoreView embedded={false} />;
+}
+
+/** Dashboard-embedded variant (no page chrome, no document.title) — used by the Account VIP tab. */
+export function VipStoreEmbedded() {
+  return <VipStoreView embedded />;
 }

@@ -26,7 +26,7 @@ import { revokeMyRefreshTokens } from '@/lib/revoke-refresh-tokens.functions';
 import { getOrdersForVerifiedEmail, type GuestOrdersResult } from '@/lib/account-orders.functions';
 import { logSecurityEvent } from '@/lib/security-events';
 import { OrderTrackingBar } from '@/components/OrderTrackingBar';
-import VipStore from '@/pages/VipStore';
+import { VipStoreEmbedded } from '@/pages/VipStore';
 import { PayAgainCTA } from '@/components/PayAgainCTA';
 import TidePayPanel from '@/components/TidePayPanel';
 import { getDisplayStatus } from '@/lib/order-payment-retry';
@@ -1032,7 +1032,7 @@ export default function AccountPage() {
               {/* ── VIP STORE ── */}
               {activeTab === 'vip' && isVip && (
                 <motion.div key="vip" initial={{ y: 10 }} animate={{ y: 0 }} exit={{ y: -10 }} transition={{ duration: 0.25 }}>
-                  <VipStore embedded />
+                  <VipStoreEmbedded />
                 </motion.div>
               )}
 
