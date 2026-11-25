@@ -262,6 +262,7 @@ const DELISTED_PRODUCT_PATHS = new Set([
   "/products/tirzepatide-research-peptide",
   "/products/tirzepatide",
   "/products/r3tatrutid3",
+  "/products/r3tatrutid33",
 ]);
 
 // ═══════════════════════════════════════════════════════════════════════════════
