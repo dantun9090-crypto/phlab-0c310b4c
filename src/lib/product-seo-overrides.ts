@@ -113,7 +113,7 @@ export const PRODUCT_SEO_OVERRIDES: Record<string, ProductSeoOverride> = {
   // "bpc 157 uk" 2,900/mo · KD 13 — easy win
   // Semrush UK typo cluster: ~450/mo combined
   "bpc-157": {
-    title: "BPC-157 UK — Research Peptide, HPLC + CoA | PH Labs",
+    title: "BPC 157 UK — BPC-157 Research Peptide + CoA | PH Labs",
     description:
       "BPC-157 UK research peptide. HPLC-tested ≥99% purity, batch Certificate of Analysis. For laboratory research only — not for human consumption.",
     misspellings: [
@@ -123,6 +123,8 @@ export const PRODUCT_SEO_OVERRIDES: Record<string, ProductSeoOverride> = {
       "bpc-175",
       "bpc peptide",
       "pbc-157",
+      "bpc 157 uk",
+      "bpc-157 peptide uk",
     ],
     faqs: [
       {
@@ -176,6 +178,28 @@ export const PRODUCT_SEO_OVERRIDES: Record<string, ProductSeoOverride> = {
     title: "Bacteriostatic Water UK — Lab Diluent 0.9% BA | PH Labs",
     description:
       "Bacteriostatic water (0.9% benzyl alcohol) UK — sterile laboratory diluent for in-vitro reconstitution. For research use only — not for human consumption.",
+    // Semrush UK: "bacteriostatic water" 6,600/mo (#18), "b a c water" 6,600/mo, "... uk" KD 3
+    misspellings: [
+      "bac water",
+      "b a c water",
+      "bacteriostatic water uk",
+      "bacteriostatic h2o",
+      "bacterostatic water",
+    ],
+    faqs: [
+      {
+        q: "Where can I buy bacteriostatic water in the UK?",
+        a: "PH Labs supplies bacteriostatic water (bac water) — sterile water with 0.9% benzyl alcohol — direct from our UK facility, dispatched within 1 business day by tracked UK courier. Supplied as a laboratory diluent for reconstituting lyophilised research compounds. For in-vitro laboratory research only — not for human consumption.",
+      },
+      {
+        q: "What is bacteriostatic water used for in the lab?",
+        a: "Bacteriostatic water is a sterile laboratory diluent containing 0.9% benzyl alcohol, which limits bacterial growth so a multi-use vial can be accessed repeatedly under laboratory conditions. Researchers use it to reconstitute lyophilised peptides for in-vitro work. For in-vitro laboratory research only — not for human consumption.",
+      },
+      {
+        q: "What is the difference between bacteriostatic water and sterile water?",
+        a: "Both are sterile, but bacteriostatic water contains 0.9% benzyl alcohol as a preservative, so a vial can be accessed multiple times. Plain sterile water has no preservative and is intended for single use once opened.",
+      },
+    ],
   },
 
   // "ghk-cu uk" 90/mo · KD 11 — easy win
@@ -248,7 +272,7 @@ export const PRODUCT_SEO_OVERRIDES: Record<string, ProductSeoOverride> = {
   // "kpv peptide uk" 90/mo · KD 12 — very easy win
   // Semrush UK typo cluster: ~1.3k/mo combined (kpv 720, k.p.v 320, k p v 110)
   "kpv-research-peptide": {
-    title: "KPV Tripeptide UK — Research Peptide | PH Labs",
+    title: "KPV Peptide UK — Tripeptide, HPLC + CoA | PH Labs",
     description:
       "KPV tripeptide UK research reagent. HPLC ≥99% purity, batch CoA included. For laboratory research only — not for human consumption.",
     misspellings: [
@@ -256,6 +280,23 @@ export const PRODUCT_SEO_OVERRIDES: Record<string, ProductSeoOverride> = {
       "k.p.v",
       "k p v",
       "kpv peptide",
+      "kpv peptide uk",
+      "lys-pro-val",
+    ],
+    // Semrush UK: "kpv peptide" 4,400/mo · KD 19
+    faqs: [
+      {
+        q: "Where can I buy KPV peptide in the UK from a verified lab?",
+        a: "PH Labs supplies KPV peptide (Lys-Pro-Val tripeptide) direct from our UK facility. Every order ships with the batch-matched HPLC Certificate of Analysis confirming ≥99% purity, dispatched within 1 business day by tracked UK courier. For in-vitro laboratory research only — not for human consumption.",
+      },
+      {
+        q: "What is KPV peptide?",
+        a: "KPV is a synthetic tripeptide made of lysine, proline and valine — the C-terminal fragment of alpha-MSH. PH Labs supplies it as a lyophilised analytical reference standard for in-vitro laboratory studies, with identity confirmed by mass spectrometry. For in-vitro laboratory research only — not for human consumption.",
+      },
+      {
+        q: "How should KPV peptide be stored after delivery?",
+        a: "Store lyophilised KPV sealed at −20°C, dry and protected from light. Once reconstituted with bacteriostatic water for laboratory work, keep the working solution at 2–8°C and avoid repeated freeze-thaw cycles.",
+      },
     ],
   },
 
@@ -305,6 +346,19 @@ export const PRODUCT_SEO_OVERRIDES: Record<string, ProductSeoOverride> = {
       "nicotinamide adenine dinucleotide",
       "n-ad",
       "nad +",
+      "nad+ peptide",
+      "nad peptide",
+    ],
+    // Semrush UK: "nad+ peptide" 1,000/mo · KD 27
+    faqs: [
+      {
+        q: "Is NAD+ a peptide?",
+        a: "NAD+ (nicotinamide adenine dinucleotide) is often searched for as 'NAD+ peptide', but it is a dinucleotide coenzyme rather than a peptide. PH Labs supplies NAD+ alongside its peptide range as a lyophilised research compound with a batch-matched HPLC Certificate of Analysis. For in-vitro laboratory research only — not for human consumption.",
+      },
+      {
+        q: "Where can I buy NAD+ in the UK for laboratory research?",
+        a: "PH Labs ships NAD+ research compound direct from our UK facility, dispatched within 1 business day by tracked UK courier with the batch CoA included. For in-vitro laboratory research only — not for human consumption.",
+      },
     ],
   },
 };
