@@ -261,6 +261,10 @@ export default function EmailMarketingTab() {
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [customerCount, setCustomerCount] = useState<number | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  // Campaign audience. Default = active newsletter subscribers (they opted in
+  // via the signup form — consent-safe). "All customers" emails every
+  // registered customer that has an email address on file.
+  const [audience, setAudience] = useState<'subscribers' | 'customers'>('subscribers');
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [templateOpen, setTemplateOpen] = useState(false);
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -316,6 +320,24 @@ export default function EmailMarketingTab() {
       setLoadingSubscribers(false);
     }
   };
+
+  // Active newsletter subscribers — missing status counts as active,
+  // matching the NewsletterTab convention (status ?? 'active').
+  const activeSubscribers = useMemo<Customer[]>(() => subscribers
+    .filter(s => s?.email && String(s.status ?? 'active').toLowerCase() !== 'unsubscribed')
+    .map(s => ({ id: String(s.id), email: String(s.email) })), [subscribers]);
+
+  // Final recipient list for the selected audience, deduped by email.
+  const audienceRecipients = useMemo<Customer[]>(() => {
+    const source = audience === 'subscribers' ? activeSubscribers : customers.filter(c => c.email);
+    const seen = new Set<string>();
+    return source.filter(r => {
+      const key = (r.email || '').trim().toLowerCase();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [audience, activeSubscribers, customers]);
 
   const exportSubscribers = () => {
     const csv = 'Email,Source,Date,Status,Discount Code\n' + subscribers.map(s =>
@@ -409,8 +431,8 @@ export default function EmailMarketingTab() {
       setMsg({ type: 'error', text: 'Subject and body are required.' });
       return null;
     }
-    if (!customers.length) {
-      setMsg({ type: 'error', text: 'No customers with email addresses found.' });
+    if (!audienceRecipients.length) {
+      setMsg({ type: 'error', text: audience === 'subscribers' ? 'No active newsletter subscribers found.' : 'No customers with email addresses found.' });
       return null;
     }
     setValidating(true);
@@ -426,7 +448,7 @@ export default function EmailMarketingTab() {
           subject: subject.trim(),
           html: body.trim(),
           dryRun: true,
-          recipients: customers.map(c => ({
+          recipients: audienceRecipients.map(c => ({
             email: c.email,
             firstName: c.firstName || undefined,
             lastName: c.lastName || undefined,
@@ -450,8 +472,8 @@ export default function EmailMarketingTab() {
       setMsg({ type: 'error', text: 'Subject and body are required.' });
       return;
     }
-    if (!customers.length) {
-      setMsg({ type: 'error', text: 'No customers with email addresses found.' });
+    if (!audienceRecipients.length) {
+      setMsg({ type: 'error', text: audience === 'subscribers' ? 'No active newsletter subscribers found.' : 'No customers with email addresses found.' });
       return;
     }
 
@@ -472,7 +494,7 @@ export default function EmailMarketingTab() {
     }
 
     const confirmed = window.confirm(
-      `${warnings.length ? warnings.join('\n\n') + '\n\n' : ''}Send email to ${customers.length} customer${customers.length === 1 ? '' : 's'}?\n\nSubject: ${subject}\n\nThis action cannot be undone.`
+      `${warnings.length ? warnings.join('\n\n') + '\n\n' : ''}Send email to ${audienceRecipients.length} recipient${audienceRecipients.length === 1 ? '' : 's'} (${audience === 'subscribers' ? 'active newsletter subscribers' : 'all registered customers'})?\n\nSubject: ${subject}\n\nThis action cannot be undone.`
     );
     if (!confirmed) return;
 
@@ -495,7 +517,7 @@ export default function EmailMarketingTab() {
           idToken,
           subject: subject.trim(),
           html: body.trim(),
-          recipients: customers.map(c => ({
+          recipients: audienceRecipients.map(c => ({
             email: c.email,
             firstName: c.firstName || undefined,
             lastName: c.lastName || undefined,
@@ -508,13 +530,14 @@ export default function EmailMarketingTab() {
         throw new Error(result.error || result.detail || `HTTP ${res.status}`);
       }
 
-      const missingFirstName = customers.filter(c => !(c.firstName || '').trim()).length;
+      const missingFirstName = audienceRecipients.filter(c => !(c.firstName || '').trim()).length;
       await logAdminAction({
         action: 'marketing.campaign.send',
         target: `marketing/campaign/${Date.now()}`,
         meta: {
           subject: subject.trim(),
-          recipientCount: customers.length,
+          audience,
+          recipientCount: audienceRecipients.length,
           enqueued: result.enqueued ?? 0,
           failed: result.failed ?? 0,
           fallbackFirstNameCount: missingFirstName,
@@ -708,7 +731,7 @@ export default function EmailMarketingTab() {
   // because their firstName is missing/blank in Firestore.
   // Single-pass memo (was: 4 separate full-array filters on every render).
   const { emailedCustomers, missingFirstName, missingLastName, missingBoth, totalEmailable, fallbackPct } = useMemo(() => {
-    const emailed = customers.filter(c => c.email);
+    const emailed = audienceRecipients;
     const missFirst: typeof emailed = [];
     const missLast: typeof emailed = [];
     const missBoth: typeof emailed = [];
@@ -728,7 +751,7 @@ export default function EmailMarketingTab() {
       totalEmailable: total,
       fallbackPct: total > 0 ? Math.round((missFirst.length / total) * 100) : 0,
     };
-  }, [customers]);
+  }, [audienceRecipients]);
   const [showFallbackList, setShowFallbackList] = useState(false);
 
   const selectedTpl = TEMPLATES.find(t => t.id === selectedTemplate);
@@ -744,17 +767,35 @@ export default function EmailMarketingTab() {
             Email Marketing
           </h1>
           <p className="text-[#9cb8d9] text-sm mt-1">
-            Compose and send promotional emails to all registered customers.
+            Compose and send promotional emails. Default audience: active newsletter subscribers (consent-safe).
           </p>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-[#0b1a30]/80 border border-white/10 rounded-xl">
           <Users className="w-4 h-4 text-blue-400" />
-          {loadingCustomers ? (
+          {(loadingCustomers || loadingSubscribers) ? (
             <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
           ) : (
-            <span className="text-white text-sm font-semibold">{customerCount ?? 0}</span>
+            <span className="text-white text-sm font-semibold">{audienceRecipients.length}</span>
           )}
           <span className="text-[#9cb8d9] text-sm">recipients</span>
+          <div className="flex items-center bg-[#04101f]/80 border border-white/10 rounded-lg p-0.5 ml-1">
+            <button
+              type="button"
+              onClick={() => setAudience('subscribers')}
+              title="Active newsletter subscribers (opted in via the signup form)"
+              className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${audience === 'subscribers' ? 'bg-pink-600 text-white' : 'text-[#9cb8d9] hover:text-white'}`}
+            >
+              Subscribers
+            </button>
+            <button
+              type="button"
+              onClick={() => setAudience('customers')}
+              title="Every registered customer with an email on file"
+              className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${audience === 'customers' ? 'bg-pink-600 text-white' : 'text-[#9cb8d9] hover:text-white'}`}
+            >
+              All customers
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1068,7 +1109,7 @@ export default function EmailMarketingTab() {
               <button
                 type="button"
                 onClick={() => runValidation()}
-                disabled={validating || !subject.trim() || !body.trim() || !customerCount}
+                disabled={validating || !subject.trim() || !body.trim() || !audienceRecipients.length}
                 className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 rounded-xl text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {validating ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
@@ -1078,11 +1119,11 @@ export default function EmailMarketingTab() {
               <button
                 type="button"
                 onClick={handleSend}
-                disabled={sending || !subject.trim() || !body.trim() || !customerCount}
+                disabled={sending || !subject.trim() || !body.trim() || !audienceRecipients.length}
                 className="flex items-center gap-2 px-5 py-2.5 bg-pink-600 hover:bg-pink-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-colors ml-auto"
               >
                 {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                {sending ? 'Queuing...' : `Send to ${customerCount ?? '…'} recipients`}
+                {sending ? 'Queuing...' : `Send to ${audienceRecipients.length || '…'} ${audience === 'subscribers' ? 'subscribers' : 'customers'}`}
               </button>
             </div>
 
