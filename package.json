@@ -146,7 +146,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^9.39.5",
-    "@lovable.dev/vite-tanstack-config": "2.28.0",
+    "@lovable.dev/vite-tanstack-config": "2.27.3",
     "@playwright/test": "^1.63.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
